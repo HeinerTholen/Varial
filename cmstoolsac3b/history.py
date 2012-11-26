@@ -1,7 +1,7 @@
 import re
-from functools import wraps
-from collections import Iterable
-from cmstoolsac3b.wrappers import Wrapper
+import functools
+import collections
+import wrappers
 
 class History(object):
     """
@@ -77,14 +77,14 @@ def track_history(func):
     """
     Python decorator for Wrapper operations.
     """
-    @wraps(func)
+    @functools.wraps(func)
     def decorator(*args, **kws):
         history = History(func.__name__)
         if len(args):
             candidate = args[0]
-            if isinstance(candidate, Wrapper):
+            if isinstance(candidate, wrappers.Wrapper):
                 history.add_args([candidate.history])
-            if isinstance(candidate, Iterable):
+            if isinstance(candidate, collections.Iterable):
                 args = list(args)
                 hist_list = []
                 args[0] = gen_catch_history(candidate, hist_list)

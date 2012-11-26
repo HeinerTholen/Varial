@@ -2,9 +2,9 @@
 
 import ctypes
 import collections
+import settings
 import history
 import wrappers
-import settings
 from ROOT import THStack
 
 class OperationError(Exception): pass

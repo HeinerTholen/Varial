@@ -1,8 +1,8 @@
 import time
 import os
 import glob
-import cmstoolsac3b.settings as settings
-import cmstoolsac3b.sample
+import settings
+import sample
 from PyQt4 import QtCore
 
 class CmsRunProcess(QtCore.QProcess):
@@ -12,22 +12,22 @@ class CmsRunProcess(QtCore.QProcess):
     """
     message = QtCore.pyqtSignal(object, str)
 
-    def __init__(self, sample, try_reuse_old_data = False, cfg_filename=None):
+    def __init__(self, sample_inst, try_reuse_old_data = False, cfg_filename=None):
         super(CmsRunProcess, self).__init__()
 
-        assert isinstance(sample, cmstoolsac3b.sample.Sample)
-        self.sample             = sample
-        self.name               = sample.name
+        assert isinstance(sample_inst, sample.Sample)
+        self.sample             = sample_inst
+        self.name               = sample_inst.name
         self.cfg_filename       = settings.cfg_main_import_path
         if cfg_filename: self.cfg_filename = cfg_filename
         self.exe                = "cmsRun"
         self.log_filename       = settings.DIR_LOGS\
-                                  + "/" + sample.name + ".log"
+                                  + "/" + sample_inst.name + ".log"
         self.conf_filename      = settings.DIR_CONFS\
-                                  + "/" + sample.name + ".py"
+                                  + "/" + sample_inst.name + ".py"
         self.service_filename   = settings.DIR_FILESERVICE\
-                                  + "/" + sample.name + ".root"
-        self.jobinfo_filename   = settings.DIR_JOBINFO + "/" + sample.name + ".ini"
+                                  + "/" + sample_inst.name + ".root"
+        self.jobinfo_filename   = settings.DIR_JOBINFO + "/" + sample_inst.name + ".ini"
         self.jobinfo            = QtCore.QSettings(self.jobinfo_filename, 1)
         self.try_reuse_old_data = try_reuse_old_data
         self.will_reuse_data    = False

@@ -1,9 +1,9 @@
 
 import os.path
 import glob
-import cmstoolsac3b.settings as settings
-import cmstoolsac3b.singleton
-import cmstoolsac3b.wrappers as wrappers
+import settings
+import singleton
+import wrappers
 from ROOT import TFile, TH1
 
 
@@ -11,7 +11,7 @@ class HistoDispatch(object):
     """
     Central dispatch for histograms
     """
-    __metaclass__ = cmstoolsac3b.singleton.Singleton
+    __metaclass__ = singleton.Singleton
 
     class NoObjectError(Exception): pass
     class NoHistogramError(Exception): pass
@@ -133,7 +133,7 @@ class HistoDispatch(object):
 
 class HistoPool(object):
     """Storage for all kinds of Wrappers"""
-    __metaclass__ = cmstoolsac3b.singleton.Singleton
+    __metaclass__ = singleton.Singleton
     _pool = []
 
     def put(self, wrp):

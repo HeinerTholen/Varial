@@ -1,8 +1,8 @@
 
 from PyQt4 import QtCore
-import cmstoolsac3b.monitor
-import cmstoolsac3b.cmsrunprocess as crp
-import cmstoolsac3b.settings as settings
+import settings
+import monitor
+import cmsrunprocess as crp
 
 class Controller(QtCore.QObject):
     """Generates, starts and finishes crp.CmsRunProcesses."""
@@ -20,7 +20,7 @@ class Controller(QtCore.QObject):
         self.finished_pros = []
         self.failed_pros   = []
 
-        mon = cmstoolsac3b.monitor.Monitor()
+        mon = monitor.Monitor()
         mon.connect_controller(self)
         mon.message(
             self,

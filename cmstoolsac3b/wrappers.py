@@ -1,6 +1,7 @@
 # HistoOperations.py
 
 import sys
+import settings
 from ROOT import TH1, THStack, TCanvas
 from ast import literal_eval
 
