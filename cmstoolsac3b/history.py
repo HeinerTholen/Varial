@@ -1,0 +1,104 @@
+import re
+from functools import wraps
+from collections import Iterable
+from cmstoolsac3b.wrappers import Wrapper
+
+class History(object):
+    """
+    Tracking of operations provenance.
+
+    >>> h = History("some_op")
+    >>> print str(h)
+    some_op()
+    >>> h.add_args(["w1", "w2"])
+    >>> print str(h)
+    some_op(
+        'w1',
+        'w2'
+    )
+    >>> h.add_kws({"a_keyword": "a_value"})
+    >>> print str(h)
+    some_op(
+        'w1',
+        'w2',
+        {'a_keyword': 'a_value'}
+    )
+    >>> h
+    some_op('w1','w2',{'a_keyword':'a_value'})
+    >>> h.add_args([History("another_op")])
+    >>> print str(h)
+    some_op(
+        another_op(),
+        {'a_keyword': 'a_value'}
+    )
+    """
+    def __init__(self, operation):
+        self.op = str(operation)
+        self.args = None
+        self.kws  = None
+
+    def __str__(self):
+        string = ""
+        if self.args:
+            for arg in self.args:
+                if len(string):
+                    string += ",\n"
+                string += "    "
+                string += repr(arg).replace("\n", "\n    ")
+        if self.kws:
+            string += ",\n    "
+            string += str(self.kws)
+        if string:
+            return self.op + "(\n" + string + "\n)"
+        else:
+            return self.op + "()"
+
+    def __repr__(self):
+        pat = re.compile(r'\s+')
+        return pat.sub('', str(self))
+
+    def add_args(self, args):
+        self.args = args
+
+    def add_kws(self, kws):
+        self.kws = kws
+
+
+def gen_catch_history(wrps, hist_list=list()):
+    """
+    'Pass through' generator.
+    """
+    for wrp in wrps:
+        if hasattr(wrp, "history"):
+            hist_list.append(wrp.history)
+        yield wrp
+
+def track_history(func):
+    """
+    Python decorator for Wrapper operations.
+    """
+    @wraps(func)
+    def decorator(*args, **kws):
+        history = History(func.__name__)
+        if len(args):
+            candidate = args[0]
+            if isinstance(candidate, Wrapper):
+                history.add_args([candidate.history])
+            if isinstance(candidate, Iterable):
+                args = list(args)
+                hist_list = []
+                args[0] = gen_catch_history(candidate, hist_list)
+                history.add_args(hist_list)
+        if len(kws):
+            history.add_kws(kws)
+        ret = func(*args, **kws)
+        ret.history = history
+        return ret
+    return decorator
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
+
+
