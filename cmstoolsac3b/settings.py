@@ -85,7 +85,9 @@ def get_stack_position(sample):
         return legend
 
 ################################################################ root style ###
-from ROOT import TStyle, gROOT, TGaxis
+from ROOT import gROOT
+gROOT.SetBatch()
+from ROOT import TStyle, TGaxis
 
 class StyleClass(TStyle):
     """
@@ -161,7 +163,5 @@ class StyleClass(TStyle):
         self.colors = [1, 2, 3, 4, 6, 7, 8, 9, 11]
         self.markers = [20, 21, 22, 23, 24, 25, 26, 27, 28]
         self.styles = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-
-        gROOT.SetBatch()
 
 root_style = StyleClass() #! reference to the TStyle class instance.
