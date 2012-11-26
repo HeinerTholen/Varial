@@ -21,7 +21,7 @@ class HistoDispatch(object):
         self.aliases = None
 
     def __del__(self):
-        for name, file in self.open_root_files.items():
+        for name, file in self.open_root_files.iteritems():
             file.Close()
         del self.open_root_files
 

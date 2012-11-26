@@ -18,15 +18,15 @@ cfg_common_builtins     = {}
 samples = {}
 def mc_samples():
     """Returns a dict of all MC samples."""
-    return {k:v for k,v in samples.items() if not v.is_data}
+    return dict((k,v) for k,v in samples.iteritems() if not v.is_data)
 
 def data_samples():
     """Returns a dict of all real data samples."""
-    return {k:v for k,v in samples.items() if v.is_data}
+    return dict((k,v) for k,v in samples.iteritems() if v.is_data)
 
 def data_lumi_sum():
     """Returns the sum of luminosity in data samples."""
-    return sum(v.lumi for k,v in data_samples().items())
+    return sum(v.lumi for k,v in data_samples().iteritems())
 
 ######################################################### folder management ###
 import os
@@ -52,7 +52,7 @@ def create_folders():
             path = getattr(this_mod, name)
             if not os.path.exists(path):
                 os.mkdir(path)
-    for key, folder in tool_folders.items():
+    for key, folder in tool_folders.iteritems():
         if not os.path.exists(folder):
             os.mkdir(folder)
 

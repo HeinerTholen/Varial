@@ -37,7 +37,7 @@ class Controller(QtCore.QObject):
         if len(self.waiting_pros): #setup has been done already
             return
 
-        for name, sample in settings.samples.items():
+        for name, sample in settings.samples.iteritems():
             process = crp.CmsRunProcess(sample, settings.try_reuse_results)
             process.message.connect(self.message)
             process.prepare_run_conf()

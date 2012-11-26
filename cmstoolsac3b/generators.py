@@ -5,7 +5,7 @@ import itertools
 import operator
 
 def _filt_req(wrp, filter_dict): # generator over True/False
-    for key, value in filter_dict.items():
+    for key, value in filter_dict.iteritems():
         try:
             yield getattr(wrp,key," ") in value # handle iterable
         except TypeError:
