@@ -1,9 +1,7 @@
 # rendering.py
 
 ################################################################# renderers ###
-from cmstoolsac3b.wrappers import \
-    HistoWrapper, \
-    StackWrapper
+import wrappers
 
 class Renderer(object):
     """
@@ -25,7 +23,7 @@ class Renderer(object):
     def draw(self, option=""): pass
 
 
-class HistoRenderer(Renderer, HistoWrapper):
+class HistoRenderer(Renderer, wrappers.HistoWrapper):
     """
     Extend HistoWrapper for drawing.
     """
@@ -64,7 +62,7 @@ class HistoRenderer(Renderer, HistoWrapper):
         self.histo.Draw(self.draw_option + option)
 
 
-class StackRenderer(HistoRenderer, StackWrapper):
+class StackRenderer(HistoRenderer, wrappers.StackWrapper):
     """
     Extend StackWrapper for drawing.
     """
@@ -98,9 +96,9 @@ from cmstoolsac3b.wrappers import CanvasWrapper
 def _renderize(wrp): #TODO maybe use reflection here??
     if isinstance(wrp, Renderer):
         return wrp
-    if isinstance(wrp, StackWrapper):
+    if isinstance(wrp, wrappers.StackWrapper):
         return StackRenderer(wrp)
-    if isinstance(wrp, HistoWrapper):
+    if isinstance(wrp, wrappers.HistoWrapper):
         return HistoRenderer(wrp)
 
 def _renderize_iter(wrps):

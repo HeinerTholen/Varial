@@ -1,10 +1,10 @@
 
 import signal
 import sys
-import cmstoolsac3b.settings as settings
-import cmstoolsac3b.sample
-import cmstoolsac3b.controller
-import cmstoolsac3b.postprocessing
+import settings
+import sample
+import controller
+import postprocessing
 from PyQt4 import QtCore
 
 class SigintHandler(object):
@@ -52,7 +52,7 @@ def main(samples=None,
                                     ``None``.
     """
     # prepare...
-    cmstoolsac3b.sample.load_samples(samples)
+    sample.load_samples(samples)
     settings.create_folders()
     app = QtCore.QCoreApplication(sys.argv)
     if logfilename:
@@ -60,15 +60,15 @@ def main(samples=None,
         sys.stderr = sys.stdout
 
     # controller
-    cnt = cmstoolsac3b.controller.Controller()
+    cnt = controller.Controller()
     cnt.setup_processes()
     executed_procs = list(p for p in cnt.waiting_pros if not p.will_reuse_data)
 
     # post processor
-    pst = cmstoolsac3b.postprocessing.PostProcessor(not bool(executed_procs))
+    pst = postprocessing.PostProcessor(not bool(executed_procs))
     cnt.all_finished.connect(pst.run)
     for tool in post_proc_tool_classes:
-        assert issubclass(tool, cmstoolsac3b.postprocessing.PostProcTool)
+        assert issubclass(tool, postprocessing.PostProcTool)
         pst.add_tool(tool())
 
     # SIGINT handler
@@ -100,10 +100,10 @@ def standalone(post_proc_tool_classes, samples=None):
     :param samples:                 list of ``Sample`` subclasses. (tools might
                                     depend on sample info, e.g. legend string.)
     """
-    cmstoolsac3b.sample.load_samples(samples)
+    sample.load_samples(samples)
     settings.create_folders()
 
-    pst = cmstoolsac3b.postprocessing.PostProcessor(False)
+    pst = postprocessing.PostProcessor(False)
     for tool in post_proc_tool_classes:
         pst.add_tool(tool())
     settings.create_folders()

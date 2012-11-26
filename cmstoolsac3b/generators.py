@@ -152,7 +152,7 @@ def debug_print(wrps, prefix="DEBUG "):
         yield wrp
 
 ################################################################ operations ###
-import cmstoolsac3b.operations as op
+import operations as op
 
 def generate_op(op_func):
     """
@@ -201,8 +201,8 @@ gen_int_l = generate_op(op.int_l)  #: This is ``generate_op(cmstoolsac3b.operati
 gen_int_r = generate_op(op.int_r)  #: This is ``generate_op(cmstoolsac3b.operations.int_r)``
 
 ############################################################### load / save ###
-import cmstoolsac3b.settings as settings
-import cmstoolsac3b.histodispatch as dsp
+import settings
+import histodispatch as dsp
 from ROOT import TFile
 
 def fs_content():
@@ -284,7 +284,7 @@ def save(wrps, filename_func, suffices = None):
         yield wrp
 
 ################################################### application & packaging ###
-import cmstoolsac3b.rendering as rnd
+import rendering as rnd
 
 def apply_histo_fillcolor(wrps):
     """

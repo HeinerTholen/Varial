@@ -1,6 +1,6 @@
 
-import cmstoolsac3b.settings as settings
-import cmstoolsac3b.monitor as mon
+import settings
+import monitor
 from PyQt4 import QtCore
 
 
@@ -22,8 +22,8 @@ class PostProcTool(object):
         self.plot_output_dir = plot_output_dir
 
         # qt message signals
-        self.messenger = mon.Messenger()
-        mon.Monitor().connect_object_with_messenger(self)
+        self.messenger = monitor.Messenger()
+        monitor.Monitor().connect_object_with_messenger(self)
         self.message = self.messenger.message.emit
 
     def wanna_reuse(self, all_reused_before_me):

@@ -1,9 +1,9 @@
 
 import os
+import singleton
 from PyQt4 import QtCore
-from cmstoolsac3b.singleton import Singleton
 
-class QSingleton(Singleton, type(QtCore.QObject)): pass
+class QSingleton(singleton.Singleton, type(QtCore.QObject)): pass
 
 
 class Messenger(QtCore.QObject):

@@ -2,8 +2,9 @@
 
 import ctypes
 import collections
-import cmstoolsac3b.history
+import history
 from cmstoolsac3b.wrappers import HistoWrapper, StackWrapper, FloatWrapper
+import settings
 from ROOT import THStack
 
 class OperationError(Exception): pass
@@ -18,7 +19,7 @@ def iterableize(obj):
     else:
         return [obj]
 
-@cmstoolsac3b.history.track_history
+@history.track_history
 def stack(wrps):
     """
     Applies only to HistoWrappers. Returns StackWrapper.
@@ -72,7 +73,7 @@ def stack(wrps):
         del info["sample"]
     return StackWrapper(stk_wrp, **info)
 
-@cmstoolsac3b.history.track_history
+@history.track_history
 def sum(wrps):
     """
     Applies only to HistoWrappers. Returns HistoWrapper. Adds lumi up.
@@ -117,7 +118,7 @@ def sum(wrps):
     info["lumi"] = lumi
     return HistoWrapper(histo, **info)
 
-@cmstoolsac3b.history.track_history
+@history.track_history
 def merge(wrps):
     """
     Applies only to HistoWrapper. Returns HistoWrapper. Normalizes histos to lumi.
@@ -161,7 +162,7 @@ def merge(wrps):
     info["lumi"] = 1.
     return HistoWrapper(histo, **info)
 
-@cmstoolsac3b.history.track_history
+@history.track_history
 def prod(wrps):
     """
     Applies to HistoWrapper and FloatWrapper. Returns HistoWrapper. Takes lumi from first.
@@ -220,7 +221,7 @@ def prod(wrps):
     info["lumi"] = lumi
     return HistoWrapper(histo, **info)
 
-@cmstoolsac3b.history.track_history
+@history.track_history
 def div(wrps):
     """
     Applies to HistoWrapper and FloatWrapper. Returns HistoWrapper. Takes lumi from first.
@@ -277,7 +278,7 @@ def div(wrps):
     info["lumi"] = lumi
     return HistoWrapper(histo, **info)
 
-@cmstoolsac3b.history.track_history
+@history.track_history
 def lumi(wrp):
     """
     Applies to HistoWrapper. Returns FloatWrapper.
@@ -300,7 +301,7 @@ def lumi(wrp):
     info = wrp.all_info()
     return FloatWrapper(wrp.lumi, **info)
 
-@cmstoolsac3b.history.track_history
+@history.track_history
 def mv_in(wrp, overflow=True, underflow=True):
     """
     Moves under- and/or overflow bin into first/last bin.
@@ -346,7 +347,7 @@ def mv_in(wrp, overflow=True, underflow=True):
         histo.SetBinContent(histo.GetNbinsX() + 1, 0.)
     return HistoWrapper(histo, **wrp.all_info())
 
-@cmstoolsac3b.history.track_history
+@history.track_history
 def int(wrp, useBinWidth=False):
     """
     Integral. Applies to HistoWrapper. Returns FloatWrapper.
@@ -374,7 +375,7 @@ def int(wrp, useBinWidth=False):
     info = wrp.all_info()
     return FloatWrapper(wrp.histo.Integral(option), **info)
 
-@cmstoolsac3b.history.track_history
+@history.track_history
 def int_l(wrp, useBinWidth=False):
     """
     Left-sided integral. Applies to HistoWrapper. Returns HistoWrapper.
@@ -412,7 +413,7 @@ def int_l(wrp, useBinWidth=False):
     info = wrp.all_info()
     return HistoWrapper(int_histo, **info)
 
-@cmstoolsac3b.history.track_history
+@history.track_history
 def int_r(wrp, useBinWidth=False):
     """
     Applies to HistoWrapper. Returns HistoWrapper.

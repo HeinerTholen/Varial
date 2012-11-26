@@ -1,4 +1,4 @@
-import cmstoolsac3b.settings as settings
+import settings
 import collections
 
 class Sample(object):
