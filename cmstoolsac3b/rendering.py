@@ -89,9 +89,8 @@ class StackRenderer(HistoRenderer, wrappers.StackWrapper):
         self.histo.Draw(self.draw_option_sum)
 
 ############################################################ canvas-builder ###
-import cmstoolsac3b.settings as settings
+import settings
 from ROOT import TCanvas, TObject
-from cmstoolsac3b.wrappers import CanvasWrapper
 
 def _renderize(wrp): #TODO maybe use reflection here??
     if isinstance(wrp, Renderer):
@@ -232,7 +231,7 @@ class CanvasBuilder(object):
         canvas = self.canvas
         if not canvas:
             self.run_procedure()
-        wrp = CanvasWrapper(self.canvas, **self.kws)
+        wrp = wrappers.CanvasWrapper(self.canvas, **self.kws)
         self._del_builder_refs()
         return wrp
 

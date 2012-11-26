@@ -3,7 +3,7 @@
 import ctypes
 import collections
 import history
-from cmstoolsac3b.wrappers import HistoWrapper, StackWrapper, FloatWrapper
+import wrappers
 import settings
 from ROOT import THStack
 
@@ -29,13 +29,13 @@ def stack(wrps):
     >>> h1 = TH1I("h1", "", 2, .5, 4.5)
     >>> h1.Fill(1,4)
     1
-    >>> w1 = HistoWrapper(h1, lumi=2.)
+    >>> w1 = wrappers.HistoWrapper(h1, lumi=2.)
     >>> h2 = TH1I("h2", "", 2, .5, 4.5)
     >>> h2.Fill(1,3)
     1
     >>> h2.Fill(3,6)
     2
-    >>> w2 = HistoWrapper(h2, lumi=2.)
+    >>> w2 = wrappers.HistoWrapper(h2, lumi=2.)
     >>> w3 = stack([w1, w2])
     >>> w3.histo.Integral()
     13.0
@@ -48,12 +48,12 @@ def stack(wrps):
     info    = None
     sample  = ""
     for wrp in wrps:
-        if not isinstance(wrp, HistoWrapper):                   # histo check
+        if not isinstance(wrp, wrappers.HistoWrapper):          # histo check
             raise WrongInputError(
                 "stack accepts only HistoWrappers. wrp: "
                 + str(wrp)
             )
-        if not stk_wrp:                                           # stack init
+        if not stk_wrp:                                         # stack init
             stk_wrp = THStack(wrp.name, wrp.title)
             lumi = wrp.lumi
             info = wrp.all_info()
@@ -71,7 +71,7 @@ def stack(wrps):
         )
     if not sample:
         del info["sample"]
-    return StackWrapper(stk_wrp, **info)
+    return wrappers.StackWrapper(stk_wrp, **info)
 
 @history.track_history
 def sum(wrps):
@@ -82,13 +82,13 @@ def sum(wrps):
     >>> h1 = TH1I("h1", "", 2, .5, 4.5)
     >>> h1.Fill(1)
     1
-    >>> w1 = HistoWrapper(h1, lumi=2.)
+    >>> w1 = wrappers.HistoWrapper(h1, lumi=2.)
     >>> h2 = TH1I("h2", "", 2, .5, 4.5)
     >>> h2.Fill(1)
     1
     >>> h2.Fill(3)
     2
-    >>> w2 = HistoWrapper(h2, lumi=3.)
+    >>> w2 = wrappers.HistoWrapper(h2, lumi=3.)
     >>> w3 = sum([w1, w2])
     >>> w3.histo.Integral()
     3.0
@@ -100,7 +100,7 @@ def sum(wrps):
     lumi = 0.
     info = None
     for wrp in wrps:
-        if not isinstance(wrp, HistoWrapper):
+        if not isinstance(wrp, wrappers.HistoWrapper):
             raise WrongInputError(
                 "sum accepts only HistoWrappers. wrp: "
                 + str(wrp)
@@ -116,7 +116,7 @@ def sum(wrps):
             "At least one Wrapper must be provided."
         )
     info["lumi"] = lumi
-    return HistoWrapper(histo, **info)
+    return wrappers.HistoWrapper(histo, **info)
 
 @history.track_history
 def merge(wrps):
@@ -127,13 +127,13 @@ def merge(wrps):
     >>> h1 = TH1I("h1", "", 2, .5, 2.5)
     >>> h1.Fill(1,4)
     1
-    >>> w1 = HistoWrapper(h1, lumi=2.)
+    >>> w1 = wrappers.HistoWrapper(h1, lumi=2.)
     >>> h2 = TH1I("h2", "", 2, .5, 2.5)
     >>> h2.Fill(1,3)
     1
     >>> h2.Fill(2,6)
     2
-    >>> w2 = HistoWrapper(h2, lumi=3.)
+    >>> w2 = wrappers.HistoWrapper(h2, lumi=3.)
     >>> w3 = merge([w1, w2])
     >>> w3.histo.Integral()
     5.0
@@ -144,7 +144,7 @@ def merge(wrps):
     histo = None
     info = None
     for wrp in wrps:
-        if not isinstance(wrp, HistoWrapper):
+        if not isinstance(wrp, wrappers.HistoWrapper):
             raise WrongInputError(
                 "merge accepts only HistoWrappers. wrp: "
                 + str(wrp)
@@ -160,7 +160,7 @@ def merge(wrps):
             "At least one Wrapper must be provided."
         )
     info["lumi"] = 1.
-    return HistoWrapper(histo, **info)
+    return wrappers.HistoWrapper(histo, **info)
 
 @history.track_history
 def prod(wrps):
@@ -171,19 +171,19 @@ def prod(wrps):
     >>> h1 = TH1I("h1", "", 2, .5, 2.5)
     >>> h1.Fill(1)
     1
-    >>> w1 = HistoWrapper(h1, lumi=2, history="w1")
+    >>> w1 = wrappers.HistoWrapper(h1, lumi=2, history="w1")
     >>> h2 = TH1I("h2", "", 2, .5, 2.5)
     >>> h2.Fill(1)
     1
     >>> h2.Fill(2)
     2
-    >>> w2 = HistoWrapper(h2, lumi=3)
+    >>> w2 = wrappers.HistoWrapper(h2, lumi=3)
     >>> w3 = prod([w1, w2])
     >>> w3.histo.Integral()
     1.0
     >>> w3.lumi
     1.0
-    >>> w4 = FloatWrapper(2.)
+    >>> w4 = wrappers.FloatWrapper(2.)
     >>> w5 = prod([w1, w4])
     >>> w5.histo.Integral()
     2.0
@@ -194,10 +194,10 @@ def prod(wrps):
     lumi = 1.
     for wrp in wrps:
         if histo:
-            if isinstance(wrp, HistoWrapper):
+            if isinstance(wrp, wrappers.HistoWrapper):
                 histo.Multiply(wrp.histo)
                 lumi = 1.
-            elif not isinstance(wrp, FloatWrapper):
+            elif not isinstance(wrp, wrappers.FloatWrapper):
                 raise WrongInputError(
                     "prod accepts only HistoWrappers and FloatWrappers. wrp: "
                     + str(wrp)
@@ -206,7 +206,7 @@ def prod(wrps):
                 histo.Scale(wrp.float)
                 lumi *= wrp.float
         else:
-            if not isinstance(wrp, HistoWrapper):
+            if not isinstance(wrp, wrappers.HistoWrapper):
                 raise WrongInputError(
                     "prod expects first argument to be of type HistoWrapper. wrp: "
                     + str(wrp)
@@ -219,7 +219,7 @@ def prod(wrps):
             "At least one Wrapper must be provided."
         )
     info["lumi"] = lumi
-    return HistoWrapper(histo, **info)
+    return wrappers.HistoWrapper(histo, **info)
 
 @history.track_history
 def div(wrps):
@@ -230,15 +230,15 @@ def div(wrps):
     >>> h1 = TH1I("h1", "", 2, .5, 2.5)
     >>> h1.Fill(1,4)
     1
-    >>> w1 = HistoWrapper(h1, lumi=2)
+    >>> w1 = wrappers.HistoWrapper(h1, lumi=2)
     >>> h2 = TH1I("h2", "", 2, .5, 2.5)
     >>> h2.Fill(1,2)
     1
-    >>> w2 = HistoWrapper(h2, lumi=3)
+    >>> w2 = wrappers.HistoWrapper(h2, lumi=3)
     >>> w3 = div([w1, w2])
     >>> w3.histo.Integral()
     2.0
-    >>> w4 = FloatWrapper(2., history="w4")
+    >>> w4 = wrappers.FloatWrapper(2., history="w4")
     >>> w5 = div([w1, w4])
     >>> w5.histo.Integral()
     2.0
@@ -255,12 +255,13 @@ def div(wrps):
         raise TooManyWrpsError("div needs exactly two Wrappers.")
     except StopIteration:
         pass
-    if not isinstance(nominator, HistoWrapper):
+    if not isinstance(nominator, wrappers.HistoWrapper):
         raise WrongInputError(
             "div needs nominator to be of type HistoWrapper. nominator: "
             + str(nominator)
         )
-    if not (isinstance(denominator, HistoWrapper) or isinstance(denominator, FloatWrapper)):
+    if not (isinstance(denominator, wrappers.HistoWrapper) or
+            isinstance(denominator, wrappers.FloatWrapper)):
         raise WrongInputError(
             "div needs denominator to be of type HistoWrapper or FloatWrapper. denominator: "
             + str(denominator)
@@ -268,7 +269,7 @@ def div(wrps):
 
     histo = nominator.histo.Clone()
     lumi = nominator.lumi
-    if isinstance(denominator, HistoWrapper):
+    if isinstance(denominator, wrappers.HistoWrapper):
         histo.Divide(denominator.histo)
         lumi = 1.
     else:
@@ -276,7 +277,7 @@ def div(wrps):
         lumi /= denominator.float
     info = nominator.all_info()
     info["lumi"] = lumi
-    return HistoWrapper(histo, **info)
+    return wrappers.HistoWrapper(histo, **info)
 
 @history.track_history
 def lumi(wrp):
@@ -287,19 +288,19 @@ def lumi(wrp):
     >>> h1 = TH1I("h1", "", 2, .5, 2.5)
     >>> h1.Fill(1)
     1
-    >>> w1 = HistoWrapper(h1, lumi=2.)
+    >>> w1 = wrappers.HistoWrapper(h1, lumi=2.)
     >>> w2 = lumi(w1)
     >>> w2.float
     2.0
     """
-    if not isinstance(wrp, HistoWrapper):
+    if not isinstance(wrp, wrappers.HistoWrapper):
         raise WrongInputError(
             "lumi needs argument of type HistoWrapper. histo: "
             + str(wrp)
         )
 
     info = wrp.all_info()
-    return FloatWrapper(wrp.lumi, **info)
+    return wrappers.FloatWrapper(wrp.lumi, **info)
 
 @history.track_history
 def mv_in(wrp, overflow=True, underflow=True):
@@ -312,7 +313,7 @@ def mv_in(wrp, overflow=True, underflow=True):
     -1
     >>> h1.Fill(5,3)
     -1
-    >>> w1 = HistoWrapper(h1)
+    >>> w1 = wrappers.HistoWrapper(h1)
     >>> w1.histo.Integral()
     0.0
     >>> w2 = mv_in(w1, False, False)
@@ -328,7 +329,7 @@ def mv_in(wrp, overflow=True, underflow=True):
     >>> w5.histo.Integral()
     4.0
     """
-    if not isinstance(wrp, HistoWrapper):
+    if not isinstance(wrp, wrappers.HistoWrapper):
         raise WrongInputError(
             "mv_bin needs argument of type HistoWrapper. histo: "
             + str(wrp)
@@ -345,7 +346,7 @@ def mv_in(wrp, overflow=True, underflow=True):
         lastbin  += histo.GetBinContent(nbins)
         histo.SetBinContent(nbins, lastbin)
         histo.SetBinContent(histo.GetNbinsX() + 1, 0.)
-    return HistoWrapper(histo, **wrp.all_info())
+    return wrappers.HistoWrapper(histo, **wrp.all_info())
 
 @history.track_history
 def int(wrp, useBinWidth=False):
@@ -358,7 +359,7 @@ def int(wrp, useBinWidth=False):
     1
     >>> h1.Fill(3,3)
     2
-    >>> w1 = HistoWrapper(h1)
+    >>> w1 = wrappers.HistoWrapper(h1)
     >>> w2 = int(w1)
     >>> w2.float
     4.0
@@ -366,14 +367,14 @@ def int(wrp, useBinWidth=False):
     >>> w3.float
     8.0
     """
-    if not isinstance(wrp, HistoWrapper):
+    if not isinstance(wrp, wrappers.HistoWrapper):
         raise WrongInputError(
             "int needs argument of type HistoWrapper. histo: "
             + str(wrp)
         )
     option = "width" if useBinWidth else ""
     info = wrp.all_info()
-    return FloatWrapper(wrp.histo.Integral(option), **info)
+    return wrappers.FloatWrapper(wrp.histo.Integral(option), **info)
 
 @history.track_history
 def int_l(wrp, useBinWidth=False):
@@ -386,7 +387,7 @@ def int_l(wrp, useBinWidth=False):
     1
     >>> h1.Fill(3,2)
     2
-    >>> w1 = HistoWrapper(h1)
+    >>> w1 = wrappers.HistoWrapper(h1)
     >>> w2 = int_l(w1)
     >>> w2.histo.GetBinContent(1)
     1.0
@@ -398,7 +399,7 @@ def int_l(wrp, useBinWidth=False):
     >>> w2.histo.GetBinContent(2)
     6.0
     """
-    if not isinstance(wrp, HistoWrapper):
+    if not isinstance(wrp, wrappers.HistoWrapper):
         raise WrongInputError(
             "int_l needs argument of type HistoWrapper. histo: "
             + str(wrp)
@@ -411,7 +412,7 @@ def int_l(wrp, useBinWidth=False):
         int_histo.SetBinContent(i, value)
         int_histo.SetBinError(i, error.value)
     info = wrp.all_info()
-    return HistoWrapper(int_histo, **info)
+    return wrappers.HistoWrapper(int_histo, **info)
 
 @history.track_history
 def int_r(wrp, useBinWidth=False):
@@ -424,7 +425,7 @@ def int_r(wrp, useBinWidth=False):
     1
     >>> h1.Fill(3,2)
     2
-    >>> w1 = HistoWrapper(h1)
+    >>> w1 = wrappers.HistoWrapper(h1)
     >>> w2 = int_r(w1)
     >>> w2.histo.GetBinContent(1)
     3.0
@@ -436,7 +437,7 @@ def int_r(wrp, useBinWidth=False):
     >>> w2.histo.GetBinContent(2)
     4.0
     """
-    if not isinstance(wrp, HistoWrapper):
+    if not isinstance(wrp, wrappers.HistoWrapper):
         raise WrongInputError(
             "int_r needs argument of type HistoWrapper. histo: "
             + str(wrp)
@@ -450,7 +451,7 @@ def int_r(wrp, useBinWidth=False):
         int_histo.SetBinContent(i, value)
         int_histo.SetBinError(i, error.value)
     info = wrp.all_info()
-    return HistoWrapper(int_histo, **info)
+    return wrappers.HistoWrapper(int_histo, **info)
 
 
 if __name__ == "__main__":
