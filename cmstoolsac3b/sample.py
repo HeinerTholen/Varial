@@ -44,6 +44,8 @@ class Sample(object):
             raise self.MissingDefinition(tbd + "lumi or (x_sec and n_events)")
         if not self.input_files:
             raise self.MissingDefinition(tbd + "input_files")
+        if not isinstance(self.input_files, collections.Iterable):
+            self.input_files = [self.input_files]
         if not type(self.cfg_builtin) == dict:
             raise self.MissingDefinition("cfg_builtin must be of type dict")
         if not self.legend:

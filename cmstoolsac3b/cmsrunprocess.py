@@ -110,7 +110,7 @@ class CmsRunProcess(QtCore.QProcess):
         if settings.cfg_use_file_service:
             conf_lines.append(
                 "process.TFileService.fileName = '"
-                + settings.DIR_FILESERVICE + "/"
+                + settings.DIR_FILESERVICE
                 + sample.name + ".root'"
             )
             conf_lines.append("")
