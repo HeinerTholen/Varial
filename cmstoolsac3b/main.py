@@ -38,7 +38,7 @@ def _process_settings_kws(kws):
     for k,v in kws.iteritems():
         if hasattr(settings, k):
             setattr(settings, k, v)
-    if type(settings.samples) is not dict:
+    if not type(settings.samples) is dict:
         settings.samples = sample.load_samples(settings.samples)
 
 def main(post_proc_tool_classes=list(),
