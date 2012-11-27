@@ -54,7 +54,7 @@ def _check_n_load(field):
     if issubclass(field, Sample):
         smp = field()
         if smp.__dict__.get("enable", settings.default_enable_sample):
-            return {smp.name, smp}
+            return {smp.name: smp}
         else:
             return {}
 
