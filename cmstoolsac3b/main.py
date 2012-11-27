@@ -34,7 +34,7 @@ class StdOutTee:
 
 
 def main(samples=None,
-         cfg_import_path="",
+         cfg_import_path=None,
          post_proc_tool_classes=list(),
          not_ask_execute=False,
          logfilename="cmstoolsac3b.log"):
