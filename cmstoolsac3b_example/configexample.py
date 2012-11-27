@@ -2,10 +2,10 @@
 Example use of the CmsAnalysisAC3B toolkit.
 """
 import cmstoolsac3b.settings as settings
-import cmstoolsac3b_example.settingsprofile_postproc # default color, legend names, ...
-import cmstoolsac3b.postprocessing       # to build a tool
-import cmstoolsac3b.generators as gen     # histogram stream processing
-import cmstoolsac3b.rendering             # canvas decorators
+import cmstoolsac3b_example.settingsprofile_postproc    # default color, legend names, ...
+import cmstoolsac3b.postprocessing                      # to build a tool
+import cmstoolsac3b.generators as gen                   # histogram stream processing
+import cmstoolsac3b.rendering                           # canvas decorators
 
 class CrtlFiltStackPlotter(cmstoolsac3b.postprocessing.PostProcTool):
     """An cmstoolsac3b_example stack plotter with data overlay."""
@@ -44,11 +44,11 @@ class CrtlFiltStackPlotter(cmstoolsac3b.postprocessing.PostProcTool):
 
 
 # execute
-import cmstoolsac3b_example.sampledefinition         # sample definitions, module goes into main
-import cmstoolsac3b.main                 # for execution
+import cmstoolsac3b_example.sampledefinition as samples # sample definitions, module goes into main
+import cmstoolsac3b.main                                # for execution
 if __name__ == '__main__':
-    settings.cfg_main_import_path = "CmsPackage.CmsModule.doMyNonExistingAnalysis_cfg"
     cmstoolsac3b.main.main(
-        samples=cmstoolsac3b_example.sampledefinition,
+        samples=[samples],
+        cfg_import_path="CmsPackage.CmsModule.doMyNonExistingAnalysis_cfg",
         post_proc_tool_classes=[CrtlFiltStackPlotter]
     )

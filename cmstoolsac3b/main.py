@@ -34,6 +34,7 @@ class StdOutTee:
 
 
 def main(samples=None,
+         cfg_import_path="",
          post_proc_tool_classes=list(),
          not_ask_execute=False,
          logfilename="cmstoolsac3b.log"):
@@ -53,6 +54,8 @@ def main(samples=None,
     """
     # prepare...
     sample.load_samples(samples)
+    if cfg_import_path:
+        settings.cfg_main_import_path = cfg_import_path
     settings.create_folders()
     app = QtCore.QCoreApplication(sys.argv)
     if logfilename:

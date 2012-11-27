@@ -1,4 +1,5 @@
 import os.path
+import glob
 import settings
 import collections
 
@@ -102,3 +103,10 @@ def generate_samples(in_filenames, in_path="", out_path=""):
             output_file = out_path
         samples.append(sample_subclass)
     return samples
+
+
+def generate_samples_glob(glob_path, out_path):
+    """Globs for files and creates according samples."""
+    in_filenames = glob.glob(glob_path)
+    return generate_samples(in_filenames, "", out_path)
+
