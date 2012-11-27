@@ -70,7 +70,7 @@ class CmsRunProcess(QtCore.QProcess):
             "legend": sample.legend,
             "sample": '"' + sample.name + '"'
         }
-        builtin_dict.update(self.sample)
+        builtin_dict.update(self.sample.cfg_builtin)
         builtin_dict.update(settings.cfg_common_builtins)
 
         conf_lines.append("import __builtin__")
