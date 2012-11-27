@@ -1,6 +1,7 @@
 
 import os
 import singleton
+import settings
 from PyQt4 import QtCore
 
 class QSingleton(singleton.Singleton, type(QtCore.QObject)): pass
@@ -35,12 +36,12 @@ class Monitor(QtCore.QObject):
         print "INFO process enqueued:   cmsRun ", process.conf_filename
 
     def proc_started(self, process):
-        if process.no_exec or process.reused_old_data:
+        if settings.suppress_cmsRun_exec or process.reused_old_data:
             return
         print "INFO process started :   cmsRun ", process.conf_filename
 
     def proc_finished(self, process):
-        if process.no_exec or process.reused_old_data:
+        if settings.suppress_cmsRun_exec or process.reused_old_data:
             return
         print "INFO process finished:   cmsRun ", process.conf_filename
 
