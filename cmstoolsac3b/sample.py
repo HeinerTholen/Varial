@@ -1,3 +1,4 @@
+import os.path
 import settings
 import collections
 
@@ -29,7 +30,8 @@ class Sample(object):
 
     def __init__(self):
         # check/correct input
-        self.name = self.__class__.__name__
+        if not self.name:
+            self.name = self.__class__.__name__
         tbd = "TO BE DECLARED: "
         if not isinstance(self.input_files, collections.Iterable):
             self.input_files = [self.input_files]
@@ -47,6 +49,13 @@ class Sample(object):
             self.legend = self.name
 
 
+def _check_n_load(field):
+    if issubclass(field, Sample):
+        smp = field()
+        if smp.__dict__.get("enable", settings.default_enable_sample):
+            settings.samples[smp.name] = smp
+
+
 def load_samples(modules):
     """
     Adds samples to samples list in settings.
@@ -61,9 +70,35 @@ def load_samples(modules):
     for module in modules:
         for name in dir(module):
             if name[0] == "_": continue
-            obj = getattr(module, name)
-            if issubclass(name, Sample):
-                smp = obj()
-                if smp.__dict__.get("enable", settings.default_enable_sample):
-                    settings.samples[name] = smp
+            field = getattr(module, name)
+            try:                                # handle iterables
+                for f in field: _check_n_load(f)
+            except TypeError:
+                _check_n_load(field)
     return len(settings.samples) - old_len
+
+
+def generate_samples(in_filenames, in_path="", out_path=""):
+    """
+    Generates samples and adds them to settings.samples.
+
+    The input filename without suffix will be taken as sample name.
+
+    :param in_filenames:    names of inputfiles
+    :param in_path:         input path
+    :param out_path:        output path
+    :returns:               list of sample classes
+    """
+    if type(in_filenames) is str:
+        in_filenames = [in_filenames]
+    samples = []
+    for fname in in_filenames:
+        basename    = os.path.basename(fname)
+        samplename  = os.path.splitext(basename)[0]
+        class sample_subclass(Sample):
+            name = samplename
+            lumi = 1.
+            input_files = in_path + fname
+            output_file = out_path
+        samples.append(sample_subclass)
+    return samples
