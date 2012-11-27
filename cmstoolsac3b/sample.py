@@ -54,30 +54,31 @@ def _check_n_load(field):
     if issubclass(field, Sample):
         smp = field()
         if smp.__dict__.get("enable", settings.default_enable_sample):
-            settings.samples[smp.name] = smp
+            return {smp.name, smp}
+        else:
+            return {}
 
-
-def load_samples(modules):
+def load_samples(module):
     """
     Adds samples to samples list in settings.
 
-    :param modules: modules to import samples from
-    :type  modules: module or module iterable
-    :returns:       number of loaded samples
+    :param module: modules to import samples from
+    :type  module: module
+    :returns:      dict of sample classes
     """
-    old_len = len(settings.samples)
-    if not isinstance(modules, collections.Iterable):
-        modules = [modules]
-    for module in modules:
+    samples = {}
+    if isinstance(module, collections.Iterable):
+        for mod in module:
+            samples.update(load_samples(mod))
+    else:
         for name in dir(module):
             if name[0] == "_": continue
             field = getattr(module, name)
-            try:                                # handle iterables
-                for f in field: _check_n_load(f)
+            try: # handle iterable
+                for f in field: samples.update(_check_n_load(f))
             except TypeError:
-                _check_n_load(field)
-    return len(settings.samples) - old_len
-
+                samples.update(_check_n_load(field))
+    return samples
 
 def generate_samples(in_filenames, in_path="", out_path=""):
     """
@@ -88,11 +89,11 @@ def generate_samples(in_filenames, in_path="", out_path=""):
     :param in_filenames:    names of inputfiles
     :param in_path:         input path
     :param out_path:        output path
-    :returns:               list of sample classes
+    :returns:               dict of sample classes
     """
     if type(in_filenames) is str:
         in_filenames = [in_filenames]
-    samples = []
+    samples = {}
     for fname in in_filenames:
         basename    = os.path.basename(fname)
         samplename  = os.path.splitext(basename)[0]
@@ -101,9 +102,8 @@ def generate_samples(in_filenames, in_path="", out_path=""):
             lumi = 1.
             input_files = in_path + fname
             output_file = out_path
-        samples.append(sample_subclass)
+        samples[samplename] = sample_subclass
     return samples
-
 
 def generate_samples_glob(glob_path, out_path):
     """Globs for files and creates according samples."""

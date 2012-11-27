@@ -48,7 +48,7 @@ import sampledefinition     # sample definitions, module goes into main
 import cmstoolsac3b.main    # for execution
 if __name__ == '__main__':
     cmstoolsac3b.main.main(
-        samples=[sampledefinition],
+        samples=sampledefinition,
         post_proc_tool_classes=[CrtlFiltStackPlotter],
         cfg_main_import_path="CmsPackage.CmsModule.doMyNonExistingAnalysis_cfg"
     )

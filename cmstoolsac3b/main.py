@@ -38,29 +38,29 @@ def _process_settings_kws(kws):
     for k,v in kws.iteritems():
         if hasattr(settings, k):
             setattr(settings, k, v)
+    if type(settings.samples) is not dict:
+        settings.samples = sample.load_samples(settings.samples)
 
-
-def main(samples=None,
-         post_proc_tool_classes=list(),
+def main(post_proc_tool_classes=list(),
          not_ask_execute=False,
          logfilename="cmstoolsac3b.log",
          **settings_kws):
     """
     Post processing and processing.
 
-    :type   samples:                list
-    :param  samples:                ``Sample`` subclasses.
-    :type   post_proc_tool_classes: liat
+    :type   post_proc_tool_classes: list
     :param  post_proc_tool_classes: ``PostProcTool`` subclasses.
     :type   not_ask_execute:        bool
     :param  not_ask_execute:        Suppress command line input check before
                                     executing the cmsRun processes.
     :type   logfilename:            string
     :param  logfilename:            name of the logfile. No logging if
-                                    ``None``.
+                                    ``None`` .
+    :param  settings_kws:           settings parameters given as keyword
+                                    arguments are added to settings, e.g.
+                                    ``samples={"mc":MCSample, ...}`` .
     """
     # prepare...
-    sample.load_samples(samples)
     _process_settings_kws(settings_kws)
     settings.create_folders()
     app = QtCore.QCoreApplication(sys.argv)
@@ -101,16 +101,16 @@ def main(samples=None,
             cnt.start_processes()
     return app.exec_()
 
-def standalone(post_proc_tool_classes, samples=None, **settings_kws):
+def standalone(post_proc_tool_classes, **settings_kws):
     """
     Runs post processing alone.
 
     :param post_proc_tool_classes:  list of ``PostProcTool`` subclasses.
-    :param samples:                 list of ``Sample`` subclasses. (tools might
-                                    depend on sample info, e.g. legend string.)
+    :param  settings_kws:           settings parameters given as keyword
+                                    arguments are added to settings, e.g.
+                                    ``samples={"mc":MCSample, ...}`` .
     """
     _process_settings_kws(settings_kws)
-    sample.load_samples(samples)
     settings.create_folders()
 
     pst = postprocessing.PostProcessor(False)
