@@ -33,11 +33,18 @@ class StdOutTee:
         self.logfile.write(string)
 
 
+def _process_settings_kws(kws):
+    # replace setting, if its name already exists.
+    for k,v in kws.iteritems():
+        if hasattr(settings, k):
+            setattr(settings, k, v)
+
+
 def main(samples=None,
-         cfg_import_path=None,
          post_proc_tool_classes=list(),
          not_ask_execute=False,
-         logfilename="cmstoolsac3b.log"):
+         logfilename="cmstoolsac3b.log",
+         **settings_kws):
     """
     Post processing and processing.
 
@@ -54,8 +61,7 @@ def main(samples=None,
     """
     # prepare...
     sample.load_samples(samples)
-    if cfg_import_path:
-        settings.cfg_main_import_path = cfg_import_path
+    _process_settings_kws(settings_kws)
     settings.create_folders()
     app = QtCore.QCoreApplication(sys.argv)
     if logfilename:
@@ -95,7 +101,7 @@ def main(samples=None,
             cnt.start_processes()
     return app.exec_()
 
-def standalone(post_proc_tool_classes, samples=None):
+def standalone(post_proc_tool_classes, samples=None, **settings_kws):
     """
     Runs post processing alone.
 
@@ -103,6 +109,7 @@ def standalone(post_proc_tool_classes, samples=None):
     :param samples:                 list of ``Sample`` subclasses. (tools might
                                     depend on sample info, e.g. legend string.)
     """
+    _process_settings_kws(settings_kws)
     sample.load_samples(samples)
     settings.create_folders()
 
