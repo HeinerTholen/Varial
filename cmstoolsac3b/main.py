@@ -41,6 +41,11 @@ def _process_settings_kws(kws):
     if not type(settings.samples) is dict:
         settings.samples = sample.load_samples(settings.samples)
 
+def _instanciate_samples():
+    for k,v in settings.samples.items():
+        if not isinstance(v, sample.Sample):
+            settings.samples[k] = v()
+
 def main(post_proc_tool_classes=list(),
          not_ask_execute=False,
          logfilename="cmstoolsac3b.log",
@@ -62,6 +67,7 @@ def main(post_proc_tool_classes=list(),
     """
     # prepare...
     _process_settings_kws(settings_kws)
+    _instanciate_samples()
     settings.create_folders()
     app = QtCore.QCoreApplication(sys.argv)
     if logfilename:
@@ -111,6 +117,7 @@ def standalone(post_proc_tool_classes, **settings_kws):
                                     ``samples={"mc":MCSample, ...}`` .
     """
     _process_settings_kws(settings_kws)
+    _instanciate_samples()
     settings.create_folders()
 
     pst = postprocessing.PostProcessor(False)
