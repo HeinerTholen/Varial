@@ -21,13 +21,10 @@ class CmsRunProcess(QtCore.QProcess):
         self.cfg_filename       = settings.cfg_main_import_path
         if cfg_filename: self.cfg_filename = cfg_filename
         self.exe                = "cmsRun"
-        self.log_filename       = settings.DIR_LOGS\
-                                  + "/" + sample_inst.name + ".log"
-        self.conf_filename      = settings.DIR_CONFS\
-                                  + "/" + sample_inst.name + ".py"
-        self.service_filename   = settings.DIR_FILESERVICE\
-                                  + "/" + sample_inst.name + ".root"
-        self.jobinfo_filename   = settings.DIR_JOBINFO + "/" + sample_inst.name + ".ini"
+        self.log_filename       = settings.DIR_LOGS + sample_inst.name + ".log"
+        self.conf_filename      = settings.DIR_CONFS + sample_inst.name + ".py"
+        self.service_filename   = settings.DIR_FILESERVICE + sample_inst.name + ".root"
+        self.jobinfo_filename   = settings.DIR_JOBINFO + sample_inst.name + ".ini"
         self.jobinfo            = QtCore.QSettings(self.jobinfo_filename, 1)
         self.try_reuse_old_data = try_reuse_old_data
         self.will_reuse_data    = False
