@@ -105,6 +105,9 @@ def main(post_proc_tool_classes=list(),
             + "\n??? (type 'yes')"
         ) == "yes":
             cnt.start_processes()
+        else:
+            print "INFO: Answer was not yes. Quitting..."
+            exit(0)
     return app.exec_()
 
 def standalone(post_proc_tool_classes, **settings_kws):
