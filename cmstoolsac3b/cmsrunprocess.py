@@ -84,6 +84,11 @@ class CmsRunProcess(QtCore.QProcess):
         for in_file in sample.input_files:
             if in_file[:5] == "file:":
                 files_in_dir = glob.glob(in_file[5:])
+                if not files_in_dir:
+                    self.message.emit(
+                        self,
+                        "WARNING: no input files found for "+in_file[5:]
+                    )
                 for fid in files_in_dir:
                     conf_lines.append("    'file:" + fid + "',")
             else:
