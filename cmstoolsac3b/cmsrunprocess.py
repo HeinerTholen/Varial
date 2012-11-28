@@ -41,6 +41,9 @@ class CmsRunProcess(QtCore.QProcess):
     def __str__(self):
         return "CmsRunProcess(" + self.name + ")"
 
+    def __repr__(self):
+        return str(self)
+
     def prepare_run_conf(self):
         """
         Takes all infos about the cmsRun to be started and builds a configuration file
