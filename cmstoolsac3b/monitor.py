@@ -38,7 +38,7 @@ class Monitor(QtCore.QObject):
     def proc_started(self, process):
         if settings.suppress_cmsRun_exec or process.reused_old_data:
             return
-        print "INFO process started :   cmsRun ", process.conf_filename
+        print "INFO process started :   cmsRun ", process.conf_filename, "PID: ", process.pid()
 
     def proc_finished(self, process):
         if settings.suppress_cmsRun_exec or process.reused_old_data:
