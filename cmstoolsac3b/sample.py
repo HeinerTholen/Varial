@@ -2,8 +2,10 @@ import os.path
 import glob
 import settings
 import collections
+import itertools
+import wrappers
 
-class Sample(object):
+class Sample(wrappers._dict_base):
     """
     Collect information about a sample. Subclass!
 
@@ -110,5 +112,13 @@ def generate_samples(in_filenames, in_path="", out_path=""):
 def generate_samples_glob(glob_path, out_path):
     """Globs for files and creates according samples."""
     in_filenames = glob.glob(glob_path)
-    return generate_samples(in_filenames, "", out_path)
+    in_filenames = itertools.imap(
+        lambda t: "file:" + t, # prefix with 'file:' for cmssw
+        in_filenames
+    )
+    return generate_samples(
+        in_filenames, 
+        "", 
+        out_path
+    )
 
