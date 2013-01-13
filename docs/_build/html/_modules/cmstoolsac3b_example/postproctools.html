@@ -1,0 +1,165 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cmstoolsac3b_example.postproctools &mdash; CmsAnalysisAC3B 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="CmsAnalysisAC3B 0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for cmstoolsac3b_example.postproctools</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Post processing tools that can be used nearly out-of-the-box.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span> <span class="nn">cmstoolsac3b.generators</span> <span class="kn">as</span> <span class="nn">gen</span>     <span class="c"># histogram stream processing</span>
+<span class="kn">import</span> <span class="nn">cmstoolsac3b.postprocessing</span>       <span class="c"># base class for post processing</span>
+<span class="kn">import</span> <span class="nn">itertools</span>                        <span class="c"># very useful!!</span>
+
+<div class="viewcode-block" id="StackPlusDataPlotter"><a class="viewcode-back" href="../../examples.html#cmstoolsac3b_example.postproctools.StackPlusDataPlotter">[docs]</a><span class="k">class</span> <span class="nc">StackPlusDataPlotter</span><span class="p">(</span><span class="n">cmstoolsac3b</span><span class="o">.</span><span class="n">postprocessing</span><span class="o">.</span><span class="n">PostProcTool</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Subclass me and feed the data members!</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">store_stack_and_data_in_pool</span>    <span class="o">=</span> <span class="bp">False</span> <span class="c">#: Set True to drop all stacks and histos into the pool.</span>
+    <span class="n">canvas_decorators</span>               <span class="o">=</span> <span class="p">[]</span>    <span class="c">#: Give Decorators for the canvas builder.</span>
+    <span class="n">canvas_callback</span>                 <span class="o">=</span> <span class="bp">None</span>  <span class="c">#: Callback function, called with CanvasBuilders before execution.</span>
+    <span class="n">histo_filter_dict</span>               <span class="o">=</span> <span class="p">{}</span>    <span class="c">#: Filter dict. see histotools.generators.filter for specification.</span>
+
+<div class="viewcode-block" id="StackPlusDataPlotter.wanna_reuse"><a class="viewcode-back" href="../../examples.html#cmstoolsac3b_example.postproctools.StackPlusDataPlotter.wanna_reuse">[docs]</a>    <span class="k">def</span> <span class="nf">wanna_reuse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">all_reused_before_me</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        In this method one can check, if data from last time running is still</span>
+<span class="sd">        available. If yes is returned, then run() is not called.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># simply believe, that the products of this tool did not change, when</span>
+        <span class="c"># nothing changed before:</span>
+        <span class="c"># caution: if this module fills the histopool, these histos are missing!</span>
+        <span class="k">return</span> <span class="n">all_reused_before_me</span>
+</div>
+<div class="viewcode-block" id="StackPlusDataPlotter.store_to_pool"><a class="viewcode-back" href="../../examples.html#cmstoolsac3b_example.postproctools.StackPlusDataPlotter.store_to_pool">[docs]</a>    <span class="k">def</span> <span class="nf">store_to_pool</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream_stack_n_data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Keep stacks and data histograms in histopool, for later use.</span>
+<span class="sd">        The stream has to be splitted in a stack and a data stream and to be</span>
+<span class="sd">        rejoined in the end.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">stream_stack_n_data</span>        <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">stream_stack_n_data</span><span class="p">)</span>   <span class="c"># resolve grouping</span>
+        <span class="n">stream_data</span><span class="p">,</span> <span class="n">stream_stacks</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">split_data_mc</span><span class="p">(</span><span class="n">stream_stack_n_data</span><span class="p">)</span> <span class="c"># split (stacks are mc)</span>
+        <span class="n">stream_stacks</span>              <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">pool_store_items</span><span class="p">(</span><span class="n">stream_stacks</span><span class="p">)</span>    <span class="c"># store</span>
+        <span class="n">stream_data</span>                <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">pool_store_items</span><span class="p">(</span><span class="n">stream_data</span><span class="p">)</span>      <span class="c"># store</span>
+        <span class="n">stream_stack_n_data</span>        <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">izip</span><span class="p">(</span><span class="n">stream_stacks</span><span class="p">,</span> <span class="n">stream_data</span><span class="p">)</span> <span class="c"># join stream again</span>
+        <span class="k">return</span> <span class="n">stream_stack_n_data</span>
+</div>
+<div class="viewcode-block" id="StackPlusDataPlotter.run"><a class="viewcode-back" href="../../examples.html#cmstoolsac3b_example.postproctools.StackPlusDataPlotter.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load, stack, print and save histograms in a stream.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># combined operation for loading, filtering, stacking, etc..</span>
+        <span class="c"># the output looks like: [(stack1, data1), (stack2, data2), ...]</span>
+        <span class="n">stream_stack_n_data</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">fs_mc_stack_n_data_sum</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">histo_filter_dict</span>
+        <span class="p">)</span>
+
+        <span class="c"># can be saved for later use.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">store_stack_and_data_in_pool</span><span class="p">:</span>
+            <span class="n">stream_stack_n_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">store_to_pool</span><span class="p">(</span><span class="n">stream_stack_n_data</span><span class="p">)</span>
+
+        <span class="c"># plot (stack, data) pairs into canvases, with decorators</span>
+        <span class="n">stream_canvas</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">canvas</span><span class="p">(</span>
+            <span class="n">stream_stack_n_data</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">canvas_decorators</span>
+        <span class="p">)</span>
+
+        <span class="c"># store into dir of this tool</span>
+        <span class="n">stream_canvas</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">save</span><span class="p">(</span>
+            <span class="n">stream_canvas</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">wrp</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot_output_dir</span> <span class="o">+</span> <span class="n">wrp</span><span class="o">.</span><span class="n">analyzer</span>
+        <span class="p">)</span>
+
+        <span class="c"># pull everything through the stream</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">consume_n_count</span><span class="p">(</span><span class="n">stream_canvas</span><span class="p">)</span>
+
+        <span class="c"># make a nice statement</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">(</span><span class="s">&quot;INFO: &quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">+</span><span class="s">&quot; produced &quot;</span><span class="o">+</span><span class="n">count</span><span class="o">+</span><span class="s">&quot; canvases.&quot;</span><span class="p">)</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Heiner Tholen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

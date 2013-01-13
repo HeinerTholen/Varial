@@ -1,0 +1,284 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cmstoolsac3b.cmsrunprocess &mdash; CmsAnalysisAC3B 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="CmsAnalysisAC3B 0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for cmstoolsac3b.cmsrunprocess</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">settings</span>
+<span class="kn">import</span> <span class="nn">sample</span>
+<span class="kn">from</span> <span class="nn">PyQt4</span> <span class="kn">import</span> <span class="n">QtCore</span>
+
+<div class="viewcode-block" id="CmsRunProcess"><a class="viewcode-back" href="../../cmsanalysis.html#cmstoolsac3b.cmsrunprocess.CmsRunProcess">[docs]</a><span class="k">class</span> <span class="nc">CmsRunProcess</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QProcess</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class hosts a cmsRun process.</span>
+<span class="sd">    cmsRun output is streamed into logfile.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_inst</span><span class="p">,</span> <span class="n">try_reuse_old_data</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">cfg_filename</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CmsRunProcess</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sample_inst</span><span class="p">,</span> <span class="n">sample</span><span class="o">.</span><span class="n">Sample</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sample</span>             <span class="o">=</span> <span class="n">sample_inst</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span>               <span class="o">=</span> <span class="n">sample_inst</span><span class="o">.</span><span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cfg_filename</span>       <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">cfg_main_import_path</span>
+        <span class="k">if</span> <span class="n">cfg_filename</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg_filename</span> <span class="o">=</span> <span class="n">cfg_filename</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exe</span>                <span class="o">=</span> <span class="s">&quot;cmsRun&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_filename</span>       <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">DIR_LOGS</span> <span class="o">+</span> <span class="n">sample_inst</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s">&quot;.log&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conf_filename</span>      <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">DIR_CONFS</span> <span class="o">+</span> <span class="n">sample_inst</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s">&quot;.py&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">service_filename</span>   <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">DIR_FILESERVICE</span> <span class="o">+</span> <span class="n">sample_inst</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s">&quot;.root&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">jobinfo_filename</span>   <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">DIR_JOBINFO</span> <span class="o">+</span> <span class="n">sample_inst</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s">&quot;.ini&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">jobinfo</span>            <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QSettings</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jobinfo_filename</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">try_reuse_old_data</span> <span class="o">=</span> <span class="n">try_reuse_old_data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">will_reuse_data</span>    <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reused_old_data</span>    <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sig_int</span>            <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="c"># set all environment</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setWorkingDirectory</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setEnvironment</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QProcess</span><span class="o">.</span><span class="n">systemEnvironment</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setProcessChannelMode</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setStandardOutputFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">log_filename</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">finished</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">write_job_info</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;CmsRunProcess(&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s">&quot;)&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CmsRunProcess.prepare_run_conf"><a class="viewcode-back" href="../../cmsanalysis.html#cmstoolsac3b.cmsrunprocess.CmsRunProcess.prepare_run_conf">[docs]</a>    <span class="k">def</span> <span class="nf">prepare_run_conf</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Takes all infos about the cmsRun to be started and builds a configuration file</span>
+<span class="sd">        with python code, which is passed to cmsRun on calling start(). Conf-file</span>
+<span class="sd">        stored in settings.DIR_CONFS.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">try_reuse_old_data</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_reuse_possible</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">will_reuse_data</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">return</span>
+
+        <span class="c"># collect lines to write out at once.</span>
+        <span class="n">conf_lines</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s">&quot;# generated&quot;</span><span class="p">,</span>
+            <span class="s">&quot;# on &quot;</span> <span class="o">+</span> <span class="n">time</span><span class="o">.</span><span class="n">ctime</span><span class="p">(),</span>
+            <span class="s">&quot;# by cmsrunprocess.py&quot;</span><span class="p">,</span>
+            <span class="s">&quot;&quot;</span>
+        <span class="p">]</span>
+
+        <span class="c"># set __builtin__ variables</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample</span>
+        <span class="n">builtin_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s">&quot;lumi&quot;</span><span class="p">:</span> <span class="n">sample</span><span class="o">.</span><span class="n">lumi</span><span class="p">,</span>
+            <span class="s">&quot;isData&quot;</span><span class="p">:</span> <span class="n">sample</span><span class="o">.</span><span class="n">is_data</span><span class="p">,</span>
+            <span class="s">&quot;legend&quot;</span><span class="p">:</span> <span class="n">sample</span><span class="o">.</span><span class="n">legend</span><span class="p">,</span>
+            <span class="s">&quot;sample&quot;</span><span class="p">:</span> <span class="s">&#39;&quot;&#39;</span> <span class="o">+</span> <span class="n">sample</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s">&#39;&quot;&#39;</span>
+        <span class="p">}</span>
+        <span class="n">builtin_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="o">.</span><span class="n">cfg_builtin</span><span class="p">)</span>
+        <span class="n">builtin_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">cfg_common_builtins</span><span class="p">)</span>
+
+        <span class="n">conf_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;import __builtin__&quot;</span><span class="p">)</span>
+        <span class="n">conf_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;__builtin__.cms_var = &quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">builtin_dict</span><span class="p">))</span>
+        <span class="n">conf_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">conf_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="c"># do import statement</span>
+        <span class="n">conf_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;from &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg_filename</span> <span class="o">+</span> <span class="s">&quot; import *&quot;</span><span class="p">)</span>
+        <span class="n">conf_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="c"># do input filename statements</span>
+        <span class="n">conf_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;process.source.fileNames = [&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">in_file</span> <span class="ow">in</span> <span class="n">sample</span><span class="o">.</span><span class="n">input_files</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">in_file</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;file:&quot;</span><span class="p">:</span>
+                <span class="n">files_in_dir</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">in_file</span><span class="p">[</span><span class="mi">5</span><span class="p">:])</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">files_in_dir</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="p">,</span>
+                        <span class="s">&quot;WARNING: no input files found for &quot;</span><span class="o">+</span><span class="n">in_file</span><span class="p">[</span><span class="mi">5</span><span class="p">:]</span>
+                    <span class="p">)</span>
+                <span class="k">for</span> <span class="n">fid</span> <span class="ow">in</span> <span class="n">files_in_dir</span><span class="p">:</span>
+                    <span class="n">conf_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;    &#39;file:&quot;</span> <span class="o">+</span> <span class="n">fid</span> <span class="o">+</span> <span class="s">&quot;&#39;,&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">conf_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;    &#39;&quot;</span> <span class="o">+</span> <span class="n">in_file</span> <span class="o">+</span> <span class="s">&quot;&#39;,&quot;</span><span class="p">)</span>
+        <span class="n">conf_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;]&quot;</span><span class="p">)</span>
+
+        <span class="c"># do output filename statements</span>
+        <span class="k">if</span> <span class="n">sample</span><span class="o">.</span><span class="n">output_file</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">output_file</span>
+            <span class="k">if</span> <span class="n">filename</span><span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">:]</span> <span class="o">!=</span> <span class="s">&quot;.root&quot;</span><span class="p">:</span>
+                <span class="n">filename</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s">&quot;.root&quot;</span>
+            <span class="n">conf_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="s">&quot;process.&quot;</span>
+                <span class="o">+</span> <span class="n">settings</span><span class="o">.</span><span class="n">cfg_output_module_name</span>
+                <span class="o">+</span> <span class="s">&quot;.fileName = &#39;&quot;</span>
+                <span class="o">+</span> <span class="n">filename</span>
+                <span class="o">+</span> <span class="s">&quot;&#39;&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c"># fileService statement</span>
+        <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">cfg_use_file_service</span><span class="p">:</span>
+            <span class="n">conf_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="s">&quot;process.TFileService.fileName = &#39;&quot;</span>
+                <span class="o">+</span> <span class="n">settings</span><span class="o">.</span><span class="n">DIR_FILESERVICE</span>
+                <span class="o">+</span> <span class="n">sample</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s">&quot;.root&#39;&quot;</span>
+            <span class="p">)</span>
+            <span class="n">conf_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="c"># custom code</span>
+        <span class="n">conf_lines</span> <span class="o">+=</span> <span class="n">sample</span><span class="o">.</span><span class="n">cfg_add_lines</span>
+
+        <span class="c"># write out file</span>
+        <span class="n">conf_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conf_filename</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">conf_lines</span><span class="p">:</span>
+            <span class="n">conf_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="n">conf_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="CmsRunProcess.write_job_info"><a class="viewcode-back" href="../../cmsanalysis.html#cmstoolsac3b.cmsrunprocess.CmsRunProcess.write_job_info">[docs]</a>    <span class="k">def</span> <span class="nf">write_job_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exit_code</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Writes start- and endtime as well as exitcode to the process info file</span>
+<span class="sd">        in settings.DIR_JOBINFO.</span>
+<span class="sd">        If self.sigint is true, it does not write anything.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">ctime</span><span class="p">()</span>
+
+        <span class="c"># on SIGINT or reuse, do not write the process info</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sig_int</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">reused_old_data</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c"># collect lines to be written at once TODO: pythonify</span>
+        <span class="n">job_info</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QSettings</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jobinfo_filename</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">job_info</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="s">&quot;startTime&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_start</span><span class="p">)</span>
+        <span class="n">job_info</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="s">&quot;endTime&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_end</span><span class="p">)</span>
+        <span class="n">job_info</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="s">&quot;exitCode&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">exit_code</span><span class="p">))</span>
+        <span class="n">job_info</span><span class="o">.</span><span class="n">sync</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="CmsRunProcess.check_reuse_possible"><a class="viewcode-back" href="../../cmsanalysis.html#cmstoolsac3b.cmsrunprocess.CmsRunProcess.check_reuse_possible">[docs]</a>    <span class="k">def</span> <span class="nf">check_reuse_possible</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if log, conf and file service files are present and if the</span>
+<span class="sd">        process was finished successfully before. If yes returns True,</span>
+<span class="sd">        because the previous results can be used again.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">log_filename</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conf_filename</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">service_filename</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jobinfo_filename</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="n">prev_exit_code</span><span class="p">,</span> <span class="n">parse_ok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">jobinfo</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="s">&quot;exitCode&quot;</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span><span class="o">.</span><span class="n">toInt</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">parse_ok</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">prev_exit_code</span>
+</div>
+<div class="viewcode-block" id="CmsRunProcess.start"><a class="viewcode-back" href="../../cmsanalysis.html#cmstoolsac3b.cmsrunprocess.CmsRunProcess.start">[docs]</a>    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Start cmsRun with conf-file. If self.try_reuse is True and reuse is</span>
+<span class="sd">        possible, just calls &#39;cmsRun --help&#39; and pipes output to /dev/null.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_start</span> <span class="o">=</span>  <span class="n">time</span><span class="o">.</span><span class="n">ctime</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">will_reuse_data</span> <span class="ow">or</span> <span class="n">settings</span><span class="o">.</span><span class="n">suppress_cmsRun_exec</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setStandardOutputFile</span><span class="p">(</span><span class="s">&quot;/dev/null&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reused_old_data</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">settings</span><span class="o">.</span><span class="n">suppress_cmsRun_exec</span><span class="p">:</span> <span class="c">#TODO too complicated!!</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&quot;INFO reusing data for &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">CmsRunProcess</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">,</span> <span class="p">[</span><span class="s">&quot;--help&quot;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">jobinfo</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">jobinfo</span><span class="o">.</span><span class="n">sync</span><span class="p">()</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">CmsRunProcess</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">,</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">conf_filename</span><span class="p">])</span>
+</div>
+<div class="viewcode-block" id="CmsRunProcess.terminate"><a class="viewcode-back" href="../../cmsanalysis.html#cmstoolsac3b.cmsrunprocess.CmsRunProcess.terminate">[docs]</a>    <span class="k">def</span> <span class="nf">terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overwrites terminate method, set&#39;s flag for infofile first, then calls</span>
+<span class="sd">        terminate.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sig_int</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CmsRunProcess</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Heiner Tholen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

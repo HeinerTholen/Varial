@@ -1,0 +1,270 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Package utilities &mdash; CmsAnalysisAC3B 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="CmsAnalysisAC3B 0.1.0 documentation" href="index.html" />
+    <link rel="up" title="API Reference" href="reference.html" />
+    <link rel="prev" title="Package cmsanalysis" href="cmsanalysis.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cmsanalysis.html" title="Package cmsanalysis"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="reference.html" accesskey="U">API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="package-utilities">
+<h1>Package utilities<a class="headerlink" href="#package-utilities" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-cmstoolsac3b.settings">
+<span id="settings"></span><h2>Settings<a class="headerlink" href="#module-cmstoolsac3b.settings" title="Permalink to this headline">¶</a></h2>
+<p>This module contains project wide settings.</p>
+<dl class="function">
+<dt id="cmstoolsac3b.settings.mc_samples">
+<tt class="descclassname">cmstoolsac3b.settings.</tt><tt class="descname">mc_samples</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/settings.html#mc_samples"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.settings.mc_samples" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict of all MC samples.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.settings.data_samples">
+<tt class="descclassname">cmstoolsac3b.settings.</tt><tt class="descname">data_samples</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/settings.html#data_samples"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.settings.data_samples" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict of all real data samples.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.settings.data_lumi_sum">
+<tt class="descclassname">cmstoolsac3b.settings.</tt><tt class="descname">data_lumi_sum</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/settings.html#data_lumi_sum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.settings.data_lumi_sum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the sum of luminosity in data samples.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.settings.create_folders">
+<tt class="descclassname">cmstoolsac3b.settings.</tt><tt class="descname">create_folders</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/settings.html#create_folders"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.settings.create_folders" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create all &#8220;DIR&#8221; prefixed folders.</p>
+<p>Looks up all string members starting with DIR (e.g. DIR_LOGS) and
+produces folders in the working dir according to the string.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.settings.get_pretty_name">
+<tt class="descclassname">cmstoolsac3b.settings.</tt><tt class="descname">get_pretty_name</tt><big>(</big><em>key</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/settings.html#get_pretty_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.settings.get_pretty_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simple dict call for names, e.g. axis labels.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.settings.get_fill_color">
+<tt class="descclassname">cmstoolsac3b.settings.</tt><tt class="descname">get_fill_color</tt><big>(</big><em>sample_or_legend_name</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/settings.html#get_fill_color"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.settings.get_fill_color" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gives a ROOT color value back for sample or legend name.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.settings.get_stack_position">
+<tt class="descclassname">cmstoolsac3b.settings.</tt><tt class="descname">get_stack_position</tt><big>(</big><em>sample</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/settings.html#get_stack_position"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.settings.get_stack_position" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the stacking position (integer)</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="cmstoolsac3b.settings.StyleClass">
+<em class="property">class </em><tt class="descclassname">cmstoolsac3b.settings.</tt><tt class="descname">StyleClass</tt><a class="reference internal" href="_modules/cmstoolsac3b/settings.html#StyleClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.settings.StyleClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets all ROOT style variables.
+Places self as new ROOT style.</p>
+<dl class="method">
+<dt id="cmstoolsac3b.settings.StyleClass.root_style_settings">
+<tt class="descname">root_style_settings</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/settings.html#StyleClass.root_style_settings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.settings.StyleClass.root_style_settings" title="Permalink to this definition">¶</a></dt>
+<dd><p>All custom style settings are specified here and applied to self.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-cmstoolsac3b.decorator">
+<span id="decorator"></span><span id="decorator-module"></span><h2>Decorator<a class="headerlink" href="#module-cmstoolsac3b.decorator" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="cmstoolsac3b.decorator.Decorator">
+<em class="property">class </em><tt class="descclassname">cmstoolsac3b.decorator.</tt><tt class="descname">Decorator</tt><big>(</big><em>target</em>, <em>deep_decoration=True</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/decorator.html#Decorator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.decorator.Decorator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements the decorator pattern. For a basic outline, have a look at
+<a class="reference external" href="http://en.wikipedia.org/wiki/Decorator_pattern">http://en.wikipedia.org/wiki/Decorator_pattern</a>
+However, in python, no subclassing and no getters/setters are needed,
+thanks to __getattr__ and __setattr__.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">f1</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="k">print</span> <span class="s">&quot;in Foo.f1()&quot;</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">f2</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="k">print</span> <span class="s">&quot;in Foo.f2()&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">FooDecorator</span><span class="p">(</span><span class="n">Decorator</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">f2</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="k">print</span> <span class="s">&quot;in FooDecorator.f2()&quot;</span>
+<span class="gp">... </span>        <span class="bp">self</span><span class="o">.</span><span class="n">decoratee</span><span class="o">.</span><span class="n">f2</span><span class="p">()</span> <span class="c"># VERY IMPORTANT !! pass on the call...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">FooDecorator</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span><span class="o">.</span><span class="n">f1</span><span class="p">()</span>
+<span class="go">in Foo.f1()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span><span class="o">.</span><span class="n">f2</span><span class="p">()</span>
+<span class="go">in FooDecorator.f2()</span>
+<span class="go">in Foo.f2()</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="cmstoolsac3b.decorator.Decorator.get_decorator">
+<tt class="descname">get_decorator</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/decorator.html#Decorator.get_decorator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.decorator.Decorator.get_decorator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs over all inner decorators, returns the one according to &#8216;name&#8217;.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cmstoolsac3b.decorator.Decorator.insert_decorator">
+<tt class="descname">insert_decorator</tt><big>(</big><em>new_dec</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/decorator.html#Decorator.insert_decorator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.decorator.Decorator.insert_decorator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts decorator right after me.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cmstoolsac3b.decorator.Decorator.replace_decorator">
+<tt class="descname">replace_decorator</tt><big>(</big><em>old</em>, <em>new_dec</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/decorator.html#Decorator.replace_decorator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.decorator.Decorator.replace_decorator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Changes old for new in the chain of decorators.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cmstoolsac3b.decorator.Decorator.remove_decorator">
+<tt class="descname">remove_decorator</tt><big>(</big><em>old</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/decorator.html#Decorator.remove_decorator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.decorator.Decorator.remove_decorator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Searches &#8216;old&#8217; and removes it.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cmstoolsac3b.decorator.Decorator.print_decorators">
+<tt class="descname">print_decorators</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/decorator.html#Decorator.print_decorators"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.decorator.Decorator.print_decorators" title="Permalink to this definition">¶</a></dt>
+<dd><p>For debugging.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-cmstoolsac3b.singleton">
+<span id="singleton"></span><h2>Singleton<a class="headerlink" href="#module-cmstoolsac3b.singleton" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="cmstoolsac3b.singleton.Singleton">
+<em class="property">class </em><tt class="descclassname">cmstoolsac3b.singleton.</tt><tt class="descname">Singleton</tt><big>(</big><em>*args</em>, <em>**kws</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/singleton.html#Singleton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.singleton.Singleton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use as metaclass! Example use in <tt class="docutils literal"><span class="pre">utilities/monitor.py</span></tt> .</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-cmstoolsac3b.monitor">
+<span id="monitor"></span><h2>Monitor<a class="headerlink" href="#module-cmstoolsac3b.monitor" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="cmstoolsac3b.monitor.Messenger">
+<em class="property">class </em><tt class="descclassname">cmstoolsac3b.monitor.</tt><tt class="descname">Messenger</tt><a class="reference internal" href="_modules/cmstoolsac3b/monitor.html#Messenger"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.monitor.Messenger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message stub. Used to connect to Monitor.</p>
+<p>This class eliminates the need for other classes to subclass
+<tt class="docutils literal"><span class="pre">PyQt4.QtCore.QObject</span></tt> if messaging is wanted.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="cmstoolsac3b.monitor.Monitor">
+<em class="property">class </em><tt class="descclassname">cmstoolsac3b.monitor.</tt><tt class="descname">Monitor</tt><a class="reference internal" href="_modules/cmstoolsac3b/monitor.html#Monitor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.monitor.Monitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interface for system outputs.</p>
+<p>Can be interfaced to a future GUI. Therefore the PyQt Signal and Slot
+Mechanism is used.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Package utilities</a><ul>
+<li><a class="reference internal" href="#module-cmstoolsac3b.settings">Settings</a></li>
+<li><a class="reference internal" href="#module-cmstoolsac3b.decorator">Decorator</a></li>
+<li><a class="reference internal" href="#module-cmstoolsac3b.singleton">Singleton</a></li>
+<li><a class="reference internal" href="#module-cmstoolsac3b.monitor">Monitor</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cmsanalysis.html"
+                        title="previous chapter">Package cmsanalysis</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/utilities.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cmsanalysis.html" title="Package cmsanalysis"
+             >previous</a> |</li>
+        <li><a href="index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="reference.html" >API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Heiner Tholen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
