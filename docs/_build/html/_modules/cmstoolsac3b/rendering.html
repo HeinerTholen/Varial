@@ -1,0 +1,395 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cmstoolsac3b.rendering &mdash; CmsAnalysisAC3B 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="CmsAnalysisAC3B 0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for cmstoolsac3b.rendering</h1><div class="highlight"><pre>
+<span class="c"># rendering.py</span>
+
+<span class="c">################################################################# renderers ###</span>
+<span class="kn">import</span> <span class="nn">wrappers</span>
+
+<div class="viewcode-block" id="Renderer"><a class="viewcode-back" href="../../rendering.html#cmstoolsac3b.rendering.Renderer">[docs]</a><span class="k">class</span> <span class="nc">Renderer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Baseclass for rendered wrappers.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wrp</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">wrp</span><span class="o">.</span><span class="n">__dict__</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">x_min</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">x_max</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">y_min</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">y_max</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">y_min_gr_zero</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_min</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">option</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">):</span> <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="HistoRenderer"><a class="viewcode-back" href="../../rendering.html#cmstoolsac3b.rendering.HistoRenderer">[docs]</a><span class="k">class</span> <span class="nc">HistoRenderer</span><span class="p">(</span><span class="n">Renderer</span><span class="p">,</span> <span class="n">wrappers</span><span class="o">.</span><span class="n">HistoWrapper</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extend HistoWrapper for drawing.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wrp</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">HistoRenderer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">wrp</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_data</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">draw_option</span> <span class="o">=</span> <span class="s">&quot;E1X0&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">draw_option</span> <span class="o">=</span> <span class="s">&quot;hist&quot;</span>
+
+    <span class="k">def</span> <span class="nf">x_min</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">GetXaxis</span><span class="p">()</span><span class="o">.</span><span class="n">GetXmin</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">x_max</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">GetXaxis</span><span class="p">()</span><span class="o">.</span><span class="n">GetXmax</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">y_min</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">GetMinimum</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">y_max</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">GetMaximum</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">y_min_gr_zero</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">histo</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">histo</span><span class="p">:</span> <span class="n">histo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">histo</span>
+        <span class="n">nbins</span> <span class="o">=</span> <span class="n">histo</span><span class="o">.</span><span class="n">GetNbinsX</span><span class="p">()</span>
+        <span class="n">min_val</span> <span class="o">=</span> <span class="n">histo</span><span class="o">.</span><span class="n">GetMinimum</span><span class="p">()</span> <span class="c"># min on y axis</span>
+        <span class="k">if</span> <span class="n">min_val</span> <span class="o">&lt;</span> <span class="mf">1e-43</span> <span class="ow">and</span> <span class="n">histo</span><span class="o">.</span><span class="n">GetMaximum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">1e-43</span><span class="p">:</span> <span class="c"># should be greater than zero</span>
+            <span class="n">min_val</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+                <span class="n">histo</span><span class="o">.</span><span class="n">GetBinContent</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">nbins</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">histo</span><span class="o">.</span><span class="n">GetBinContent</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1e-43</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">min_val</span>
+
+    <span class="k">def</span> <span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">option</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">Draw</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">draw_option</span> <span class="o">+</span> <span class="n">option</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="StackRenderer"><a class="viewcode-back" href="../../rendering.html#cmstoolsac3b.rendering.StackRenderer">[docs]</a><span class="k">class</span> <span class="nc">StackRenderer</span><span class="p">(</span><span class="n">HistoRenderer</span><span class="p">,</span> <span class="n">wrappers</span><span class="o">.</span><span class="n">StackWrapper</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extend StackWrapper for drawing.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wrp</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">StackRenderer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">wrp</span><span class="p">)</span>
+        <span class="c"># prepare the sum histo</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">SetFillColor</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">SetMarkerColor</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">SetMarkerSize</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">SetFillStyle</span><span class="p">(</span><span class="mi">3005</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">SetLineColor</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">SetTitle</span><span class="p">(</span><span class="s">&quot;stat. uncert. MC&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">draw_option_sum</span> <span class="o">=</span> <span class="s">&quot;sameE2&quot;</span>
+
+    <span class="k">def</span> <span class="nf">y_min_gr_zero</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">histo</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">StackRenderer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">y_min_gr_zero</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">GetHists</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">option</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">Draw</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">draw_option</span> <span class="o">+</span> <span class="n">option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">GetXaxis</span><span class="p">()</span><span class="o">.</span><span class="n">SetTitle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">GetXaxis</span><span class="p">()</span><span class="o">.</span><span class="n">GetTitle</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">GetYaxis</span><span class="p">()</span><span class="o">.</span><span class="n">SetTitle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">GetYaxis</span><span class="p">()</span><span class="o">.</span><span class="n">GetTitle</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">Draw</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">draw_option_sum</span><span class="p">)</span>
+
+<span class="c">############################################################ canvas-builder ###</span></div>
+<span class="kn">import</span> <span class="nn">settings</span>
+<span class="kn">from</span> <span class="nn">ROOT</span> <span class="kn">import</span> <span class="n">TCanvas</span><span class="p">,</span> <span class="n">TObject</span>
+
+<span class="k">def</span> <span class="nf">_renderize</span><span class="p">(</span><span class="n">wrp</span><span class="p">):</span> <span class="c">#TODO maybe use reflection here??</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span> <span class="n">Renderer</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">wrp</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span> <span class="n">wrappers</span><span class="o">.</span><span class="n">StackWrapper</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">StackRenderer</span><span class="p">(</span><span class="n">wrp</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span> <span class="n">wrappers</span><span class="o">.</span><span class="n">HistoWrapper</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">HistoRenderer</span><span class="p">(</span><span class="n">wrp</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_renderize_iter</span><span class="p">(</span><span class="n">wrps</span><span class="p">):</span>
+    <span class="n">rnds</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">wrp</span> <span class="ow">in</span> <span class="n">wrps</span><span class="p">:</span>
+        <span class="n">rnds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_renderize</span><span class="p">(</span><span class="n">wrp</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">rnds</span>
+
+<div class="viewcode-block" id="CanvasBuilder"><a class="viewcode-back" href="../../rendering.html#cmstoolsac3b.rendering.CanvasBuilder">[docs]</a><span class="k">class</span> <span class="nc">CanvasBuilder</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a TCanvas and plot wrapped ROOT-objects.</span>
+
+<span class="sd">    Use this class like so::</span>
+
+<span class="sd">        cb = CanvasBuilder(list_of_wrappers, **kws)</span>
+<span class="sd">        canvas_wrp = cb.build_canvas()</span>
+
+<span class="sd">    * ``list_of_wrappers`` is can also be a list of renderers. If not, the</span>
+<span class="sd">      renderers are created automaticly.</span>
+
+<span class="sd">    * ``**kws`` can be empty. Accepted keywords are ``name=`` and ``title=`` and</span>
+<span class="sd">      any keyword that is accepted by ``histotools.wrappers.CanvasWrapper``.</span>
+
+<span class="sd">    When designing decorators, these instance data members can be of interest:</span>
+
+<span class="sd">    ================= =========================================================</span>
+<span class="sd">    ``x_bounds``      Bounds of canvas area in x</span>
+<span class="sd">    ``y_bounds``      Bounds of canvas area in y</span>
+<span class="sd">    ``y_min_gr_zero`` smallest y greater zero (need in log plotting)</span>
+<span class="sd">    ``canvas``        Reference to the TCanvas instance</span>
+<span class="sd">    ``main_pad``      Reference to TPad instance</span>
+<span class="sd">    ``first_drawed``  TObject which is first drawed (for valid TAxis reference)</span>
+<span class="sd">    ``legend``        Reference to TLegend object.</span>
+<span class="sd">    ================= =========================================================</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">class</span> <span class="nc">TooManyStacksError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="k">pass</span>
+    <span class="k">class</span> <span class="nc">NoInputError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="k">pass</span>
+
+    <span class="n">x_bounds</span>       <span class="o">=</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span>
+    <span class="n">y_bounds</span>       <span class="o">=</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span>
+    <span class="n">y_min_gr_zero</span>  <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">canvas</span>         <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">main_pad</span>       <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">first_drawed</span>   <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">legend</span>         <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wrps</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">wrps</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">NoInputError</span><span class="p">(</span><span class="s">&quot;CanvasBuilder wants wrps!&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CanvasBuilder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kws</span>            <span class="o">=</span> <span class="n">kws</span>
+
+        <span class="c"># only one stack, which should be one first place</span>
+        <span class="n">rnds</span> <span class="o">=</span> <span class="n">_renderize_iter</span><span class="p">(</span><span class="n">wrps</span><span class="p">)</span>
+        <span class="n">rnds</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="n">rnds</span><span class="p">,</span>
+            <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">StackRenderer</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">rnd</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rnds</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rnd</span><span class="p">,</span> <span class="n">StackRenderer</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">TooManyStacksError</span><span class="p">(</span>
+                    <span class="s">&quot;CanvasWrapper takes at most one stack&quot;</span>
+                <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">renderers</span> <span class="o">=</span> <span class="n">rnds</span>
+
+        <span class="c"># if no name is specified, just take first rnds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span>  <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">,</span> <span class="n">rnds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;title&quot;</span><span class="p">,</span> <span class="n">rnds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">title</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CanvasBuilder.configure"><a class="viewcode-back" href="../../rendering.html#cmstoolsac3b.rendering.CanvasBuilder.configure">[docs]</a>    <span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called at first. Can be used to initialize decorators.&quot;&quot;&quot;</span>
+</div>
+<div class="viewcode-block" id="CanvasBuilder.find_x_y_bounds"><a class="viewcode-back" href="../../rendering.html#cmstoolsac3b.rendering.CanvasBuilder.find_x_y_bounds">[docs]</a>    <span class="k">def</span> <span class="nf">find_x_y_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Scan ROOT-objects for x and y bounds.&quot;&quot;&quot;</span>
+        <span class="n">rnds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">renderers</span>
+        <span class="n">x_min</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">x_min</span><span class="p">()</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rnds</span><span class="p">)</span>
+        <span class="n">x_max</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">x_max</span><span class="p">()</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rnds</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x_bounds</span> <span class="o">=</span> <span class="n">x_min</span><span class="p">,</span> <span class="n">x_max</span>
+        <span class="n">y_min</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">y_min</span><span class="p">()</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rnds</span><span class="p">)</span>
+        <span class="n">y_max</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">y_max</span><span class="p">()</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rnds</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y_bounds</span> <span class="o">=</span> <span class="n">y_min</span><span class="p">,</span> <span class="n">y_max</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y_min_gr_zero</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">y_min_gr_zero</span><span class="p">()</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rnds</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CanvasBuilder.make_empty_canvas"><a class="viewcode-back" href="../../rendering.html#cmstoolsac3b.rendering.CanvasBuilder.make_empty_canvas">[docs]</a>    <span class="k">def</span> <span class="nf">make_empty_canvas</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Instanciate ``self.canvas`` .&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">canvas</span> <span class="o">=</span> <span class="n">TCanvas</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+            <span class="n">settings</span><span class="o">.</span><span class="n">canvas_size_x</span><span class="p">,</span>
+            <span class="n">settings</span><span class="o">.</span><span class="n">canvas_size_y</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">main_pad</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">canvas</span>
+</div>
+<div class="viewcode-block" id="CanvasBuilder.draw_full_plot"><a class="viewcode-back" href="../../rendering.html#cmstoolsac3b.rendering.CanvasBuilder.draw_full_plot">[docs]</a>    <span class="k">def</span> <span class="nf">draw_full_plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The renderers draw method is called.&quot;&quot;&quot;</span>
+        <span class="n">rnds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">renderers</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">rnd</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rnds</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">i</span><span class="p">:</span>
+                <span class="n">rnd</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">first_drawed</span> <span class="o">=</span> <span class="n">rnd</span><span class="o">.</span><span class="n">primary_object</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">rnd</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="s">&quot;same&quot;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CanvasBuilder.do_final_cosmetics"><a class="viewcode-back" href="../../rendering.html#cmstoolsac3b.rendering.CanvasBuilder.do_final_cosmetics">[docs]</a>    <span class="k">def</span> <span class="nf">do_final_cosmetics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Pimp the canvas!&quot;&quot;&quot;</span>
+        <span class="n">y_min</span><span class="p">,</span> <span class="n">y_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_bounds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">first_drawed</span><span class="o">.</span><span class="n">SetMinimum</span><span class="p">(</span><span class="n">y_min</span> <span class="o">*</span> <span class="mf">0.9</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">first_drawed</span><span class="o">.</span><span class="n">SetMaximum</span><span class="p">(</span><span class="n">y_max</span> <span class="o">*</span> <span class="mf">1.1</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CanvasBuilder.run_procedure"><a class="viewcode-back" href="../../rendering.html#cmstoolsac3b.rendering.CanvasBuilder.run_procedure">[docs]</a>    <span class="k">def</span> <span class="nf">run_procedure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method calls all other methods, which fill and build the canvas.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">configure</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">find_x_y_bounds</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">make_empty_canvas</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">draw_full_plot</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">do_final_cosmetics</span><span class="p">()</span>
+</div>
+    <span class="k">def</span> <span class="nf">_del_builder_refs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">obj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">TObject</span><span class="p">):</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CanvasBuilder.build_canvas"><a class="viewcode-back" href="../../rendering.html#cmstoolsac3b.rendering.CanvasBuilder.build_canvas">[docs]</a>    <span class="k">def</span> <span class="nf">build_canvas</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        With this method, the building procedure is started.</span>
+
+<span class="sd">        :return: ``CanvasWrapper`` instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">canvas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">canvas</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">canvas</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">run_procedure</span><span class="p">()</span>
+        <span class="n">wrp</span> <span class="o">=</span> <span class="n">wrappers</span><span class="o">.</span><span class="n">CanvasWrapper</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">canvas</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kws</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_del_builder_refs</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">wrp</span>
+
+<span class="c">############################################# customization with decorators ###</span></div></div>
+<span class="kn">from</span> <span class="nn">cmstoolsac3b.decorator</span> <span class="kn">import</span> <span class="n">Decorator</span>
+<span class="kn">from</span> <span class="nn">ROOT</span> <span class="kn">import</span> <span class="n">TLegend</span>
+
+<div class="viewcode-block" id="Legend"><a class="viewcode-back" href="../../rendering.html#cmstoolsac3b.rendering.Legend">[docs]</a><span class="k">class</span> <span class="nc">Legend</span><span class="p">(</span><span class="n">Decorator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adds a legend to the main_pad.</span>
+
+<span class="sd">    Takes entries from ``self.main_pad.BuildLegend()`` .</span>
+<span class="sd">    The box height is adjusted by the number of legend entries.</span>
+<span class="sd">    No border or shadow are printed. Keyword</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inner</span><span class="p">,</span> <span class="n">dd</span> <span class="o">=</span> <span class="s">&quot;True&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Legend</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">inner</span><span class="p">,</span> <span class="n">dd</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dec_par</span><span class="p">[</span><span class="s">&quot;x1&quot;</span><span class="p">]</span>          <span class="o">=</span> <span class="mf">0.43</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dec_par</span><span class="p">[</span><span class="s">&quot;x2&quot;</span><span class="p">]</span>          <span class="o">=</span> <span class="mf">0.67</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dec_par</span><span class="p">[</span><span class="s">&quot;y2&quot;</span><span class="p">]</span>          <span class="o">=</span> <span class="mf">0.88</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dec_par</span><span class="p">[</span><span class="s">&quot;y_shift&quot;</span><span class="p">]</span>     <span class="o">=</span> <span class="mf">0.04</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dec_par</span><span class="p">[</span><span class="s">&quot;opt&quot;</span><span class="p">]</span>         <span class="o">=</span> <span class="s">&quot;f&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dec_par</span><span class="p">[</span><span class="s">&quot;opt_data&quot;</span><span class="p">]</span>    <span class="o">=</span> <span class="s">&quot;p&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dec_par</span><span class="p">[</span><span class="s">&quot;reverse&quot;</span><span class="p">]</span>     <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dec_par</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kws</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Legend.do_final_cosmetics"><a class="viewcode-back" href="../../rendering.html#cmstoolsac3b.rendering.Legend.do_final_cosmetics">[docs]</a>    <span class="k">def</span> <span class="nf">do_final_cosmetics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Only ``do_final_cosmetics`` is overwritten here.</span>
+
+<span class="sd">        If self.legend == None, this method will create a default legend and</span>
+<span class="sd">        store it to self.legend</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">legend</span><span class="p">:</span> <span class="k">return</span>
+
+        <span class="n">tmp_leg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">main_pad</span><span class="o">.</span><span class="n">BuildLegend</span><span class="p">()</span> <span class="c"># get legend entry objects</span>
+        <span class="n">tobjects</span> <span class="o">=</span> <span class="p">[(</span><span class="n">entry</span><span class="o">.</span><span class="n">GetObject</span><span class="p">(),</span> <span class="n">entry</span><span class="o">.</span><span class="n">GetLabel</span><span class="p">())</span>
+                    <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">tmp_leg</span><span class="o">.</span><span class="n">GetListOfPrimitives</span><span class="p">()]</span>
+        <span class="n">tmp_leg</span><span class="o">.</span><span class="n">Delete</span><span class="p">()</span>
+
+        <span class="n">par</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dec_par</span>
+        <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">y_shift</span> <span class="o">=</span> <span class="n">par</span><span class="p">[</span><span class="s">&quot;x1&quot;</span><span class="p">],</span> <span class="n">par</span><span class="p">[</span><span class="s">&quot;x2&quot;</span><span class="p">],</span> <span class="n">par</span><span class="p">[</span><span class="s">&quot;y2&quot;</span><span class="p">],</span> <span class="n">par</span><span class="p">[</span><span class="s">&quot;y_shift&quot;</span><span class="p">]</span>
+        <span class="n">y1</span> <span class="o">=</span> <span class="n">y2</span> <span class="o">-</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tobjects</span><span class="p">)</span> <span class="o">*</span> <span class="n">y_shift</span><span class="p">)</span>
+        <span class="n">legend</span> <span class="o">=</span> <span class="n">TLegend</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">)</span>
+        <span class="n">legend</span><span class="o">.</span><span class="n">SetBorderSize</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">par</span><span class="p">[</span><span class="s">&quot;reverse&quot;</span><span class="p">]:</span>
+            <span class="n">tobjects</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">tobjects</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">obj</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;Data&quot;</span> <span class="ow">or</span> <span class="n">obj</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;data&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">legend</span><span class="o">.</span><span class="n">AddEntry</span><span class="p">(</span>
+                    <span class="n">obj</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">obj</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">par</span><span class="p">[</span><span class="s">&quot;opt_data&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">legend</span><span class="o">.</span><span class="n">AddEntry</span><span class="p">(</span>
+                    <span class="n">obj</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">obj</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">par</span><span class="p">[</span><span class="s">&quot;opt&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
+        <span class="n">legend</span><span class="o">.</span><span class="n">Draw</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">legend</span> <span class="o">=</span> <span class="n">legend</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decoratee</span><span class="o">.</span><span class="n">do_final_cosmetics</span><span class="p">()</span>         <span class="c"># Call next inner class!!</span>
+
+
+<span class="c">#TODO: Statbox from classes/CRUtilities</span>
+<span class="c">#TODO: Stuff from tools/CRHistoStackerDecorators</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Heiner Tholen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

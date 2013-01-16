@@ -1,0 +1,133 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cmstoolsac3b_example.sampledefinition &mdash; CmsAnalysisAC3B 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="CmsAnalysisAC3B 0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for cmstoolsac3b_example.sampledefinition</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">An example Sample definition.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">cmstoolsac3b.sample</span> <span class="kn">as</span> <span class="nn">smp</span>
+
+<span class="n">common_input_path</span>   <span class="o">=</span> <span class="s">&quot;/the/path/to/all/input/files/&quot;</span>
+<span class="n">common_output_path</span>  <span class="o">=</span>  <span class="s">&quot;/a/folder/for/all/eventoutput/&quot;</span>
+
+
+<div class="viewcode-block" id="FirstMCSample"><a class="viewcode-back" href="../../examples.html#cmstoolsac3b_example.sampledefinition.FirstMCSample">[docs]</a><span class="k">class</span> <span class="nc">FirstMCSample</span><span class="p">(</span><span class="n">smp</span><span class="o">.</span><span class="n">Sample</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Shortest possible Declaration&quot;&quot;&quot;</span>
+    <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">common_input_path</span> <span class="o">+</span> <span class="s">&quot;some/dir/qcd*.root&quot;</span><span class="p">]</span> <span class="c">#: specify input files. Globbing is use, so &#39;*&#39; is fine.</span>
+    <span class="n">lumi</span>        <span class="o">=</span> <span class="mf">50000.</span>                                     <span class="c">#: Luminosity: Unit has to be consistent over all samples.</span>
+
+</div>
+<div class="viewcode-block" id="TheDataSample"><a class="viewcode-back" href="../../examples.html#cmstoolsac3b_example.sampledefinition.TheDataSample">[docs]</a><span class="k">class</span> <span class="nc">TheDataSample</span><span class="p">(</span><span class="n">smp</span><span class="o">.</span><span class="n">Sample</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Data sample: notice &#39;is_data&#39;!&quot;&quot;&quot;</span>
+    <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">common_input_path</span> <span class="o">+</span> <span class="s">&quot;data/dir/*.root&quot;</span><span class="p">]</span>
+    <span class="n">lumi</span>        <span class="o">=</span> <span class="mf">4700.</span>
+    <span class="n">output_file</span> <span class="o">=</span> <span class="n">common_output_path</span>
+    <span class="n">legend</span>      <span class="o">=</span> <span class="s">&quot;Data&quot;</span>
+    <span class="n">is_data</span>     <span class="o">=</span> <span class="bp">True</span>                                      <span class="c">#: set this to &#39;True&#39; for data samples.</span>
+
+</div>
+<div class="viewcode-block" id="OtherMCSample"><a class="viewcode-back" href="../../examples.html#cmstoolsac3b_example.sampledefinition.OtherMCSample">[docs]</a><span class="k">class</span> <span class="nc">OtherMCSample</span><span class="p">(</span><span class="n">smp</span><span class="o">.</span><span class="n">Sample</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extensive Declaration&quot;&quot;&quot;</span>
+    <span class="n">input_files</span>     <span class="o">=</span> <span class="p">[</span><span class="n">common_input_path</span> <span class="o">+</span> <span class="s">&quot;some/dir/muon*.root&quot;</span><span class="p">]</span>
+    <span class="n">n_events</span>        <span class="o">=</span> <span class="mi">1000000</span>                               <span class="c">#: either &#39;n_events&#39; and &#39;x_sec&#39; or &#39;lumi&#39; has to be provided.</span>
+    <span class="n">x_sec</span>           <span class="o">=</span> <span class="mf">165.</span>                                  <span class="c">#: cross section</span>
+    <span class="n">output_file</span>     <span class="o">=</span> <span class="n">common_output_path</span>                    <span class="c">#: if not ends on &#39;.root&#39; &#39;samplename.root&#39; is appended</span>
+    <span class="n">legend</span>          <span class="o">=</span> <span class="s">&quot;t#bart Inclusive&quot;</span>                    <span class="c">#: legend string: Many samples can have the same.</span>
+    <span class="n">cfg_builtin</span>     <span class="o">=</span> <span class="p">{</span>                                     <span class="c">#: added to the builtin dict cms_var</span>
+        <span class="s">&quot;some_string&quot;</span><span class="p">:</span> <span class="s">&quot;</span><span class="se">\&quot;</span><span class="s">a_string</span><span class="se">\&quot;</span><span class="s">&quot;</span><span class="p">,</span>
+        <span class="s">&quot;some_number&quot;</span><span class="p">:</span> <span class="mf">12.345</span>
+    <span class="p">}</span>
+    <span class="n">cfg_add_lines</span>   <span class="o">=</span> <span class="p">[</span>                                     <span class="c">#: code lines to be appended to the cfg</span>
+        <span class="s">&quot;print </span><span class="se">\&quot;</span><span class="s">these code lines are appended to</span><span class="se">\&quot;</span><span class="s">&quot;</span><span class="p">,</span>
+        <span class="s">&quot;print </span><span class="se">\&quot;</span><span class="s">the sample-specific cfg file.</span><span class="se">\&quot;</span><span class="s">&quot;</span>
+    <span class="p">]</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Heiner Tholen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

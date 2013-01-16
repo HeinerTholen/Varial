@@ -1,0 +1,606 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>The generator module &mdash; CmsAnalysisAC3B 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="CmsAnalysisAC3B 0.1.0 documentation" href="index.html" />
+    <link rel="up" title="API Reference" href="reference.html" />
+    <link rel="next" title="Canvas Rendering" href="rendering.html" />
+    <link rel="prev" title="Operations on wrapper-types" href="operations.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="rendering.html" title="Canvas Rendering"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="operations.html" title="Operations on wrapper-types"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="reference.html" accesskey="U">API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="the-generator-module">
+<h1>The generator module<a class="headerlink" href="#the-generator-module" title="Permalink to this headline">¶</a></h1>
+<p>Python generators help to process ROOT-objects, so you don&#8217;t have to load and
+manipulate wrappers one by one. Many generators are predefined here.
+They generalize the operations and deliver utility functions.
+The beauty of this approach becomes apparent when chaining generators.
+Some chaining (or &#8216;packaging&#8217;) takes place at the bottom of this document,
+starting with the <tt class="docutils literal"><span class="pre">fs_filter_sort_load</span></tt> generator.</p>
+<p>Use the generators within the <tt class="docutils literal"><span class="pre">run()</span></tt> method of your Post-processing tools!
+Also check out the Examples in <a class="reference internal" href="examples.html#post-proc-example"><em>Predefined post-processing tools</em></a> to see the actual
+application.</p>
+<div class="section" id="module-cmstoolsac3b.generators">
+<span id="module-members"></span><h2>Module members<a class="headerlink" href="#module-cmstoolsac3b.generators" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="cmstoolsac3b.generators.consume_n_count">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">consume_n_count</tt><big>(</big><em>iterable</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#consume_n_count"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.consume_n_count" title="Permalink to this definition">¶</a></dt>
+<dd><p>Walks over iterable and counts number of items.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">integer</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.filter">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">filter</tt><big>(</big><em>wrps</em>, <em>key_value_dict=None</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Only wrappers with specified attributes can pass this generator.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>wrps</strong> &#8211; Wrapper iterable</li>
+<li><strong>key_value_dict</strong> &#8211; dictionary of attributes, see cmstoolsac3b_example</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Yields :</th><td class="field-body"><p class="first last">Wrapper</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example:</strong> (Every key in the given dictonairy is tested, where the key
+is the tested attribute of the wrapper. A single value, a list of values or
+a regular expression can be evaluated):</p>
+<div class="highlight-python"><pre>filter(
+    wrappers,
+    {
+        "is_data"   : False,                # single value
+        "analyzer"  : ["AnaEt", "AnaDR"]    # candidate list
+        "name"      : re.compile("histo*")   # regular expression
+    }
+)</pre>
+</div>
+<p>If the <strong>key_value_dict</strong> is empty, all wrappers pass the filter.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.callback">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">callback</tt><big>(</big><em>wrps</em>, <em>filter_dict=None</em>, <em>func=None</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Do a special treatment for selected wrps! All wrps are yielded.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>wrps</strong> &#8211; Wrapper iterable</li>
+<li><strong>filter_dict</strong> &#8211; same as key_value_dict in <tt class="docutils literal"><span class="pre">filter(..)</span></tt> above</li>
+<li><strong>func</strong> &#8211; callable</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Yields :</th><td class="field-body"><p class="first last">Wrapper</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example:</strong> If you wanted to color all passing MC histograms blue:</p>
+<div class="highlight-python"><pre>def make_blue(wrp):
+    wrp.histo.SetFillColor(ROOT.kBlue)
+    return wrp # IMPORTANT! RETURN THE WRAPPER!
+
+callback(
+    wrappers,
+    {"is_data": False}
+    make_blue
+)</pre>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.sort">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">sort</tt><big>(</big><em>wrps</em>, <em>key_list=None</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#sort"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.sort" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sort stream after items in key_list. Loads full stream into memory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>wrps</strong> &#8211; Wrapper iterable</li>
+<li><strong>key_list</strong> &#8211; (List of) token(s) after which the stream is sorted.
+First item has highest importance. If <tt class="docutils literal"><span class="pre">None</span></tt>, then
+<tt class="docutils literal"><span class="pre">['analyzer',</span> <span class="pre">'name',</span> <span class="pre">'is_data',</span> <span class="pre">'sample']</span></tt> is used.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">sorted list of wrappers.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.group">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">group</tt><big>(</big><em>wrps</em>, <em>key_func=None</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clusters stream into groups. wrps should be sorted.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>wrps</strong> &#8211; Wrapper iterable</li>
+<li><strong>key_func</strong> &#8211; callable to group the wrappers. If <tt class="docutils literal"><span class="pre">None</span></tt>, then
+<tt class="docutils literal"><span class="pre">lambda</span> <span class="pre">w:</span> <span class="pre">w.analyzer</span> <span class="pre">+</span> <span class="pre">&quot;_&quot;</span> <span class="pre">+</span> <span class="pre">w.name</span></tt> is used.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Yields :</th><td class="field-body"><p class="first last">Wrapper</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example:</strong> This is neccessary before stacking, in order to have only
+same-observable-histograms stacked together:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># wrappers has the names [&quot;h1&quot;, &quot;h1&quot;, &quot;h2&quot;, &quot;h2&quot;]</span>
+<span class="n">wrappers</span> <span class="o">=</span> <span class="n">group</span><span class="p">(</span><span class="n">wrappers</span><span class="p">)</span>
+<span class="c"># result is like: [ (&quot;h1&quot;, &quot;h1&quot;), (&quot;h2&quot;, &quot;h2&quot;) ]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.split_data_mc">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">split_data_mc</tt><big>(</big><em>wrps</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#split_data_mc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.split_data_mc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Split stream into data and mc stream.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>wrps</strong> &#8211; Wrapper iterable</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">two wrapper iterators: <tt class="docutils literal"><span class="pre">(stream_data,</span> <span class="pre">stream_mc)</span></tt></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.debug_print">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">debug_print</tt><big>(</big><em>wrps</em>, <em>prefix='DEBUG '</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#debug_print"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.debug_print" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints all passing items.</p>
+<p><strong>Implementation:</strong></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">for</span> <span class="n">wrp</span> <span class="ow">in</span> <span class="n">wrps</span><span class="p">:</span>
+    <span class="k">print</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">wrp</span><span class="o">.</span><span class="n">all_info</span><span class="p">()</span>
+    <span class="k">yield</span> <span class="n">wrp</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.generate_op">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">generate_op</tt><big>(</big><em>op_func</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#generate_op"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.generate_op" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transforms an operation with one argument into a generator.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>op_func</strong> &#8211; callable</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">generator</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example:</strong> The <tt class="docutils literal"><span class="pre">lumi</span></tt> and <tt class="docutils literal"><span class="pre">int</span></tt> operations are generatorized below
+(notice that <tt class="docutils literal"><span class="pre">w1</span></tt>,``w2`` and <tt class="docutils literal"><span class="pre">w3</span></tt> are iterables):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">ROOT</span> <span class="kn">import</span> <span class="n">TH1I</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cmstoolsac3b.wrappers</span> <span class="kn">import</span> <span class="n">HistoWrapper</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h1</span> <span class="o">=</span> <span class="n">TH1I</span><span class="p">(</span><span class="s">&quot;h1&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">.</span><span class="mi">5</span><span class="p">,</span> <span class="mf">4.5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h1</span><span class="o">.</span><span class="n">Fill</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h1</span><span class="o">.</span><span class="n">Fill</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w1</span> <span class="o">=</span> <span class="p">[</span><span class="n">HistoWrapper</span><span class="p">(</span><span class="n">h1</span><span class="p">,</span> <span class="n">lumi</span><span class="o">=</span><span class="mf">2.</span><span class="p">)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gen_lumi</span> <span class="o">=</span> <span class="n">generate_op</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">lumi</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w2</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">gen_lumi</span><span class="p">(</span><span class="n">w1</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">float</span>
+<span class="go">2.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gen_int</span> <span class="o">=</span> <span class="n">generate_op</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w3</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">gen_int</span><span class="p">(</span><span class="n">w1</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w3</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">float</span>
+<span class="go">2.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w4</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">gen_int</span><span class="p">(</span><span class="n">w1</span><span class="p">,</span> <span class="n">useBinWidth</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w4</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">float</span>
+<span class="go">4.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.gen_stack">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">gen_stack</tt><big>(</big><em>wrps</em>, <em>**kws</em><big>)</big><a class="headerlink" href="#cmstoolsac3b.generators.gen_stack" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is <tt class="docutils literal"><span class="pre">generate_op(cmstoolsac3b.operations.stack)</span></tt></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.gen_sum">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">gen_sum</tt><big>(</big><em>wrps</em>, <em>**kws</em><big>)</big><a class="headerlink" href="#cmstoolsac3b.generators.gen_sum" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is <tt class="docutils literal"><span class="pre">generate_op(cmstoolsac3b.operations.sum)</span></tt></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.gen_merge">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">gen_merge</tt><big>(</big><em>wrps</em>, <em>**kws</em><big>)</big><a class="headerlink" href="#cmstoolsac3b.generators.gen_merge" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is <tt class="docutils literal"><span class="pre">generate_op(cmstoolsac3b.operations.merge)</span></tt></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.gen_prod">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">gen_prod</tt><big>(</big><em>wrps</em>, <em>**kws</em><big>)</big><a class="headerlink" href="#cmstoolsac3b.generators.gen_prod" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is <tt class="docutils literal"><span class="pre">generate_op(cmstoolsac3b.operations.prod)</span></tt></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.gen_div">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">gen_div</tt><big>(</big><em>wrps</em>, <em>**kws</em><big>)</big><a class="headerlink" href="#cmstoolsac3b.generators.gen_div" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is <tt class="docutils literal"><span class="pre">generate_op(cmstoolsac3b.operations.div)</span></tt></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.gen_lumi">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">gen_lumi</tt><big>(</big><em>wrps</em>, <em>**kws</em><big>)</big><a class="headerlink" href="#cmstoolsac3b.generators.gen_lumi" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is <tt class="docutils literal"><span class="pre">generate_op(cmstoolsac3b.operations.lumi)</span></tt></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.gen_mv_in">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">gen_mv_in</tt><big>(</big><em>wrps</em>, <em>**kws</em><big>)</big><a class="headerlink" href="#cmstoolsac3b.generators.gen_mv_in" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is <tt class="docutils literal"><span class="pre">generate_op(cmstoolsac3b.operations.mv_in)</span></tt></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.gen_int">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">gen_int</tt><big>(</big><em>wrps</em>, <em>**kws</em><big>)</big><a class="headerlink" href="#cmstoolsac3b.generators.gen_int" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is <tt class="docutils literal"><span class="pre">generate_op(cmstoolsac3b.operations.int)</span></tt></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.gen_int_l">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">gen_int_l</tt><big>(</big><em>wrps</em>, <em>**kws</em><big>)</big><a class="headerlink" href="#cmstoolsac3b.generators.gen_int_l" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is <tt class="docutils literal"><span class="pre">generate_op(cmstoolsac3b.operations.int_l)</span></tt></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.gen_int_r">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">gen_int_r</tt><big>(</big><em>wrps</em>, <em>**kws</em><big>)</big><a class="headerlink" href="#cmstoolsac3b.generators.gen_int_r" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is <tt class="docutils literal"><span class="pre">generate_op(cmstoolsac3b.operations.int_r)</span></tt></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.fs_content">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">fs_content</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#fs_content"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.fs_content" title="Permalink to this definition">¶</a></dt>
+<dd><p>Searches <tt class="docutils literal"><span class="pre">settings.DIR_FILESERVICE</span></tt> for samples and loads aliases.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Yields :</th><td class="field-body">FileServiceAlias</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.pool_content">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">pool_content</tt><big>(</big><em>filter_dict=None</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#pool_content"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.pool_content" title="Permalink to this definition">¶</a></dt>
+<dd><p>Yields selected pool content.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filter_dict</strong> &#8211; same as key_value_dict in <tt class="docutils literal"><span class="pre">filter(..)</span></tt> above</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Yields :</th><td class="field-body">Wrappers</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.pool_store_items">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">pool_store_items</tt><big>(</big><em>wrps</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#pool_store_items"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.pool_store_items" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves items in pool and yields them again.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>wrps</strong> &#8211; Wrapper iterable</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Yields :</th><td class="field-body">Wrapper</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.pool_consume_n_count">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">pool_consume_n_count</tt><big>(</big><em>wrps</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#pool_consume_n_count"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.pool_consume_n_count" title="Permalink to this definition">¶</a></dt>
+<dd><p>Consumes wrappers into pool.</p>
+<p><strong>Implementation:</strong></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">return</span> <span class="n">consume_n_count</span><span class="p">(</span><span class="n">pool_store_items</span><span class="p">(</span><span class="n">wrps</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.load">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">load</tt><big>(</big><em>aliases</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads histograms in histowrappers for aliases.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>aliases</strong> &#8211; Alias iterable</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Yields :</th><td class="field-body">HistoWrapper</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.save">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">save</tt><big>(</big><em>wrps</em>, <em>filename_func</em>, <em>suffices=None</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves passing wrps to disk, plus .info file with the wrapper infos.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>wrps</strong> &#8211; Wrapper iterable</li>
+<li><strong>filename_func</strong> &#8211; callable that returns path and filename without
+suffix.</li>
+<li><strong>suffices</strong> &#8211; list of suffices</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example:</strong></p>
+<div class="highlight-python"><pre>save(
+    wrappers,
+    lambda wrp: OUTPUT_DIR + wrp.name,
+    [.root, .png]           # BETTER: settings.rootfile_postfixes
+)</pre>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.apply_histo_fillcolor">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">apply_histo_fillcolor</tt><big>(</big><em>wrps</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#apply_histo_fillcolor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.apply_histo_fillcolor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses <tt class="docutils literal"><span class="pre">histo.SetFillColor</span></tt>. Colors from utilities.settings</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>wrps</strong> &#8211; HistoWrapper iterable</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Yields :</th><td class="field-body">HistoWrapper</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.fs_filter_sort_load">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">fs_filter_sort_load</tt><big>(</big><em>filter_dict=None</em>, <em>key_list=None</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#fs_filter_sort_load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.fs_filter_sort_load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Packaging of filtering, sorting and loading.</p>
+<p><strong>Implementation:</strong></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">wrps</span> <span class="o">=</span> <span class="n">fs_content</span><span class="p">()</span>
+<span class="n">wrps</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">filter_dict</span><span class="p">)</span>
+<span class="n">wrps</span> <span class="o">=</span> <span class="n">sort</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">key_list</span><span class="p">)</span>
+<span class="k">return</span> <span class="n">load</span><span class="p">(</span><span class="n">wrps</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.fs_mc_stack_n_data_sum">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">fs_mc_stack_n_data_sum</tt><big>(</big><em>filter_dict=None</em>, <em>merge_mc_key_func=None</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#fs_mc_stack_n_data_sum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.fs_mc_stack_n_data_sum" title="Permalink to this definition">¶</a></dt>
+<dd><p>The full job to stacked histos and data, directly from fileservice.</p>
+<p>Check out the sourcecode!</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.make_canvas_builder">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">make_canvas_builder</tt><big>(</big><em>grps</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#make_canvas_builder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.make_canvas_builder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Yields instanciated CanvasBuilders.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>grps</strong> &#8211; grouped(!) Wrapper iterable</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Yields :</th><td class="field-body">CanvasBuilder instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.decorate">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">decorate</tt><big>(</big><em>wrps</em>, <em>decorators=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#decorate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.decorate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorate any iterable with a list of decorators.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>wrps</strong> &#8211; Wrapper (or CanvasBuilder) iterable</li>
+<li><strong>decorators</strong> &#8211; list of decorator classes.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Yields :</th><td class="field-body"><p class="first last">Wrapper (or CanvasBuilder)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example:</strong></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">result</span> <span class="o">=</span> <span class="n">decorate</span><span class="p">([</span><span class="n">CanvasBuilder</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="p">[</span><span class="n">Legend</span><span class="p">,</span> <span class="n">TextBox</span><span class="p">])</span>
+<span class="c"># result = [Legend(TextBox(CanvasBuilder)), ...]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.build_canvas">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">build_canvas</tt><big>(</big><em>bldrs</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#build_canvas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.build_canvas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls the <tt class="docutils literal"><span class="pre">build_canvas()</span></tt> method and returns the result.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>bldrs</strong> &#8211; CanvasBuilder iterable</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Yields :</th><td class="field-body">CanvasWrapper</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.canvas">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">canvas</tt><big>(</big><em>grps</em>, <em>decorators=</em><span class="optional">[</span><span class="optional">]</span>, <em>callback_filter=None</em>, <em>callback_func=None</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#canvas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.canvas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Packaging of canvas builder, decorating, callback and canvas building.</p>
+<p><strong>Implementation:</strong></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">grps</span> <span class="o">=</span> <span class="n">make_canvas_builder</span><span class="p">(</span><span class="n">grps</span><span class="p">)</span>
+<span class="n">grps</span> <span class="o">=</span> <span class="n">decorate</span><span class="p">(</span><span class="n">grps</span><span class="p">,</span> <span class="n">decorators</span><span class="p">)</span>
+<span class="n">grps</span> <span class="o">=</span> <span class="n">callback</span><span class="p">(</span><span class="n">grps</span><span class="p">,</span> <span class="n">filter_dict</span><span class="o">=</span><span class="n">callback_filter</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="n">callback_func</span><span class="p">)</span>
+<span class="k">return</span> <span class="n">build_canvas</span><span class="p">(</span><span class="n">grps</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">The generator module</a><ul>
+<li><a class="reference internal" href="#module-cmstoolsac3b.generators">Module members</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="operations.html"
+                        title="previous chapter">Operations on wrapper-types</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="rendering.html"
+                        title="next chapter">Canvas Rendering</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/generators.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="rendering.html" title="Canvas Rendering"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="operations.html" title="Operations on wrapper-types"
+             >previous</a> |</li>
+        <li><a href="index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="reference.html" >API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Heiner Tholen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

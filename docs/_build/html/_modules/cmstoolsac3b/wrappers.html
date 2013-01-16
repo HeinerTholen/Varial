@@ -1,0 +1,353 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cmstoolsac3b.wrappers &mdash; CmsAnalysisAC3B 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="CmsAnalysisAC3B 0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for cmstoolsac3b.wrappers</h1><div class="highlight"><pre>
+<span class="c"># HistoOperations.py</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">settings</span> <span class="c"># only imported for ROOT-system startup</span>
+<span class="kn">from</span> <span class="nn">ROOT</span> <span class="kn">import</span> <span class="n">TH1</span><span class="p">,</span> <span class="n">THStack</span><span class="p">,</span> <span class="n">TCanvas</span>
+<span class="kn">from</span> <span class="nn">ast</span> <span class="kn">import</span> <span class="n">literal_eval</span>
+
+<span class="k">class</span> <span class="nc">_dict_base</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Overwrites __str__ to print classname and __dict__</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">class</span> <span class="nc">NoDictInFileError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Writes all __dict__ entries into a string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">txt</span> <span class="o">=</span> <span class="s">&quot;_____________&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span> <span class="o">+</span> <span class="s">&quot;____________</span><span class="se">\n</span><span class="s">&quot;</span>
+        <span class="n">txt</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">)</span>
+        <span class="n">txt</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+        <span class="k">return</span> <span class="n">txt</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">all_info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns copy of self.__dict__.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Alias"><a class="viewcode-back" href="../../wrappers.html#cmstoolsac3b.wrappers.Alias">[docs]</a><span class="k">class</span> <span class="nc">Alias</span><span class="p">(</span><span class="n">_dict_base</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Alias of a histogram on disk.</span>
+
+<span class="sd">    :param  filename:       path to root file</span>
+<span class="sd">    :param  in_file_path:   path to ROOT-object within the root file.</span>
+<span class="sd">    :type   in_file_path:   list of strings</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">in_file_path</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">in_file_path</span> <span class="o">=</span> <span class="n">in_file_path</span>
+
+</div>
+<div class="viewcode-block" id="FileServiceAlias"><a class="viewcode-back" href="../../wrappers.html#cmstoolsac3b.wrappers.FileServiceAlias">[docs]</a><span class="k">class</span> <span class="nc">FileServiceAlias</span><span class="p">(</span><span class="n">Alias</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Alias of a histogram in the fileservice output.</span>
+
+<span class="sd">    :param  name:           histogram name</span>
+<span class="sd">    :param  analyzer:       name of the CMSSW analyzer</span>
+<span class="sd">    :param  sample:         name of the sample</span>
+<span class="sd">    :param  is_data:        data or not?</span>
+<span class="sd">    :type   is_data:        bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">analyzer</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="n">is_data</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FileServiceAlias</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="p">[</span><span class="n">analyzer</span><span class="p">,</span> <span class="n">name</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span>           <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyzer</span>       <span class="o">=</span> <span class="n">analyzer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sample</span>         <span class="o">=</span> <span class="n">sample</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_data</span>        <span class="o">=</span> <span class="n">is_data</span>
+
+</div>
+<div class="viewcode-block" id="Wrapper"><a class="viewcode-back" href="../../wrappers.html#cmstoolsac3b.wrappers.Wrapper">[docs]</a><span class="k">class</span> <span class="nc">Wrapper</span><span class="p">(</span><span class="n">_dict_base</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper base class.</span>
+
+<span class="sd">    **Keywords:** ``name``, ``title`` and ``history`` are accepted.</span>
+
+<span class="sd">    **Example:**</span>
+
+<span class="sd">    &gt;&gt;&gt; w = Wrapper(name=&quot;n&quot;, title=&quot;t&quot;, history=&quot;h&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; info = w.all_info()</span>
+<span class="sd">    &gt;&gt;&gt; info[&quot;name&quot;]</span>
+<span class="sd">    &#39;n&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Wrapper.FalseObjectError"><a class="viewcode-back" href="../../wrappers.html#cmstoolsac3b.wrappers.Wrapper.FalseObjectError">[docs]</a>    <span class="k">class</span> <span class="nc">FalseObjectError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Exception for false type.&quot;&quot;&quot;</span>
+</div>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span>           <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title</span>          <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;title&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">history</span>        <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;history&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Wrapper.write_info_file"><a class="viewcode-back" href="../../wrappers.html#cmstoolsac3b.wrappers.Wrapper.write_info_file">[docs]</a>    <span class="k">def</span> <span class="nf">write_info_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">info_filename</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Serializes Wrapper to python code dict.</span>
+
+<span class="sd">        Class is encoded as &#39;klass&#39;,</span>
+<span class="sd">        history (see :ref:`history-module`) is printed out nicely.</span>
+
+<span class="sd">        :param  info_filename:  filename to store wrapper infos with suffix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">klass</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+        <span class="n">history</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">))</span>
+        <span class="nb">file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">info_filename</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">)</span>
+        <span class="nb">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_info</span><span class="p">())</span><span class="o">+</span><span class="s">&quot; </span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="k">print</span> <span class="o">&gt;&gt;</span> <span class="nb">file</span><span class="p">,</span> <span class="n">history</span>
+        <span class="nb">file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">klass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="n">history</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Wrapper.create_from_file"><a class="viewcode-back" href="../../wrappers.html#cmstoolsac3b.wrappers.Wrapper.create_from_file">[docs]</a>    <span class="k">def</span> <span class="nf">create_from_file</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">info_filename</span><span class="p">,</span> <span class="n">wrapped_obj</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reads serialized dict and creates wrapper.</span>
+
+<span class="sd">        :param  info_filename:  filename to read wrapper infos from.</span>
+<span class="sd">        :param  wrapped_obj:    object to be wrapped by the newly instantiated wrapper.</span>
+<span class="sd">        :type   wrapped_obj:    TH1/THStack/TCanvas/...</span>
+<span class="sd">        :returns:               Wrapper type according to info file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">info_filename</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">)</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="nb">file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="n">info</span> <span class="o">=</span> <span class="n">literal_eval</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="nb">file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">info</span><span class="p">)</span> <span class="o">==</span> <span class="nb">dict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">cls</span><span class="o">.</span><span class="n">NoDictInFileError</span><span class="p">(</span>
+                <span class="s">&quot;Could not read file: &quot;</span> <span class="o">+</span> <span class="n">info_filename</span>
+            <span class="p">)</span>
+        <span class="n">this_mod</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="n">__name__</span><span class="p">]</span>
+        <span class="n">klass</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">this_mod</span><span class="p">,</span> <span class="n">info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;klass&quot;</span><span class="p">))</span>
+        <span class="k">del</span> <span class="n">info</span><span class="p">[</span><span class="s">&quot;klass&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">klass</span><span class="p">(</span><span class="n">wrapped_obj</span><span class="p">,</span> <span class="o">**</span><span class="n">info</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Wrapper.primary_object"><a class="viewcode-back" href="../../wrappers.html#cmstoolsac3b.wrappers.Wrapper.primary_object">[docs]</a>    <span class="k">def</span> <span class="nf">primary_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Overwrite! Should returned wrapped object.&quot;&quot;&quot;</span>
+
+</div></div>
+<div class="viewcode-block" id="FloatWrapper"><a class="viewcode-back" href="../../wrappers.html#cmstoolsac3b.wrappers.FloatWrapper">[docs]</a><span class="k">class</span> <span class="nc">FloatWrapper</span><span class="p">(</span><span class="n">Wrapper</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper for float values.</span>
+
+<span class="sd">    **Keywords:** See superclass.</span>
+
+<span class="sd">    :raises: self.FalseObjectError</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FloatWrapper</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kws</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">==</span> <span class="nb">float</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">==</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">FalseObjectError</span><span class="p">(</span>
+                <span class="s">&quot;FloatWrapper needs a float or int as first argument&quot;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="HistoWrapper"><a class="viewcode-back" href="../../wrappers.html#cmstoolsac3b.wrappers.HistoWrapper">[docs]</a><span class="k">class</span> <span class="nc">HistoWrapper</span><span class="p">(</span><span class="n">Wrapper</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper class for a ROOT histogram TH1.</span>
+<span class="sd">    </span>
+<span class="sd">    **Keywords:**</span>
+<span class="sd">    ``lumi``,</span>
+<span class="sd">    ``is_data``,</span>
+<span class="sd">    ``sample``,</span>
+<span class="sd">    ``analyzer``,</span>
+<span class="sd">    and also see superclass.</span>
+
+<span class="sd">    :raises: self.FalseObjectError</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">histo</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">histo</span><span class="p">,</span> <span class="n">TH1</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">FalseObjectError</span><span class="p">(</span>
+                <span class="s">&quot;HistoWrapper needs a TH1 instance as first argument&quot;</span>
+            <span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">HistoWrapper</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kws</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">histo</span>          <span class="o">=</span> <span class="n">histo</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span>           <span class="o">=</span> <span class="n">histo</span><span class="o">.</span><span class="n">GetName</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title</span>          <span class="o">=</span> <span class="n">histo</span><span class="o">.</span><span class="n">GetTitle</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_data</span>        <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;is_data&quot;</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lumi</span>           <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;lumi&quot;</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sample</span>         <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;sample&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyzer</span>       <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;analyzer&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span>       <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;filename&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">in_file_path</span>   <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;in_file_path&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">filename</span>       <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample</span> <span class="o">+</span> <span class="s">&quot;.root&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">in_file_path</span>   <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">analyzer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+
+<div class="viewcode-block" id="HistoWrapper.all_info"><a class="viewcode-back" href="../../wrappers.html#cmstoolsac3b.wrappers.HistoWrapper.all_info">[docs]</a>    <span class="k">def</span> <span class="nf">all_info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns: dict with all members, but not the histo.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">info</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">HistoWrapper</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">all_info</span><span class="p">()</span>
+        <span class="k">del</span> <span class="n">info</span><span class="p">[</span><span class="s">&quot;histo&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">info</span>
+</div>
+    <span class="k">def</span> <span class="nf">primary_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">histo</span>
+
+</div>
+<div class="viewcode-block" id="StackWrapper"><a class="viewcode-back" href="../../wrappers.html#cmstoolsac3b.wrappers.StackWrapper">[docs]</a><span class="k">class</span> <span class="nc">StackWrapper</span><span class="p">(</span><span class="n">HistoWrapper</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper class for a ROOT histogram stack THStack.</span>
+
+<span class="sd">    **Keywords:** See superclass.</span>
+
+<span class="sd">    :raises: self.FalseObjectError</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stack</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stack</span><span class="p">,</span> <span class="n">THStack</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">FalseObjectError</span><span class="p">(</span>
+                <span class="s">&quot;StackWrapper needs a THStack instance as first argument&quot;</span>
+            <span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">StackWrapper</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_add_stack_up</span><span class="p">(</span><span class="n">stack</span><span class="p">),</span>
+            <span class="o">**</span><span class="n">kws</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span>          <span class="o">=</span> <span class="n">stack</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span>           <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">GetName</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title</span>          <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">GetTitle</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_add_stack_up</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stack</span><span class="p">):</span>
+        <span class="n">sum_hist</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">for</span> <span class="n">histo</span> <span class="ow">in</span> <span class="n">stack</span><span class="o">.</span><span class="n">GetHists</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">sum_hist</span><span class="p">:</span>
+                <span class="n">sum_hist</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">histo</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sum_hist</span> <span class="o">=</span> <span class="n">histo</span><span class="o">.</span><span class="n">Clone</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">sum_hist</span>
+
+<div class="viewcode-block" id="StackWrapper.all_info"><a class="viewcode-back" href="../../wrappers.html#cmstoolsac3b.wrappers.StackWrapper.all_info">[docs]</a>    <span class="k">def</span> <span class="nf">all_info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns: dict with all members, but not the stack.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">info</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">StackWrapper</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">all_info</span><span class="p">()</span>
+        <span class="k">del</span> <span class="n">info</span><span class="p">[</span><span class="s">&quot;stack&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">info</span>
+</div>
+    <span class="k">def</span> <span class="nf">primary_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stack</span>
+
+</div>
+<div class="viewcode-block" id="CanvasWrapper"><a class="viewcode-back" href="../../wrappers.html#cmstoolsac3b.wrappers.CanvasWrapper">[docs]</a><span class="k">class</span> <span class="nc">CanvasWrapper</span><span class="p">(</span><span class="n">Wrapper</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper class for a ROOT canvas TCanvas.</span>
+
+<span class="sd">    **Keywords:** ``lumi`` and also see superclass.</span>
+
+<span class="sd">    :raises: self.FalseObjectError</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">canvas</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">TCanvas</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">FalseObjectError</span><span class="p">(</span>
+                <span class="s">&quot;CanvasWrapper needs a TCanvas instance as first argument!&quot;</span>
+            <span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CanvasWrapper</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kws</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">canvas</span> <span class="o">=</span> <span class="n">canvas</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lumi</span>   <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;lumi&quot;</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span>   <span class="o">=</span> <span class="n">canvas</span><span class="o">.</span><span class="n">GetName</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title</span>  <span class="o">=</span> <span class="n">canvas</span><span class="o">.</span><span class="n">GetTitle</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">primary_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">Modified</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">Update</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">canvas</span>
+
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">doctest</span>
+    <span class="n">doctest</span><span class="o">.</span><span class="n">testmod</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Heiner Tholen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

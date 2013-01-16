@@ -1,0 +1,289 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Canvas Rendering &mdash; CmsAnalysisAC3B 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="CmsAnalysisAC3B 0.1.0 documentation" href="index.html" />
+    <link rel="up" title="API Reference" href="reference.html" />
+    <link rel="next" title="Package cmsanalysis" href="cmsanalysis.html" />
+    <link rel="prev" title="The generator module" href="generators.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cmsanalysis.html" title="Package cmsanalysis"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="generators.html" title="The generator module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="reference.html" accesskey="U">API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="canvas-rendering">
+<h1>Canvas Rendering<a class="headerlink" href="#canvas-rendering" title="Permalink to this headline">¶</a></h1>
+<p>The members of this package make plots from histograms or other wrapped
+ROOT-objects. The &#8216;Renderers&#8217; extend the functionality of wrappers for drawing.
+The ROOT-canvas is build with the <tt class="docutils literal"><span class="pre">CanvasBuilder</span></tt> class.
+The functionality of <tt class="docutils literal"><span class="pre">CanvasBuilder</span></tt> can be extended with decorators, see
+below.</p>
+<div class="section" id="renderers-for-wrapper-types">
+<h2>Renderers for wrapper types<a class="headerlink" href="#renderers-for-wrapper-types" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="cmstoolsac3b.rendering.Renderer">
+<em class="property">class </em><tt class="descclassname">cmstoolsac3b.rendering.</tt><tt class="descname">Renderer</tt><big>(</big><em>wrp</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/rendering.html#Renderer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.rendering.Renderer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Baseclass for rendered wrappers.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="cmstoolsac3b.rendering.HistoRenderer">
+<em class="property">class </em><tt class="descclassname">cmstoolsac3b.rendering.</tt><tt class="descname">HistoRenderer</tt><big>(</big><em>wrp</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/rendering.html#HistoRenderer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.rendering.HistoRenderer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#cmstoolsac3b.rendering.Renderer" title="cmstoolsac3b.rendering.Renderer"><tt class="xref py py-class docutils literal"><span class="pre">cmstoolsac3b.rendering.Renderer</span></tt></a>, <a class="reference internal" href="wrappers.html#cmstoolsac3b.wrappers.HistoWrapper" title="cmstoolsac3b.wrappers.HistoWrapper"><tt class="xref py py-class docutils literal"><span class="pre">cmstoolsac3b.wrappers.HistoWrapper</span></tt></a></p>
+<p>Extend HistoWrapper for drawing.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="cmstoolsac3b.rendering.StackRenderer">
+<em class="property">class </em><tt class="descclassname">cmstoolsac3b.rendering.</tt><tt class="descname">StackRenderer</tt><big>(</big><em>wrp</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/rendering.html#StackRenderer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.rendering.StackRenderer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#cmstoolsac3b.rendering.HistoRenderer" title="cmstoolsac3b.rendering.HistoRenderer"><tt class="xref py py-class docutils literal"><span class="pre">cmstoolsac3b.rendering.HistoRenderer</span></tt></a>, <a class="reference internal" href="wrappers.html#cmstoolsac3b.wrappers.StackWrapper" title="cmstoolsac3b.wrappers.StackWrapper"><tt class="xref py py-class docutils literal"><span class="pre">cmstoolsac3b.wrappers.StackWrapper</span></tt></a></p>
+<p>Extend StackWrapper for drawing.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="canvas-building">
+<h2>Canvas Building<a class="headerlink" href="#canvas-building" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="cmstoolsac3b.rendering.CanvasBuilder">
+<em class="property">class </em><tt class="descclassname">cmstoolsac3b.rendering.</tt><tt class="descname">CanvasBuilder</tt><big>(</big><em>wrps</em>, <em>**kws</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/rendering.html#CanvasBuilder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.rendering.CanvasBuilder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a TCanvas and plot wrapped ROOT-objects.</p>
+<p>Use this class like so:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">cb</span> <span class="o">=</span> <span class="n">CanvasBuilder</span><span class="p">(</span><span class="n">list_of_wrappers</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">)</span>
+<span class="n">canvas_wrp</span> <span class="o">=</span> <span class="n">cb</span><span class="o">.</span><span class="n">build_canvas</span><span class="p">()</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">list_of_wrappers</span></tt> is can also be a list of renderers. If not, the
+renderers are created automaticly.</li>
+<li><tt class="docutils literal"><span class="pre">**kws</span></tt> can be empty. Accepted keywords are <tt class="docutils literal"><span class="pre">name=</span></tt> and <tt class="docutils literal"><span class="pre">title=</span></tt> and
+any keyword that is accepted by <tt class="docutils literal"><span class="pre">histotools.wrappers.CanvasWrapper</span></tt>.</li>
+</ul>
+<p>When designing decorators, these instance data members can be of interest:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="23%" />
+<col width="77%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">x_bounds</span></tt></td>
+<td>Bounds of canvas area in x</td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">y_bounds</span></tt></td>
+<td>Bounds of canvas area in y</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">y_min_gr_zero</span></tt></td>
+<td>smallest y greater zero (need in log plotting)</td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">canvas</span></tt></td>
+<td>Reference to the TCanvas instance</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">main_pad</span></tt></td>
+<td>Reference to TPad instance</td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">first_drawed</span></tt></td>
+<td>TObject which is first drawed (for valid TAxis reference)</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">legend</span></tt></td>
+<td>Reference to TLegend object.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="cmstoolsac3b.rendering.CanvasBuilder.configure">
+<tt class="descname">configure</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/rendering.html#CanvasBuilder.configure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.rendering.CanvasBuilder.configure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called at first. Can be used to initialize decorators.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cmstoolsac3b.rendering.CanvasBuilder.find_x_y_bounds">
+<tt class="descname">find_x_y_bounds</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/rendering.html#CanvasBuilder.find_x_y_bounds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.rendering.CanvasBuilder.find_x_y_bounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scan ROOT-objects for x and y bounds.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cmstoolsac3b.rendering.CanvasBuilder.make_empty_canvas">
+<tt class="descname">make_empty_canvas</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/rendering.html#CanvasBuilder.make_empty_canvas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.rendering.CanvasBuilder.make_empty_canvas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instanciate <tt class="docutils literal"><span class="pre">self.canvas</span></tt> .</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cmstoolsac3b.rendering.CanvasBuilder.draw_full_plot">
+<tt class="descname">draw_full_plot</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/rendering.html#CanvasBuilder.draw_full_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.rendering.CanvasBuilder.draw_full_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>The renderers draw method is called.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cmstoolsac3b.rendering.CanvasBuilder.do_final_cosmetics">
+<tt class="descname">do_final_cosmetics</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/rendering.html#CanvasBuilder.do_final_cosmetics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.rendering.CanvasBuilder.do_final_cosmetics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pimp the canvas!</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cmstoolsac3b.rendering.CanvasBuilder.run_procedure">
+<tt class="descname">run_procedure</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/rendering.html#CanvasBuilder.run_procedure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.rendering.CanvasBuilder.run_procedure" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method calls all other methods, which fill and build the canvas.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cmstoolsac3b.rendering.CanvasBuilder.build_canvas">
+<tt class="descname">build_canvas</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/rendering.html#CanvasBuilder.build_canvas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.rendering.CanvasBuilder.build_canvas" title="Permalink to this definition">¶</a></dt>
+<dd><p>With this method, the building procedure is started.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><tt class="docutils literal"><span class="pre">CanvasWrapper</span></tt> instance.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="decorators-for-canvasbuilder">
+<h2>Decorators for CanvasBuilder<a class="headerlink" href="#decorators-for-canvasbuilder" title="Permalink to this headline">¶</a></h2>
+<p>Decorators are the way to add content to canvases, like a legend, boxes, lines,
+text, etc.. See <a class="reference internal" href="utilities.html#decorator-module"><em>Decorator</em></a> for details on the decorator
+implementation. Apply as below (e.g. with a &#8216;Legend&#8217; and a &#8216;TextBox&#8217;
+Decorator):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">cb</span> <span class="o">=</span> <span class="n">CanvasBuilder</span><span class="p">(</span><span class="n">wrappers</span><span class="p">)</span>
+<span class="n">cb</span> <span class="o">=</span> <span class="n">Legend</span><span class="p">(</span><span class="n">cb</span><span class="p">,</span> <span class="n">x1</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">x2</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">cb</span> <span class="o">=</span> <span class="n">Textbox</span><span class="p">(</span><span class="n">cb</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s">&quot;Some boxed Text&quot;</span><span class="p">)</span>
+<span class="n">canvas_wrp</span> <span class="o">=</span> <span class="n">cb</span><span class="o">.</span><span class="n">build_canvas</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="cmstoolsac3b.rendering.Legend">
+<em class="property">class </em><tt class="descclassname">cmstoolsac3b.rendering.</tt><tt class="descname">Legend</tt><big>(</big><em>inner</em>, <em>dd='True'</em>, <em>**kws</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/rendering.html#Legend"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.rendering.Legend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="utilities.html#cmstoolsac3b.decorator.Decorator" title="cmstoolsac3b.decorator.Decorator"><tt class="xref py py-class docutils literal"><span class="pre">cmstoolsac3b.decorator.Decorator</span></tt></a></p>
+<p>Adds a legend to the main_pad.</p>
+<p>Takes entries from <tt class="docutils literal"><span class="pre">self.main_pad.BuildLegend()</span></tt> .
+The box height is adjusted by the number of legend entries.
+No border or shadow are printed. Keyword</p>
+<dl class="method">
+<dt id="cmstoolsac3b.rendering.Legend.do_final_cosmetics">
+<tt class="descname">do_final_cosmetics</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/rendering.html#Legend.do_final_cosmetics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.rendering.Legend.do_final_cosmetics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Only <tt class="docutils literal"><span class="pre">do_final_cosmetics</span></tt> is overwritten here.</p>
+<p>If self.legend == None, this method will create a default legend and
+store it to self.legend</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Canvas Rendering</a><ul>
+<li><a class="reference internal" href="#renderers-for-wrapper-types">Renderers for wrapper types</a></li>
+<li><a class="reference internal" href="#canvas-building">Canvas Building</a></li>
+<li><a class="reference internal" href="#decorators-for-canvasbuilder">Decorators for CanvasBuilder</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="generators.html"
+                        title="previous chapter">The generator module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cmsanalysis.html"
+                        title="next chapter">Package cmsanalysis</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/rendering.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cmsanalysis.html" title="Package cmsanalysis"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="generators.html" title="The generator module"
+             >previous</a> |</li>
+        <li><a href="index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="reference.html" >API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Heiner Tholen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

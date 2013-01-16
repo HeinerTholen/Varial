@@ -38,10 +38,10 @@ def _process_settings_kws(kws):
     for k,v in kws.iteritems():
         if hasattr(settings, k):
             setattr(settings, k, v)
-    if not type(settings.samples) is dict:
-        settings.samples = sample.load_samples(settings.samples)
 
 def _instanciate_samples():
+    if not type(settings.samples) is dict:
+        settings.samples = sample.load_samples(settings.samples)
     for k,v in settings.samples.items():
         if not isinstance(v, sample.Sample):
             settings.samples[k] = v()

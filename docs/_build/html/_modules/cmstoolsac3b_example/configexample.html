@@ -1,0 +1,147 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cmstoolsac3b_example.configexample &mdash; CmsAnalysisAC3B 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="CmsAnalysisAC3B 0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for cmstoolsac3b_example.configexample</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Example use of the CmsAnalysisAC3B toolkit.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">settingsprofile_postproc</span>                <span class="c"># default color, legend names, ...</span>
+<span class="kn">import</span> <span class="nn">cmstoolsac3b.settings</span> <span class="kn">as</span> <span class="nn">settings</span>
+<span class="kn">import</span> <span class="nn">cmstoolsac3b.postprocessing</span>             <span class="c"># to build a tool</span>
+<span class="kn">import</span> <span class="nn">cmstoolsac3b.generators</span> <span class="kn">as</span> <span class="nn">gen</span>          <span class="c"># histogram stream processing</span>
+<span class="kn">import</span> <span class="nn">cmstoolsac3b.rendering</span>                  <span class="c"># canvas decorators</span>
+
+<div class="viewcode-block" id="CrtlFiltStackPlotter"><a class="viewcode-back" href="../../examples.html#cmstoolsac3b_example.configexample.CrtlFiltStackPlotter">[docs]</a><span class="k">class</span> <span class="nc">CrtlFiltStackPlotter</span><span class="p">(</span><span class="n">cmstoolsac3b</span><span class="o">.</span><span class="n">postprocessing</span><span class="o">.</span><span class="n">PostProcTool</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An cmstoolsac3b_example stack plotter with data overlay.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="CrtlFiltStackPlotter.run"><a class="viewcode-back" href="../../examples.html#cmstoolsac3b_example.configexample.CrtlFiltStackPlotter.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load, stack, print and save histograms in a stream.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># combined operation for loading, filtering, stacking, etc..</span>
+        <span class="c"># the output looks like: [(stack1, data1), (stack2, data2), ...]</span>
+        <span class="n">stream_stack_n_data</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">fs_mc_stack_n_data_sum</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s">&quot;name&quot;</span>      <span class="p">:</span> <span class="s">&quot;histo&quot;</span><span class="p">,</span>
+                <span class="s">&quot;analyzer&quot;</span>  <span class="p">:</span> <span class="p">[</span><span class="s">&quot;CrtlFiltEt&quot;</span><span class="p">,</span> <span class="s">&quot;CrtlFiltEta&quot;</span><span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+
+        <span class="c"># plot (stack, data) pairs into canvases, with legend</span>
+        <span class="n">stream_canvas</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">canvas</span><span class="p">(</span>
+            <span class="n">stream_stack_n_data</span><span class="p">,</span>
+            <span class="p">[</span><span class="n">cmstoolsac3b</span><span class="o">.</span><span class="n">rendering</span><span class="o">.</span><span class="n">Legend</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="c"># store into dir of this tool</span>
+        <span class="n">stream_canvas</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">save</span><span class="p">(</span>
+            <span class="n">stream_canvas</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">wrp</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot_output_dir</span> <span class="o">+</span> <span class="n">wrp</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>  <span class="c"># this function returns a path without postfix</span>
+            <span class="n">settings</span><span class="o">.</span><span class="n">rootfile_postfixes</span>
+        <span class="p">)</span>
+
+        <span class="c"># pull everything through the stream</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">consume_n_count</span><span class="p">(</span><span class="n">stream_canvas</span><span class="p">)</span>
+
+        <span class="c"># make a nice statement</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">(</span><span class="s">&quot;INFO: &quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">+</span><span class="s">&quot; produced &quot;</span><span class="o">+</span><span class="n">count</span><span class="o">+</span><span class="s">&quot; canvases.&quot;</span><span class="p">)</span>
+
+
+<span class="c"># execute</span></div></div>
+<span class="kn">import</span> <span class="nn">sampledefinition</span>     <span class="c"># sample definitions, module goes into main</span>
+<span class="kn">import</span> <span class="nn">cmstoolsac3b.main</span>    <span class="c"># for execution</span>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">cmstoolsac3b</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">main</span><span class="p">(</span>
+        <span class="n">samples</span><span class="o">=</span><span class="n">sampledefinition</span><span class="p">,</span>
+        <span class="n">post_proc_tool_classes</span><span class="o">=</span><span class="p">[</span><span class="n">CrtlFiltStackPlotter</span><span class="p">],</span>
+        <span class="n">cfg_main_import_path</span><span class="o">=</span><span class="s">&quot;CmsPackage.CmsModule.doMyNonExistingAnalysis_cfg&quot;</span>
+    <span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Heiner Tholen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

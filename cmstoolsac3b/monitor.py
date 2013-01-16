@@ -49,7 +49,11 @@ class Monitor(QtCore.QObject):
         print "WARNING process FAILED  :   cmsRun ", process.conf_filename
         if not self.error_logs_opened:
             print "_______________________________________begin_cmsRun_logfile"
-            os.system("cat " + process.log_filename)
+            try:
+                logfile = open(process.log_filename, "r")
+                print logfile.readlines()
+            finally:
+                logfile.close()
             print "_________________________________________end_cmsRun_logfile"
             self.error_logs_opened += 1
 

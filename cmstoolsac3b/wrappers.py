@@ -1,7 +1,7 @@
 # HistoOperations.py
 
 import sys
-import settings
+import settings # only imported for ROOT-system startup
 from ROOT import TH1, THStack, TCanvas
 from ast import literal_eval
 
