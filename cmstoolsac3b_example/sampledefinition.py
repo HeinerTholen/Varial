@@ -25,6 +25,7 @@ class TheDataSample(smp.Sample):
 
 class OtherMCSample(smp.Sample):
     """Extensive Declaration"""
+    enable          = True                                  #: Force usage. Also see settings.default_enable_sample
     input_files     = [common_input_path + "some/dir/muon*.root"]
     n_events        = 1000000                               #: either 'n_events' and 'x_sec' or 'lumi' has to be provided.
     x_sec           = 165.                                  #: cross section

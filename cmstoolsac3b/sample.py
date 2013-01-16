@@ -64,7 +64,7 @@ def _check_n_load(field):
 
 def load_samples(module):
     """
-    Adds samples to samples list in settings.
+    Get sample instances from a module.
 
     :param module: modules to import samples from
     :type  module: module
