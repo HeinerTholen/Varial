@@ -4,6 +4,7 @@ import settings
 import collections
 import itertools
 import wrappers
+import inspect
 
 class Sample(wrappers._dict_base):
     """
@@ -33,7 +34,7 @@ class Sample(wrappers._dict_base):
 
     def __init__(self):
         # check/correct input
-        if not self.name:
+        if not getattr(self, "name", 0):
             self.name = self.__class__.__name__
         tbd = "TO BE DECLARED: "
         if not isinstance(self.input_files, collections.Iterable):
@@ -55,12 +56,11 @@ class Sample(wrappers._dict_base):
 
 
 def _check_n_load(field):
-    if issubclass(field, Sample):
+    if inspect.isclass(field) and issubclass(field, Sample):
         smp = field()
         if smp.__dict__.get("enable", settings.default_enable_sample):
             return {smp.name: smp}
-        else:
-            return {}
+    return {}
 
 def load_samples(module):
     """
@@ -80,7 +80,7 @@ def load_samples(module):
             field = getattr(module, name)
             try: # handle iterable
                 for f in field: samples.update(_check_n_load(f))
-            except TypeError:
+            except TypeError: # not an iterable
                 samples.update(_check_n_load(field))
     return samples
 
