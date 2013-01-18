@@ -17,6 +17,7 @@ class SigintHandler(object):
             if self.hits:
                 exit(-1)
             print "WARNING: aborting all processes. Crtl-C again to kill immediately!"
+            sys.stdout.flush()
             self.hits += 1
             self.controller.abort_all_processes()
 
@@ -95,20 +96,27 @@ def main(post_proc_tool_classes=list(),
     cnt.all_finished.connect(app.quit)
 
     # GO!
-    if not cnt.waiting_pros:
+    if not cnt.waiting_pros:                    # No jobs, no running.
         print "INFO: I have no cmsRun jobs. Quitting..."
         exit(-1)
-    elif executed_procs:
+    elif executed_procs:                        # Got jobs to execute?
         if not_ask_execute or raw_input(
-            "Really run these processes??:\n   "
-            + ",\n   ".join(map(str,executed_procs)) # I love Python!
-            + "\n(type 'yes') "
+            "Really run these processes:\n"
+            + str(executed_procs)
+            + "\n?? (type 'yes') "
         ) == "yes":
             cnt.start_processes()
+            return app.exec_()
         else:
             print "INFO: Answer was not yes. Quitting..."
-            exit(0)
-    return app.exec_()
+            exit(-1)
+    elif post_proc_tool_classes:                # No jobs, but post-proc..
+        pst.run()
+        exit(0)
+    else:                                       # Nothing to do.
+        print "I've got nothing to do!"
+        exit(0)
+
 
 def standalone(post_proc_tool_classes, **settings_kws):
     """
