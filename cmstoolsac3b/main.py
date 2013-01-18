@@ -100,9 +100,9 @@ def main(post_proc_tool_classes=list(),
         exit(-1)
     elif executed_procs:
         if not_ask_execute or raw_input(
-            "Really run these processes:\n"
-            + str(executed_procs)
-            + "\n?? (type 'yes') "
+            "Really run these processes??:\n   "
+            + ",\n   ".join(map(str,executed_procs)) # I love Python!
+            + "\n(type 'yes') "
         ) == "yes":
             cnt.start_processes()
         else:
