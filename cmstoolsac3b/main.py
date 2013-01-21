@@ -100,11 +100,13 @@ def main(post_proc_tool_classes=list(),
         print "INFO: I have no cmsRun jobs. Quitting..."
         exit(-1)
     elif executed_procs:                        # Got jobs to execute?
-        if not_ask_execute or raw_input(
-            "Really run these processes:\n"
-            + str(executed_procs)
-            + "\n?? (type 'yes') "
-        ) == "yes":
+        if (not_ask_execute 
+            or settings.suppress_cmsRun_exec
+            or raw_input(
+                "Really run these processes:\n"
+                + str(executed_procs)
+                + "\n?? (type 'yes') "
+            ) == "yes"):
             cnt.start_processes()
             return app.exec_()
         else:
