@@ -11,11 +11,12 @@ class PostProcTool(object):
     A directory in <settings.DIR_PLOTS> with the class name of this tool is
     created. Messages can be printed with self.message().
     """
-    def __init__(self, ):
+    def __init__(self, tool_name = None):
         super(PostProcTool, self).__init__()
 
         # plot output directory
-        tool_name = self.__class__.__name__
+        if not tool_name:
+            tool_name = self.__class__.__name__
         plot_output_dir = settings.DIR_PLOTS + tool_name + "/"
         settings.tool_folders[tool_name] = plot_output_dir
         self.name = tool_name

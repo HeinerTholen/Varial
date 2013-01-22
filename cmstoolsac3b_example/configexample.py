@@ -7,6 +7,7 @@ import cmstoolsac3b.postprocessing             # to build a tool
 import cmstoolsac3b.generators as gen          # histogram stream processing
 import cmstoolsac3b.rendering                  # canvas decorators
 
+
 class CrtlFiltStackPlotter(cmstoolsac3b.postprocessing.PostProcTool):
     """An cmstoolsac3b_example stack plotter with data overlay."""
 
