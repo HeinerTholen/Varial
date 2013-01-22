@@ -47,15 +47,15 @@ def _instanciate_samples():
         if not isinstance(v, sample.Sample):
             settings.samples[k] = v()
 
-def main(post_proc_tool_classes=list(),
+def main(post_proc_tools=list(),
          not_ask_execute=False,
          logfilename="cmstoolsac3b.log",
          **settings_kws):
     """
     Post processing and processing.
 
-    :type   post_proc_tool_classes: list
-    :param  post_proc_tool_classes: ``PostProcTool`` subclasses.
+    :type   post_proc_tools: list
+    :param  post_proc_tools: ``PostProcTool`` subclasses.
     :type   not_ask_execute:        bool
     :param  not_ask_execute:        Suppress command line input check before
                                     executing the cmsRun processes.
@@ -83,9 +83,11 @@ def main(post_proc_tool_classes=list(),
     # post processor
     pst = postprocessing.PostProcessor(not bool(executed_procs))
     cnt.all_finished.connect(pst.run)
-    for tool in post_proc_tool_classes:
+    for tool in post_proc_tools:
         assert issubclass(tool, postprocessing.PostProcTool)
-        pst.add_tool(tool())
+        if not isinstance(tool, postprocessing.PostProcTool):
+            tool = tool()
+        pst.add_tool(tool)
 
     # SIGINT handler
     sig_handler = SigintHandler(cnt)
@@ -112,7 +114,7 @@ def main(post_proc_tool_classes=list(),
         else:
             print "INFO: Answer was not yes. Quitting..."
             exit(-1)
-    elif post_proc_tool_classes:                # No jobs, but post-proc..
+    elif post_proc_tools:                # No jobs, but post-proc..
         pst.run()
         exit(0)
     else:                                       # Nothing to do.
