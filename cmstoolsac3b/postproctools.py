@@ -16,14 +16,14 @@ class StackPlotterFS(postprocessing.PostProcTool):
         Load, stack, print and save histograms in a stream.
         """
         # combined operation for loading, filtering, stacking, etc..
-        # the output looks like: [(stack1, data1), (stack2, data2), ...]
-        stream_stack_n_data = gen.fs_mc_stack_n_data_sum(
+        # the output looks like: [(stack1,), (stack2,), ...]
+        stream_stack = gen.fs_mc_stack(
             self.histo_filter_dict
         )
 
         # plot (stack, data) pairs into canvases, with legend
         stream_canvas = gen.canvas(
-            stream_stack_n_data,
+            stream_stack,
             [rendering.Legend]
         )
 

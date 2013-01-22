@@ -316,6 +316,24 @@ def fs_filter_sort_load(filter_dict=None, key_list=None):
     wrps = sort(wrps, key_list)
     return load(wrps)
 
+def fs_mc_stack(filter_dict=None, merge_mc_key_func=None):
+    """Delivers only MC stacks, no data, from fileservice."""
+    if not merge_mc_key_func:
+        merge_mc_key_func = lambda w: settings.get_stack_position(w.sample)
+    loaded = fs_filter_sort_load(filter_dict)
+    grouped = group(loaded)
+    for grp in grouped:
+
+        # merge mc samples (merge also normalizes to lumi = 1.)
+        mc_sorted = sorted(grp, key=merge_mc_key_func)
+        mc_groupd = group(mc_sorted, merge_mc_key_func)
+        mc_merged = (op.merge(g) for g in mc_groupd)
+        mc_colord = apply_histo_fillcolor(mc_merged)
+
+        # stack mc
+        mc_stack = op.stack(mc_colord)
+        yield (mc_stack,)
+
 def fs_mc_stack_n_data_sum(filter_dict=None, merge_mc_key_func=None):
     """
     The full job to stacked histos and data, directly from fileservice.
