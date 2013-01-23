@@ -84,7 +84,8 @@ def main(post_proc_tools=list(),
     pst = postprocessing.PostProcessor(not bool(executed_procs))
     cnt.all_finished.connect(pst.run)
     for tool in post_proc_tools:
-        assert issubclass(tool, postprocessing.PostProcTool)
+        assert (isinstance(tool, postprocessing.PostProcTool)
+            or issubclass(tool, postprocessing.PostProcTool))
         if not isinstance(tool, postprocessing.PostProcTool):
             tool = tool()
         pst.add_tool(tool)
