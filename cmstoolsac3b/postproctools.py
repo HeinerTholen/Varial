@@ -24,13 +24,22 @@ class StackPlotterFS(postprocessing.PostProcTool):
         # plot (stack, data) pairs into canvases, with legend
         stream_canvas = gen.canvas(
             stream_stack,
-            [rendering.Legend]
+            #[rendering.Legend],
+            ana_histo_name = True,
         )
+
+        def log_scale(wrps):
+            for wrp in wrps:
+                wrp.canvas.SetLogy()
+                wrp.name += "_log"
+                yield wrp
+        stream_canvas = log_scale(stream_canvas)
 
         # store into dir of this tool
         stream_canvas = gen.save(
             stream_canvas,
-            lambda wrp: self.plot_output_dir + wrp.name,  # this function returns a path without postfix
+            # this lambda function returns a path without postfix
+            lambda wrp: self.plot_output_dir + wrp.name,
             settings.rootfile_postfixes
         )
 
@@ -38,5 +47,5 @@ class StackPlotterFS(postprocessing.PostProcTool):
         count = gen.consume_n_count(stream_canvas)
 
         # make a nice info statement
-        self.message("INFO: "+self.name+" produced "+count+" canvases.")
+        self.message("INFO: "+self.name+" produced "+str(count)+" canvases.")
 
