@@ -404,7 +404,11 @@ def build_canvas(bldrs):
     for bldr in bldrs:
         yield bldr.build_canvas()
 
-def canvas(grps, decorators=list(), callback_filter=None, callback_func=None):
+def canvas(grps, 
+           decorators=list(), 
+           callback_filter=None, 
+           callback_func=None,
+           ana_histo_name=False):
     """
     Packaging of canvas builder, decorating, callback and canvas building.
 
@@ -415,7 +419,14 @@ def canvas(grps, decorators=list(), callback_filter=None, callback_func=None):
         grps = callback(grps, filter_dict=callback_filter, func=callback_func)
         return build_canvas(grps)
     """
+    def put_ana_histo_name(grps):
+        for grp in grps:
+            grp.name = grp.renderers[0].analyzer+"_"+grp.name
+            yield grp
+
     grps = make_canvas_builder(grps)
+    if ana_histo_name:
+        grps = put_ana_histo_name(grps)
     grps = decorate(grps, decorators)
     grps = callback(grps, filter_dict=callback_filter, func=callback_func)
     return build_canvas(grps)
