@@ -7,6 +7,8 @@ import controller
 import postprocessing
 from PyQt4 import QtCore
 
+
+
 class SigintHandler(object):
     def __init__(self, controller):
         self.controller = controller
@@ -17,7 +19,7 @@ class SigintHandler(object):
             if self.hits:
                 exit(-1)
             print "WARNING: aborting all processes. Crtl-C again to kill immediately!"
-            sys.stdout.flush()
+            sys.__stdout__.flush()
             self.hits += 1
             self.controller.abort_all_processes()
 
@@ -32,6 +34,10 @@ class StdOutTee:
     def write(self, string):
         sys.__stdout__.write(string)
         self.logfile.write(string)
+
+    def flush(self):
+        sys.__stdout__.flush()
+        self.logfile.flush()
 
 
 def _process_settings_kws(kws):
