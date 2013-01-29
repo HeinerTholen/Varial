@@ -112,8 +112,8 @@ def main(post_proc_tools=list(),
         if (not_ask_execute 
             or settings.suppress_cmsRun_exec
             or raw_input(
-                "Really run these processes:\n"
-                + str(executed_procs)
+                "Really run these processes:\n   "
+                + ",\n   ".join(map(str,executed_procs))
                 + "\n?? (type 'yes') "
             ) == "yes"):
             cnt.start_processes()
