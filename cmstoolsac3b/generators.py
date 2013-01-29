@@ -277,8 +277,9 @@ def save(wrps, filename_func, suffices = None):
     for wrp in wrps:
         if hasattr(wrp, "primary_object"):
             filename = filename_func(wrp)
+            prim_obj = wrp.primary_object()
             for suffix in suffices:
-                wrp.primary_object().SaveAs(filename + suffix)
+                prim_obj.SaveAs(filename + suffix)
             if hasattr(wrp, "write_info_file"):
                 wrp.write_info_file(filename + ".info")
         yield wrp
