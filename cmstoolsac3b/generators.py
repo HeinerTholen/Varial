@@ -23,6 +23,13 @@ def _filt_req(wrp, filter_dict): # generator over True/False
             else:
                 yield getattr(wrp,key," ") == value # handle non-iterable
 
+def debug_printer(iterable, print_obj=True):
+    for obj in iterable:
+        print "DEBUG: debug_printer: obj type: ", type(obj)
+        if print_obj:
+            print "DEBUG: debug_printer: obj:      ", obj
+        yield obj
+
 def consume_n_count(iterable):
     """
     Walks over iterable and counts number of items.
