@@ -6,7 +6,6 @@ import singleton
 import wrappers
 from ROOT import TFile, TH1
 
-
 class HistoDispatch(object):
     """
     Central dispatch for histograms
