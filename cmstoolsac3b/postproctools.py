@@ -3,6 +3,7 @@ import settings
 import postprocessing
 import generators as gen
 import rendering
+import re
 
 class StackPlotterFS(postprocessing.PostProcTool):
     """An cmstoolsac3b_example stack plotter with data overlay."""
@@ -15,37 +16,28 @@ class StackPlotterFS(postprocessing.PostProcTool):
         """
         Load, stack, print and save histograms in a stream.
         """
-        # combined operation for loading, filtering, stacking, etc..
-        # the output looks like: [(stack1,), (stack2,), ...]
-        stream_stack = gen.fs_mc_stack(
-            self.histo_filter_dict
+
+        stream_stack = gen.fs_mc_stack_n_data_sum(
+            {"analyzer":re.compile("CrtlFilt*")}
         )
 
-        # plot (stack, data) pairs into canvases, with legend
+        stream_stack = gen.pool_store_items(stream_stack)
+
+        stream_stack = gen.debug_printer(stream_stack, False)
+
         stream_canvas = gen.canvas(
             stream_stack,
-            #[rendering.Legend],
-            ana_histo_name = True,
+            #[rendering.Legend]
         )
 
-        def log_scale(wrps):
-            for wrp in wrps:
-                wrp.canvas.SetLogy()
-                wrp.name += "_log"
-                yield wrp
-        stream_canvas = log_scale(stream_canvas)
+        stream_canvas = gen.debug_printer(stream_canvas, False)
 
-        # store into dir of this tool
         stream_canvas = gen.save(
             stream_canvas,
-            # this lambda function returns a path without postfix
             lambda wrp: self.plot_output_dir + wrp.name,
             settings.rootfile_postfixes
         )
 
-        # pull everything through the stream
         count = gen.consume_n_count(stream_canvas)
-
-        # make a nice info statement
         self.message("INFO: "+self.name+" produced "+str(count)+" canvases.")
 
