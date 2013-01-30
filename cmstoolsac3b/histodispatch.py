@@ -83,6 +83,7 @@ class HistoDispatch(object):
                 "Loaded object is not of type TH1: ", str(object)
             )
         histo.Sumw2()
+        histo.SetTitle(settings.samples[alias.sample].legend)
         wrp = wrappers.HistoWrapper(histo, **alias.all_info())
         wrp.lumi = settings.samples[alias.sample].lumi
         return wrp
