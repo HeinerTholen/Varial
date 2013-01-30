@@ -408,10 +408,12 @@ def make_canvas_builder(grps):
     """
     Yields instanciated CanvasBuilders.
 
-    :param grps:    grouped(!) Wrapper iterable
+    :param grps:    grouped or ungrouped Wrapper iterable
+                    if grouped: on canvas for each group
     :yields:        CanvasBuilder instance
     """
     for grp in grps:
+        grp = _iterableize(grp)
         yield rnd.CanvasBuilder(grp)
 
 def decorate(wrps, decorators = list()):
@@ -461,7 +463,6 @@ def canvas(grps,
             if hasattr(grp.renderers[0], "analyzer"):
                 grp.name = grp.renderers[0].analyzer+"_"+grp.name
             yield grp
-    grps = (_iterableize(grp) for grp in grps)  # make sure, we really have groups
     grps = make_canvas_builder(grps)            # a builder for every group
     grps = put_ana_histo_name(grps)             # only applies to fs histos
     grps = decorate(grps, decorators)           # apply decorators
