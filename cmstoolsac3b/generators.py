@@ -438,11 +438,12 @@ def canvas(grps,
             if hasattr(grp.renderers[0], "analyzer"):
                 grp.name = grp.renderers[0].analyzer+"_"+grp.name
             yield grp
-    grps = make_canvas_builder(grps)
-    grps = put_ana_histo_name(grps)
-    grps = decorate(grps, decorators)
-    grps = callback(grps, filter_dict=callback_filter, func=callback_func)
-    return build_canvas(grps)
+    grps = (_iterableize(grp) for grp in grps)  # make sure, we really have groups
+    grps = make_canvas_builder(grps)            # a builder for every group
+    grps = put_ana_histo_name(grps)             # only applies to fs histos
+    grps = decorate(grps, decorators)           # apply decorators
+    grps = callback(grps, filter_dict=callback_filter, func=callback_func) # ...
+    return build_canvas(grps)                   # and do the job
 
 if __name__ == "__main__":
     import doctest
