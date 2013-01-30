@@ -1,8 +1,17 @@
 # generators.py
 
 ################################################################### utility ###
+import collections
 import itertools
 import operator
+
+def _iterableize(obj_or_iterable):
+    """provides iterable for [obj OR iterable(obj)]"""
+    if isinstance(obj_or_iterable, collections.Iterable):
+        for o in obj_or_iterable:
+            yield o
+    else:
+        yield obj_or_iterable
 
 def _filt_req(wrp, filter_dict): # generator over True/False
     for key, value in filter_dict.iteritems():
@@ -98,11 +107,8 @@ def sort(wrps, key_list=None):
     """
     if not key_list: key_list = ['analyzer', 'name', 'is_data', 'sample']
     # python sorting is stable: Just sort by reversed key_list:
-    try:
-        for key in reversed(key_list):
-            wrps = sorted(wrps, key=operator.attrgetter(key))
-    except TypeError:
-        wrps = sorted(wrps, key=operator.attrgetter(key_list))
+    for key in reversed(list(_iterableize(key_list))):
+        wrps = sorted(wrps, key=operator.attrgetter(key))
     return wrps
 
 def group(wrps, key_func=None):
@@ -232,7 +238,8 @@ def pool_store_items(wrps):
     """
     pool = dsp.HistoPool()
     for wrp in wrps:
-        pool.put(wrp)
+        for w in _iterableize(wrp):
+            pool.put(w)
         yield wrp
 
 def pool_consume_n_count(wrps):
