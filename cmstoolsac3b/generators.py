@@ -24,6 +24,12 @@ def _filt_req(wrp, filter_dict): # generator over True/False
                 yield getattr(wrp,key," ") == value # handle non-iterable
 
 def debug_printer(iterable, print_obj=True):
+    """
+    Print objects and their type on flying by. Object printing can be turned off.
+
+    :param iterable:    An iterable with objects
+    :yields:            same as input
+    """
     for obj in iterable:
         print "DEBUG: debug_printer: obj type: ", type(obj)
         if print_obj:
@@ -284,7 +290,7 @@ def save(wrps, filename_func, suffices = None):
         save(
             wrappers,
             lambda wrp: OUTPUT_DIR + wrp.name,
-            [.root, .png]           # BETTER: settings.rootfile_postfixes
+            [.root, .png]           # DEFAULT: settings.rootfile_postfixes
         )
     """
     if not suffices: suffices = settings.rootfile_postfixes
@@ -315,9 +321,13 @@ def apply_histo_fillcolor(wrps):
                 wrp.histo.SetFillColor(fill_color)
         yield wrp
 
-def fs_filter_sort_load(filter_dict=None, key_list=None):
+def fs_filter_sort_load(filter_dict=None, sort_keys=None):
     """
     Packaging of filtering, sorting and loading.
+
+    :param filter_dict: see function filter(...) above
+    :param sort_keys:   see function sort(...) above
+    :yields:            HistoWrapper
 
     **Implementation:** ::
 
@@ -328,11 +338,18 @@ def fs_filter_sort_load(filter_dict=None, key_list=None):
     """
     wrps = fs_content()
     wrps = filter(wrps, filter_dict)
-    wrps = sort(wrps, key_list)
+    wrps = sort(wrps, sort_keys)
     return load(wrps)
 
 def fs_mc_stack(filter_dict=None, merge_mc_key_func=None):
-    """Delivers only MC stacks, no data, from fileservice."""
+    """
+    Delivers only MC stacks, no data, from fileservice.
+
+    :param filter_dict:         see function filter(...) above
+    :param merge_mc_key_func:   key function for python sorted(...), default
+                                tries to sort after stack position
+    :yields:                    StackWrapper
+    """
     if not merge_mc_key_func:
         merge_mc_key_func = lambda w: settings.get_stack_position(w.sample)
     loaded = fs_filter_sort_load(filter_dict)
@@ -347,13 +364,19 @@ def fs_mc_stack(filter_dict=None, merge_mc_key_func=None):
 
         # stack mc
         mc_stack = op.stack(mc_colord)
-        yield (mc_stack,)
+        yield mc_stack
 
 def fs_mc_stack_n_data_sum(filter_dict=None, merge_mc_key_func=None):
     """
     The full job to stacked histos and data, directly from fileservice.
 
-    Check out the sourcecode!
+    The output are tuples of MC stacks and data histograms.
+    ATTENTION: This crashes, if the proper histograms are not present!
+
+    :param filter_dict:         see function filter(...) above
+    :param merge_mc_key_func:   key function for python sorted(...), default
+                                tries to sort after stack position
+    :yields:                    (StackWrapper, HistoWrapper)
     """
     if not merge_mc_key_func:
         merge_mc_key_func = lambda w: settings.get_stack_position(w.sample)
@@ -426,12 +449,12 @@ def canvas(grps,
     """
     Packaging of canvas builder, decorating, callback and canvas building.
 
-    **Implementation:** ::
-
-        grps = make_canvas_builder(grps)
-        grps = decorate(grps, decorators)
-        grps = callback(grps, filter_dict=callback_filter, func=callback_func)
-        return build_canvas(grps)
+    :param grps:            grouped or ungrouped Wrapper iterable
+                            if grouped: on canvas for each group
+    :param decorators:      see function decorate(...) above
+    :param callback_filter: see function callback(...) above (param filter_dict there)
+    :param callback_func:   see function callback(...) above
+    :yields:                CanvasWrapper
     """
     def put_ana_histo_name(grps):
         for grp in grps:
