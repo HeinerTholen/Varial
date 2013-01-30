@@ -1,6 +1,7 @@
 # rendering.py
 
 ################################################################# renderers ###
+import collections
 import wrappers
 
 class Renderer(object):
@@ -145,8 +146,8 @@ class CanvasBuilder(object):
     legend         = None
 
     def __init__(self, wrps, **kws):
-        if not len(wrps):
-            raise self.NoInputError("CanvasBuilder wants wrps!")
+        if not isinstance(wrps, collections.Iterable):
+            raise self.NoInputError("CanvasBuilder wants iterable of wrps!")
         super(CanvasBuilder, self).__init__()
         self.kws            = kws
 
