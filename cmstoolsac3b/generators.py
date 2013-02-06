@@ -77,6 +77,15 @@ def filter(wrps, key_value_dict=None):
         wrps
     )
 
+def filter_inv(wrps, key_value_dict=None):
+    """Just as filter, only inverted."""
+    if not key_value_dict: key_value_dict = {}
+    assert type(key_value_dict) == dict
+    return itertools.ifilter(
+        lambda wrp: not any(_filt_req(wrp, key_value_dict)),
+        wrps
+    )
+
 def callback(wrps, filter_dict=None, func=None):
     """
     Do a special treatment for selected wrps! All wrps are yielded.
