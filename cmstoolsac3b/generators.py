@@ -375,25 +375,22 @@ def fs_mc_stack(filter_dict=None, merge_mc_key_func=None):
         mc_stack = op.stack(mc_colord)
         yield mc_stack
 
-def fs_mc_stack_n_data_sum(filter_dict=None, merge_mc_key_func=None):
+def mc_stack_n_data_sum(wrps, merge_mc_key_func=None):
     """
-    The full job to stacked histos and data, directly from fileservice.
+    Stacks MC histos and merges data, input needs to be sorted and grouped.
 
     The output are tuples of MC stacks and data histograms.
     ATTENTION: This crashes, if the proper histograms are not present!
 
-    :param filter_dict:         see function filter(...) above
+    :param wrps:                Iterables of HistoWrapper (grouped)
     :param merge_mc_key_func:   key function for python sorted(...), default
                                 tries to sort after stack position
     :yields:                    (StackWrapper, HistoWrapper)
     """
     if not merge_mc_key_func:
         merge_mc_key_func = lambda w: settings.get_stack_position(w.sample)
-    loaded = fs_filter_sort_load(filter_dict)
 
-    # group by analyzer_histo (the fs histo 'ID')
-    grouped = group(loaded)
-    for grp in grouped:
+    for grp in wrps:
 
         # split stream
         data, mc = split_data_mc(grp)
@@ -412,6 +409,22 @@ def fs_mc_stack_n_data_sum(filter_dict=None, merge_mc_key_func=None):
         mc_norm = gen_prod(itertools.izip(mc_colord, itertools.repeat(data_lumi)))
         mc_stack = op.stack(mc_norm)
         yield mc_stack, data_sum
+
+def fs_mc_stack_n_data_sum(filter_dict=None, merge_mc_key_func=None):
+    """
+    The full job to stacked histos and data, directly from fileservice.
+
+    The output are tuples of MC stacks and data histograms.
+    ATTENTION: This crashes, if the proper histograms are not present!
+
+    :param filter_dict:         see function filter(...) above
+    :param merge_mc_key_func:   key function for python sorted(...), default
+                                tries to sort after stack position
+    :yields:                    (StackWrapper, HistoWrapper)
+    """
+    loaded = fs_filter_sort_load(filter_dict)
+    grouped = group(loaded) # default: group by analyzer_histo (the fs histo 'ID')
+    return mc_stack_n_data_sum(grouped, merge_mc_key_func)
 
 def make_canvas_builder(grps):
     """
