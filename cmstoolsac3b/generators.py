@@ -64,7 +64,7 @@ def filter(wrps, key_value_dict=None):
             {
                 "is_data"   : False,                # single value
                 "analyzer"  : ["AnaEt", "AnaDR"]    # candidate list
-                "name"      : re.compile("histo*")   # regular expression
+                "name"      : re.compile("histo")   # regular expression
             }
         )
 
