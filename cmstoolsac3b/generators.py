@@ -166,8 +166,6 @@ def interleave(*grouped_wrps):
     for grp in zipped:
         yield itertools.chain(*grp)
 
-
-
 def split_data_mc(wrps):
     """
     Split stream into data and mc stream.
