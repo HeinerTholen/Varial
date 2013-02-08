@@ -100,7 +100,7 @@
             <span class="k">print</span> <span class="s">&quot;_______________________________________begin_cmsRun_logfile&quot;</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">logfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">process</span><span class="o">.</span><span class="n">log_filename</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">)</span>
-                <span class="k">print</span> <span class="n">logfile</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">logfile</span><span class="o">.</span><span class="n">readlines</span><span class="p">():</span> <span class="k">print</span> <span class="n">line</span><span class="p">,</span>
             <span class="k">finally</span><span class="p">:</span>
                 <span class="n">logfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
             <span class="k">print</span> <span class="s">&quot;_________________________________________end_cmsRun_logfile&quot;</span>

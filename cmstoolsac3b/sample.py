@@ -58,7 +58,10 @@ class Sample(wrappers._dict_base):
 def _check_n_load(field):
     if inspect.isclass(field) and issubclass(field, Sample):
         smp = field()
-        if smp.__dict__.get("enable", settings.default_enable_sample):
+        if hasattr(smp, "enable"):
+            if smp.enable:
+                return {smp.name: smp}
+        elif settings.default_enable_sample:
             return {smp.name: smp}
     return {}
 

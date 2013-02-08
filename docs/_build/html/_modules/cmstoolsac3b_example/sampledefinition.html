@@ -75,6 +75,7 @@
 </div>
 <div class="viewcode-block" id="OtherMCSample"><a class="viewcode-back" href="../../examples.html#cmstoolsac3b_example.sampledefinition.OtherMCSample">[docs]</a><span class="k">class</span> <span class="nc">OtherMCSample</span><span class="p">(</span><span class="n">smp</span><span class="o">.</span><span class="n">Sample</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Extensive Declaration&quot;&quot;&quot;</span>
+    <span class="n">enable</span>          <span class="o">=</span> <span class="bp">True</span>                                  <span class="c">#: Force usage. Also see settings.default_enable_sample</span>
     <span class="n">input_files</span>     <span class="o">=</span> <span class="p">[</span><span class="n">common_input_path</span> <span class="o">+</span> <span class="s">&quot;some/dir/muon*.root&quot;</span><span class="p">]</span>
     <span class="n">n_events</span>        <span class="o">=</span> <span class="mi">1000000</span>                               <span class="c">#: either &#39;n_events&#39; and &#39;x_sec&#39; or &#39;lumi&#39; has to be provided.</span>
     <span class="n">x_sec</span>           <span class="o">=</span> <span class="mf">165.</span>                                  <span class="c">#: cross section</span>

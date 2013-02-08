@@ -153,6 +153,21 @@ def group(wrps, key_func=None):
     for k,g in itertools.groupby(wrps, key_func):
         yield g
 
+def interleave(*grouped_wrps):
+    """
+    Like itertools.izip, but chains inner packaging.
+
+    ((a,b),(c,d)), ((1,2),(3,4)) => ((a,b,1,2), (c,d,3,4))
+
+    :param *grouped_wrps:   grouped iterators
+    :yields:                generator object
+    """
+    zipped = itertools.izip(grouped_wrps)
+    for grp in zipped:
+        yield itertools.chain(*grp)
+
+
+
 def split_data_mc(wrps):
     """
     Split stream into data and mc stream.
