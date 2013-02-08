@@ -77,8 +77,8 @@ def filter(wrps, key_value_dict=None):
         wrps
     )
 
-def filter_inv(wrps, key_value_dict=None):
-    """Just as filter, only inverted."""
+def rejector(wrps, key_value_dict=None):
+    """Just as filter, only rejects items with the given properites."""
     if not key_value_dict: key_value_dict = {}
     assert type(key_value_dict) == dict
     return itertools.ifilter(
