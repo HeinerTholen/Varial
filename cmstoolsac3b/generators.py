@@ -155,7 +155,7 @@ def group(wrps, key_func=None):
 
 def interleave(*grouped_wrps):
     """
-    Like itertools.izip, but chains inner packaging.
+    Like itertools.izip, but chains inner packaging. Useful before making canvasses.
 
     ((a,b),(c,d)), ((1,2),(3,4)) => ((a,b,1,2), (c,d,3,4))
 
