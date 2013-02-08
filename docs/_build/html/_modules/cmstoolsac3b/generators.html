@@ -51,8 +51,17 @@
 <span class="c"># generators.py</span>
 
 <span class="c">################################################################### utility ###</span>
+<span class="kn">import</span> <span class="nn">collections</span>
 <span class="kn">import</span> <span class="nn">itertools</span>
 <span class="kn">import</span> <span class="nn">operator</span>
+
+<span class="k">def</span> <span class="nf">_iterableize</span><span class="p">(</span><span class="n">obj_or_iterable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;provides iterable for [obj OR iterable(obj)]&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj_or_iterable</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">Iterable</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">obj_or_iterable</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">o</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">obj_or_iterable</span>
 
 <span class="k">def</span> <span class="nf">_filt_req</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span> <span class="n">filter_dict</span><span class="p">):</span> <span class="c"># generator over True/False</span>
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">filter_dict</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
@@ -64,6 +73,19 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">yield</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span><span class="n">key</span><span class="p">,</span><span class="s">&quot; &quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">value</span> <span class="c"># handle non-iterable</span>
 
+<div class="viewcode-block" id="debug_printer"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.debug_printer">[docs]</a><span class="k">def</span> <span class="nf">debug_printer</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">print_obj</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Print objects and their type on flying by. Object printing can be turned off.</span>
+
+<span class="sd">    :param iterable:    An iterable with objects</span>
+<span class="sd">    :yields:            same as input</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;DEBUG: debug_printer: obj type: &quot;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">print_obj</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&quot;DEBUG: debug_printer: obj:      &quot;</span><span class="p">,</span> <span class="n">obj</span>
+        <span class="k">yield</span> <span class="n">obj</span>
+</div>
 <div class="viewcode-block" id="consume_n_count"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.consume_n_count">[docs]</a><span class="k">def</span> <span class="nf">consume_n_count</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Walks over iterable and counts number of items.</span>
@@ -92,7 +114,7 @@
 <span class="sd">            {</span>
 <span class="sd">                &quot;is_data&quot;   : False,                # single value</span>
 <span class="sd">                &quot;analyzer&quot;  : [&quot;AnaEt&quot;, &quot;AnaDR&quot;]    # candidate list</span>
-<span class="sd">                &quot;name&quot;      : re.compile(&quot;histo*&quot;)   # regular expression</span>
+<span class="sd">                &quot;name&quot;      : re.compile(&quot;histo&quot;)   # regular expression</span>
 <span class="sd">            }</span>
 <span class="sd">        )</span>
 
@@ -102,6 +124,15 @@
     <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">key_value_dict</span><span class="p">)</span> <span class="o">==</span> <span class="nb">dict</span>
     <span class="k">return</span> <span class="n">itertools</span><span class="o">.</span><span class="n">ifilter</span><span class="p">(</span>
         <span class="k">lambda</span> <span class="n">wrp</span><span class="p">:</span> <span class="nb">all</span><span class="p">(</span><span class="n">_filt_req</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span> <span class="n">key_value_dict</span><span class="p">)),</span>
+        <span class="n">wrps</span>
+    <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="filter_inv"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.filter_inv">[docs]</a><span class="k">def</span> <span class="nf">filter_inv</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">key_value_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Just as filter, only inverted.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">key_value_dict</span><span class="p">:</span> <span class="n">key_value_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">key_value_dict</span><span class="p">)</span> <span class="o">==</span> <span class="nb">dict</span>
+    <span class="k">return</span> <span class="n">itertools</span><span class="o">.</span><span class="n">ifilter</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">wrp</span><span class="p">:</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">_filt_req</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span> <span class="n">key_value_dict</span><span class="p">)),</span>
         <span class="n">wrps</span>
     <span class="p">)</span>
 </div>
@@ -148,11 +179,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">key_list</span><span class="p">:</span> <span class="n">key_list</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;analyzer&#39;</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;is_data&#39;</span><span class="p">,</span> <span class="s">&#39;sample&#39;</span><span class="p">]</span>
     <span class="c"># python sorting is stable: Just sort by reversed key_list:</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">key_list</span><span class="p">):</span>
-            <span class="n">wrps</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
-    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-        <span class="n">wrps</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="n">key_list</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">_iterableize</span><span class="p">(</span><span class="n">key_list</span><span class="p">))):</span>
+        <span class="n">wrps</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">wrps</span>
 </div>
 <div class="viewcode-block" id="group"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.group">[docs]</a><span class="k">def</span> <span class="nf">group</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">key_func</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
@@ -282,7 +310,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">pool</span> <span class="o">=</span> <span class="n">dsp</span><span class="o">.</span><span class="n">HistoPool</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">wrp</span> <span class="ow">in</span> <span class="n">wrps</span><span class="p">:</span>
-        <span class="n">pool</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">wrp</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">_iterableize</span><span class="p">(</span><span class="n">wrp</span><span class="p">):</span>
+            <span class="n">pool</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
         <span class="k">yield</span> <span class="n">wrp</span>
 </div>
 <div class="viewcode-block" id="pool_consume_n_count"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.pool_consume_n_count">[docs]</a><span class="k">def</span> <span class="nf">pool_consume_n_count</span><span class="p">(</span><span class="n">wrps</span><span class="p">):</span>
@@ -320,15 +349,16 @@
 <span class="sd">        save(</span>
 <span class="sd">            wrappers,</span>
 <span class="sd">            lambda wrp: OUTPUT_DIR + wrp.name,</span>
-<span class="sd">            [.root, .png]           # BETTER: settings.rootfile_postfixes</span>
+<span class="sd">            [.root, .png]           # DEFAULT: settings.rootfile_postfixes</span>
 <span class="sd">        )</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">suffices</span><span class="p">:</span> <span class="n">suffices</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">rootfile_postfixes</span>
     <span class="k">for</span> <span class="n">wrp</span> <span class="ow">in</span> <span class="n">wrps</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span> <span class="s">&quot;primary_object&quot;</span><span class="p">):</span>
             <span class="n">filename</span> <span class="o">=</span> <span class="n">filename_func</span><span class="p">(</span><span class="n">wrp</span><span class="p">)</span>
+            <span class="n">prim_obj</span> <span class="o">=</span> <span class="n">wrp</span><span class="o">.</span><span class="n">primary_object</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">suffix</span> <span class="ow">in</span> <span class="n">suffices</span><span class="p">:</span>
-                <span class="n">wrp</span><span class="o">.</span><span class="n">primary_object</span><span class="p">()</span><span class="o">.</span><span class="n">SaveAs</span><span class="p">(</span><span class="n">filename</span> <span class="o">+</span> <span class="n">suffix</span><span class="p">)</span>
+                <span class="n">prim_obj</span><span class="o">.</span><span class="n">SaveAs</span><span class="p">(</span><span class="n">filename</span> <span class="o">+</span> <span class="n">suffix</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span> <span class="s">&quot;write_info_file&quot;</span><span class="p">):</span>
                 <span class="n">wrp</span><span class="o">.</span><span class="n">write_info_file</span><span class="p">(</span><span class="n">filename</span> <span class="o">+</span> <span class="s">&quot;.info&quot;</span><span class="p">)</span>
         <span class="k">yield</span> <span class="n">wrp</span>
@@ -350,9 +380,13 @@
                 <span class="n">wrp</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">SetFillColor</span><span class="p">(</span><span class="n">fill_color</span><span class="p">)</span>
         <span class="k">yield</span> <span class="n">wrp</span>
 </div>
-<div class="viewcode-block" id="fs_filter_sort_load"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.fs_filter_sort_load">[docs]</a><span class="k">def</span> <span class="nf">fs_filter_sort_load</span><span class="p">(</span><span class="n">filter_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">key_list</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="fs_filter_sort_load"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.fs_filter_sort_load">[docs]</a><span class="k">def</span> <span class="nf">fs_filter_sort_load</span><span class="p">(</span><span class="n">filter_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Packaging of filtering, sorting and loading.</span>
+
+<span class="sd">    :param filter_dict: see function filter(...) above</span>
+<span class="sd">    :param sort_keys:   see function sort(...) above</span>
+<span class="sd">    :yields:            HistoWrapper</span>
 
 <span class="sd">    **Implementation:** ::</span>
 
@@ -363,22 +397,50 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">wrps</span> <span class="o">=</span> <span class="n">fs_content</span><span class="p">()</span>
     <span class="n">wrps</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">filter_dict</span><span class="p">)</span>
-    <span class="n">wrps</span> <span class="o">=</span> <span class="n">sort</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">key_list</span><span class="p">)</span>
+    <span class="n">wrps</span> <span class="o">=</span> <span class="n">sort</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">sort_keys</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">load</span><span class="p">(</span><span class="n">wrps</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="fs_mc_stack_n_data_sum"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.fs_mc_stack_n_data_sum">[docs]</a><span class="k">def</span> <span class="nf">fs_mc_stack_n_data_sum</span><span class="p">(</span><span class="n">filter_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">merge_mc_key_func</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="fs_mc_stack"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.fs_mc_stack">[docs]</a><span class="k">def</span> <span class="nf">fs_mc_stack</span><span class="p">(</span><span class="n">filter_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">merge_mc_key_func</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    The full job to stacked histos and data, directly from fileservice.</span>
+<span class="sd">    Delivers only MC stacks, no data, from fileservice.</span>
 
-<span class="sd">    Check out the sourcecode!</span>
+<span class="sd">    :param filter_dict:         see function filter(...) above</span>
+<span class="sd">    :param merge_mc_key_func:   key function for python sorted(...), default</span>
+<span class="sd">                                tries to sort after stack position</span>
+<span class="sd">    :yields:                    StackWrapper</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">merge_mc_key_func</span><span class="p">:</span>
         <span class="n">merge_mc_key_func</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">get_stack_position</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">sample</span><span class="p">)</span>
     <span class="n">loaded</span> <span class="o">=</span> <span class="n">fs_filter_sort_load</span><span class="p">(</span><span class="n">filter_dict</span><span class="p">)</span>
-
-    <span class="c"># group by analyzer_histo (the fs histo &#39;ID&#39;)</span>
     <span class="n">grouped</span> <span class="o">=</span> <span class="n">group</span><span class="p">(</span><span class="n">loaded</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">grp</span> <span class="ow">in</span> <span class="n">grouped</span><span class="p">:</span>
+
+        <span class="c"># merge mc samples (merge also normalizes to lumi = 1.)</span>
+        <span class="n">mc_sorted</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">grp</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">merge_mc_key_func</span><span class="p">)</span>
+        <span class="n">mc_groupd</span> <span class="o">=</span> <span class="n">group</span><span class="p">(</span><span class="n">mc_sorted</span><span class="p">,</span> <span class="n">merge_mc_key_func</span><span class="p">)</span>
+        <span class="n">mc_merged</span> <span class="o">=</span> <span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">mc_groupd</span><span class="p">)</span>
+        <span class="n">mc_colord</span> <span class="o">=</span> <span class="n">apply_histo_fillcolor</span><span class="p">(</span><span class="n">mc_merged</span><span class="p">)</span>
+
+        <span class="c"># stack mc</span>
+        <span class="n">mc_stack</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">mc_colord</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="n">mc_stack</span>
+</div>
+<div class="viewcode-block" id="mc_stack_n_data_sum"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.mc_stack_n_data_sum">[docs]</a><span class="k">def</span> <span class="nf">mc_stack_n_data_sum</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">merge_mc_key_func</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Stacks MC histos and merges data, input needs to be sorted and grouped.</span>
+
+<span class="sd">    The output are tuples of MC stacks and data histograms.</span>
+<span class="sd">    ATTENTION: This crashes, if the proper histograms are not present!</span>
+
+<span class="sd">    :param wrps:                Iterables of HistoWrapper (grouped)</span>
+<span class="sd">    :param merge_mc_key_func:   key function for python sorted(...), default</span>
+<span class="sd">                                tries to sort after stack position</span>
+<span class="sd">    :yields:                    (StackWrapper, HistoWrapper)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">merge_mc_key_func</span><span class="p">:</span>
+        <span class="n">merge_mc_key_func</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">get_stack_position</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">sample</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">grp</span> <span class="ow">in</span> <span class="n">wrps</span><span class="p">:</span>
 
         <span class="c"># split stream</span>
         <span class="n">data</span><span class="p">,</span> <span class="n">mc</span> <span class="o">=</span> <span class="n">split_data_mc</span><span class="p">(</span><span class="n">grp</span><span class="p">)</span>
@@ -398,14 +460,32 @@
         <span class="n">mc_stack</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">mc_norm</span><span class="p">)</span>
         <span class="k">yield</span> <span class="n">mc_stack</span><span class="p">,</span> <span class="n">data_sum</span>
 </div>
+<div class="viewcode-block" id="fs_mc_stack_n_data_sum"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.fs_mc_stack_n_data_sum">[docs]</a><span class="k">def</span> <span class="nf">fs_mc_stack_n_data_sum</span><span class="p">(</span><span class="n">filter_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">merge_mc_key_func</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The full job to stacked histos and data, directly from fileservice.</span>
+
+<span class="sd">    The output are tuples of MC stacks and data histograms.</span>
+<span class="sd">    ATTENTION: This crashes, if the proper histograms are not present!</span>
+
+<span class="sd">    :param filter_dict:         see function filter(...) above</span>
+<span class="sd">    :param merge_mc_key_func:   key function for python sorted(...), default</span>
+<span class="sd">                                tries to sort after stack position</span>
+<span class="sd">    :yields:                    (StackWrapper, HistoWrapper)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">loaded</span> <span class="o">=</span> <span class="n">fs_filter_sort_load</span><span class="p">(</span><span class="n">filter_dict</span><span class="p">)</span>
+    <span class="n">grouped</span> <span class="o">=</span> <span class="n">group</span><span class="p">(</span><span class="n">loaded</span><span class="p">)</span> <span class="c"># default: group by analyzer_histo (the fs histo &#39;ID&#39;)</span>
+    <span class="k">return</span> <span class="n">mc_stack_n_data_sum</span><span class="p">(</span><span class="n">grouped</span><span class="p">,</span> <span class="n">merge_mc_key_func</span><span class="p">)</span>
+</div>
 <div class="viewcode-block" id="make_canvas_builder"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.make_canvas_builder">[docs]</a><span class="k">def</span> <span class="nf">make_canvas_builder</span><span class="p">(</span><span class="n">grps</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Yields instanciated CanvasBuilders.</span>
 
-<span class="sd">    :param grps:    grouped(!) Wrapper iterable</span>
+<span class="sd">    :param grps:    grouped or ungrouped Wrapper iterable</span>
+<span class="sd">                    if grouped: on canvas for each group</span>
 <span class="sd">    :yields:        CanvasBuilder instance</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">grp</span> <span class="ow">in</span> <span class="n">grps</span><span class="p">:</span>
+        <span class="n">grp</span> <span class="o">=</span> <span class="n">_iterableize</span><span class="p">(</span><span class="n">grp</span><span class="p">)</span>
         <span class="k">yield</span> <span class="n">rnd</span><span class="o">.</span><span class="n">CanvasBuilder</span><span class="p">(</span><span class="n">grp</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="decorate"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.decorate">[docs]</a><span class="k">def</span> <span class="nf">decorate</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">decorators</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()):</span>
@@ -436,21 +516,30 @@
     <span class="k">for</span> <span class="n">bldr</span> <span class="ow">in</span> <span class="n">bldrs</span><span class="p">:</span>
         <span class="k">yield</span> <span class="n">bldr</span><span class="o">.</span><span class="n">build_canvas</span><span class="p">()</span>
 </div>
-<div class="viewcode-block" id="canvas"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.canvas">[docs]</a><span class="k">def</span> <span class="nf">canvas</span><span class="p">(</span><span class="n">grps</span><span class="p">,</span> <span class="n">decorators</span><span class="o">=</span><span class="nb">list</span><span class="p">(),</span> <span class="n">callback_filter</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">callback_func</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="canvas"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.canvas">[docs]</a><span class="k">def</span> <span class="nf">canvas</span><span class="p">(</span><span class="n">grps</span><span class="p">,</span> 
+           <span class="n">decorators</span><span class="o">=</span><span class="nb">list</span><span class="p">(),</span> 
+           <span class="n">callback_filter</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> 
+           <span class="n">callback_func</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Packaging of canvas builder, decorating, callback and canvas building.</span>
 
-<span class="sd">    **Implementation:** ::</span>
-
-<span class="sd">        grps = make_canvas_builder(grps)</span>
-<span class="sd">        grps = decorate(grps, decorators)</span>
-<span class="sd">        grps = callback(grps, filter_dict=callback_filter, func=callback_func)</span>
-<span class="sd">        return build_canvas(grps)</span>
+<span class="sd">    :param grps:            grouped or ungrouped Wrapper iterable</span>
+<span class="sd">                            if grouped: on canvas for each group</span>
+<span class="sd">    :param decorators:      see function decorate(...) above</span>
+<span class="sd">    :param callback_filter: see function callback(...) above (param filter_dict there)</span>
+<span class="sd">    :param callback_func:   see function callback(...) above</span>
+<span class="sd">    :yields:                CanvasWrapper</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">grps</span> <span class="o">=</span> <span class="n">make_canvas_builder</span><span class="p">(</span><span class="n">grps</span><span class="p">)</span>
-    <span class="n">grps</span> <span class="o">=</span> <span class="n">decorate</span><span class="p">(</span><span class="n">grps</span><span class="p">,</span> <span class="n">decorators</span><span class="p">)</span>
-    <span class="n">grps</span> <span class="o">=</span> <span class="n">callback</span><span class="p">(</span><span class="n">grps</span><span class="p">,</span> <span class="n">filter_dict</span><span class="o">=</span><span class="n">callback_filter</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="n">callback_func</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">build_canvas</span><span class="p">(</span><span class="n">grps</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">put_ana_histo_name</span><span class="p">(</span><span class="n">grps</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">grp</span> <span class="ow">in</span> <span class="n">grps</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">grp</span><span class="o">.</span><span class="n">renderers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s">&quot;analyzer&quot;</span><span class="p">):</span>
+                <span class="n">grp</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">grp</span><span class="o">.</span><span class="n">renderers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">analyzer</span><span class="o">+</span><span class="s">&quot;_&quot;</span><span class="o">+</span><span class="n">grp</span><span class="o">.</span><span class="n">name</span>
+            <span class="k">yield</span> <span class="n">grp</span>
+    <span class="n">grps</span> <span class="o">=</span> <span class="n">make_canvas_builder</span><span class="p">(</span><span class="n">grps</span><span class="p">)</span>            <span class="c"># a builder for every group</span>
+    <span class="n">grps</span> <span class="o">=</span> <span class="n">put_ana_histo_name</span><span class="p">(</span><span class="n">grps</span><span class="p">)</span>             <span class="c"># only applies to fs histos</span>
+    <span class="n">grps</span> <span class="o">=</span> <span class="n">decorate</span><span class="p">(</span><span class="n">grps</span><span class="p">,</span> <span class="n">decorators</span><span class="p">)</span>           <span class="c"># apply decorators</span>
+    <span class="n">grps</span> <span class="o">=</span> <span class="n">callback</span><span class="p">(</span><span class="n">grps</span><span class="p">,</span> <span class="n">filter_dict</span><span class="o">=</span><span class="n">callback_filter</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="n">callback_func</span><span class="p">)</span> <span class="c"># ...</span>
+    <span class="k">return</span> <span class="n">build_canvas</span><span class="p">(</span><span class="n">grps</span><span class="p">)</span>                   <span class="c"># and do the job</span>
 </div>
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">doctest</span>

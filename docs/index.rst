@@ -29,6 +29,16 @@ Contents:
    reference.rst
 
 
+Jump to module:
+
+.. toctree::
+   :maxdepth: 1
+
+   generators.rst
+   wrappers.rst
+   rendering.rst
+
+
 Indices and tables
 ==================
 
