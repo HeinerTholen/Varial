@@ -13,6 +13,7 @@ class SigintHandler(object):
     def __init__(self, controller):
         self.controller = controller
         self.hits = 0
+        settings.recieved_sigint = True
 
     def handle(self, signal_int, frame):
         if signal_int is signal.SIGINT:
