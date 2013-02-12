@@ -43,7 +43,10 @@ class Monitor(QtCore.QObject):
     def proc_finished(self, process):
         if settings.suppress_cmsRun_exec or process.reused_old_data:
             return
-        print "INFO process finished:   cmsRun ", process.conf_filename
+        if hasattr(settings, "recieved_sigint"):
+            print "INFO process aborted:   cmsRun ", process.conf_filename
+        else:
+            print "INFO process finished:   cmsRun ", process.conf_filename
 
     def proc_failed(self, process):
         print "WARNING process FAILED  :   cmsRun ", process.conf_filename

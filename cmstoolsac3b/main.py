@@ -21,6 +21,7 @@ class SigintHandler(object):
             print "WARNING: aborting all processes. Crtl-C again to kill immediately!"
             sys.__stdout__.flush()
             self.hits += 1
+            settings.recieved_sigint = True
             self.controller.abort_all_processes()
 
 
