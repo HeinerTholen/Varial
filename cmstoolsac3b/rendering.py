@@ -51,7 +51,7 @@ class HistoRenderer(Renderer, wrappers.HistoWrapper):
         if not histo: histo = self.histo
         nbins = histo.GetNbinsX()
         min_val = histo.GetMinimum() # min on y axis
-        if min_val < 1e-43 and histo.GetMaximum() > 1e-43: # should be greater than zero
+        if min_val < 1e-23 < histo.GetMaximum(): # should be greater than zero
             min_val = min(
                 histo.GetBinContent(i)
                     for i in xrange(nbins + 1)

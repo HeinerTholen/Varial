@@ -68,7 +68,7 @@ def get_pretty_name(key):
     return pretty_names.get(key, key)
 
 colors = {} # map legend entries to fill colors
-def get_fill_color(sample_or_legend_name):
+def get_color(sample_or_legend_name):
     """Gives a ROOT color value back for sample or legend name."""
     if colors.has_key(sample_or_legend_name):
         return colors[sample_or_legend_name]
