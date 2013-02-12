@@ -329,18 +329,40 @@ def save(wrps, filename_func, suffices = None):
 ################################################### application & packaging ###
 import rendering as rnd
 
-def apply_histo_fillcolor(wrps):
+def apply_histo_fillcolor(wrps, colors=None):
     """
-    Uses ``histo.SetFillColor``. Colors from utilities.settings
+    Uses ``histo.SetFillColor``. Colors from settings, if not given.
 
     :param wrps:    HistoWrapper iterable
+    :param colors:  Integer iterable
     :yields:        HistoWrapper
     """
     for wrp in wrps:
         if hasattr(wrp, "histo"):
-            fill_color = settings.get_fill_color(wrp.sample)
-            if fill_color:
-                wrp.histo.SetFillColor(fill_color)
+            if colors:
+                color = colors.next()
+            else:
+                color = settings.get_color(wrp.sample)
+            if color:
+                wrp.histo.SetFillColor(color)
+        yield wrp
+
+def apply_histo_linecolor(wrps, colors=None):
+    """
+    Uses ``histo.SetLineColor``. Colors from settings, if not given.
+
+    :param wrps:    HistoWrapper iterable
+    :param colors:  Integer iterable
+    :yields:        HistoWrapper
+    """
+    for wrp in wrps:
+        if hasattr(wrp, "histo"):
+            if colors:
+                color = colors.next()
+            else:
+                color = settings.get_color(wrp.sample)
+            if color:
+                wrp.histo.SetLineColor(color)
         yield wrp
 
 def fs_filter_sort_load(filter_dict=None, sort_keys=None):
