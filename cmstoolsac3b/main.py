@@ -13,7 +13,6 @@ class SigintHandler(object):
     def __init__(self, controller):
         self.controller = controller
         self.hits = 0
-        settings.recieved_sigint = True
 
     def handle(self, signal_int, frame):
         if signal_int is signal.SIGINT:
@@ -22,6 +21,7 @@ class SigintHandler(object):
             print "WARNING: aborting all processes. Crtl-C again to kill immediately!"
             sys.__stdout__.flush()
             self.hits += 1
+            settings.recieved_sigint = True
             self.controller.abort_all_processes()
 
 
