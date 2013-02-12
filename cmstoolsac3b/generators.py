@@ -334,13 +334,15 @@ def apply_histo_fillcolor(wrps, colors=None):
     Uses ``histo.SetFillColor``. Colors from settings, if not given.
 
     :param wrps:    HistoWrapper iterable
-    :param colors:  Integer iterable
+    :param colors:  Integer list
     :yields:        HistoWrapper
     """
+    n, l = 0, len(colors)
     for wrp in wrps:
         if hasattr(wrp, "histo"):
             if colors:
-                color = colors.next()
+                color = colors[n%l]
+                n += 1
             else:
                 color = settings.get_color(wrp.sample)
             if color:
@@ -352,13 +354,15 @@ def apply_histo_linecolor(wrps, colors=None):
     Uses ``histo.SetLineColor``. Colors from settings, if not given.
 
     :param wrps:    HistoWrapper iterable
-    :param colors:  Integer iterable
+    :param colors:  Integer list
     :yields:        HistoWrapper
     """
+    n, l = 0, len(colors)
     for wrp in wrps:
         if hasattr(wrp, "histo"):
             if colors:
-                color = colors.next()
+                color = colors[n%l]
+                n += 1
             else:
                 color = settings.get_color(wrp.sample)
             if color:
