@@ -385,20 +385,18 @@ def fs_filter_sort_load(filter_dict=None, sort_keys=None):
     wrps = sort(wrps, sort_keys)
     return load(wrps)
 
-def fs_mc_stack(filter_dict=None, merge_mc_key_func=None):
+def mc_stack(wrps, merge_mc_key_func=None):
     """
-    Delivers only MC stacks, no data, from fileservice.
+    Delivers only MC stacks, feed only with MC.
 
-    :param filter_dict:         see function filter(...) above
+    :param wrps:                Iterables of HistoWrapper (grouped)
     :param merge_mc_key_func:   key function for python sorted(...), default
                                 tries to sort after stack position
     :yields:                    StackWrapper
     """
     if not merge_mc_key_func:
         merge_mc_key_func = lambda w: settings.get_stack_position(w.sample)
-    loaded = fs_filter_sort_load(filter_dict)
-    grouped = group(loaded)
-    for grp in grouped:
+    for grp in wrps:
 
         # merge mc samples (merge also normalizes to lumi = 1.)
         mc_sorted = sorted(grp, key=merge_mc_key_func)
@@ -409,6 +407,19 @@ def fs_mc_stack(filter_dict=None, merge_mc_key_func=None):
         # stack mc
         mc_stack = op.stack(mc_colord)
         yield mc_stack
+
+def fs_mc_stack(filter_dict=None, merge_mc_key_func=None):
+    """
+    Delivers only MC stacks, no data, from fileservice.
+
+    :param filter_dict:         see function filter(...) above
+    :param merge_mc_key_func:   key function for python sorted(...), default
+                                tries to sort after stack position
+    :yields:                    StackWrapper
+    """
+    loaded = fs_filter_sort_load(filter_dict)
+    grouped = group(loaded)
+    return mc_stack(grouped, merge_mc_key_func)
 
 def mc_stack_n_data_sum(wrps, merge_mc_key_func=None):
     """
