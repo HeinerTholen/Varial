@@ -142,6 +142,7 @@ class CanvasBuilder(object):
     y_min_gr_zero  = 0.
     canvas         = None
     main_pad       = None
+    second_pad     = None
     first_drawn    = None
     legend         = None
 
@@ -237,7 +238,16 @@ class CanvasBuilder(object):
         canvas = self.canvas
         canvas.Modified()
         canvas.Update()
-        wrp = wrappers.CanvasWrapper(canvas, **self.kws)
+        wrp = wrappers.CanvasWrapper(
+            canvas,
+            main_pad    = self.main_pad,
+            second_pad  = self.second_pad,
+            legend      = self.legend,
+            x_bounds    = self.x_bounds,
+            y_bounds    = self.y_bounds,
+            y_min_gr_0  = self.y_min_gr_zero,
+            **self.kws
+        )
         self._del_builder_refs()
         return wrp
 
