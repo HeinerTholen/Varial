@@ -262,7 +262,6 @@ class Legend(Decorator):
 
     def do_final_cosmetics(self):
         """
-
         Only ``do_final_cosmetics`` is overwritten here.
 
         If self.legend == None, this method will create a default legend and
@@ -300,6 +299,23 @@ class Legend(Decorator):
         legend.Draw()
         self.legend = legend
         self.decoratee.do_final_cosmetics()         # Call next inner class!!
+
+
+class LegendLeft(Legend):
+    """Just as Legend, but plotted on the left."""
+    def __init__(self, inner, dd = "True", **kws):
+        kws["x1"] = 0.19
+        kws["x2"] = 0.43
+        super(LegendLeft, self).__init__(inner, dd, **kws)
+
+
+class LegendRight(Legend):
+    """Just as Legend, but plotted on the right."""
+    def __init__(self, inner, dd = "True", **kws):
+        kws["x1"] = 0.67
+        kws["x2"] = 0.88
+        super(LegendRight, self).__init__(inner, dd, **kws)
+
 
 
 #TODO: Statbox from classes/CRUtilities
