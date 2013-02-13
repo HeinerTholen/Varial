@@ -131,7 +131,6 @@ def main(post_proc_tools=list(),
         print "I've got nothing to do!"
         exit(0)
 
-
 def standalone(post_proc_tool_classes, **settings_kws):
     """
     Runs post processing alone.

@@ -197,8 +197,9 @@ class CanvasBuilder(object):
         rnds = self.renderers
         for i, rnd in enumerate(rnds):
             if not i:
-                rnd.draw("")
                 self.first_drawed = rnd.primary_object()
+                self.first_drawed.SetTitle("")
+                rnd.draw("")
             else:
                 rnd.draw("same")
 
@@ -269,9 +270,11 @@ class Legend(Decorator):
         """
         if self.legend: return
 
-        tmp_leg = self.main_pad.BuildLegend() # get legend entry objects
+        tmp_leg = self.main_pad.BuildLegend(0.1, 0.6, 0.5, 0.8) # get legend entry objects
         tobjects = [(entry.GetObject(), entry.GetLabel())
                     for entry in tmp_leg.GetListOfPrimitives()]
+        tmp_leg.Clear()
+        self.main_pad.GetListOfPrimitives().Remove(tmp_leg)
         tmp_leg.Delete()
 
         par = self.dec_par
@@ -283,13 +286,13 @@ class Legend(Decorator):
             tobjects.reverse()
         for obj in tobjects:
             if obj[1] == "Data" or obj[1] == "data":
-                self.legend.AddEntry(
+                legend.AddEntry(
                     obj[0],
                     obj[1],
                     par["opt_data"]
                 )
             else:
-                self.legend.AddEntry(
+                legend.AddEntry(
                     obj[0],
                     obj[1],
                     par["opt"]
