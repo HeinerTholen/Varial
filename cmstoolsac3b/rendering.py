@@ -206,7 +206,9 @@ class CanvasBuilder(object):
     def do_final_cosmetics(self):
         """Pimp the canvas!"""
         y_min, y_max = self.y_bounds
-        self.first_drawed.SetMinimum(y_min * 0.9)
+        self.first_drawed.GetXaxis().SetNoExponent()
+        self.first_drawed.GetXaxis().SetLabelSize(0.052)
+        #self.first_drawed.SetMinimum(y_min * 0.9)
         self.first_drawed.SetMaximum(y_max * 1.1)
 
     def run_procedure(self):
@@ -230,10 +232,12 @@ class CanvasBuilder(object):
 
         :return: ``CanvasWrapper`` instance.
         """
-        canvas = self.canvas
-        if not canvas:
+        if not self.canvas:
             self.run_procedure()
-        wrp = wrappers.CanvasWrapper(self.canvas, **self.kws)
+        canvas = self.canvas
+        canvas.Modified()
+        canvas.Update()
+        wrp = wrappers.CanvasWrapper(canvas, **self.kws)
         self._del_builder_refs()
         return wrp
 
@@ -247,7 +251,7 @@ class Legend(Decorator):
 
     Takes entries from ``self.main_pad.BuildLegend()`` .
     The box height is adjusted by the number of legend entries.
-    No border or shadow are printed. Keyword
+    No border or shadow are printed. See __init__ for keywords.
     """
     def __init__(self, inner, dd = "True", **kws):
         super(Legend, self).__init__(inner, dd)
