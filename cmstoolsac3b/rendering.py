@@ -130,7 +130,7 @@ class CanvasBuilder(object):
     ``y_min_gr_zero`` smallest y greater zero (need in log plotting)
     ``canvas``        Reference to the TCanvas instance
     ``main_pad``      Reference to TPad instance
-    ``first_drawed``  TObject which is first drawed (for valid TAxis reference)
+    ``first_drawn``   TObject which is first drawed (for valid TAxis reference)
     ``legend``        Reference to TLegend object.
     ================= =========================================================
     """
@@ -142,7 +142,7 @@ class CanvasBuilder(object):
     y_min_gr_zero  = 0.
     canvas         = None
     main_pad       = None
-    first_drawed   = None
+    first_drawn    = None
     legend         = None
 
     def __init__(self, wrps, **kws):
@@ -197,8 +197,8 @@ class CanvasBuilder(object):
         rnds = self.renderers
         for i, rnd in enumerate(rnds):
             if not i:
-                self.first_drawed = rnd.primary_object()
-                self.first_drawed.SetTitle("")
+                self.first_drawn = rnd.primary_object()
+                self.first_drawn.SetTitle("")
                 rnd.draw("")
             else:
                 rnd.draw("same")
@@ -206,10 +206,10 @@ class CanvasBuilder(object):
     def do_final_cosmetics(self):
         """Pimp the canvas!"""
         y_min, y_max = self.y_bounds
-        self.first_drawed.GetXaxis().SetNoExponent()
-        self.first_drawed.GetXaxis().SetLabelSize(0.052)
-        #self.first_drawed.SetMinimum(y_min * 0.9)
-        self.first_drawed.SetMaximum(y_max * 1.1)
+        self.first_drawn.GetXaxis().SetNoExponent()
+        self.first_drawn.GetXaxis().SetLabelSize(0.052)
+        #self.first_drawn.SetMinimum(y_min * 0.9)
+        self.first_drawn.SetMaximum(y_max * 1.1)
 
     def run_procedure(self):
         """
