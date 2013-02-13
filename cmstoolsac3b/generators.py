@@ -484,7 +484,7 @@ def make_canvas_builder(grps):
         grp = _iterableize(grp)
         yield rnd.CanvasBuilder(grp)
 
-def decorate(wrps, decorators = list()):
+def decorate(wrps, decorators=None):
     """
     Decorate any iterable with a list of decorators.
 
@@ -497,6 +497,7 @@ def decorate(wrps, decorators = list()):
         result = decorate([CanvasBuilder, ...], [Legend, TextBox])
         # result = [Legend(TextBox(CanvasBuilder)), ...]
     """
+    if not decorators: decorators = {}
     for wrp in wrps:
         for dec in decorators:
             wrp = dec(wrp)
