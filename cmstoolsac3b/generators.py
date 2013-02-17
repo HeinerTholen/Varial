@@ -337,11 +337,11 @@ def apply_histo_fillcolor(wrps, colors=None):
     :param colors:  Integer list
     :yields:        HistoWrapper
     """
-    n, l = 0, len(colors)
+    n = 0
     for wrp in wrps:
         if hasattr(wrp, "histo"):
             if colors:
-                color = colors[n%l]
+                color = colors[n%len(colors)]
                 n += 1
             else:
                 color = settings.get_color(wrp.sample)
