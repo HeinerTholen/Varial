@@ -51,7 +51,7 @@ class HistoRenderer(Renderer, wrappers.HistoWrapper):
         if not histo: histo = self.histo
         nbins = histo.GetNbinsX()
         min_val = histo.GetMinimum() # min on y axis
-        if min_val < 1e-43 and histo.GetMaximum() > 1e-43: # should be greater than zero
+        if min_val < 1e-23 < histo.GetMaximum(): # should be greater than zero
             min_val = min(
                 histo.GetBinContent(i)
                     for i in xrange(nbins + 1)
@@ -130,7 +130,7 @@ class CanvasBuilder(object):
     ``y_min_gr_zero`` smallest y greater zero (need in log plotting)
     ``canvas``        Reference to the TCanvas instance
     ``main_pad``      Reference to TPad instance
-    ``first_drawed``  TObject which is first drawed (for valid TAxis reference)
+    ``first_drawn``   TObject which is first drawed (for valid TAxis reference)
     ``legend``        Reference to TLegend object.
     ================= =========================================================
     """
@@ -142,7 +142,8 @@ class CanvasBuilder(object):
     y_min_gr_zero  = 0.
     canvas         = None
     main_pad       = None
-    first_drawed   = None
+    second_pad     = None
+    first_drawn    = None
     legend         = None
 
     def __init__(self, wrps, **kws):
@@ -197,16 +198,19 @@ class CanvasBuilder(object):
         rnds = self.renderers
         for i, rnd in enumerate(rnds):
             if not i:
+                self.first_drawn = rnd.primary_object()
+                self.first_drawn.SetTitle("")
                 rnd.draw("")
-                self.first_drawed = rnd.primary_object()
             else:
                 rnd.draw("same")
 
     def do_final_cosmetics(self):
         """Pimp the canvas!"""
         y_min, y_max = self.y_bounds
-        self.first_drawed.SetMinimum(y_min * 0.9)
-        self.first_drawed.SetMaximum(y_max * 1.1)
+        self.first_drawn.GetXaxis().SetNoExponent()
+        self.first_drawn.GetXaxis().SetLabelSize(0.052)
+        #self.first_drawn.SetMinimum(y_min * 0.9)
+        self.first_drawn.SetMaximum(y_max * 1.1)
 
     def run_procedure(self):
         """
@@ -229,10 +233,21 @@ class CanvasBuilder(object):
 
         :return: ``CanvasWrapper`` instance.
         """
-        canvas = self.canvas
-        if not canvas:
+        if not self.canvas:
             self.run_procedure()
-        wrp = wrappers.CanvasWrapper(self.canvas, **self.kws)
+        canvas = self.canvas
+        canvas.Modified()
+        canvas.Update()
+        wrp = wrappers.CanvasWrapper(
+            canvas,
+            main_pad    = self.main_pad,
+            second_pad  = self.second_pad,
+            legend      = self.legend,
+            x_bounds    = self.x_bounds,
+            y_bounds    = self.y_bounds,
+            y_min_gr_0  = self.y_min_gr_zero,
+            **self.kws
+        )
         self._del_builder_refs()
         return wrp
 
@@ -246,7 +261,7 @@ class Legend(Decorator):
 
     Takes entries from ``self.main_pad.BuildLegend()`` .
     The box height is adjusted by the number of legend entries.
-    No border or shadow are printed. Keyword
+    No border or shadow are printed. See __init__ for keywords.
     """
     def __init__(self, inner, dd = "True", **kws):
         super(Legend, self).__init__(inner, dd)
@@ -261,7 +276,6 @@ class Legend(Decorator):
 
     def do_final_cosmetics(self):
         """
-
         Only ``do_final_cosmetics`` is overwritten here.
 
         If self.legend == None, this method will create a default legend and
@@ -269,9 +283,11 @@ class Legend(Decorator):
         """
         if self.legend: return
 
-        tmp_leg = self.main_pad.BuildLegend() # get legend entry objects
+        tmp_leg = self.main_pad.BuildLegend(0.1, 0.6, 0.5, 0.8) # get legend entry objects
         tobjects = [(entry.GetObject(), entry.GetLabel())
                     for entry in tmp_leg.GetListOfPrimitives()]
+        tmp_leg.Clear()
+        self.main_pad.GetListOfPrimitives().Remove(tmp_leg)
         tmp_leg.Delete()
 
         par = self.dec_par
@@ -283,13 +299,13 @@ class Legend(Decorator):
             tobjects.reverse()
         for obj in tobjects:
             if obj[1] == "Data" or obj[1] == "data":
-                self.legend.AddEntry(
+                legend.AddEntry(
                     obj[0],
                     obj[1],
                     par["opt_data"]
                 )
             else:
-                self.legend.AddEntry(
+                legend.AddEntry(
                     obj[0],
                     obj[1],
                     par["opt"]
@@ -297,6 +313,23 @@ class Legend(Decorator):
         legend.Draw()
         self.legend = legend
         self.decoratee.do_final_cosmetics()         # Call next inner class!!
+
+
+class LegendLeft(Legend):
+    """Just as Legend, but plotted on the left."""
+    def __init__(self, inner, dd = "True", **kws):
+        kws["x1"] = 0.19
+        kws["x2"] = 0.43
+        super(LegendLeft, self).__init__(inner, dd, **kws)
+
+
+class LegendRight(Legend):
+    """Just as Legend, but plotted on the right."""
+    def __init__(self, inner, dd = "True", **kws):
+        kws["x1"] = 0.67
+        kws["x2"] = 0.88
+        super(LegendRight, self).__init__(inner, dd, **kws)
+
 
 
 #TODO: Statbox from classes/CRUtilities

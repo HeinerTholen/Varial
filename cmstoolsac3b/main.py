@@ -76,7 +76,6 @@ def main(post_proc_tools=list(),
     # prepare...
     _process_settings_kws(settings_kws)
     _instanciate_samples()
-    settings.create_folders()
     app = QtCore.QCoreApplication(sys.argv)
     if logfilename:
         sys.stdout = StdOutTee(logfilename)
@@ -96,6 +95,9 @@ def main(post_proc_tools=list(),
         if not isinstance(tool, postprocessing.PostProcTool):
             tool = tool()
         pst.add_tool(tool)
+
+    # create folders
+    settings.create_folders()
 
     # SIGINT handler
     sig_handler = SigintHandler(cnt)
@@ -128,7 +130,6 @@ def main(post_proc_tools=list(),
     else:                                       # Nothing to do.
         print "I've got nothing to do!"
         exit(0)
-
 
 def standalone(post_proc_tool_classes, **settings_kws):
     """

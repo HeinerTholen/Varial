@@ -244,10 +244,16 @@ class CanvasWrapper(Wrapper):
                 "CanvasWrapper needs a TCanvas instance as first argument!"
             )
         super(CanvasWrapper, self).__init__(**kws)
-        self.canvas = canvas
-        self.lumi   = kws.get("lumi", 1.)
-        self.name   = canvas.GetName()
-        self.title  = canvas.GetTitle()
+        self.canvas     = canvas
+        self.main_pad   = kws.get("main_pad", canvas)
+        self.second_pad = kws.get("second_pad")
+        self.legend     = kws.get("legend")
+        self.x_bounds   = kws.get("x_bounds")
+        self.y_bounds   = kws.get("y_bounds")
+        self.y_min_gr_0 = kws.get("y_min_gr_0")
+        self.lumi       = kws.get("lumi", 1.)
+        self.name       = canvas.GetName()
+        self.title      = canvas.GetTitle()
 
     def primary_object(self):
         self.canvas.Modified()
