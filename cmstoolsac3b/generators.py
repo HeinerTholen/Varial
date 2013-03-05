@@ -86,7 +86,7 @@ def rejector(wrps, key_value_dict=None):
         wrps
     )
 
-def callback(wrps, filter_dict=None, func=None):
+def callback(wrps, func=None, filter_dict=None):
     """
     Do a special treatment for selected wrps! All wrps are yielded.
 
