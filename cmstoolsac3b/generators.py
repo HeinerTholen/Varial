@@ -236,8 +236,10 @@ gen_merge = generate_op(op.merge)  #: This is ``generate_op(cmstoolsac3b.operati
 gen_prod  = generate_op(op.prod)   #: This is ``generate_op(cmstoolsac3b.operations.prod)``
 gen_div   = generate_op(op.div)    #: This is ``generate_op(cmstoolsac3b.operations.div)``
 gen_lumi  = generate_op(op.lumi)   #: This is ``generate_op(cmstoolsac3b.operations.lumi)``
+gen_norm_to_lumi  = generate_op(op.norm_to_lumi)   #: This is ``generate_op(cmstoolsac3b.operations.norm_to_lumi)``
+gen_norm_to_integral = generate_op(op.norm_to_integral)   #: This is ``generate_op(cmstoolsac3b.operations.norm_to_integral)``
 gen_mv_in = generate_op(op.mv_in)  #: This is ``generate_op(cmstoolsac3b.operations.mv_in)``
-gen_int   = generate_op(op.int)    #: This is ``generate_op(cmstoolsac3b.operations.int)``
+gen_integral   = generate_op(op.integral)    #: This is ``generate_op(cmstoolsac3b.operations.integral)``
 gen_int_l = generate_op(op.int_l)  #: This is ``generate_op(cmstoolsac3b.operations.int_l)``
 gen_int_r = generate_op(op.int_r)  #: This is ``generate_op(cmstoolsac3b.operations.int_r)``
 

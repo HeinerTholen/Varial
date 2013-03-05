@@ -303,6 +303,59 @@ def lumi(wrp):
     return wrappers.FloatWrapper(wrp.lumi, **info)
 
 @history.track_history
+def norm_to_lumi(wrp):
+    """
+    Applies to HistoWrapper. Returns HistoWrapper.
+    
+    >>> from ROOT import TH1I
+    >>> h1 = TH1I("h1", "", 2, .5, 2.5)
+    >>> h1.Fill(1, 4)
+    1
+    >>> w1 = wrappers.HistoWrapper(h1, lumi=2.)
+    >>> w1.histo.Integral()
+    4.0
+    >>> w2 = norm_to_lumi(w1)
+    >>> w2.histo.Integral()
+    2.0
+    """
+    if not isinstance(wrp, wrappers.HistoWrapper):
+        raise WrongInputError(
+            "norm_to_lumi needs argument of type HistoWrapper. histo: "
+            + str(wrp)
+        )
+    histo = wrp.histo.Clone()
+    info = wrp.all_info()
+    histo.Scale(1. / wrp.lumi)
+    return wrappers.HistoWrapper(histo, **info)
+
+@history.track_history
+def norm_to_integral(wrp, useBinWidth=False):
+    """
+    Applies to HistoWrapper. Returns HistoWrapper.
+    
+    >>> from ROOT import TH1I
+    >>> h1 = TH1I("h1", "", 2, .5, 2.5)
+    >>> h1.Fill(1, 4)
+    1
+    >>> w1 = wrappers.HistoWrapper(h1, lumi=2.)
+    >>> w1.histo.Integral()
+    4.0
+    >>> w2 = norm_to_integral(w1)
+    >>> w2.histo.Integral()
+    1.0
+    """
+    if not isinstance(wrp, wrappers.HistoWrapper):
+        raise WrongInputError(
+            "norm_to_lumi needs argument of type HistoWrapper. histo: "
+            + str(wrp)
+        )
+    histo = wrp.histo.Clone()
+    info = wrp.all_info()
+    option = "width" if useBinWidth else ""
+    histo.Scale(1. / wrp.histo.Integral(option))
+    return wrappers.HistoWrapper(histo, **info)
+
+@history.track_history
 def mv_in(wrp, overflow=True, underflow=True):
     """
     Moves under- and/or overflow bin into first/last bin.
@@ -349,7 +402,7 @@ def mv_in(wrp, overflow=True, underflow=True):
     return wrappers.HistoWrapper(histo, **wrp.all_info())
 
 @history.track_history
-def int(wrp, useBinWidth=False):
+def integral(wrp, useBinWidth=False):
     """
     Integral. Applies to HistoWrapper. Returns FloatWrapper.
     
@@ -360,10 +413,10 @@ def int(wrp, useBinWidth=False):
     >>> h1.Fill(3,3)
     2
     >>> w1 = wrappers.HistoWrapper(h1)
-    >>> w2 = int(w1)
+    >>> w2 = integral(w1)
     >>> w2.float
     4.0
-    >>> w3 = int(w1, True)
+    >>> w3 = integral(w1, True)
     >>> w3.float
     8.0
     """
