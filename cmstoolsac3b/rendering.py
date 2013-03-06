@@ -251,6 +251,8 @@ class CanvasBuilder(object):
         self._del_builder_refs()
         return wrp
 
+    #TODO: Think about making CanvasWrapper and CanvasBuilder one object
+
 ############################################# customization with decorators ###
 from cmstoolsac3b.decorator import Decorator
 from ROOT import TLegend
