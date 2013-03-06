@@ -428,8 +428,10 @@ def switch_log_scale(cnvs, y_axis=True, x_axis=False):
         else:
             cnv.main_pad.SetLogx(0)
         if y_axis:
+            cnv.first_drawn.SetMinimum(cnv.y_min_gr_0 * 0.5)
             cnv.main_pad.SetLogy(1)
         else:
+            cnv.first_drawn.SetMinimum(cnv.y_min)
             cnv.main_pad.SetLogy(0)
         yield cnv
 

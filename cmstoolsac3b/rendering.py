@@ -55,7 +55,7 @@ class HistoRenderer(Renderer, wrappers.HistoWrapper):
             min_val = min(
                 histo.GetBinContent(i)
                     for i in xrange(nbins + 1)
-                    if histo.GetBinContent(i) > 1e-43
+                    if histo.GetBinContent(i) > 1e-23
             )
         return min_val
 
@@ -243,6 +243,7 @@ class CanvasBuilder(object):
             main_pad    = self.main_pad,
             second_pad  = self.second_pad,
             legend      = self.legend,
+            first_drawn = self.first_drawn,
             x_bounds    = self.x_bounds,
             y_bounds    = self.y_bounds,
             y_min_gr_0  = self.y_min_gr_zero,
