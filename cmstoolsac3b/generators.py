@@ -328,7 +328,7 @@ def save(wrps, filename_func, suffices = None):
                 wrp.write_info_file(filename + ".info")
         yield wrp
 
-################################################### application & packaging ###
+################################################################## plotting ###
 import rendering as rnd
 
 def apply_histo_fillcolor(wrps, colors=None):
@@ -371,6 +371,48 @@ def apply_histo_linecolor(wrps, colors=None):
                 wrp.histo.SetLineColor(color)
         yield wrp
 
+def make_canvas_builder(grps):
+    """
+    Yields instanciated CanvasBuilders.
+
+    :param grps:    grouped or ungrouped Wrapper iterable
+                    if grouped: on canvas for each group
+    :yields:        CanvasBuilder instance
+    """
+    for grp in grps:
+        grp = _iterableize(grp)
+        yield rnd.CanvasBuilder(grp)
+
+def decorate(wrps, decorators=None):
+    """
+    Decorate any iterable with a list of decorators.
+
+    :param wrps:        Wrapper (or CanvasBuilder) iterable
+    :param decorators:  list of decorator classes.
+    :yields:            Wrapper (or CanvasBuilder)
+
+    **Example:** ::
+
+        result = decorate([CanvasBuilder, ...], [Legend, TextBox])
+        # result = [Legend(TextBox(CanvasBuilder)), ...]
+    """
+    if not decorators: decorators = {}
+    for wrp in wrps:
+        for dec in decorators:
+            wrp = dec(wrp)
+        yield wrp
+
+def build_canvas(bldrs):
+    """
+    Calls the ``build_canvas()`` method and returns the result.
+
+    :param bldrs:   CanvasBuilder iterable
+    :yields:        CanvasWrapper
+    """
+    for bldr in bldrs:
+        yield bldr.build_canvas()
+
+################################################### application & packaging ###
 def fs_filter_sort_load(filter_dict=None, sort_keys=None):
     """
     Packaging of filtering, sorting and loading.
@@ -477,47 +519,6 @@ def fs_mc_stack_n_data_sum(filter_dict=None, merge_mc_key_func=None):
     loaded = fs_filter_sort_load(filter_dict)
     grouped = group(loaded) # default: group by analyzer_histo (the fs histo 'ID')
     return mc_stack_n_data_sum(grouped, merge_mc_key_func)
-
-def make_canvas_builder(grps):
-    """
-    Yields instanciated CanvasBuilders.
-
-    :param grps:    grouped or ungrouped Wrapper iterable
-                    if grouped: on canvas for each group
-    :yields:        CanvasBuilder instance
-    """
-    for grp in grps:
-        grp = _iterableize(grp)
-        yield rnd.CanvasBuilder(grp)
-
-def decorate(wrps, decorators=None):
-    """
-    Decorate any iterable with a list of decorators.
-
-    :param wrps:        Wrapper (or CanvasBuilder) iterable
-    :param decorators:  list of decorator classes.
-    :yields:            Wrapper (or CanvasBuilder)
-
-    **Example:** ::
-
-        result = decorate([CanvasBuilder, ...], [Legend, TextBox])
-        # result = [Legend(TextBox(CanvasBuilder)), ...]
-    """
-    if not decorators: decorators = {}
-    for wrp in wrps:
-        for dec in decorators:
-            wrp = dec(wrp)
-        yield wrp
-
-def build_canvas(bldrs):
-    """
-    Calls the ``build_canvas()`` method and returns the result.
-
-    :param bldrs:   CanvasBuilder iterable
-    :yields:        CanvasWrapper
-    """
-    for bldr in bldrs:
-        yield bldr.build_canvas()
 
 def canvas(grps, 
            decorators=list(), 
