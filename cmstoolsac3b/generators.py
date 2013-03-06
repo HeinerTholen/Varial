@@ -412,6 +412,27 @@ def build_canvas(bldrs):
     for bldr in bldrs:
         yield bldr.build_canvas()
 
+def switch_log_scale(cnvs, y_axis=True, x_axis=False):
+    """
+    Sets main_pad in canvases to logscale.
+    
+    :param cnvs:    CanvasWrapper iterable
+    :param x_axis:  boolean for x axis
+    :param y_axis:  boolean for y axis
+    :yields:        CanvasWrapper
+    """
+    for cnv in cnvs:
+        assert isinstance(cnv, rnd.wrappers.CanvasWrapper)
+        if x_axis:
+            cnv.main_pad.SetLogx(1)
+        else:
+            cnv.main_pad.SetLogx(0)
+        if y_axis:
+            cnv.main_pad.SetLogy(1)
+        else:
+            cnv.main_pad.SetLogy(0)
+        yield cnv
+
 ################################################### application & packaging ###
 def fs_filter_sort_load(filter_dict=None, sort_keys=None):
     """
