@@ -371,6 +371,19 @@ def apply_histo_linecolor(wrps, colors=None):
                 wrp.histo.SetLineColor(color)
         yield wrp
 
+def apply_histo_linewidth(wrps, linewidth=2):
+    """
+    Uses ``histo.SetLineWidth``. Default is 2.
+
+    :param wrps:        HistoWrapper iterable
+    :param line_width:  argument for SetLineWidth
+    :yields:            HistoWrapper
+    """
+    for wrp in wrps:
+        if hasattr(wrp, "histo"):
+            wrp.histo.SetLineWidth(2)
+        yield wrp
+
 def make_canvas_builder(grps):
     """
     Yields instanciated CanvasBuilders.
