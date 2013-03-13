@@ -107,6 +107,7 @@ def main(post_proc_tools=list(),
     # (all other finishing connections before this one)
     cnt.all_finished.connect(app.quit)
 
+    # TODO: do not execute postproctools when crtl-c was hit.
     # GO!
     if not cnt.waiting_pros:                    # No jobs, no running.
         print "INFO: I have no cmsRun jobs. Quitting..."
