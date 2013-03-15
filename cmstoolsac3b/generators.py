@@ -99,12 +99,11 @@ def callback(wrps, func=None, filter_dict=None):
 
         def make_blue(wrp):
             wrp.histo.SetFillColor(ROOT.kBlue)
-            return wrp # IMPORTANT! RETURN THE WRAPPER!
 
         callback(
             wrappers,
-            {"is_data": False}
             make_blue
+            {"is_data": False}
         )
     """
     if not func:
@@ -114,7 +113,7 @@ def callback(wrps, func=None, filter_dict=None):
         if not filter_dict: filter_dict = {}
         for wrp in wrps:
             if all(_filt_req(wrp, filter_dict)):
-                wrp = func(wrp)
+                func(wrp)
             yield wrp
 
 def sort(wrps, key_list=None):
