@@ -81,6 +81,9 @@ def main(post_proc_tools=list(),
         sys.stdout = StdOutTee(logfilename)
         sys.stderr = sys.stdout
 
+    # create folders (for process confs)
+    settings.create_folders()
+
     # controller
     cnt = controller.Controller()
     cnt.setup_processes()
@@ -96,7 +99,7 @@ def main(post_proc_tools=list(),
             tool = tool()
         pst.add_tool(tool)
 
-    # create folders
+    # create folders (for plottools)
     settings.create_folders()
 
     # SIGINT handler
