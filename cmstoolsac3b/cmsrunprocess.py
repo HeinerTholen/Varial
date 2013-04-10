@@ -180,7 +180,10 @@ class CmsRunProcess(QtCore.QProcess):
         else:
             self.jobinfo.clear()
             self.jobinfo.sync()
-            super(CmsRunProcess, self).start(self.exe, [self.conf_filename])
+            super(CmsRunProcess, self).start(
+                self.exe, 
+                [self.conf_filename] + self.sample.cmsRun_args
+            )
 
     def terminate(self):
         """

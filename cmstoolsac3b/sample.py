@@ -30,6 +30,7 @@ class Sample(wrappers._dict_base):
     output_file     = ""
     cfg_builtin     = {}
     cfg_add_lines   = []
+    cmsRun_args     = []
     class MissingDefinition(Exception): pass
 
     def __init__(self):
@@ -37,10 +38,12 @@ class Sample(wrappers._dict_base):
         if not getattr(self, "name", 0):
             self.name = self.__class__.__name__
         tbd = "TO BE DECLARED: "
-        if not isinstance(self.input_files, collections.Iterable):
+        if isinstance(self.input_files, str):
             self.input_files = [self.input_files]
-        if not isinstance(self.cfg_add_lines, collections.Iterable):
+        if isinstance(self.cfg_add_lines, str):
             self.cfg_add_lines = [self.cfg_add_lines]
+        if isinstance(self.cmsRun_args, str):
+            self.cmsRun_args = self.cmsRun_args.split()
         if self.x_sec and self.n_events:
             self.lumi = self.n_events / float(self.x_sec)
         if not self.lumi:
