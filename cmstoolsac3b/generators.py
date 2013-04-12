@@ -7,21 +7,26 @@ import operator
 
 def _iterableize(obj_or_iterable):
     """provides iterable for [obj OR iterable(obj)]"""
-    if isinstance(obj_or_iterable, collections.Iterable):
+    if (isinstance(obj_or_iterable, collections.Iterable)
+    and not type(obj_or_iterable) == str):
         for o in obj_or_iterable:
             yield o
     else:
         yield obj_or_iterable
 
-def _filt_req(wrp, filter_dict): # generator over True/False
-    for key, value in filter_dict.iteritems():
+def _filt_items(wrp, key, value_list):
+    """yields True/False for every value in value_list"""
+    for val in value_list:
         try:
-            yield getattr(wrp,key," ") in value # handle iterable
-        except TypeError:
-            if hasattr(value, "search"):
-                yield bool(value.search(getattr(wrp,key," ")))
-            else:
-                yield getattr(wrp,key," ") == value # handle non-iterable
+            yield bool(val.search(getattr(wrp,key," ")))
+        except AttributeError:
+            yield getattr(wrp,key," ") == val
+
+def _filt_req(wrp, filter_dict):
+    """Yields True/False for each item in filter_dict"""
+    for key, value in filter_dict.iteritems():
+        value = _iterableize(value)
+        yield any(_filt_items(wrp, key, value))
 
 def debug_printer(iterable, print_obj=True):
     """

@@ -55,6 +55,7 @@ class TestGenerators(TestHistoToolsBase):
         data     = gen.filter(aliases, {"is_data": True})
         tmplt    = gen.filter(aliases, {"analyzer": "fakeTemplate"})
         crtlplt  = gen.filter(aliases, {"analyzer": re.compile("CrtlFilt*")})
+        crtlplt2 = gen.filter(aliases, {"analyzer": [re.compile("CrtlFilt*")]})
         ttgam_cf = gen.filter(aliases,
             {
                 "name": "cutflow",
@@ -64,6 +65,7 @@ class TestGenerators(TestHistoToolsBase):
         self.assertEqual(gen.consume_n_count(data), 52)
         self.assertEqual(gen.consume_n_count(tmplt), 9)
         self.assertEqual(gen.consume_n_count(crtlplt), 39)
+        self.assertEqual(gen.consume_n_count(crtlplt2), 39)
         self.assertEqual(gen.consume_n_count(ttgam_cf), 2)
 
     def test_gen_special_treat(self):
