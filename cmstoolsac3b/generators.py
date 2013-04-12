@@ -86,7 +86,7 @@ def rejector(wrps, key_value_dict=None):
         wrps
     )
 
-def callback(wrps, filter_dict=None, func=None):
+def callback(wrps, func=None, filter_dict=None):
     """
     Do a special treatment for selected wrps! All wrps are yielded.
 
@@ -99,12 +99,11 @@ def callback(wrps, filter_dict=None, func=None):
 
         def make_blue(wrp):
             wrp.histo.SetFillColor(ROOT.kBlue)
-            return wrp # IMPORTANT! RETURN THE WRAPPER!
 
         callback(
             wrappers,
-            {"is_data": False}
             make_blue
+            {"is_data": False}
         )
     """
     if not func:
@@ -114,7 +113,7 @@ def callback(wrps, filter_dict=None, func=None):
         if not filter_dict: filter_dict = {}
         for wrp in wrps:
             if all(_filt_req(wrp, filter_dict)):
-                wrp = func(wrp)
+                func(wrp)
             yield wrp
 
 def sort(wrps, key_list=None):
@@ -236,8 +235,10 @@ gen_merge = generate_op(op.merge)  #: This is ``generate_op(cmstoolsac3b.operati
 gen_prod  = generate_op(op.prod)   #: This is ``generate_op(cmstoolsac3b.operations.prod)``
 gen_div   = generate_op(op.div)    #: This is ``generate_op(cmstoolsac3b.operations.div)``
 gen_lumi  = generate_op(op.lumi)   #: This is ``generate_op(cmstoolsac3b.operations.lumi)``
+gen_norm_to_lumi  = generate_op(op.norm_to_lumi)   #: This is ``generate_op(cmstoolsac3b.operations.norm_to_lumi)``
+gen_norm_to_integral = generate_op(op.norm_to_integral)   #: This is ``generate_op(cmstoolsac3b.operations.norm_to_integral)``
 gen_mv_in = generate_op(op.mv_in)  #: This is ``generate_op(cmstoolsac3b.operations.mv_in)``
-gen_int   = generate_op(op.int)    #: This is ``generate_op(cmstoolsac3b.operations.int)``
+gen_integral   = generate_op(op.integral)    #: This is ``generate_op(cmstoolsac3b.operations.integral)``
 gen_int_l = generate_op(op.int_l)  #: This is ``generate_op(cmstoolsac3b.operations.int_l)``
 gen_int_r = generate_op(op.int_r)  #: This is ``generate_op(cmstoolsac3b.operations.int_r)``
 
@@ -326,7 +327,7 @@ def save(wrps, filename_func, suffices = None):
                 wrp.write_info_file(filename + ".info")
         yield wrp
 
-################################################### application & packaging ###
+################################################################## plotting ###
 import rendering as rnd
 
 def apply_histo_fillcolor(wrps, colors=None):
@@ -357,11 +358,11 @@ def apply_histo_linecolor(wrps, colors=None):
     :param colors:  Integer list
     :yields:        HistoWrapper
     """
-    n, l = 0, len(colors)
+    n = 0
     for wrp in wrps:
         if hasattr(wrp, "histo"):
             if colors:
-                color = colors[n%l]
+                color = colors[n%len(colors)]
                 n += 1
             else:
                 color = settings.get_color(wrp.sample)
@@ -369,6 +370,84 @@ def apply_histo_linecolor(wrps, colors=None):
                 wrp.histo.SetLineColor(color)
         yield wrp
 
+def apply_histo_linewidth(wrps, linewidth=2):
+    """
+    Uses ``histo.SetLineWidth``. Default is 2.
+
+    :param wrps:        HistoWrapper iterable
+    :param line_width:  argument for SetLineWidth
+    :yields:            HistoWrapper
+    """
+    for wrp in wrps:
+        if hasattr(wrp, "histo"):
+            wrp.histo.SetLineWidth(2)
+        yield wrp
+
+def make_canvas_builder(grps):
+    """
+    Yields instanciated CanvasBuilders.
+
+    :param grps:    grouped or ungrouped Wrapper iterable
+                    if grouped: on canvas for each group
+    :yields:        CanvasBuilder instance
+    """
+    for grp in grps:
+        grp = _iterableize(grp)
+        yield rnd.CanvasBuilder(grp)
+
+def decorate(wrps, decorators=None):
+    """
+    Decorate any iterable with a list of decorators.
+
+    :param wrps:        Wrapper (or CanvasBuilder) iterable
+    :param decorators:  list of decorator classes.
+    :yields:            Wrapper (or CanvasBuilder)
+
+    **Example:** ::
+
+        result = decorate([CanvasBuilder, ...], [Legend, TextBox])
+        # result = [Legend(TextBox(CanvasBuilder)), ...]
+    """
+    if not decorators: decorators = {}
+    for wrp in wrps:
+        for dec in decorators:
+            wrp = dec(wrp)
+        yield wrp
+
+def build_canvas(bldrs):
+    """
+    Calls the ``build_canvas()`` method and returns the result.
+
+    :param bldrs:   CanvasBuilder iterable
+    :yields:        CanvasWrapper
+    """
+    for bldr in bldrs:
+        yield bldr.build_canvas()
+
+def switch_log_scale(cnvs, y_axis=True, x_axis=False):
+    """
+    Sets main_pad in canvases to logscale.
+    
+    :param cnvs:    CanvasWrapper iterable
+    :param x_axis:  boolean for x axis
+    :param y_axis:  boolean for y axis
+    :yields:        CanvasWrapper
+    """
+    for cnv in cnvs:
+        assert isinstance(cnv, rnd.wrappers.CanvasWrapper)
+        if x_axis:
+            cnv.main_pad.SetLogx(1)
+        else:
+            cnv.main_pad.SetLogx(0)
+        if y_axis:
+            cnv.first_drawn.SetMinimum(cnv.y_min_gr_0 * 0.5)
+            cnv.main_pad.SetLogy(1)
+        else:
+            cnv.first_drawn.SetMinimum(cnv.y_min)
+            cnv.main_pad.SetLogy(0)
+        yield cnv
+
+################################################### application & packaging ###
 def fs_filter_sort_load(filter_dict=None, sort_keys=None):
     """
     Packaging of filtering, sorting and loading.
@@ -475,47 +554,6 @@ def fs_mc_stack_n_data_sum(filter_dict=None, merge_mc_key_func=None):
     loaded = fs_filter_sort_load(filter_dict)
     grouped = group(loaded) # default: group by analyzer_histo (the fs histo 'ID')
     return mc_stack_n_data_sum(grouped, merge_mc_key_func)
-
-def make_canvas_builder(grps):
-    """
-    Yields instanciated CanvasBuilders.
-
-    :param grps:    grouped or ungrouped Wrapper iterable
-                    if grouped: on canvas for each group
-    :yields:        CanvasBuilder instance
-    """
-    for grp in grps:
-        grp = _iterableize(grp)
-        yield rnd.CanvasBuilder(grp)
-
-def decorate(wrps, decorators=None):
-    """
-    Decorate any iterable with a list of decorators.
-
-    :param wrps:        Wrapper (or CanvasBuilder) iterable
-    :param decorators:  list of decorator classes.
-    :yields:            Wrapper (or CanvasBuilder)
-
-    **Example:** ::
-
-        result = decorate([CanvasBuilder, ...], [Legend, TextBox])
-        # result = [Legend(TextBox(CanvasBuilder)), ...]
-    """
-    if not decorators: decorators = {}
-    for wrp in wrps:
-        for dec in decorators:
-            wrp = dec(wrp)
-        yield wrp
-
-def build_canvas(bldrs):
-    """
-    Calls the ``build_canvas()`` method and returns the result.
-
-    :param bldrs:   CanvasBuilder iterable
-    :yields:        CanvasWrapper
-    """
-    for bldr in bldrs:
-        yield bldr.build_canvas()
 
 def canvas(grps, 
            decorators=list(), 

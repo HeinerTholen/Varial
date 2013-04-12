@@ -15,7 +15,8 @@ cfg_output_module_name  = "out"
 cfg_common_builtins     = {}
 
 ################################################################### samples ###
-samples = {}
+samples = {}       # all samples being processed
+samples_stack = [] # list of strings of samplenames for data/MC comparison
 def mc_samples():
     """Returns a dict of all MC samples."""
     return dict((k,v) for k,v in samples.iteritems() if not v.is_data)

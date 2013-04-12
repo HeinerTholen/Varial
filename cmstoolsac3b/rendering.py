@@ -55,7 +55,7 @@ class HistoRenderer(Renderer, wrappers.HistoWrapper):
             min_val = min(
                 histo.GetBinContent(i)
                     for i in xrange(nbins + 1)
-                    if histo.GetBinContent(i) > 1e-43
+                    if histo.GetBinContent(i) > 1e-23
             )
         return min_val
 
@@ -130,6 +130,7 @@ class CanvasBuilder(object):
     ``y_min_gr_zero`` smallest y greater zero (need in log plotting)
     ``canvas``        Reference to the TCanvas instance
     ``main_pad``      Reference to TPad instance
+    ``second_pad``    Reference to TPad instance or None
     ``first_drawn``   TObject which is first drawed (for valid TAxis reference)
     ``legend``        Reference to TLegend object.
     ================= =========================================================
@@ -169,6 +170,12 @@ class CanvasBuilder(object):
         self.name  = kws.get("name", rnds[0].name)
         self.title = kws.get("title", rnds[0].title)
 
+    def __del__(self):
+        """Remove the pads first."""
+        if self.second_pad:
+            self.main_pad.Delete()
+            self.main_pad.Delete()
+
     def configure(self):
         """Called at first. Can be used to initialize decorators."""
 
@@ -195,8 +202,7 @@ class CanvasBuilder(object):
 
     def draw_full_plot(self):
         """The renderers draw method is called."""
-        rnds = self.renderers
-        for i, rnd in enumerate(rnds):
+        for i, rnd in enumerate(self.renderers):
             if not i:
                 self.first_drawn = rnd.primary_object()
                 self.first_drawn.SetTitle("")
@@ -243,6 +249,7 @@ class CanvasBuilder(object):
             main_pad    = self.main_pad,
             second_pad  = self.second_pad,
             legend      = self.legend,
+            first_drawn = self.first_drawn,
             x_bounds    = self.x_bounds,
             y_bounds    = self.y_bounds,
             y_min_gr_0  = self.y_min_gr_zero,
@@ -251,11 +258,14 @@ class CanvasBuilder(object):
         self._del_builder_refs()
         return wrp
 
-############################################# customization with decorators ###
-from cmstoolsac3b.decorator import Decorator
-from ROOT import TLegend
+    #TODO: Think about making CanvasWrapper and CanvasBuilder one object
 
-class Legend(Decorator):
+############################################# customization with decorators ###
+import decorator as dec
+import operations as op
+from ROOT import TLegend, TPad
+
+class Legend(dec.Decorator):
     """
     Adds a legend to the main_pad.
 
@@ -330,6 +340,109 @@ class LegendRight(Legend):
         kws["x2"] = 0.88
         super(LegendRight, self).__init__(inner, dd, **kws)
 
+
+class BottomPlot(dec.Decorator):
+    """Base class for all plot business at the bottom of the canvas."""
+    def __init__(self, inner, dd = "True", **kws):
+        super(BottomPlot, self).__init__(inner, dd, **kws)
+        self.dec_par["draw_opt"] = kws.get("draw_opt", "E1")
+
+    def define_bottom_hist(self):
+        """Overwrite this method and give a histo-ref to self.bottom_hist."""
+        pass
+
+    def make_empty_canvas(self):
+        """Instanciate canvas with two pads."""
+        # canvas
+        self.decoratee.make_empty_canvas()
+        name = self.name
+        self.main_pad = TPad(
+            "main_pad_" + name, 
+            "main_pad_" + name, 
+            0, 0.25, 1, 1
+        )
+        # main (upper) pad
+        main_pad = self.main_pad
+        main_pad.SetTopMargin(0.1)
+        main_pad.SetBottomMargin(0.)
+        main_pad.SetRightMargin(0.04)
+        main_pad.SetLeftMargin(0.16)
+        main_pad.Draw()
+        # bottom pad
+        self.canvas.cd()
+        self.second_pad = TPad(
+            "bottom_pad_" + name, 
+            "bottom_pad_" + name, 
+            0, 0, 1, 0.25
+        )
+        second_pad = self.second_pad
+        second_pad.SetTopMargin(0.)
+        second_pad.SetBottomMargin(0.375)
+        second_pad.SetRightMargin(0.04)
+        second_pad.SetLeftMargin(0.16)
+        second_pad.SetGridy()
+        second_pad.Draw()
+
+    def draw_full_plot(self):
+        """Make bottom plot, draw both."""
+        # draw main histogram
+        self.main_pad.cd()
+        self.decoratee.draw_full_plot()
+        first_drawn = self.first_drawn
+        first_drawn.GetYaxis().CenterTitle(1)
+        first_drawn.GetYaxis().SetTitleSize(0.055)
+        first_drawn.GetYaxis().SetTitleOffset(1.3)
+        first_drawn.GetYaxis().SetLabelSize(0.055)
+        first_drawn.GetXaxis().SetNdivisions(505)
+        # make bottom histo and draw it
+        self.second_pad.cd()
+        self.define_bottom_hist()
+        bottom_hist = self.bottom_hist
+
+        bottom_hist.GetYaxis().CenterTitle(1)
+        bottom_hist.GetYaxis().SetTitleSize(0.165) #0.11
+        bottom_hist.GetYaxis().SetTitleOffset(0.44) #0.55
+        bottom_hist.GetYaxis().SetLabelSize(0.16)
+        bottom_hist.GetYaxis().SetNdivisions(205)
+
+        bottom_hist.GetXaxis().SetNoExponent()
+        bottom_hist.GetXaxis().SetTitleSize(0.16)
+        bottom_hist.GetXaxis().SetLabelSize(0.17)
+        bottom_hist.GetXaxis().SetTitleOffset(1)
+        bottom_hist.GetXaxis().SetLabelOffset(0.006)
+        bottom_hist.GetXaxis().SetNdivisions(505)
+        bottom_hist.GetXaxis().SetTickLength(
+            bottom_hist.GetXaxis().GetTickLength() * 3.
+        )
+
+        bottom_hist.SetTitle("")
+        bottom_hist.SetYTitle("Ratio")
+        bottom_hist.SetLineColor(1)
+        bottom_hist.SetLineStyle(1)
+#        y_min = self.dec_par["y_min"]
+#        y_max = self.dec_par["y_max"]
+#        hist_min = bottom_hist.GetMinimum()
+#        hist_max = bottom_hist.GetMaximum()
+#        if y_min < hist_min:
+#            y_min = hist_min
+#        if y_max > hist_max:
+#            y_max = hist_max
+#        bottom_hist.GetYaxis().SetRangeUser(y_min, y_max)
+        bottom_hist.Draw(self.dec_par["draw_opt"])
+
+        # set focus on main_pad for further drawing
+        self.main_pad.cd()
+
+
+class BottomPlotRatio(BottomPlot):
+    """Ratio of first and second histogram in canvas."""
+    def define_bottom_hist(self):
+        rnds = self.renderers
+        assert(len(rnds) > 1)
+        wrp = op.div(iter(rnds))
+        wrp.histo.SetYTitle("Data/MC")
+        self.bottom_hist = wrp.histo
+        #TODO: use HistoRenderer here
 
 
 #TODO: Statbox from classes/CRUtilities

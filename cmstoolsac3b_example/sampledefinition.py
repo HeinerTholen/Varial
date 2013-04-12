@@ -39,4 +39,5 @@ class OtherMCSample(smp.Sample):
         "print \"these code lines are appended to\"",
         "print \"the sample-specific cfg file.\""
     ]
+    cmsRun_args     = "this is passed to cmsRun execution"  #: can be string or list of strings
 
