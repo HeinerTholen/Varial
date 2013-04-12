@@ -201,8 +201,8 @@ def generate_op(op_func):
     :param op_func: callable
     :returns:       generator
 
-    **Example:** The ``lumi`` and ``int`` operations are generatorized below
-    (notice that ``w1``,``w2`` and ``w3`` are iterables):
+    **Example:** The ``lumi`` and ``integral`` operations are generatorized
+    below (notice that ``w1``,``w2`` and ``w3`` are iterables):
 
     >>> from ROOT import TH1I
     >>> from cmstoolsac3b.wrappers import HistoWrapper
@@ -216,7 +216,7 @@ def generate_op(op_func):
     >>> w2 = list(gen_lumi(w1))
     >>> w2[0].float
     2.0
-    >>> gen_int = generate_op(op.int)
+    >>> gen_int = generate_op(op.integral)
     >>> w3 = list(gen_int(w1))
     >>> w3[0].float
     2.0

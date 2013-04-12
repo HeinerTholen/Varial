@@ -80,8 +80,8 @@ class TestGenerators(TestHistoToolsBase):
         treat_func = TreatCls(self)
         treated = gen.callback(
             gen.fs_content(),
-            {"sample":sample, "name":name},
-            treat_func
+            treat_func,
+            {"sample":sample, "name":name}
         )
         self.assertEqual(gen.consume_n_count(treated), 150)
         self.assertEqual(treat_func.n_times_called, 2)
