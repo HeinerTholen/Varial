@@ -11,9 +11,16 @@ class TestWrapper(TestHistoToolsBase):
     def test_write_info_file(self):
         fname = "test/wrp_save.info"
         self.test_wrp.write_info_file(fname)
+        # file should exist
         self.assertTrue(
             os.path.exists(fname)
         )
+        # file should have 7 lines (with history written out)
+        n_lines = 0
+        with open(fname) as fhandle:
+            for line in fhandle:
+                n_lines += 1
+        self.assertEqual(n_lines, 7)
 
     def test_create_from_file(self):
         fname = "test/wrp_load.info"
