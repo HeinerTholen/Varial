@@ -1,5 +1,10 @@
 # operations.py
 
+"""
+Module operations
+"""
+#TODO: Guideline write an operation: arguments and return values for good history
+
 import ctypes
 import collections
 import settings
