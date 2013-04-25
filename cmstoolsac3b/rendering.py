@@ -460,5 +460,4 @@ class BottomPlotRatio(BottomPlot):
 #TODO: Statbox from classes/CRUtilities
 #TODO: Stuff from tools/CRHistoStackerDecorators
 
-#TODO: ADD HISTORY TO RENDERING!!! FAST!
 
