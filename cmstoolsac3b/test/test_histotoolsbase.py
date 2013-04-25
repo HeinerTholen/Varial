@@ -45,8 +45,8 @@ class TestHistoToolsBase(unittest.TestCase):
         h1 = TH1I("h1", "H1", 2, .5, 4.5)
         h1.Fill(1)
         h1.Fill(3,2)
-        hist = History("some_op") # create some fake history
-        hist.add_args([History("input_A"), History("input_B")])
+        hist = History("test_op") # create some fake history
+        hist.add_args([History("fake_input_A"), History("fake_input_B")])
         hist.add_kws({"john":"cleese"})
         self.test_wrp = HistoWrapper(
             h1,

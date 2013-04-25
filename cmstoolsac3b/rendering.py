@@ -91,6 +91,7 @@ class StackRenderer(HistoRenderer, wrappers.StackWrapper):
 
 ############################################################ canvas-builder ###
 import settings
+import history
 from ROOT import TCanvas, TObject
 
 def _renderize(wrp): #TODO maybe use reflection here??
@@ -106,6 +107,7 @@ def _renderize_iter(wrps):
     for wrp in wrps:
         rnds.append(_renderize(wrp))
     return rnds
+
 
 class CanvasBuilder(object):
     """
@@ -228,6 +230,15 @@ class CanvasBuilder(object):
         self.draw_full_plot()
         self.do_final_cosmetics()
 
+    def _track_canvas_history(self):
+        list_of_histories = []
+        for rnd in self.renderers:
+            list_of_histories.append(rnd.history)
+        hstry = history.History(self.__class__.__name__)
+        hstry.add_args(list_of_histories)
+        hstry.add_kws(self.kws)
+        return hstry
+
     def _del_builder_refs(self):
         for k,obj in self.__dict__.items():
             if isinstance(obj, TObject):
@@ -253,6 +264,7 @@ class CanvasBuilder(object):
             x_bounds    = self.x_bounds,
             y_bounds    = self.y_bounds,
             y_min_gr_0  = self.y_min_gr_zero,
+            history     = self._track_canvas_history(),
             **self.kws
         )
         self._del_builder_refs()
@@ -447,3 +459,6 @@ class BottomPlotRatio(BottomPlot):
 
 #TODO: Statbox from classes/CRUtilities
 #TODO: Stuff from tools/CRHistoStackerDecorators
+
+#TODO: ADD HISTORY TO RENDERING!!! FAST!
+
