@@ -64,13 +64,13 @@ class History(object):
         self.kws = kws
 
 
-def gen_catch_history(wrps, hist_list=list()):
+def gen_catch_history(wrps, list_of_histories):
     """
     'Pass through' generator.
     """
     for wrp in wrps:
         if hasattr(wrp, "history"):
-            hist_list.append(wrp.history)
+            list_of_histories.append(wrp.history)
         yield wrp
 
 def track_history(func):
@@ -86,9 +86,9 @@ def track_history(func):
                 history.add_args([candidate.history])
             if isinstance(candidate, collections.Iterable):
                 args = list(args)
-                hist_list = []
-                args[0] = gen_catch_history(candidate, hist_list)
-                history.add_args(hist_list)
+                list_of_histories = []
+                args[0] = gen_catch_history(candidate, list_of_histories)
+                history.add_args(list_of_histories)
         if len(kws):
             history.add_kws(kws)
         ret = func(*args, **kws)
