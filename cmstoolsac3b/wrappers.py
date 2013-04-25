@@ -93,10 +93,9 @@ class Wrapper(_dict_base):
         """
         self.klass = self.__class__.__name__
         history, self.history = self.history, repr(str(self.history))
-        file = open(info_filename, "w")
-        file.write(repr(self.all_info())+" \n\n")
-        print >> file, history
-        file.close()
+        with open(info_filename, "w") as file:
+            file.write(repr(self.all_info())+" \n\n")
+            print >> file, history
         del self.klass
         self.history = history
 
@@ -110,10 +109,9 @@ class Wrapper(_dict_base):
         :type   wrapped_obj:    TH1/THStack/TCanvas/...
         :returns:               Wrapper type according to info file
         """
-        file = open(info_filename, "r")
-        line = file.readline()
-        info = literal_eval(line)
-        file.close()
+        with open(info_filename, "r") as file:
+            line = file.readline()
+            info = literal_eval(line)
         if not type(info) == dict:
             raise cls.NoDictInFileError(
                 "Could not read file: " + info_filename
