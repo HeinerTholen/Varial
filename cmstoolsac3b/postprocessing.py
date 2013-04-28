@@ -11,21 +11,26 @@ class PostProcTool(object):
     A directory in <settings.DIR_PLOTS> with the class name of this tool is
     created. Messages can be printed with self.message().
     """
-    def __init__(self, tool_name = None):
-        super(PostProcTool, self).__init__()
-
-        # plot output directory
-        if not tool_name:
-            tool_name = self.__class__.__name__
-        plot_output_dir = settings.DIR_PLOTS + tool_name + "/"
-        settings.tool_folders[tool_name] = plot_output_dir
-        self.name = tool_name
-        self.plot_output_dir = plot_output_dir
-
-        # qt message signals
+    def _connect_message_signal(self):
         self.messenger = monitor.Messenger()
         monitor.Monitor().connect_object_with_messenger(self)
         self.message = self.messenger.message.emit
+
+    def _set_plot_output_dir(self):
+        plot_output_dir = settings.DIR_PLOTS + self.name + "/"
+        settings.tool_folders[self.name] = plot_output_dir
+        self.plot_output_dir = plot_output_dir
+
+    def __init__(self, tool_name = None):
+        super(PostProcTool, self).__init__()
+
+        if not tool_name:
+            self.name = self.__class__.__name__
+        self.plot_output_dir = settings.DIR_PLOTS
+
+        self._set_plot_output_dir()
+        self._connect_message_signal()
+
 
     def wanna_reuse(self, all_reused_before_me):
         """Overwrite! If True is returned, run is not called."""
