@@ -1,7 +1,6 @@
 import settings
 import postprocessing
 import generators as gen
-import monitor
 import os, re
 
 
@@ -77,12 +76,10 @@ class SimpleWebCreator(postprocessing.PostProcTool):
         for wd, dirs, files in os.walk(self.working_dir):
             self.subfolders += dirs
             for f in files:
-                if f[-5:] == ".info":
+                if (f[-5:] == ".info" and
+                    f[:-5] + self.image_postfix in files):
                     self.image_names.append(f[:-5])
             break
-
-        # first lines for the html page
-        self.web_lines += ["<html>", "<body>", ""]
 
     def go4subdirs(self):
         """Walk of subfolders and start instances. Remove empty dirs."""
@@ -93,6 +90,23 @@ class SimpleWebCreator(postprocessing.PostProcTool):
             inst.run()
             if not os.path.exists(os.path.join(path, "index.html")):
                 self.subfolders.remove(sf)
+
+    def make_html_head(self):
+        self.web_lines += [
+            '<html>',
+            '<head>',
+            '<script type="text/javascript" language="JavaScript"><!--',
+            'function ToggleDiv(d) {',
+            '  if(document.getElementById(d).style.display == "none") { ',
+            '    document.getElementById(d).style.display = "block";',
+            '  } else { ',
+            '    document.getElementById(d).style.display = "none";',
+            '  }',
+            '}',
+            '//--></script>',
+            '</head>',
+            '<body>'
+        ]
 
     def make_headline(self):
         self.web_lines += (
@@ -116,16 +130,31 @@ class SimpleWebCreator(postprocessing.PostProcTool):
     def make_image_divs(self):
         self.web_lines += ('<h2>Images:</h2>',)
         for img in self.image_names:
+            #TODO get history from full wrapper!!
+            history_lines = ""
+            with open(os.path.join(self.working_dir,img + ".info")) as f:
+                f.next() #skip first two lines
+                f.next()
+                for line in f:
+                    history_lines += line
+            h_id = "history_" + img
             self.web_lines += (
+                '<div>',
                 '<p>',
-                '<h3>' + img + ":</h3>"
-                '<img src="'
+                '<b>' + img + ':</b>',     # image headline
+                '<a href="javascript:ToggleDiv(\'' + h_id
+                + '\')">(toggle history)</a>',
+                '</p>',
+                '<div id="' + h_id           # history div
+                + '" style="display:none;"><pre>',
+                history_lines,
+                '</pre></div>',
+                '<img src="'                 # the image itself
                 + img + self.image_postfix
                 + '" />',
-                '</p>',
+                '</div>',
                 '<hr width="95%">'
             )
-        #TODO: Integrate image history into webpage
 
     def finalize_page(self):
         self.web_lines += ["", "</body>", "</html>", ""]
@@ -143,6 +172,7 @@ class SimpleWebCreator(postprocessing.PostProcTool):
         if not self.image_postfix: return # WARNING message above.
         if not (self.image_names or self.subfolders): return # Nothing to do
         self.go4subdirs()
+        self.make_html_head()
         self.make_headline()
         self.make_subfolder_links()
         self.make_image_divs()
@@ -151,3 +181,16 @@ class SimpleWebCreator(postprocessing.PostProcTool):
 
 
 
+# javascript:
+
+
+
+#<div id="uniquename" style="display:none;">
+#<p>Content goes here.</p>
+#</div>
+
+#<a href="javascript:ToggleDiv('uniquename')">
+#Click to show/hide.
+#</a>
+
+#<pre> preformatted text </pre>
