@@ -134,7 +134,7 @@ class SimpleWebCreator(postprocessing.PostProcTool):
             history_lines = ""
             with open(os.path.join(self.working_dir,img + ".info")) as f:
                 f.next() #skip first two lines
-                f.next()
+                f.next() #skip first two lines
                 for line in f:
                     history_lines += line
             h_id = "history_" + img
