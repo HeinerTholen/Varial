@@ -57,21 +57,26 @@
 
 <span class="k">def</span> <span class="nf">_iterableize</span><span class="p">(</span><span class="n">obj_or_iterable</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;provides iterable for [obj OR iterable(obj)]&quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj_or_iterable</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">Iterable</span><span class="p">):</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">obj_or_iterable</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">Iterable</span><span class="p">)</span>
+    <span class="ow">and</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj_or_iterable</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">obj_or_iterable</span><span class="p">:</span>
             <span class="k">yield</span> <span class="n">o</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">yield</span> <span class="n">obj_or_iterable</span>
 
-<span class="k">def</span> <span class="nf">_filt_req</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span> <span class="n">filter_dict</span><span class="p">):</span> <span class="c"># generator over True/False</span>
-    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">filter_dict</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+<span class="k">def</span> <span class="nf">_filt_items</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value_list</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;yields True/False for every value in value_list&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">value_list</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">yield</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span><span class="n">key</span><span class="p">,</span><span class="s">&quot; &quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">value</span> <span class="c"># handle iterable</span>
-        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s">&quot;search&quot;</span><span class="p">):</span>
-                <span class="k">yield</span> <span class="nb">bool</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span><span class="n">key</span><span class="p">,</span><span class="s">&quot; &quot;</span><span class="p">)))</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">yield</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span><span class="n">key</span><span class="p">,</span><span class="s">&quot; &quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">value</span> <span class="c"># handle non-iterable</span>
+            <span class="k">yield</span> <span class="nb">bool</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span><span class="n">key</span><span class="p">,</span><span class="s">&quot; &quot;</span><span class="p">)))</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span><span class="n">key</span><span class="p">,</span><span class="s">&quot; &quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">val</span>
+
+<span class="k">def</span> <span class="nf">_filt_req</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span> <span class="n">filter_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Yields True/False for each item in filter_dict&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">filter_dict</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">_iterableize</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="nb">any</span><span class="p">(</span><span class="n">_filt_items</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
 
 <div class="viewcode-block" id="debug_printer"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.debug_printer">[docs]</a><span class="k">def</span> <span class="nf">debug_printer</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">print_obj</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -127,8 +132,8 @@
         <span class="n">wrps</span>
     <span class="p">)</span>
 </div>
-<div class="viewcode-block" id="filter_inv"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.filter_inv">[docs]</a><span class="k">def</span> <span class="nf">filter_inv</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">key_value_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Just as filter, only inverted.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="rejector"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.rejector">[docs]</a><span class="k">def</span> <span class="nf">rejector</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">key_value_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Just as filter, only rejects items with the given properites.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">key_value_dict</span><span class="p">:</span> <span class="n">key_value_dict</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">key_value_dict</span><span class="p">)</span> <span class="o">==</span> <span class="nb">dict</span>
     <span class="k">return</span> <span class="n">itertools</span><span class="o">.</span><span class="n">ifilter</span><span class="p">(</span>
@@ -136,7 +141,7 @@
         <span class="n">wrps</span>
     <span class="p">)</span>
 </div>
-<div class="viewcode-block" id="callback"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.callback">[docs]</a><span class="k">def</span> <span class="nf">callback</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">filter_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="callback"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.callback">[docs]</a><span class="k">def</span> <span class="nf">callback</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">filter_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Do a special treatment for selected wrps! All wrps are yielded.</span>
 
@@ -149,12 +154,11 @@
 
 <span class="sd">        def make_blue(wrp):</span>
 <span class="sd">            wrp.histo.SetFillColor(ROOT.kBlue)</span>
-<span class="sd">            return wrp # IMPORTANT! RETURN THE WRAPPER!</span>
 
 <span class="sd">        callback(</span>
 <span class="sd">            wrappers,</span>
-<span class="sd">            {&quot;is_data&quot;: False}</span>
 <span class="sd">            make_blue</span>
+<span class="sd">            {&quot;is_data&quot;: False}</span>
 <span class="sd">        )</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">func</span><span class="p">:</span>
@@ -164,7 +168,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">filter_dict</span><span class="p">:</span> <span class="n">filter_dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">wrp</span> <span class="ow">in</span> <span class="n">wrps</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">_filt_req</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span> <span class="n">filter_dict</span><span class="p">)):</span>
-                <span class="n">wrp</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">wrp</span><span class="p">)</span>
+                <span class="n">func</span><span class="p">(</span><span class="n">wrp</span><span class="p">)</span>
             <span class="k">yield</span> <span class="n">wrp</span>
 </div>
 <div class="viewcode-block" id="sort"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.sort">[docs]</a><span class="k">def</span> <span class="nf">sort</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">key_list</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
@@ -203,6 +207,19 @@
     <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">g</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">key_func</span><span class="p">):</span>
         <span class="k">yield</span> <span class="n">g</span>
 </div>
+<div class="viewcode-block" id="interleave"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.interleave">[docs]</a><span class="k">def</span> <span class="nf">interleave</span><span class="p">(</span><span class="o">*</span><span class="n">grouped_wrps</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Like itertools.izip, but chains inner packaging. Useful before making canvasses.</span>
+
+<span class="sd">    ((a,b),(c,d)), ((1,2),(3,4)) =&gt; ((a,b,1,2), (c,d,3,4))</span>
+
+<span class="sd">    :param *grouped_wrps:   grouped iterators</span>
+<span class="sd">    :yields:                generator object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">zipped</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">izip</span><span class="p">(</span><span class="n">grouped_wrps</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">grp</span> <span class="ow">in</span> <span class="n">zipped</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="n">grp</span><span class="p">)</span>
+</div>
 <div class="viewcode-block" id="split_data_mc"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.split_data_mc">[docs]</a><span class="k">def</span> <span class="nf">split_data_mc</span><span class="p">(</span><span class="n">wrps</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Split stream into data and mc stream.</span>
@@ -239,8 +256,8 @@
 <span class="sd">    :param op_func: callable</span>
 <span class="sd">    :returns:       generator</span>
 
-<span class="sd">    **Example:** The ``lumi`` and ``int`` operations are generatorized below</span>
-<span class="sd">    (notice that ``w1``,``w2`` and ``w3`` are iterables):</span>
+<span class="sd">    **Example:** The ``lumi`` and ``integral`` operations are generatorized</span>
+<span class="sd">    below (notice that ``w1``,``w2`` and ``w3`` are iterables):</span>
 
 <span class="sd">    &gt;&gt;&gt; from ROOT import TH1I</span>
 <span class="sd">    &gt;&gt;&gt; from cmstoolsac3b.wrappers import HistoWrapper</span>
@@ -254,7 +271,7 @@
 <span class="sd">    &gt;&gt;&gt; w2 = list(gen_lumi(w1))</span>
 <span class="sd">    &gt;&gt;&gt; w2[0].float</span>
 <span class="sd">    2.0</span>
-<span class="sd">    &gt;&gt;&gt; gen_int = generate_op(op.int)</span>
+<span class="sd">    &gt;&gt;&gt; gen_int = generate_op(op.integral)</span>
 <span class="sd">    &gt;&gt;&gt; w3 = list(gen_int(w1))</span>
 <span class="sd">    &gt;&gt;&gt; w3[0].float</span>
 <span class="sd">    2.0</span>
@@ -273,24 +290,42 @@
 <span class="n">gen_prod</span>  <span class="o">=</span> <span class="n">generate_op</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">prod</span><span class="p">)</span>   <span class="c">#: This is ``generate_op(cmstoolsac3b.operations.prod)``</span>
 <span class="n">gen_div</span>   <span class="o">=</span> <span class="n">generate_op</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">div</span><span class="p">)</span>    <span class="c">#: This is ``generate_op(cmstoolsac3b.operations.div)``</span>
 <span class="n">gen_lumi</span>  <span class="o">=</span> <span class="n">generate_op</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">lumi</span><span class="p">)</span>   <span class="c">#: This is ``generate_op(cmstoolsac3b.operations.lumi)``</span>
+<span class="n">gen_norm_to_lumi</span>  <span class="o">=</span> <span class="n">generate_op</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">norm_to_lumi</span><span class="p">)</span>   <span class="c">#: This is ``generate_op(cmstoolsac3b.operations.norm_to_lumi)``</span>
+<span class="n">gen_norm_to_integral</span> <span class="o">=</span> <span class="n">generate_op</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">norm_to_integral</span><span class="p">)</span>   <span class="c">#: This is ``generate_op(cmstoolsac3b.operations.norm_to_integral)``</span>
 <span class="n">gen_mv_in</span> <span class="o">=</span> <span class="n">generate_op</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">mv_in</span><span class="p">)</span>  <span class="c">#: This is ``generate_op(cmstoolsac3b.operations.mv_in)``</span>
-<span class="n">gen_int</span>   <span class="o">=</span> <span class="n">generate_op</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>    <span class="c">#: This is ``generate_op(cmstoolsac3b.operations.int)``</span>
+<span class="n">gen_integral</span>   <span class="o">=</span> <span class="n">generate_op</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">integral</span><span class="p">)</span>    <span class="c">#: This is ``generate_op(cmstoolsac3b.operations.integral)``</span>
 <span class="n">gen_int_l</span> <span class="o">=</span> <span class="n">generate_op</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">int_l</span><span class="p">)</span>  <span class="c">#: This is ``generate_op(cmstoolsac3b.operations.int_l)``</span>
 <span class="n">gen_int_r</span> <span class="o">=</span> <span class="n">generate_op</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">int_r</span><span class="p">)</span>  <span class="c">#: This is ``generate_op(cmstoolsac3b.operations.int_r)``</span>
 
 <span class="c">############################################################### load / save ###</span>
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">settings</span>
 <span class="kn">import</span> <span class="nn">histodispatch</span> <span class="kn">as</span> <span class="nn">dsp</span>
 <span class="kn">from</span> <span class="nn">ROOT</span> <span class="kn">import</span> <span class="n">TFile</span>
 
 <div class="viewcode-block" id="fs_content"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.fs_content">[docs]</a><span class="k">def</span> <span class="nf">fs_content</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Searches ``settings.DIR_FILESERVICE`` for samples and loads aliases.</span>
+<span class="sd">    Searches ``settings.DIR_FILESERVICE`` for samples and yields aliases.</span>
 
 <span class="sd">    :yields:   FileServiceAlias</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">dsp</span><span class="o">.</span><span class="n">HistoDispatch</span><span class="p">()</span><span class="o">.</span><span class="n">fileservice_aliases</span><span class="p">():</span>
         <span class="k">yield</span> <span class="n">alias</span>
+
+<span class="c">#TODO get able to load dir content!!!!</span></div>
+<div class="viewcode-block" id="dir_content"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.dir_content">[docs]</a><span class="k">def</span> <span class="nf">dir_content</span><span class="p">(</span><span class="n">dir_path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Searches directory for loadable wrapper-types. Yields aliases.</span>
+
+<span class="sd">    :yields:   FileServiceAlias</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">basenames</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">cwd</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">dir_path</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">:]</span> <span class="o">==</span> <span class="s">&quot;.info&quot;</span>
+                <span class="ow">and</span> <span class="n">f</span><span class="p">[:</span><span class="o">-</span><span class="mi">5</span><span class="p">]</span> <span class="o">+</span> <span class="s">&quot;.root&quot;</span> <span class="ow">in</span> <span class="n">files</span><span class="p">):</span>
+                    <span class="n">basenames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="p">[:</span><span class="o">-</span><span class="mi">5</span><span class="p">])</span>
+        <span class="k">break</span>
 </div>
 <div class="viewcode-block" id="pool_content"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.pool_content">[docs]</a><span class="k">def</span> <span class="nf">pool_content</span><span class="p">(</span><span class="n">filter_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -363,23 +398,127 @@
                 <span class="n">wrp</span><span class="o">.</span><span class="n">write_info_file</span><span class="p">(</span><span class="n">filename</span> <span class="o">+</span> <span class="s">&quot;.info&quot;</span><span class="p">)</span>
         <span class="k">yield</span> <span class="n">wrp</span>
 
-<span class="c">################################################### application &amp; packaging ###</span></div>
+<span class="c">################################################################## plotting ###</span></div>
 <span class="kn">import</span> <span class="nn">rendering</span> <span class="kn">as</span> <span class="nn">rnd</span>
 
-<div class="viewcode-block" id="apply_histo_fillcolor"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.apply_histo_fillcolor">[docs]</a><span class="k">def</span> <span class="nf">apply_histo_fillcolor</span><span class="p">(</span><span class="n">wrps</span><span class="p">):</span>
+<div class="viewcode-block" id="apply_histo_fillcolor"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.apply_histo_fillcolor">[docs]</a><span class="k">def</span> <span class="nf">apply_histo_fillcolor</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">colors</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Uses ``histo.SetFillColor``. Colors from utilities.settings</span>
+<span class="sd">    Uses ``histo.SetFillColor``. Colors from settings, if not given.</span>
 
 <span class="sd">    :param wrps:    HistoWrapper iterable</span>
+<span class="sd">    :param colors:  Integer list</span>
 <span class="sd">    :yields:        HistoWrapper</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">wrp</span> <span class="ow">in</span> <span class="n">wrps</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span> <span class="s">&quot;histo&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">colors</span><span class="p">:</span>
+                <span class="n">color</span> <span class="o">=</span> <span class="n">colors</span><span class="p">[</span><span class="n">n</span><span class="o">%</span><span class="nb">len</span><span class="p">(</span><span class="n">colors</span><span class="p">)]</span>
+                <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">color</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get_color</span><span class="p">(</span><span class="n">wrp</span><span class="o">.</span><span class="n">sample</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">color</span><span class="p">:</span>
+                <span class="n">wrp</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">SetFillColor</span><span class="p">(</span><span class="n">color</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="n">wrp</span>
+</div>
+<div class="viewcode-block" id="apply_histo_linecolor"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.apply_histo_linecolor">[docs]</a><span class="k">def</span> <span class="nf">apply_histo_linecolor</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">colors</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Uses ``histo.SetLineColor``. Colors from settings, if not given.</span>
+
+<span class="sd">    :param wrps:    HistoWrapper iterable</span>
+<span class="sd">    :param colors:  Integer list</span>
+<span class="sd">    :yields:        HistoWrapper</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">wrp</span> <span class="ow">in</span> <span class="n">wrps</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span> <span class="s">&quot;histo&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">colors</span><span class="p">:</span>
+                <span class="n">color</span> <span class="o">=</span> <span class="n">colors</span><span class="p">[</span><span class="n">n</span><span class="o">%</span><span class="nb">len</span><span class="p">(</span><span class="n">colors</span><span class="p">)]</span>
+                <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">color</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get_color</span><span class="p">(</span><span class="n">wrp</span><span class="o">.</span><span class="n">sample</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">color</span><span class="p">:</span>
+                <span class="n">wrp</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">SetLineColor</span><span class="p">(</span><span class="n">color</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="n">wrp</span>
+</div>
+<div class="viewcode-block" id="apply_histo_linewidth"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.apply_histo_linewidth">[docs]</a><span class="k">def</span> <span class="nf">apply_histo_linewidth</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Uses ``histo.SetLineWidth``. Default is 2.</span>
+
+<span class="sd">    :param wrps:        HistoWrapper iterable</span>
+<span class="sd">    :param line_width:  argument for SetLineWidth</span>
+<span class="sd">    :yields:            HistoWrapper</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">wrp</span> <span class="ow">in</span> <span class="n">wrps</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span> <span class="s">&quot;histo&quot;</span><span class="p">):</span>
-            <span class="n">fill_color</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get_fill_color</span><span class="p">(</span><span class="n">wrp</span><span class="o">.</span><span class="n">sample</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">fill_color</span><span class="p">:</span>
-                <span class="n">wrp</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">SetFillColor</span><span class="p">(</span><span class="n">fill_color</span><span class="p">)</span>
+            <span class="n">wrp</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">SetLineWidth</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
         <span class="k">yield</span> <span class="n">wrp</span>
 </div>
+<div class="viewcode-block" id="make_canvas_builder"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.make_canvas_builder">[docs]</a><span class="k">def</span> <span class="nf">make_canvas_builder</span><span class="p">(</span><span class="n">grps</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Yields instanciated CanvasBuilders.</span>
+
+<span class="sd">    :param grps:    grouped or ungrouped Wrapper iterable</span>
+<span class="sd">                    if grouped: on canvas for each group</span>
+<span class="sd">    :yields:        CanvasBuilder instance</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">grp</span> <span class="ow">in</span> <span class="n">grps</span><span class="p">:</span>
+        <span class="n">grp</span> <span class="o">=</span> <span class="n">_iterableize</span><span class="p">(</span><span class="n">grp</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="n">rnd</span><span class="o">.</span><span class="n">CanvasBuilder</span><span class="p">(</span><span class="n">grp</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="decorate"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.decorate">[docs]</a><span class="k">def</span> <span class="nf">decorate</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">decorators</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decorate any iterable with a list of decorators.</span>
+
+<span class="sd">    :param wrps:        Wrapper (or CanvasBuilder) iterable</span>
+<span class="sd">    :param decorators:  list of decorator classes.</span>
+<span class="sd">    :yields:            Wrapper (or CanvasBuilder)</span>
+
+<span class="sd">    **Example:** ::</span>
+
+<span class="sd">        result = decorate([CanvasBuilder, ...], [Legend, TextBox])</span>
+<span class="sd">        # result = [Legend(TextBox(CanvasBuilder)), ...]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">decorators</span><span class="p">:</span> <span class="n">decorators</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">wrp</span> <span class="ow">in</span> <span class="n">wrps</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">dec</span> <span class="ow">in</span> <span class="n">decorators</span><span class="p">:</span>
+            <span class="n">wrp</span> <span class="o">=</span> <span class="n">dec</span><span class="p">(</span><span class="n">wrp</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="n">wrp</span>
+</div>
+<div class="viewcode-block" id="build_canvas"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.build_canvas">[docs]</a><span class="k">def</span> <span class="nf">build_canvas</span><span class="p">(</span><span class="n">bldrs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calls the ``build_canvas()`` method and returns the result.</span>
+
+<span class="sd">    :param bldrs:   CanvasBuilder iterable</span>
+<span class="sd">    :yields:        CanvasWrapper</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">bldr</span> <span class="ow">in</span> <span class="n">bldrs</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">bldr</span><span class="o">.</span><span class="n">build_canvas</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="switch_log_scale"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.switch_log_scale">[docs]</a><span class="k">def</span> <span class="nf">switch_log_scale</span><span class="p">(</span><span class="n">cnvs</span><span class="p">,</span> <span class="n">y_axis</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">x_axis</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets main_pad in canvases to logscale.</span>
+<span class="sd">    </span>
+<span class="sd">    :param cnvs:    CanvasWrapper iterable</span>
+<span class="sd">    :param x_axis:  boolean for x axis</span>
+<span class="sd">    :param y_axis:  boolean for y axis</span>
+<span class="sd">    :yields:        CanvasWrapper</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">cnv</span> <span class="ow">in</span> <span class="n">cnvs</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cnv</span><span class="p">,</span> <span class="n">rnd</span><span class="o">.</span><span class="n">wrappers</span><span class="o">.</span><span class="n">CanvasWrapper</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">x_axis</span><span class="p">:</span>
+            <span class="n">cnv</span><span class="o">.</span><span class="n">main_pad</span><span class="o">.</span><span class="n">SetLogx</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cnv</span><span class="o">.</span><span class="n">main_pad</span><span class="o">.</span><span class="n">SetLogx</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">y_axis</span><span class="p">:</span>
+            <span class="n">cnv</span><span class="o">.</span><span class="n">first_drawn</span><span class="o">.</span><span class="n">SetMinimum</span><span class="p">(</span><span class="n">cnv</span><span class="o">.</span><span class="n">y_min_gr_0</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span>
+            <span class="n">cnv</span><span class="o">.</span><span class="n">main_pad</span><span class="o">.</span><span class="n">SetLogy</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cnv</span><span class="o">.</span><span class="n">first_drawn</span><span class="o">.</span><span class="n">SetMinimum</span><span class="p">(</span><span class="n">cnv</span><span class="o">.</span><span class="n">y_min</span><span class="p">)</span>
+            <span class="n">cnv</span><span class="o">.</span><span class="n">main_pad</span><span class="o">.</span><span class="n">SetLogy</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="n">cnv</span>
+
+<span class="c">################################################### application &amp; packaging ###</span></div>
 <div class="viewcode-block" id="fs_filter_sort_load"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.fs_filter_sort_load">[docs]</a><span class="k">def</span> <span class="nf">fs_filter_sort_load</span><span class="p">(</span><span class="n">filter_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Packaging of filtering, sorting and loading.</span>
@@ -400,20 +539,18 @@
     <span class="n">wrps</span> <span class="o">=</span> <span class="n">sort</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">sort_keys</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">load</span><span class="p">(</span><span class="n">wrps</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="fs_mc_stack"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.fs_mc_stack">[docs]</a><span class="k">def</span> <span class="nf">fs_mc_stack</span><span class="p">(</span><span class="n">filter_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">merge_mc_key_func</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="mc_stack"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.mc_stack">[docs]</a><span class="k">def</span> <span class="nf">mc_stack</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">merge_mc_key_func</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Delivers only MC stacks, no data, from fileservice.</span>
+<span class="sd">    Delivers only MC stacks, feed only with MC.</span>
 
-<span class="sd">    :param filter_dict:         see function filter(...) above</span>
+<span class="sd">    :param wrps:                Iterables of HistoWrapper (grouped)</span>
 <span class="sd">    :param merge_mc_key_func:   key function for python sorted(...), default</span>
 <span class="sd">                                tries to sort after stack position</span>
 <span class="sd">    :yields:                    StackWrapper</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">merge_mc_key_func</span><span class="p">:</span>
         <span class="n">merge_mc_key_func</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">get_stack_position</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">sample</span><span class="p">)</span>
-    <span class="n">loaded</span> <span class="o">=</span> <span class="n">fs_filter_sort_load</span><span class="p">(</span><span class="n">filter_dict</span><span class="p">)</span>
-    <span class="n">grouped</span> <span class="o">=</span> <span class="n">group</span><span class="p">(</span><span class="n">loaded</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">grp</span> <span class="ow">in</span> <span class="n">grouped</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">grp</span> <span class="ow">in</span> <span class="n">wrps</span><span class="p">:</span>
 
         <span class="c"># merge mc samples (merge also normalizes to lumi = 1.)</span>
         <span class="n">mc_sorted</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">grp</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">merge_mc_key_func</span><span class="p">)</span>
@@ -424,6 +561,19 @@
         <span class="c"># stack mc</span>
         <span class="n">mc_stack</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">mc_colord</span><span class="p">)</span>
         <span class="k">yield</span> <span class="n">mc_stack</span>
+</div>
+<div class="viewcode-block" id="fs_mc_stack"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.fs_mc_stack">[docs]</a><span class="k">def</span> <span class="nf">fs_mc_stack</span><span class="p">(</span><span class="n">filter_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">merge_mc_key_func</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Delivers only MC stacks, no data, from fileservice.</span>
+
+<span class="sd">    :param filter_dict:         see function filter(...) above</span>
+<span class="sd">    :param merge_mc_key_func:   key function for python sorted(...), default</span>
+<span class="sd">                                tries to sort after stack position</span>
+<span class="sd">    :yields:                    StackWrapper</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">loaded</span> <span class="o">=</span> <span class="n">fs_filter_sort_load</span><span class="p">(</span><span class="n">filter_dict</span><span class="p">)</span>
+    <span class="n">grouped</span> <span class="o">=</span> <span class="n">group</span><span class="p">(</span><span class="n">loaded</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mc_stack</span><span class="p">(</span><span class="n">grouped</span><span class="p">,</span> <span class="n">merge_mc_key_func</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="mc_stack_n_data_sum"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.mc_stack_n_data_sum">[docs]</a><span class="k">def</span> <span class="nf">mc_stack_n_data_sum</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">merge_mc_key_func</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -475,46 +625,6 @@
     <span class="n">loaded</span> <span class="o">=</span> <span class="n">fs_filter_sort_load</span><span class="p">(</span><span class="n">filter_dict</span><span class="p">)</span>
     <span class="n">grouped</span> <span class="o">=</span> <span class="n">group</span><span class="p">(</span><span class="n">loaded</span><span class="p">)</span> <span class="c"># default: group by analyzer_histo (the fs histo &#39;ID&#39;)</span>
     <span class="k">return</span> <span class="n">mc_stack_n_data_sum</span><span class="p">(</span><span class="n">grouped</span><span class="p">,</span> <span class="n">merge_mc_key_func</span><span class="p">)</span>
-</div>
-<div class="viewcode-block" id="make_canvas_builder"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.make_canvas_builder">[docs]</a><span class="k">def</span> <span class="nf">make_canvas_builder</span><span class="p">(</span><span class="n">grps</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Yields instanciated CanvasBuilders.</span>
-
-<span class="sd">    :param grps:    grouped or ungrouped Wrapper iterable</span>
-<span class="sd">                    if grouped: on canvas for each group</span>
-<span class="sd">    :yields:        CanvasBuilder instance</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">for</span> <span class="n">grp</span> <span class="ow">in</span> <span class="n">grps</span><span class="p">:</span>
-        <span class="n">grp</span> <span class="o">=</span> <span class="n">_iterableize</span><span class="p">(</span><span class="n">grp</span><span class="p">)</span>
-        <span class="k">yield</span> <span class="n">rnd</span><span class="o">.</span><span class="n">CanvasBuilder</span><span class="p">(</span><span class="n">grp</span><span class="p">)</span>
-</div>
-<div class="viewcode-block" id="decorate"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.decorate">[docs]</a><span class="k">def</span> <span class="nf">decorate</span><span class="p">(</span><span class="n">wrps</span><span class="p">,</span> <span class="n">decorators</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Decorate any iterable with a list of decorators.</span>
-
-<span class="sd">    :param wrps:        Wrapper (or CanvasBuilder) iterable</span>
-<span class="sd">    :param decorators:  list of decorator classes.</span>
-<span class="sd">    :yields:            Wrapper (or CanvasBuilder)</span>
-
-<span class="sd">    **Example:** ::</span>
-
-<span class="sd">        result = decorate([CanvasBuilder, ...], [Legend, TextBox])</span>
-<span class="sd">        # result = [Legend(TextBox(CanvasBuilder)), ...]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">for</span> <span class="n">wrp</span> <span class="ow">in</span> <span class="n">wrps</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">dec</span> <span class="ow">in</span> <span class="n">decorators</span><span class="p">:</span>
-            <span class="n">wrp</span> <span class="o">=</span> <span class="n">dec</span><span class="p">(</span><span class="n">wrp</span><span class="p">)</span>
-        <span class="k">yield</span> <span class="n">wrp</span>
-</div>
-<div class="viewcode-block" id="build_canvas"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.build_canvas">[docs]</a><span class="k">def</span> <span class="nf">build_canvas</span><span class="p">(</span><span class="n">bldrs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Calls the ``build_canvas()`` method and returns the result.</span>
-
-<span class="sd">    :param bldrs:   CanvasBuilder iterable</span>
-<span class="sd">    :yields:        CanvasWrapper</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">for</span> <span class="n">bldr</span> <span class="ow">in</span> <span class="n">bldrs</span><span class="p">:</span>
-        <span class="k">yield</span> <span class="n">bldr</span><span class="o">.</span><span class="n">build_canvas</span><span class="p">()</span>
 </div>
 <div class="viewcode-block" id="canvas"><a class="viewcode-back" href="../../generators.html#cmstoolsac3b.generators.canvas">[docs]</a><span class="k">def</span> <span class="nf">canvas</span><span class="p">(</span><span class="n">grps</span><span class="p">,</span> 
            <span class="n">decorators</span><span class="o">=</span><span class="nb">list</span><span class="p">(),</span> 

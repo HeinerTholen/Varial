@@ -230,7 +230,10 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">jobinfo</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">jobinfo</span><span class="o">.</span><span class="n">sync</span><span class="p">()</span>
-            <span class="nb">super</span><span class="p">(</span><span class="n">CmsRunProcess</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">,</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">conf_filename</span><span class="p">])</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">CmsRunProcess</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">,</span> 
+                <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">conf_filename</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="o">.</span><span class="n">cmsRun_args</span>
+            <span class="p">)</span>
 </div>
 <div class="viewcode-block" id="CmsRunProcess.terminate"><a class="viewcode-back" href="../../cmsanalysis.html#cmstoolsac3b.cmsrunprocess.CmsRunProcess.terminate">[docs]</a>    <span class="k">def</span> <span class="nf">terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>

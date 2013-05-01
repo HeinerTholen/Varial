@@ -25,9 +25,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="CmsAnalysisAC3B 0.1.0 documentation" href="index.html" />
-    <link rel="up" title="API Reference" href="reference.html" />
-    <link rel="next" title="Package cmsanalysis" href="cmsanalysis.html" />
-    <link rel="prev" title="The generator module" href="generators.html" /> 
+    <link rel="prev" title="Wrapper types" href="wrappers.html" /> 
   </head>
   <body>
     <div class="related">
@@ -40,13 +38,9 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="cmsanalysis.html" title="Package cmsanalysis"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="generators.html" title="The generator module"
+          <a href="wrappers.html" title="Wrapper types"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li>
-          <li><a href="reference.html" accesskey="U">API Reference</a> &raquo;</li> 
+        <li><a href="index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -124,10 +118,13 @@ any keyword that is accepted by <tt class="docutils literal"><span class="pre">h
 <tr class="row-odd"><td><tt class="docutils literal"><span class="pre">main_pad</span></tt></td>
 <td>Reference to TPad instance</td>
 </tr>
-<tr class="row-even"><td><tt class="docutils literal"><span class="pre">first_drawed</span></tt></td>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">second_pad</span></tt></td>
+<td>Reference to TPad instance or None</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">first_drawn</span></tt></td>
 <td>TObject which is first drawed (for valid TAxis reference)</td>
 </tr>
-<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">legend</span></tt></td>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">legend</span></tt></td>
 <td>Reference to TLegend object.</td>
 </tr>
 </tbody>
@@ -204,7 +201,7 @@ Decorator):</p>
 <p>Adds a legend to the main_pad.</p>
 <p>Takes entries from <tt class="docutils literal"><span class="pre">self.main_pad.BuildLegend()</span></tt> .
 The box height is adjusted by the number of legend entries.
-No border or shadow are printed. Keyword</p>
+No border or shadow are printed. See __init__ for keywords.</p>
 <dl class="method">
 <dt id="cmstoolsac3b.rendering.Legend.do_final_cosmetics">
 <tt class="descname">do_final_cosmetics</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/rendering.html#Legend.do_final_cosmetics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.rendering.Legend.do_final_cosmetics" title="Permalink to this definition">¶</a></dt>
@@ -235,11 +232,8 @@ store it to self.legend</p>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="generators.html"
-                        title="previous chapter">The generator module</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="cmsanalysis.html"
-                        title="next chapter">Package cmsanalysis</a></p>
+  <p class="topless"><a href="wrappers.html"
+                        title="previous chapter">Wrapper types</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="_sources/rendering.txt"
@@ -272,13 +266,9 @@ store it to self.legend</p>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="cmsanalysis.html" title="Package cmsanalysis"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="generators.html" title="The generator module"
+          <a href="wrappers.html" title="Wrapper types"
              >previous</a> |</li>
-        <li><a href="index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li>
-          <li><a href="reference.html" >API Reference</a> &raquo;</li> 
+        <li><a href="index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

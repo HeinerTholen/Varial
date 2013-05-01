@@ -64,6 +64,7 @@ them take one ore more wrappers and return a wrapper. Every wrapper has a
 module.</p>
 <div class="section" id="module-cmstoolsac3b.operations">
 <span id="module-members"></span><h2>Module members<a class="headerlink" href="#module-cmstoolsac3b.operations" title="Permalink to this headline">¶</a></h2>
+<p>Module operations</p>
 <dl class="function">
 <dt id="cmstoolsac3b.operations.stack">
 <tt class="descclassname">cmstoolsac3b.operations.</tt><tt class="descname">stack</tt><big>(</big><em>*args</em>, <em>**kws</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/operations.html#stack"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.operations.stack" title="Permalink to this definition">¶</a></dt>
@@ -206,6 +207,42 @@ Checks lumi to be equal among all wrappers.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="cmstoolsac3b.operations.norm_to_lumi">
+<tt class="descclassname">cmstoolsac3b.operations.</tt><tt class="descname">norm_to_lumi</tt><big>(</big><em>*args</em>, <em>**kws</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/operations.html#norm_to_lumi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.operations.norm_to_lumi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies to HistoWrapper. Returns HistoWrapper.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">ROOT</span> <span class="kn">import</span> <span class="n">TH1I</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h1</span> <span class="o">=</span> <span class="n">TH1I</span><span class="p">(</span><span class="s">&quot;h1&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">.</span><span class="mi">5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h1</span><span class="o">.</span><span class="n">Fill</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w1</span> <span class="o">=</span> <span class="n">wrappers</span><span class="o">.</span><span class="n">HistoWrapper</span><span class="p">(</span><span class="n">h1</span><span class="p">,</span> <span class="n">lumi</span><span class="o">=</span><span class="mf">2.</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w1</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">Integral</span><span class="p">()</span>
+<span class="go">4.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w2</span> <span class="o">=</span> <span class="n">norm_to_lumi</span><span class="p">(</span><span class="n">w1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w2</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">Integral</span><span class="p">()</span>
+<span class="go">2.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.operations.norm_to_integral">
+<tt class="descclassname">cmstoolsac3b.operations.</tt><tt class="descname">norm_to_integral</tt><big>(</big><em>*args</em>, <em>**kws</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/operations.html#norm_to_integral"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.operations.norm_to_integral" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies to HistoWrapper. Returns HistoWrapper.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">ROOT</span> <span class="kn">import</span> <span class="n">TH1I</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h1</span> <span class="o">=</span> <span class="n">TH1I</span><span class="p">(</span><span class="s">&quot;h1&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">.</span><span class="mi">5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h1</span><span class="o">.</span><span class="n">Fill</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w1</span> <span class="o">=</span> <span class="n">wrappers</span><span class="o">.</span><span class="n">HistoWrapper</span><span class="p">(</span><span class="n">h1</span><span class="p">,</span> <span class="n">lumi</span><span class="o">=</span><span class="mf">2.</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w1</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">Integral</span><span class="p">()</span>
+<span class="go">4.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w2</span> <span class="o">=</span> <span class="n">norm_to_integral</span><span class="p">(</span><span class="n">w1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w2</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">Integral</span><span class="p">()</span>
+<span class="go">1.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
 <dt id="cmstoolsac3b.operations.mv_in">
 <tt class="descclassname">cmstoolsac3b.operations.</tt><tt class="descname">mv_in</tt><big>(</big><em>*args</em>, <em>**kws</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/operations.html#mv_in"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.operations.mv_in" title="Permalink to this definition">¶</a></dt>
 <dd><p>Moves under- and/or overflow bin into first/last bin.</p>
@@ -235,8 +272,8 @@ Checks lumi to be equal among all wrappers.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="cmstoolsac3b.operations.int">
-<tt class="descclassname">cmstoolsac3b.operations.</tt><tt class="descname">int</tt><big>(</big><em>*args</em>, <em>**kws</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/operations.html#int"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.operations.int" title="Permalink to this definition">¶</a></dt>
+<dt id="cmstoolsac3b.operations.integral">
+<tt class="descclassname">cmstoolsac3b.operations.</tt><tt class="descname">integral</tt><big>(</big><em>*args</em>, <em>**kws</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/operations.html#integral"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.operations.integral" title="Permalink to this definition">¶</a></dt>
 <dd><p>Integral. Applies to HistoWrapper. Returns FloatWrapper.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">ROOT</span> <span class="kn">import</span> <span class="n">TH1I</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">h1</span> <span class="o">=</span> <span class="n">TH1I</span><span class="p">(</span><span class="s">&quot;h1&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">.</span><span class="mi">5</span><span class="p">,</span> <span class="mf">4.5</span><span class="p">)</span>
@@ -245,10 +282,10 @@ Checks lumi to be equal among all wrappers.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">h1</span><span class="o">.</span><span class="n">Fill</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
 <span class="go">2</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">w1</span> <span class="o">=</span> <span class="n">wrappers</span><span class="o">.</span><span class="n">HistoWrapper</span><span class="p">(</span><span class="n">h1</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">w2</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">w1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w2</span> <span class="o">=</span> <span class="n">integral</span><span class="p">(</span><span class="n">w1</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">w2</span><span class="o">.</span><span class="n">float</span>
 <span class="go">4.0</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">w3</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">w1</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w3</span> <span class="o">=</span> <span class="n">integral</span><span class="p">(</span><span class="n">w1</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">w3</span><span class="o">.</span><span class="n">float</span>
 <span class="go">8.0</span>
 </pre></div>

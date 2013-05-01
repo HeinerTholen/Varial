@@ -143,10 +143,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">klass</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
         <span class="n">history</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">))</span>
-        <span class="nb">file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">info_filename</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">)</span>
-        <span class="nb">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_info</span><span class="p">())</span><span class="o">+</span><span class="s">&quot; </span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">)</span>
-        <span class="k">print</span> <span class="o">&gt;&gt;</span> <span class="nb">file</span><span class="p">,</span> <span class="n">history</span>
-        <span class="nb">file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">info_filename</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="nb">file</span><span class="p">:</span>
+            <span class="nb">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_info</span><span class="p">())</span><span class="o">+</span><span class="s">&quot; </span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">)</span>
+            <span class="k">print</span> <span class="o">&gt;&gt;</span> <span class="nb">file</span><span class="p">,</span> <span class="n">history</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">klass</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="n">history</span>
 </div>
@@ -160,10 +159,9 @@
 <span class="sd">        :type   wrapped_obj:    TH1/THStack/TCanvas/...</span>
 <span class="sd">        :returns:               Wrapper type according to info file</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">info_filename</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">)</span>
-        <span class="n">line</span> <span class="o">=</span> <span class="nb">file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
-        <span class="n">info</span> <span class="o">=</span> <span class="n">literal_eval</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
-        <span class="nb">file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">info_filename</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="nb">file</span><span class="p">:</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="nb">file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+            <span class="n">info</span> <span class="o">=</span> <span class="n">literal_eval</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">info</span><span class="p">)</span> <span class="o">==</span> <span class="nb">dict</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">cls</span><span class="o">.</span><span class="n">NoDictInFileError</span><span class="p">(</span>
                 <span class="s">&quot;Could not read file: &quot;</span> <span class="o">+</span> <span class="n">info_filename</span>
@@ -294,10 +292,17 @@
                 <span class="s">&quot;CanvasWrapper needs a TCanvas instance as first argument!&quot;</span>
             <span class="p">)</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">CanvasWrapper</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kws</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">canvas</span> <span class="o">=</span> <span class="n">canvas</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lumi</span>   <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;lumi&quot;</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span>   <span class="o">=</span> <span class="n">canvas</span><span class="o">.</span><span class="n">GetName</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">title</span>  <span class="o">=</span> <span class="n">canvas</span><span class="o">.</span><span class="n">GetTitle</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">canvas</span>     <span class="o">=</span> <span class="n">canvas</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">main_pad</span>   <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;main_pad&quot;</span><span class="p">,</span> <span class="n">canvas</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">second_pad</span> <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;second_pad&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">legend</span>     <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;legend&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">first_drawn</span><span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;first_drawn&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x_bounds</span>   <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;x_bounds&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y_bounds</span>   <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;y_bounds&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y_min_gr_0</span> <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;y_min_gr_0&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lumi</span>       <span class="o">=</span> <span class="n">kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;lumi&quot;</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span>       <span class="o">=</span> <span class="n">canvas</span><span class="o">.</span><span class="n">GetName</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title</span>      <span class="o">=</span> <span class="n">canvas</span><span class="o">.</span><span class="n">GetTitle</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">primary_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">Modified</span><span class="p">()</span>

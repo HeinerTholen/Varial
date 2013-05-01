@@ -50,6 +50,11 @@
   <h1>Source code for cmstoolsac3b.operations</h1><div class="highlight"><pre>
 <span class="c"># operations.py</span>
 
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module operations</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c">#TODO: Guideline write an operation: arguments and return values for good history</span>
+
 <span class="kn">import</span> <span class="nn">ctypes</span>
 <span class="kn">import</span> <span class="nn">collections</span>
 <span class="kn">import</span> <span class="nn">settings</span>
@@ -353,6 +358,59 @@
     <span class="k">return</span> <span class="n">wrappers</span><span class="o">.</span><span class="n">FloatWrapper</span><span class="p">(</span><span class="n">wrp</span><span class="o">.</span><span class="n">lumi</span><span class="p">,</span> <span class="o">**</span><span class="n">info</span><span class="p">)</span>
 </div>
 <span class="nd">@history.track_history</span>
+<div class="viewcode-block" id="norm_to_lumi"><a class="viewcode-back" href="../../operations.html#cmstoolsac3b.operations.norm_to_lumi">[docs]</a><span class="k">def</span> <span class="nf">norm_to_lumi</span><span class="p">(</span><span class="n">wrp</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Applies to HistoWrapper. Returns HistoWrapper.</span>
+<span class="sd">    </span>
+<span class="sd">    &gt;&gt;&gt; from ROOT import TH1I</span>
+<span class="sd">    &gt;&gt;&gt; h1 = TH1I(&quot;h1&quot;, &quot;&quot;, 2, .5, 2.5)</span>
+<span class="sd">    &gt;&gt;&gt; h1.Fill(1, 4)</span>
+<span class="sd">    1</span>
+<span class="sd">    &gt;&gt;&gt; w1 = wrappers.HistoWrapper(h1, lumi=2.)</span>
+<span class="sd">    &gt;&gt;&gt; w1.histo.Integral()</span>
+<span class="sd">    4.0</span>
+<span class="sd">    &gt;&gt;&gt; w2 = norm_to_lumi(w1)</span>
+<span class="sd">    &gt;&gt;&gt; w2.histo.Integral()</span>
+<span class="sd">    2.0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span> <span class="n">wrappers</span><span class="o">.</span><span class="n">HistoWrapper</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">WrongInputError</span><span class="p">(</span>
+            <span class="s">&quot;norm_to_lumi needs argument of type HistoWrapper. histo: &quot;</span>
+            <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">wrp</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="n">histo</span> <span class="o">=</span> <span class="n">wrp</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">Clone</span><span class="p">()</span>
+    <span class="n">info</span> <span class="o">=</span> <span class="n">wrp</span><span class="o">.</span><span class="n">all_info</span><span class="p">()</span>
+    <span class="n">histo</span><span class="o">.</span><span class="n">Scale</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">wrp</span><span class="o">.</span><span class="n">lumi</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">wrappers</span><span class="o">.</span><span class="n">HistoWrapper</span><span class="p">(</span><span class="n">histo</span><span class="p">,</span> <span class="o">**</span><span class="n">info</span><span class="p">)</span>
+</div>
+<span class="nd">@history.track_history</span>
+<div class="viewcode-block" id="norm_to_integral"><a class="viewcode-back" href="../../operations.html#cmstoolsac3b.operations.norm_to_integral">[docs]</a><span class="k">def</span> <span class="nf">norm_to_integral</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span> <span class="n">useBinWidth</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Applies to HistoWrapper. Returns HistoWrapper.</span>
+<span class="sd">    </span>
+<span class="sd">    &gt;&gt;&gt; from ROOT import TH1I</span>
+<span class="sd">    &gt;&gt;&gt; h1 = TH1I(&quot;h1&quot;, &quot;&quot;, 2, .5, 2.5)</span>
+<span class="sd">    &gt;&gt;&gt; h1.Fill(1, 4)</span>
+<span class="sd">    1</span>
+<span class="sd">    &gt;&gt;&gt; w1 = wrappers.HistoWrapper(h1, lumi=2.)</span>
+<span class="sd">    &gt;&gt;&gt; w1.histo.Integral()</span>
+<span class="sd">    4.0</span>
+<span class="sd">    &gt;&gt;&gt; w2 = norm_to_integral(w1)</span>
+<span class="sd">    &gt;&gt;&gt; w2.histo.Integral()</span>
+<span class="sd">    1.0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span> <span class="n">wrappers</span><span class="o">.</span><span class="n">HistoWrapper</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">WrongInputError</span><span class="p">(</span>
+            <span class="s">&quot;norm_to_lumi needs argument of type HistoWrapper. histo: &quot;</span>
+            <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">wrp</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="n">histo</span> <span class="o">=</span> <span class="n">wrp</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">Clone</span><span class="p">()</span>
+    <span class="n">info</span> <span class="o">=</span> <span class="n">wrp</span><span class="o">.</span><span class="n">all_info</span><span class="p">()</span>
+    <span class="n">option</span> <span class="o">=</span> <span class="s">&quot;width&quot;</span> <span class="k">if</span> <span class="n">useBinWidth</span> <span class="k">else</span> <span class="s">&quot;&quot;</span>
+    <span class="n">histo</span><span class="o">.</span><span class="n">Scale</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">wrp</span><span class="o">.</span><span class="n">histo</span><span class="o">.</span><span class="n">Integral</span><span class="p">(</span><span class="n">option</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">wrappers</span><span class="o">.</span><span class="n">HistoWrapper</span><span class="p">(</span><span class="n">histo</span><span class="p">,</span> <span class="o">**</span><span class="n">info</span><span class="p">)</span>
+</div>
+<span class="nd">@history.track_history</span>
 <div class="viewcode-block" id="mv_in"><a class="viewcode-back" href="../../operations.html#cmstoolsac3b.operations.mv_in">[docs]</a><span class="k">def</span> <span class="nf">mv_in</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span> <span class="n">overflow</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">underflow</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Moves under- and/or overflow bin into first/last bin.</span>
@@ -399,7 +457,7 @@
     <span class="k">return</span> <span class="n">wrappers</span><span class="o">.</span><span class="n">HistoWrapper</span><span class="p">(</span><span class="n">histo</span><span class="p">,</span> <span class="o">**</span><span class="n">wrp</span><span class="o">.</span><span class="n">all_info</span><span class="p">())</span>
 </div>
 <span class="nd">@history.track_history</span>
-<div class="viewcode-block" id="int"><a class="viewcode-back" href="../../operations.html#cmstoolsac3b.operations.int">[docs]</a><span class="k">def</span> <span class="nf">int</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span> <span class="n">useBinWidth</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+<div class="viewcode-block" id="integral"><a class="viewcode-back" href="../../operations.html#cmstoolsac3b.operations.integral">[docs]</a><span class="k">def</span> <span class="nf">integral</span><span class="p">(</span><span class="n">wrp</span><span class="p">,</span> <span class="n">useBinWidth</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Integral. Applies to HistoWrapper. Returns FloatWrapper.</span>
 <span class="sd">    </span>
@@ -410,10 +468,10 @@
 <span class="sd">    &gt;&gt;&gt; h1.Fill(3,3)</span>
 <span class="sd">    2</span>
 <span class="sd">    &gt;&gt;&gt; w1 = wrappers.HistoWrapper(h1)</span>
-<span class="sd">    &gt;&gt;&gt; w2 = int(w1)</span>
+<span class="sd">    &gt;&gt;&gt; w2 = integral(w1)</span>
 <span class="sd">    &gt;&gt;&gt; w2.float</span>
 <span class="sd">    4.0</span>
-<span class="sd">    &gt;&gt;&gt; w3 = int(w1, True)</span>
+<span class="sd">    &gt;&gt;&gt; w3 = integral(w1, True)</span>
 <span class="sd">    &gt;&gt;&gt; w3.float</span>
 <span class="sd">    8.0</span>
 <span class="sd">    &quot;&quot;&quot;</span>

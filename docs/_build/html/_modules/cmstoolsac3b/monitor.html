@@ -92,7 +92,10 @@
     <span class="k">def</span> <span class="nf">proc_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">process</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">suppress_cmsRun_exec</span> <span class="ow">or</span> <span class="n">process</span><span class="o">.</span><span class="n">reused_old_data</span><span class="p">:</span>
             <span class="k">return</span>
-        <span class="k">print</span> <span class="s">&quot;INFO process finished:   cmsRun &quot;</span><span class="p">,</span> <span class="n">process</span><span class="o">.</span><span class="n">conf_filename</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s">&quot;recieved_sigint&quot;</span><span class="p">):</span>
+            <span class="k">print</span> <span class="s">&quot;INFO process aborted:   cmsRun &quot;</span><span class="p">,</span> <span class="n">process</span><span class="o">.</span><span class="n">conf_filename</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&quot;INFO process finished:   cmsRun &quot;</span><span class="p">,</span> <span class="n">process</span><span class="o">.</span><span class="n">conf_filename</span>
 
     <span class="k">def</span> <span class="nf">proc_failed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">process</span><span class="p">):</span>
         <span class="k">print</span> <span class="s">&quot;WARNING process FAILED  :   cmsRun &quot;</span><span class="p">,</span> <span class="n">process</span><span class="o">.</span><span class="n">conf_filename</span>

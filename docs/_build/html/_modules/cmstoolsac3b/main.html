@@ -70,6 +70,7 @@
             <span class="k">print</span> <span class="s">&quot;WARNING: aborting all processes. Crtl-C again to kill immediately!&quot;</span>
             <span class="n">sys</span><span class="o">.</span><span class="n">__stdout__</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">hits</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">settings</span><span class="o">.</span><span class="n">recieved_sigint</span> <span class="o">=</span> <span class="bp">True</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">abort_all_processes</span><span class="p">()</span>
 
 
@@ -124,11 +125,13 @@
     <span class="c"># prepare...</span>
     <span class="n">_process_settings_kws</span><span class="p">(</span><span class="n">settings_kws</span><span class="p">)</span>
     <span class="n">_instanciate_samples</span><span class="p">()</span>
-    <span class="n">settings</span><span class="o">.</span><span class="n">create_folders</span><span class="p">()</span>
     <span class="n">app</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QCoreApplication</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">logfilename</span><span class="p">:</span>
         <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span> <span class="o">=</span> <span class="n">StdOutTee</span><span class="p">(</span><span class="n">logfilename</span><span class="p">)</span>
         <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span>
+
+    <span class="c"># create folders (for process confs)</span>
+    <span class="n">settings</span><span class="o">.</span><span class="n">create_folders</span><span class="p">()</span>
 
     <span class="c"># controller</span>
     <span class="n">cnt</span> <span class="o">=</span> <span class="n">controller</span><span class="o">.</span><span class="n">Controller</span><span class="p">()</span>
@@ -145,6 +148,9 @@
             <span class="n">tool</span> <span class="o">=</span> <span class="n">tool</span><span class="p">()</span>
         <span class="n">pst</span><span class="o">.</span><span class="n">add_tool</span><span class="p">(</span><span class="n">tool</span><span class="p">)</span>
 
+    <span class="c"># create folders (for plottools)</span>
+    <span class="n">settings</span><span class="o">.</span><span class="n">create_folders</span><span class="p">()</span>
+
     <span class="c"># SIGINT handler</span>
     <span class="n">sig_handler</span> <span class="o">=</span> <span class="n">SigintHandler</span><span class="p">(</span><span class="n">cnt</span><span class="p">)</span>
     <span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGINT</span><span class="p">,</span> <span class="n">sig_handler</span><span class="o">.</span><span class="n">handle</span><span class="p">)</span>
@@ -153,6 +159,7 @@
     <span class="c"># (all other finishing connections before this one)</span>
     <span class="n">cnt</span><span class="o">.</span><span class="n">all_finished</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">quit</span><span class="p">)</span>
 
+    <span class="c"># TODO: do not execute postproctools when crtl-c was hit.</span>
     <span class="c"># GO!</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">cnt</span><span class="o">.</span><span class="n">waiting_pros</span><span class="p">:</span>                    <span class="c"># No jobs, no running.</span>
         <span class="k">print</span> <span class="s">&quot;INFO: I have no cmsRun jobs. Quitting...&quot;</span>
@@ -176,7 +183,6 @@
     <span class="k">else</span><span class="p">:</span>                                       <span class="c"># Nothing to do.</span>
         <span class="k">print</span> <span class="s">&quot;I&#39;ve got nothing to do!&quot;</span>
         <span class="nb">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-
 
 <span class="k">def</span> <span class="nf">standalone</span><span class="p">(</span><span class="n">post_proc_tool_classes</span><span class="p">,</span> <span class="o">**</span><span class="n">settings_kws</span><span class="p">):</span></div>
 <div class="viewcode-block" id="standalone"><a class="viewcode-back" href="../../cmsanalysis.html#cmstoolsac3b.main.standalone">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>

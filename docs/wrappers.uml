@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>Python</ID>
+  <OriginalElement>#/Users/heinzAdmin/Google Drive/tmp/code/CmsAnalysis/histotools/wrappers.py</OriginalElement>
+  <nodes>
+    <node x="303.5" y="606.0">histotools.wrappers.FloatWrapper</node>
+    <node x="306.45" y="350.0">histotools.wrappers.Wrapper</node>
+    <node x="151.5" y="518.0">histotools.wrappers.HistoWrapper</node>
+    <node x="158.0" y="796.0">histotools.wrappers.StackWrapper</node>
+    <node x="152.75" y="102.0">object</node>
+    <node x="0.5" y="573.0">histotools.wrappers.FileServiceAlias</node>
+    <node x="144.75" y="0.0">_abcoll.Hashable</node>
+    <node x="0.0" y="372.0">histotools.wrappers.HistogramAlias</node>
+    <node x="168.75" y="270.0">histotools.wrappers._dict_base</node>
+    <node x="439.5" y="573.0">histotools.wrappers.CanvasWrapper</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="histotools.wrappers.Wrapper" target="histotools.wrappers._dict_base">
+      <point x="0.0" y="-59.0" />
+      <point x="357.45" y="325.0" />
+      <point x="244.5" y="325.0" />
+      <point x="25.25" y="15.0" />
+    </edge>
+    <edge source="histotools.wrappers.CanvasWrapper" target="histotools.wrappers.Wrapper">
+      <point x="0.0" y="-59.0" />
+      <point x="504.5" y="493.0" />
+      <point x="391.45" y="493.0" />
+      <point x="34.0" y="59.0" />
+    </edge>
+    <edge source="object" target="_abcoll.Hashable">
+      <point x="0.0" y="-59.0" />
+      <point x="0.0" y="26.0" />
+    </edge>
+    <edge source="histotools.wrappers._dict_base" target="object">
+      <point x="0.0" y="-15.0" />
+      <point x="0.0" y="59.0" />
+    </edge>
+    <edge source="histotools.wrappers.FloatWrapper" target="histotools.wrappers.Wrapper">
+      <point x="0.0" y="-26.0" />
+      <point x="361.5" y="493.0" />
+      <point x="357.45" y="493.0" />
+      <point x="0.0" y="59.0" />
+    </edge>
+    <edge source="histotools.wrappers.StackWrapper" target="histotools.wrappers.HistoWrapper">
+      <point x="0.0" y="-48.0" />
+      <point x="0.0" y="114.0" />
+    </edge>
+    <edge source="histotools.wrappers.HistogramAlias" target="histotools.wrappers._dict_base">
+      <point x="0.0" y="-37.0" />
+      <point x="66.0" y="325.0" />
+      <point x="194.0" y="325.0" />
+      <point x="-25.25" y="15.0" />
+    </edge>
+    <edge source="histotools.wrappers.FileServiceAlias" target="histotools.wrappers.HistogramAlias">
+      <point x="0.0" y="-59.0" />
+      <point x="0.0" y="37.0" />
+    </edge>
+    <edge source="histotools.wrappers.HistoWrapper" target="histotools.wrappers.Wrapper">
+      <point x="0.0" y="-114.0" />
+      <point x="217.5" y="493.0" />
+      <point x="323.45" y="493.0" />
+      <point x="-34.0" y="59.0" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.0" x="285.5" y="466.5" />
+  <SelectedNodes>
+    <node>histotools.wrappers.CanvasWrapper</node>
+  </SelectedNodes>
+  <Categories>
+    <Category>Fields</Category>
+  </Categories>
+</Diagram>
+

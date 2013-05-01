@@ -25,9 +25,8 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="CmsAnalysisAC3B 0.1.0 documentation" href="index.html" />
-    <link rel="up" title="API Reference" href="reference.html" />
-    <link rel="next" title="Canvas Rendering" href="rendering.html" />
-    <link rel="prev" title="Operations on wrapper-types" href="operations.html" /> 
+    <link rel="next" title="Wrapper types" href="wrappers.html" />
+    <link rel="prev" title="Package utilities" href="utilities.html" /> 
   </head>
   <body>
     <div class="related">
@@ -40,13 +39,12 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="rendering.html" title="Canvas Rendering"
+          <a href="wrappers.html" title="Wrapper types"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="operations.html" title="Operations on wrapper-types"
+          <a href="utilities.html" title="Package utilities"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li>
-          <li><a href="reference.html" accesskey="U">API Reference</a> &raquo;</li> 
+        <li><a href="index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -133,14 +131,14 @@ a regular expression can be evaluated):</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="cmstoolsac3b.generators.filter_inv">
-<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">filter_inv</tt><big>(</big><em>wrps</em>, <em>key_value_dict=None</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#filter_inv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.filter_inv" title="Permalink to this definition">¶</a></dt>
-<dd><p>Just as filter, only inverted.</p>
+<dt id="cmstoolsac3b.generators.rejector">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">rejector</tt><big>(</big><em>wrps</em>, <em>key_value_dict=None</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#rejector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.rejector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Just as filter, only rejects items with the given properites.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="cmstoolsac3b.generators.callback">
-<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">callback</tt><big>(</big><em>wrps</em>, <em>filter_dict=None</em>, <em>func=None</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.callback" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">callback</tt><big>(</big><em>wrps</em>, <em>func=None</em>, <em>filter_dict=None</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.callback" title="Permalink to this definition">¶</a></dt>
 <dd><p>Do a special treatment for selected wrps! All wrps are yielded.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -161,12 +159,11 @@ a regular expression can be evaluated):</p>
 <p><strong>Example:</strong> If you wanted to color all passing MC histograms blue:</p>
 <div class="highlight-python"><pre>def make_blue(wrp):
     wrp.histo.SetFillColor(ROOT.kBlue)
-    return wrp # IMPORTANT! RETURN THE WRAPPER!
 
 callback(
     wrappers,
-    {"is_data": False}
     make_blue
+    {"is_data": False}
 )</pre>
 </div>
 </dd></dl>
@@ -224,6 +221,24 @@ same-observable-histograms stacked together:</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="cmstoolsac3b.generators.interleave">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">interleave</tt><big>(</big><em>*grouped_wrps</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#interleave"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.interleave" title="Permalink to this definition">¶</a></dt>
+<dd><p>Like itertools.izip, but chains inner packaging. Useful before making canvasses.</p>
+<p>((a,b),(c,d)), ((1,2),(3,4)) =&gt; ((a,b,1,2), (c,d,3,4))</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>*grouped_wrps</strong> &#8211; <p>grouped iterators</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Yields :</th><td class="field-body">generator object</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="cmstoolsac3b.generators.split_data_mc">
 <tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">split_data_mc</tt><big>(</big><em>wrps</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#split_data_mc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.split_data_mc" title="Permalink to this definition">¶</a></dt>
 <dd><p>Split stream into data and mc stream.</p>
@@ -265,8 +280,8 @@ same-observable-histograms stacked together:</p>
 </tr>
 </tbody>
 </table>
-<p><strong>Example:</strong> The <tt class="docutils literal"><span class="pre">lumi</span></tt> and <tt class="docutils literal"><span class="pre">int</span></tt> operations are generatorized below
-(notice that <tt class="docutils literal"><span class="pre">w1</span></tt>,``w2`` and <tt class="docutils literal"><span class="pre">w3</span></tt> are iterables):</p>
+<p><strong>Example:</strong> The <tt class="docutils literal"><span class="pre">lumi</span></tt> and <tt class="docutils literal"><span class="pre">integral</span></tt> operations are generatorized
+below (notice that <tt class="docutils literal"><span class="pre">w1</span></tt>,``w2`` and <tt class="docutils literal"><span class="pre">w3</span></tt> are iterables):</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">ROOT</span> <span class="kn">import</span> <span class="n">TH1I</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cmstoolsac3b.wrappers</span> <span class="kn">import</span> <span class="n">HistoWrapper</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">h1</span> <span class="o">=</span> <span class="n">TH1I</span><span class="p">(</span><span class="s">&quot;h1&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">.</span><span class="mi">5</span><span class="p">,</span> <span class="mf">4.5</span><span class="p">)</span>
@@ -279,7 +294,7 @@ same-observable-histograms stacked together:</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">w2</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">gen_lumi</span><span class="p">(</span><span class="n">w1</span><span class="p">))</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">w2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">float</span>
 <span class="go">2.0</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">gen_int</span> <span class="o">=</span> <span class="n">generate_op</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gen_int</span> <span class="o">=</span> <span class="n">generate_op</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">integral</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">w3</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">gen_int</span><span class="p">(</span><span class="n">w1</span><span class="p">))</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">w3</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">float</span>
 <span class="go">2.0</span>
@@ -327,15 +342,27 @@ same-observable-histograms stacked together:</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="cmstoolsac3b.generators.gen_norm_to_lumi">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">gen_norm_to_lumi</tt><big>(</big><em>wrps</em>, <em>**kws</em><big>)</big><a class="headerlink" href="#cmstoolsac3b.generators.gen_norm_to_lumi" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is <tt class="docutils literal"><span class="pre">generate_op(cmstoolsac3b.operations.norm_to_lumi)</span></tt></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.gen_norm_to_integral">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">gen_norm_to_integral</tt><big>(</big><em>wrps</em>, <em>**kws</em><big>)</big><a class="headerlink" href="#cmstoolsac3b.generators.gen_norm_to_integral" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is <tt class="docutils literal"><span class="pre">generate_op(cmstoolsac3b.operations.norm_to_integral)</span></tt></p>
+</dd></dl>
+
+<dl class="function">
 <dt id="cmstoolsac3b.generators.gen_mv_in">
 <tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">gen_mv_in</tt><big>(</big><em>wrps</em>, <em>**kws</em><big>)</big><a class="headerlink" href="#cmstoolsac3b.generators.gen_mv_in" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is <tt class="docutils literal"><span class="pre">generate_op(cmstoolsac3b.operations.mv_in)</span></tt></p>
 </dd></dl>
 
 <dl class="function">
-<dt id="cmstoolsac3b.generators.gen_int">
-<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">gen_int</tt><big>(</big><em>wrps</em>, <em>**kws</em><big>)</big><a class="headerlink" href="#cmstoolsac3b.generators.gen_int" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is <tt class="docutils literal"><span class="pre">generate_op(cmstoolsac3b.operations.int)</span></tt></p>
+<dt id="cmstoolsac3b.generators.gen_integral">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">gen_integral</tt><big>(</big><em>wrps</em>, <em>**kws</em><big>)</big><a class="headerlink" href="#cmstoolsac3b.generators.gen_integral" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is <tt class="docutils literal"><span class="pre">generate_op(cmstoolsac3b.operations.integral)</span></tt></p>
 </dd></dl>
 
 <dl class="function">
@@ -353,7 +380,21 @@ same-observable-histograms stacked together:</p>
 <dl class="function">
 <dt id="cmstoolsac3b.generators.fs_content">
 <tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">fs_content</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#fs_content"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.fs_content" title="Permalink to this definition">¶</a></dt>
-<dd><p>Searches <tt class="docutils literal"><span class="pre">settings.DIR_FILESERVICE</span></tt> for samples and loads aliases.</p>
+<dd><p>Searches <tt class="docutils literal"><span class="pre">settings.DIR_FILESERVICE</span></tt> for samples and yields aliases.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Yields :</th><td class="field-body">FileServiceAlias</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.dir_content">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">dir_content</tt><big>(</big><em>dir_path</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#dir_content"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.dir_content" title="Permalink to this definition">¶</a></dt>
+<dd><p>Searches directory for loadable wrapper-types. Yields aliases.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -451,15 +492,143 @@ suffix.</li>
 
 <dl class="function">
 <dt id="cmstoolsac3b.generators.apply_histo_fillcolor">
-<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">apply_histo_fillcolor</tt><big>(</big><em>wrps</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#apply_histo_fillcolor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.apply_histo_fillcolor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Uses <tt class="docutils literal"><span class="pre">histo.SetFillColor</span></tt>. Colors from utilities.settings</p>
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">apply_histo_fillcolor</tt><big>(</big><em>wrps</em>, <em>colors=None</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#apply_histo_fillcolor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.apply_histo_fillcolor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses <tt class="docutils literal"><span class="pre">histo.SetFillColor</span></tt>. Colors from settings, if not given.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>wrps</strong> &#8211; HistoWrapper iterable</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>wrps</strong> &#8211; HistoWrapper iterable</li>
+<li><strong>colors</strong> &#8211; Integer list</li>
+</ul>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Yields :</th><td class="field-body">HistoWrapper</td>
+<tr class="field-even field"><th class="field-name">Yields :</th><td class="field-body"><p class="first last">HistoWrapper</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.apply_histo_linecolor">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">apply_histo_linecolor</tt><big>(</big><em>wrps</em>, <em>colors=None</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#apply_histo_linecolor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.apply_histo_linecolor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses <tt class="docutils literal"><span class="pre">histo.SetLineColor</span></tt>. Colors from settings, if not given.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>wrps</strong> &#8211; HistoWrapper iterable</li>
+<li><strong>colors</strong> &#8211; Integer list</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Yields :</th><td class="field-body"><p class="first last">HistoWrapper</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.apply_histo_linewidth">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">apply_histo_linewidth</tt><big>(</big><em>wrps</em>, <em>linewidth=2</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#apply_histo_linewidth"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.apply_histo_linewidth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses <tt class="docutils literal"><span class="pre">histo.SetLineWidth</span></tt>. Default is 2.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>wrps</strong> &#8211; HistoWrapper iterable</li>
+<li><strong>line_width</strong> &#8211; argument for SetLineWidth</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Yields :</th><td class="field-body"><p class="first last">HistoWrapper</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.make_canvas_builder">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">make_canvas_builder</tt><big>(</big><em>grps</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#make_canvas_builder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.make_canvas_builder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Yields instanciated CanvasBuilders.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>grps</strong> &#8211; grouped or ungrouped Wrapper iterable
+if grouped: on canvas for each group</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Yields :</th><td class="field-body">CanvasBuilder instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.decorate">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">decorate</tt><big>(</big><em>wrps</em>, <em>decorators=None</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#decorate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.decorate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorate any iterable with a list of decorators.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>wrps</strong> &#8211; Wrapper (or CanvasBuilder) iterable</li>
+<li><strong>decorators</strong> &#8211; list of decorator classes.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Yields :</th><td class="field-body"><p class="first last">Wrapper (or CanvasBuilder)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example:</strong></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">result</span> <span class="o">=</span> <span class="n">decorate</span><span class="p">([</span><span class="n">CanvasBuilder</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="p">[</span><span class="n">Legend</span><span class="p">,</span> <span class="n">TextBox</span><span class="p">])</span>
+<span class="c"># result = [Legend(TextBox(CanvasBuilder)), ...]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.build_canvas">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">build_canvas</tt><big>(</big><em>bldrs</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#build_canvas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.build_canvas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls the <tt class="docutils literal"><span class="pre">build_canvas()</span></tt> method and returns the result.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>bldrs</strong> &#8211; CanvasBuilder iterable</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Yields :</th><td class="field-body">CanvasWrapper</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.switch_log_scale">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">switch_log_scale</tt><big>(</big><em>cnvs</em>, <em>y_axis=True</em>, <em>x_axis=False</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#switch_log_scale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.switch_log_scale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets main_pad in canvases to logscale.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cnvs</strong> &#8211; CanvasWrapper iterable</li>
+<li><strong>x_axis</strong> &#8211; boolean for x axis</li>
+<li><strong>y_axis</strong> &#8211; boolean for y axis</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Yields :</th><td class="field-body"><p class="first last">CanvasWrapper</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -491,6 +660,28 @@ suffix.</li>
 <span class="k">return</span> <span class="n">load</span><span class="p">(</span><span class="n">wrps</span><span class="p">)</span>
 </pre></div>
 </div>
+</dd></dl>
+
+<dl class="function">
+<dt id="cmstoolsac3b.generators.mc_stack">
+<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">mc_stack</tt><big>(</big><em>wrps</em>, <em>merge_mc_key_func=None</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#mc_stack"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.mc_stack" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delivers only MC stacks, feed only with MC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>wrps</strong> &#8211; Iterables of HistoWrapper (grouped)</li>
+<li><strong>merge_mc_key_func</strong> &#8211; key function for python sorted(...), default
+tries to sort after stack position</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Yields :</th><td class="field-body"><p class="first last">StackWrapper</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -564,65 +755,6 @@ tries to sort after stack position</li>
 </dd></dl>
 
 <dl class="function">
-<dt id="cmstoolsac3b.generators.make_canvas_builder">
-<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">make_canvas_builder</tt><big>(</big><em>grps</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#make_canvas_builder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.make_canvas_builder" title="Permalink to this definition">¶</a></dt>
-<dd><p>Yields instanciated CanvasBuilders.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>grps</strong> &#8211; grouped or ungrouped Wrapper iterable
-if grouped: on canvas for each group</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Yields :</th><td class="field-body">CanvasBuilder instance</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="cmstoolsac3b.generators.decorate">
-<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">decorate</tt><big>(</big><em>wrps</em>, <em>decorators=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#decorate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.decorate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Decorate any iterable with a list of decorators.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>wrps</strong> &#8211; Wrapper (or CanvasBuilder) iterable</li>
-<li><strong>decorators</strong> &#8211; list of decorator classes.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Yields :</th><td class="field-body"><p class="first last">Wrapper (or CanvasBuilder)</p>
-</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Example:</strong></p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">result</span> <span class="o">=</span> <span class="n">decorate</span><span class="p">([</span><span class="n">CanvasBuilder</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="p">[</span><span class="n">Legend</span><span class="p">,</span> <span class="n">TextBox</span><span class="p">])</span>
-<span class="c"># result = [Legend(TextBox(CanvasBuilder)), ...]</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
-<dt id="cmstoolsac3b.generators.build_canvas">
-<tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">build_canvas</tt><big>(</big><em>bldrs</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#build_canvas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.build_canvas" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calls the <tt class="docutils literal"><span class="pre">build_canvas()</span></tt> method and returns the result.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>bldrs</strong> &#8211; CanvasBuilder iterable</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Yields :</th><td class="field-body">CanvasWrapper</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
 <dt id="cmstoolsac3b.generators.canvas">
 <tt class="descclassname">cmstoolsac3b.generators.</tt><tt class="descname">canvas</tt><big>(</big><em>grps</em>, <em>decorators=</em><span class="optional">[</span><span class="optional">]</span>, <em>callback_filter=None</em>, <em>callback_func=None</em><big>)</big><a class="reference internal" href="_modules/cmstoolsac3b/generators.html#canvas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cmstoolsac3b.generators.canvas" title="Permalink to this definition">¶</a></dt>
 <dd><p>Packaging of canvas builder, decorating, callback and canvas building.</p>
@@ -664,11 +796,11 @@ if grouped: on canvas for each group</li>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="operations.html"
-                        title="previous chapter">Operations on wrapper-types</a></p>
+  <p class="topless"><a href="utilities.html"
+                        title="previous chapter">Package utilities</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="rendering.html"
-                        title="next chapter">Canvas Rendering</a></p>
+  <p class="topless"><a href="wrappers.html"
+                        title="next chapter">Wrapper types</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="_sources/generators.txt"
@@ -701,13 +833,12 @@ if grouped: on canvas for each group</li>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="rendering.html" title="Canvas Rendering"
+          <a href="wrappers.html" title="Wrapper types"
              >next</a> |</li>
         <li class="right" >
-          <a href="operations.html" title="Operations on wrapper-types"
+          <a href="utilities.html" title="Package utilities"
              >previous</a> |</li>
-        <li><a href="index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li>
-          <li><a href="reference.html" >API Reference</a> &raquo;</li> 
+        <li><a href="index.html">CmsAnalysisAC3B 0.1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

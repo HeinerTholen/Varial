@@ -65,7 +65,8 @@
 <span class="n">cfg_common_builtins</span>     <span class="o">=</span> <span class="p">{}</span>
 
 <span class="c">################################################################### samples ###</span>
-<span class="n">samples</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="p">{}</span>       <span class="c"># all samples being processed</span>
+<span class="n">samples_stack</span> <span class="o">=</span> <span class="p">[]</span> <span class="c"># list of strings of samplenames for data/MC comparison</span>
 <div class="viewcode-block" id="mc_samples"><a class="viewcode-back" href="../../utilities.html#cmstoolsac3b.settings.mc_samples">[docs]</a><span class="k">def</span> <span class="nf">mc_samples</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;Returns a dict of all MC samples.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">dict</span><span class="p">((</span><span class="n">k</span><span class="p">,</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">samples</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">v</span><span class="o">.</span><span class="n">is_data</span><span class="p">)</span>
@@ -118,7 +119,7 @@
     <span class="k">return</span> <span class="n">pretty_names</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
 </div>
 <span class="n">colors</span> <span class="o">=</span> <span class="p">{}</span> <span class="c"># map legend entries to fill colors</span>
-<div class="viewcode-block" id="get_fill_color"><a class="viewcode-back" href="../../utilities.html#cmstoolsac3b.settings.get_fill_color">[docs]</a><span class="k">def</span> <span class="nf">get_fill_color</span><span class="p">(</span><span class="n">sample_or_legend_name</span><span class="p">):</span>
+<div class="viewcode-block" id="get_color"><a class="viewcode-back" href="../../utilities.html#cmstoolsac3b.settings.get_color">[docs]</a><span class="k">def</span> <span class="nf">get_color</span><span class="p">(</span><span class="n">sample_or_legend_name</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Gives a ROOT color value back for sample or legend name.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">colors</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">sample_or_legend_name</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">colors</span><span class="p">[</span><span class="n">sample_or_legend_name</span><span class="p">]</span>
