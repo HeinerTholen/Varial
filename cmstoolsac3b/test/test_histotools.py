@@ -1,10 +1,11 @@
 
 import unittest
-from cmstoolsac3b.test.test_generators import suite as gen_suite
-from cmstoolsac3b.test.test_histoDispatch import suite as dip_suite
-from cmstoolsac3b.test.test_ops import suite as ops_suite
-from cmstoolsac3b.test.test_rendering import suite as rnd_suite
-from cmstoolsac3b.test.test_wrapper import suite as wrp_suite
+from test_generators import suite as gen_suite
+from test_histoDispatch import suite as dip_suite
+from test_ops import suite as ops_suite
+from test_rendering import suite as rnd_suite
+from test_wrapper import suite as wrp_suite
+from test_postproctools import suite as pst_suite
 
 import doctest
 import cmstoolsac3b.generators as gen
@@ -25,9 +26,13 @@ suite = unittest.TestSuite((
     dip_suite,
     ops_suite,
     rnd_suite,
-    wrp_suite
+    wrp_suite,
+    pst_suite
 ))
 
+import sys
 if __name__ == '__main__':
-    unittest.TextTestRunner().run(suite)
+    res = unittest.TextTestRunner().run(suite)
+    if res.failures:
+        sys.exit(-1)
 
