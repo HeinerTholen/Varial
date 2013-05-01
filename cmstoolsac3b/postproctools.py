@@ -179,18 +179,3 @@ class SimpleWebCreator(postprocessing.PostProcTool):
         self.finalize_page()
         self.write_page()
 
-
-
-# javascript:
-
-
-
-#<div id="uniquename" style="display:none;">
-#<p>Content goes here.</p>
-#</div>
-
-#<a href="javascript:ToggleDiv('uniquename')">
-#Click to show/hide.
-#</a>
-
-#<pre> preformatted text </pre>
