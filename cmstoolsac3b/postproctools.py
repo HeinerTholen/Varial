@@ -54,7 +54,7 @@ class SimpleWebCreator(postprocessing.PostProcTool):
         self.image_postfix = None
 
     def _set_plot_output_dir(self):
-        pass
+        pass # Keep it to DIR_PLOTS.
 
     def configure(self):
         """A bit of initialization."""
