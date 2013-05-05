@@ -66,7 +66,7 @@ class CmsRunProcess(QtCore.QProcess):
         sample = self.sample
         builtin_dict = {
             "lumi": sample.lumi,
-            "isData": sample.is_data,
+            "is_data": sample.is_data,
             "legend": sample.legend,
             "sample": '"' + sample.name + '"'
         }
