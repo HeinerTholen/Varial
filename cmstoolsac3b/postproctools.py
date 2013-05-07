@@ -1,42 +1,52 @@
 import settings
 import postprocessing
+import rendering
 import generators as gen
 import os, re
 
 
-class StackPlotterFS(postprocessing.PostProcTool):
+class FSStackPlotter(postprocessing.PostProcTool):
     """A 'stack with data overlay' plotter. To be subclassed."""
 
-    def __init__(self, name, histo_filter_dict):
-        super(StackPlotterFS, self).__init__(name)
-        self.histo_filter_dict = histo_filter_dict
+    class NoFilterDictError(Exception): pass
+
+    def configure(self):
+        self.filter_dict = None
+        self.canvas_decorators = [
+            rendering.BottomPlotRatio,
+            rendering.LegendRight
+        ]
+
+    def set_up_stacking(self):
+        if not self.filter_dict:
+            raise self.NoFilterDictError(
+                "filter_dict not set: subclass and overwrite configure()"
+            )
+        stream_stack = gen.fs_mc_stack_n_data_sum(self.filter_dict)
+        self.stream_stack = gen.pool_store_items(stream_stack)
+
+    def set_up_make_canvas(self):
+        self.stream_canvas = gen.canvas(
+            self.stream_stack,
+            self.canvas_decorators
+        )
+
+    def set_up_save_canvas(self):
+        self.stream_canvas = gen.save(
+            self.stream_canvas,
+            lambda wrp: self.plot_output_dir + wrp.name,
+        )
+
+    def run_sequence(self):
+        count = gen.consume_n_count(self.stream_canvas)
+        self.message("INFO: "+self.name+" produced "+str(count)+" canvases.")
 
     def run(self):
-        """Load, stack, print and save histograms in a stream."""
-
-        stream_stack = gen.fs_mc_stack_n_data_sum(
-            {"analyzer":re.compile("CrtlFilt*")}
-        )
-
-        stream_stack = gen.pool_store_items(stream_stack)
-
-        stream_stack = gen.debug_printer(stream_stack, False)
-
-        stream_canvas = gen.canvas(
-            stream_stack,
-            #[rendering.Legend]
-        )
-
-        stream_canvas = gen.debug_printer(stream_canvas, False)
-
-        stream_canvas = gen.save(
-            stream_canvas,
-            lambda wrp: self.plot_output_dir + wrp.name,
-            settings.rootfile_postfixes
-        )
-
-        count = gen.consume_n_count(stream_canvas)
-        self.message("INFO: "+self.name+" produced "+str(count)+" canvases.")
+        self.configure()
+        self.set_up_stacking()
+        self.set_up_make_canvas()
+        self.set_up_save_canvas()
+        self.run_sequence()
 
 
 class SimpleWebCreator(postprocessing.PostProcTool):
