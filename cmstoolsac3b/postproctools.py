@@ -2,7 +2,7 @@ import settings
 import postprocessing
 import rendering
 import generators as gen
-import os, re
+import os
 
 
 class FSStackPlotter(postprocessing.PostProcTool):
@@ -11,11 +11,13 @@ class FSStackPlotter(postprocessing.PostProcTool):
     class NoFilterDictError(Exception): pass
 
     def configure(self):
-        self.filter_dict = None
-        self.canvas_decorators = [
-            rendering.BottomPlotRatio,
-            rendering.LegendRight
-        ]
+        if not hasattr(self, "filter_dict"):
+            self.filter_dict = None
+        if not hasattr(self, "canvas_decorators"):
+            self.canvas_decorators = [
+                rendering.BottomPlotRatio,
+                rendering.LegendRight
+            ]
 
     def set_up_stacking(self):
         if not self.filter_dict:
