@@ -65,17 +65,10 @@ class CmsRunProcess(QtCore.QProcess):
         # set __builtin__ variables
         sample = self.sample
         builtin_dict = {
-<<<<<<< HEAD
-            "lumi": sample.lumi,
-            "is_data": sample.is_data,
-            "legend": sample.legend,
-            "sample": '"' + sample.name + '"'
-=======
             "lumi"      : sample.lumi,
             "is_data"   : sample.is_data,
             "legend"    : sample.legend,
             "sample"    : sample.name
->>>>>>> 1d0ceb3f2e2c21f7b41a95063c7a8e4019faa0dc
         }
         builtin_dict.update(settings.cfg_common_builtins)
         builtin_dict.update(sample.cfg_builtin)
