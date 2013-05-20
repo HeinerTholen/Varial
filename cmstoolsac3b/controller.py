@@ -34,14 +34,17 @@ class Controller(QtCore.QObject):
         crp.CmsRunProcesses are set up, and filled into self.waiting_pros
         crp.CmsRunProcess.prepare_run_conf() is called for every process.
         """
-        if len(self.waiting_pros): #setup has been done already
+        if self.waiting_pros: #setup has been done already
             return
 
         for name, sample in settings.samples.iteritems():
             process = crp.CmsRunProcess(sample, settings.try_reuse_results)
             process.message.connect(self.message)
             process.prepare_run_conf()
-            self.waiting_pros.append(process)
+            if process.will_reuse_data:
+                self.finished_pros.append(process)
+            else:
+                self.waiting_pros.append(process)
             self.process_enqueued.emit(process)
 
     def start_processes(self):

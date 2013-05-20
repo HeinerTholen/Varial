@@ -57,6 +57,7 @@ class Monitor(QtCore.QObject):
                 for line in logfile.readlines(): print line,
             finally:
                 logfile.close()
+            print "______________end of log for " + process.conf_filename
             print "_________________________________________end_cmsRun_logfile"
             self.error_logs_opened += 1
 
