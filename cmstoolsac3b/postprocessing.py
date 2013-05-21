@@ -26,6 +26,8 @@ class PostProcTool(object):
 
         if not tool_name:
             self.name = self.__class__.__name__
+        else:
+            self.name = tool_name
         self.plot_output_dir = settings.DIR_PLOTS
 
         self._set_plot_output_dir()
