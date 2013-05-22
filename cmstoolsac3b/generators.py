@@ -261,14 +261,13 @@ def fs_content():
     for alias in dsp.HistoDispatch().fileservice_aliases():
         yield alias
 
-def pool_content(filter_dict=None):
+def pool_content():
     """
-    Yields selected pool content.
+    Yields all pool content.
 
-    :param filter_dict: same as key_value_dict in ``filter(..)`` above
     :yields:    Wrappers
     """
-    return filter(dsp.HistoPool().get(), filter_dict)
+    return dsp.HistoPool().get()
 
 def pool_store_items(wrps):
     """
