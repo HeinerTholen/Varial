@@ -124,14 +124,12 @@ def main(post_proc_tools=list(),
             cnt.start_processes()
             return app.exec_()
         else:
-            print "INFO: Answer was not yes. Quitting..."
-            exit(-1)
+            print "INFO: Answer was not yes. Starting post-processing..."
+            pst.run()
     elif post_proc_tools:                # No jobs, but post-proc..
         pst.run()
-        exit(0)
     else:                                       # Nothing to do.
         print "I've got nothing to do!"
-        exit(0)
 
 def standalone(post_proc_tool_classes, **settings_kws):
     """
