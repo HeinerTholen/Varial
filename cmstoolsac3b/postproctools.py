@@ -10,8 +10,8 @@ class FSStackPlotter(postprocessing.PostProcTool):
 
     class NoFilterDictError(Exception): pass
 
-    def __init__(self, name):
-        super(self.__class__, self).__init__(name)
+    def __init__(self, name = None):
+        super(FSStackPlotter, self).__init__(name)
         if not hasattr(self, "filter_dict"):
             self.filter_dict = None
         if not hasattr(self, "canvas_decorators"):
