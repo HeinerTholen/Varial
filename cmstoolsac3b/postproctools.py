@@ -10,7 +10,8 @@ class FSStackPlotter(postprocessing.PostProcTool):
 
     class NoFilterDictError(Exception): pass
 
-    def configure(self):
+    def __init__(self, name):
+        super(self.__class__, self).__init__(name)
         if not hasattr(self, "filter_dict"):
             self.filter_dict = None
         if not hasattr(self, "canvas_decorators"):
@@ -18,6 +19,9 @@ class FSStackPlotter(postprocessing.PostProcTool):
                 rendering.BottomPlotRatio,
                 rendering.LegendRight
             ]
+
+    def configure(self):
+        pass
 
     def set_up_stacking(self):
         if not self.filter_dict:
@@ -41,7 +45,11 @@ class FSStackPlotter(postprocessing.PostProcTool):
 
     def run_sequence(self):
         count = gen.consume_n_count(self.stream_canvas)
-        self.message("INFO: "+self.name+" produced "+str(count)+" canvases.")
+        if count:
+            level = "INFO "
+        else:
+            level = "WARNING "
+        self.message(level+self.name+" produced "+str(count)+" canvases.")
 
     def run(self):
         self.configure()
