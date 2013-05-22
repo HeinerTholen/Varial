@@ -96,7 +96,7 @@ class Wrapper(_dict_base):
         history, self.history = self.history, repr(str(self.history))
         with open(info_filename, "w") as file:
             file.write(repr(self.all_info())+" \n\n")
-            print >> file, history
+            file.write(str(history))
         del self.klass
         self.history = history
 

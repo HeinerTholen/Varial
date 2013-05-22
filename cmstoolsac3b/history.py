@@ -44,7 +44,7 @@ class History(object):
                 if len(string):
                     string += ",\n"
                 string += "    "
-                string += repr(arg).replace("\n", "\n    ")
+                string += str(arg).replace("\n", "\n    ")
         if self.kws:
             string += ",\n    "
             string += str(self.kws)

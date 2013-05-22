@@ -234,7 +234,7 @@ class CanvasBuilder(object):
         list_of_histories = []
         for rnd in self.renderers:
             list_of_histories.append(rnd.history)
-        hstry = history.History(self.__class__.__name__)
+        hstry = history.History("CanvasBuilder")
         hstry.add_args(list_of_histories)
         hstry.add_kws(self.kws)
         return hstry
