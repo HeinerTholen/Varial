@@ -65,7 +65,9 @@ class Monitor(QtCore.QObject):
         print "INFO All processes finished"
 
     def message(self, sender, string):
-        if not type(sender) == str:
+        if hasattr(sender, "name"):
+            sender = sender.name
+        elif not type(sender) == str:
             sender = str(type(sender))
         print string + " (" + sender + ")"
 
