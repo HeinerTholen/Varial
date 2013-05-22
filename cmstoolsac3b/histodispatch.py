@@ -39,6 +39,7 @@ class HistoDispatch(object):
             if not settings.samples.has_key(sample_name):
                 continue
             is_data = settings.samples[sample_name].is_data
+            legend = settings.samples[sample_name].legend
             for analyzer_key in fs_file.GetListOfKeys():
                 analyzer = analyzer_key.ReadObj()
                 analyzer_name = analyzer_key.GetName()
@@ -49,6 +50,7 @@ class HistoDispatch(object):
                             histo_name,
                             analyzer_name,
                             sample_name,
+                            legend,
                             is_data
                         )
                     )
@@ -82,7 +84,7 @@ class HistoDispatch(object):
                 "Loaded object is not of type TH1: ", str(object)
             )
         histo.Sumw2()
-        histo.SetTitle(settings.samples[alias.sample].legend)
+        histo.SetTitle(alias.legend)
         wrp = wrappers.HistoWrapper(histo, **alias.all_info())
         wrp.lumi = settings.samples[alias.sample].lumi
         return wrp

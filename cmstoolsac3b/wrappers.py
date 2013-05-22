@@ -53,11 +53,12 @@ class FileServiceAlias(Alias):
     :param  is_data:        data or not?
     :type   is_data:        bool
     """
-    def __init__(self, name, analyzer, sample, is_data = False):
+    def __init__(self, name, analyzer, sample, legend, is_data = False):
         super(FileServiceAlias, self).__init__(sample, [analyzer, name])
         self.name           = name
         self.analyzer       = analyzer
         self.sample         = sample
+        self.legend         = legend
         self.is_data        = is_data
 
 
@@ -167,6 +168,7 @@ class HistoWrapper(Wrapper):
         self.is_data        = kws.get("is_data", False)
         self.lumi           = kws.get("lumi", 1.)
         self.sample         = kws.get("sample", "")
+        self.legend         = kws.get("legend", "")
         self.analyzer       = kws.get("analyzer", "")
         self.filename       = kws.get("filename", "")
         self.in_file_path   = kws.get("in_file_path", "")
