@@ -275,7 +275,7 @@ class CanvasBuilder(object):
 ############################################# customization with decorators ###
 import decorator as dec
 import operations as op
-from ROOT import TLegend, TPad
+from ROOT import TLegend, TPad, TPaveText
 
 class Legend(dec.Decorator):
     """
@@ -296,6 +296,23 @@ class Legend(dec.Decorator):
         self.dec_par["reverse"]     = True
         self.dec_par.update(kws)
 
+    def make_entry_tupels(self, legend):
+        rnds = self.renderers
+        entries = []
+        for entry in legend.GetListOfPrimitives():
+            obj = entry.GetObject()
+            label = entry.GetLabel()
+            is_data = ("Data" in label) or ("data" in label)
+            for rnd in rnds:
+                if isinstance(rnd, StackRenderer): continue
+                if rnd.primary_object() is obj:
+                    is_data = rnd.is_data
+                    if hasattr(rnd, "legend"):
+                        label = rnd.legend
+                    break
+            entries.append((obj, label, is_data))
+        return entries
+
     def do_final_cosmetics(self):
         """
         Only ``do_final_cosmetics`` is overwritten here.
@@ -306,32 +323,23 @@ class Legend(dec.Decorator):
         if self.legend: return
 
         tmp_leg = self.main_pad.BuildLegend(0.1, 0.6, 0.5, 0.8) # get legend entry objects
-        tobjects = [(entry.GetObject(), entry.GetLabel())
-                    for entry in tmp_leg.GetListOfPrimitives()]
+        entries = self.make_entry_tupels(tmp_leg)
         tmp_leg.Clear()
         self.main_pad.GetListOfPrimitives().Remove(tmp_leg)
         tmp_leg.Delete()
 
         par = self.dec_par
         x1, x2, y2, y_shift = par["x1"], par["x2"], par["y2"], par["y_shift"]
-        y1 = y2 - (len(tobjects) * y_shift)
+        y1 = y2 - (len(entries) * y_shift)
         legend = TLegend(x1, y1, x2, y2)
         legend.SetBorderSize(0)
         if par["reverse"]:
-            tobjects.reverse()
-        for obj in tobjects:
-            if obj[1] == "Data" or obj[1] == "data":
-                legend.AddEntry(
-                    obj[0],
-                    obj[1],
-                    par["opt_data"]
-                )
+            entries.reverse()
+        for obj, label, is_data in entries:
+            if is_data:
+                legend.AddEntry(obj, label, par["opt_data"])
             else:
-                legend.AddEntry(
-                    obj[0],
-                    obj[1],
-                    par["opt"]
-                )
+                legend.AddEntry(obj, label, par["opt"])
         legend.Draw()
         self.legend = legend
         self.decoratee.do_final_cosmetics()         # Call next inner class!!
