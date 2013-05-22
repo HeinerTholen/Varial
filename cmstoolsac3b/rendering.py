@@ -465,6 +465,26 @@ class BottomPlotRatio(BottomPlot):
         #TODO: use HistoRenderer here
 
 
+class TitleBox(dec.Decorator):
+
+    def make_title(self):
+        return "subclass TitleBox and overwrite get_title()!"
+
+    def do_final_cosmetics(self):
+        self.decoratee.do_final_cosmetics()
+
+        titlebox = TPaveText(0.18, 0.94, 0.9, 0.97, "brNDC")
+        titlebox.AddText(self.make_title())
+        titlebox.SetTextSize(0.045)
+        titlebox.SetFillStyle(0)
+        titlebox.SetBorderSize(0)
+        titlebox.SetTextAlign(13)
+        titlebox.SetMargin(0.0)
+        titlebox.SetFillColor(0)
+        titlebox.Draw("SAME")
+        self.titlebox = titlebox
+
+
 #TODO: Statbox from classes/CRUtilities
 #TODO: Stuff from tools/CRHistoStackerDecorators
 
