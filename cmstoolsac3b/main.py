@@ -113,10 +113,7 @@ def main(post_proc_tools=list(),
 
     # TODO: do not execute postproctools when crtl-c was hit.
     # GO!
-    if not cnt.waiting_pros:                    # No jobs, no running.
-        print "INFO: I have no cmsRun jobs. Quitting..."
-        exit(-1)
-    elif executed_procs:                        # Got jobs to execute?
+    if executed_procs:                          # Got jobs to execute?
         if (not_ask_execute 
             or settings.suppress_cmsRun_exec
             or raw_input(
