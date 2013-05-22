@@ -119,7 +119,7 @@ class CanvasBuilder(object):
         canvas_wrp = cb.build_canvas()
 
     * ``list_of_wrappers`` is can also be a list of renderers. If not, the
-      renderers are created automaticly.
+      renderers are created automatically.
 
     * ``**kws`` can be empty. Accepted keywords are ``name=`` and ``title=`` and
       any keyword that is accepted by ``histotools.wrappers.CanvasWrapper``.
@@ -133,7 +133,7 @@ class CanvasBuilder(object):
     ``canvas``        Reference to the TCanvas instance
     ``main_pad``      Reference to TPad instance
     ``second_pad``    Reference to TPad instance or None
-    ``first_drawn``   TObject which is first drawed (for valid TAxis reference)
+    ``first_drawn``   TObject which is first drawn (for valid TAxis reference)
     ``legend``        Reference to TLegend object.
     ================= =========================================================
     """
