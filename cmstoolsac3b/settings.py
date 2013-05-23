@@ -2,6 +2,10 @@
 This module contains project wide settings.
 """
 
+################################################################### general ###
+tweak           = "tweak.py"
+logfilename     = "cmstoolsac3b.log"
+
 ################################################################ processing ###
 import multiprocessing
 
@@ -19,6 +23,8 @@ cfg_common_builtins     = {}
 post_proc_tools = []
 
 ################################################################### samples ###
+import wrappers as wrp
+
 samples = {}       # all samples being processed
 samples_stack = [] # list of strings of samplenames for data/MC comparison
 def mc_samples():
@@ -33,11 +39,13 @@ def data_lumi_sum():
     """Returns the sum of luminosity in data samples."""
     return sum(v.lumi for k,v in data_samples().iteritems())
 
+def data_lumi_sum_wrp():
+    """Returns the sum of data luminosity in as a FloatWrapper."""
+    return wrp.FloatWrapper(data_lumi_sum(), history="DataLumiSum")
+
 ######################################################### folder management ###
 import os
 import sys
-
-logfilename     = "cmstoolsac3b.log"
 
 DIR_JOBINFO     = ".jobInfo/"
 DIR_FILESERVICE = "outputFileService/"

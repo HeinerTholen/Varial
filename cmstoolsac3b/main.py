@@ -1,6 +1,7 @@
 
 import signal
 import sys
+import os
 import settings
 import sample
 import controller
@@ -75,6 +76,13 @@ def main(**settings_kws):
     if settings.logfilename:
         sys.stdout = StdOutTee(settings.logfilename)
         sys.stderr = sys.stdout
+
+    # tweaks in working directory?
+    tweak_name = settings.tweak
+    if os.path.exists(tweak_name):
+        print "WARNING I found " + tweak_name + " and I am going to import it!"
+        import imp
+        settings.tweak = imp.load_source(tweak_name[:-3], tweak_name)
 
     # create folders (for process confs)
     settings.create_folders()
