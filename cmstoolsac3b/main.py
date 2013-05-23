@@ -7,8 +7,6 @@ import controller
 import postprocessing
 from PyQt4 import QtCore
 
-
-
 class SigintHandler(object):
     def __init__(self, controller):
         self.controller = controller
@@ -54,9 +52,7 @@ def _instanciate_samples():
         if not isinstance(v, sample.Sample):
             settings.samples[k] = v()
 
-def main(post_proc_tools=list(),
-         not_ask_execute=False,
-         logfilename="cmstoolsac3b.log",
+def main(not_ask_execute=False,
          **settings_kws):
     """
     Post processing and processing.
@@ -77,8 +73,8 @@ def main(post_proc_tools=list(),
     _process_settings_kws(settings_kws)
     _instanciate_samples()
     app = QtCore.QCoreApplication(sys.argv)
-    if logfilename:
-        sys.stdout = StdOutTee(logfilename)
+    if settings.logfilename:
+        sys.stdout = StdOutTee(settings.logfilename)
         sys.stderr = sys.stdout
 
     # create folders (for process confs)
@@ -92,7 +88,7 @@ def main(post_proc_tools=list(),
     # post processor
     pst = postprocessing.PostProcessor(not bool(executed_procs))
     cnt.all_finished.connect(pst.run)
-    for tool in post_proc_tools:
+    for tool in settings.post_proc_tools:
         #TODO: Move this into PostProcessor!
         assert (isinstance(tool, postprocessing.PostProcTool)
             or issubclass(tool, postprocessing.PostProcTool))
@@ -126,7 +122,7 @@ def main(post_proc_tools=list(),
         else:
             print "INFO: Answer was not yes. Starting post-processing..."
             pst.run()
-    elif post_proc_tools:                # No jobs, but post-proc..
+    elif settings.post_proc_tools:                # No jobs, but post-proc..
         pst.run()
     else:                                       # Nothing to do.
         print "I've got nothing to do!"

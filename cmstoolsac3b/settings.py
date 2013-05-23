@@ -14,6 +14,9 @@ cfg_use_file_service    = True
 cfg_output_module_name  = "out"
 cfg_common_builtins     = {}
 
+########################################################### post-processing ###
+post_proc_tools = []
+
 ################################################################### samples ###
 samples = {}       # all samples being processed
 samples_stack = [] # list of strings of samplenames for data/MC comparison
@@ -32,6 +35,8 @@ def data_lumi_sum():
 ######################################################### folder management ###
 import os
 import sys
+
+logfilename     = "cmstoolsac3b.log"
 
 DIR_JOBINFO     = ".jobInfo/"
 DIR_FILESERVICE = "outputFileService/"
