@@ -6,6 +6,7 @@ This module contains project wide settings.
 import multiprocessing
 
 max_num_processes       = multiprocessing.cpu_count()
+not_ask_execute         = False
 suppress_cmsRun_exec    = False
 try_reuse_results       = False
 default_enable_sample   = True

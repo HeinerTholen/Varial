@@ -52,8 +52,7 @@ def _instanciate_samples():
         if not isinstance(v, sample.Sample):
             settings.samples[k] = v()
 
-def main(not_ask_execute=False,
-         **settings_kws):
+def main(**settings_kws):
     """
     Post processing and processing.
 
@@ -110,7 +109,7 @@ def main(not_ask_execute=False,
     # TODO: do not execute postproctools when crtl-c was hit.
     # GO!
     if executed_procs:                          # Got jobs to execute?
-        if (not_ask_execute 
+        if (settings.not_ask_execute
             or settings.suppress_cmsRun_exec
             or raw_input(
                 "Really run these processes:\n   "
