@@ -80,7 +80,10 @@ def main(**settings_kws):
     # tweaks in working directory?
     tweak_name = settings.tweak
     if os.path.exists(tweak_name):
-        print "WARNING I found " + tweak_name + " and I am going to import it!"
+        print ("WARNING I found "
+               + tweak_name
+               + " and I am going to dump it first and then import it!")
+        with open(tweak_name, 'r') as f: print f.read()
         import imp
         settings.tweak = imp.load_source(tweak_name[:-3], tweak_name)
 
@@ -129,7 +132,7 @@ def main(**settings_kws):
         else:
             print "INFO: Answer was not yes. Starting post-processing..."
             pst.run()
-    elif settings.post_proc_tools:                # No jobs, but post-proc..
+    elif settings.post_proc_tools:              # No jobs, but post-proc..
         pst.run()
     else:                                       # Nothing to do.
         print "I've got nothing to do!"
