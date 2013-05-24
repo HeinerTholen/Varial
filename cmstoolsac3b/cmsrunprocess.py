@@ -33,9 +33,8 @@ class CmsRunProcess(QtCore.QProcess):
 
         # set all environment
         self.setWorkingDirectory(os.getcwd())
-        self.setEnvironment(QtCore.QProcess.systemEnvironment())
         self.setProcessChannelMode(1)
-        self.setStandardOutputFile(self.log_filename)
+        self.setEnvironment(QtCore.QProcess.systemEnvironment())
         self.finished.connect(self.write_job_info)
 
     def __str__(self):
@@ -181,6 +180,7 @@ class CmsRunProcess(QtCore.QProcess):
         else:
             self.jobinfo.clear()
             self.jobinfo.sync()
+            self.setStandardOutputFile(self.log_filename)
             super(CmsRunProcess, self).start(
                 self.exe, 
                 [self.conf_filename] + self.sample.cmsRun_args
