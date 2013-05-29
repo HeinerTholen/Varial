@@ -508,7 +508,7 @@ def fs_mc_stack(filter_dict=None, merge_mc_key_func=None):
     grouped = group(loaded)
     return mc_stack(grouped, merge_mc_key_func)
 
-def mc_stack_n_data_sum(wrps, merge_mc_key_func=None):
+def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=False):
     """
     Stacks MC histos and merges data, input needs to be sorted and grouped.
 
@@ -530,7 +530,10 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None):
 
         # sum up data
         data_sum = op.sum(data)
-        data_lumi = op.lumi(data_sum)
+        if use_all_data_lumi:
+            data_lumi = settings.data_lumi_sum_wrp()
+        else:
+            data_lumi = op.lumi(data_sum)
 
         # merge mc samples (merge also normalizes to lumi = 1.)
         mc_sorted = sorted(mc, key=merge_mc_key_func)
@@ -557,7 +560,7 @@ def fs_mc_stack_n_data_sum(filter_dict=None, merge_mc_key_func=None):
     """
     loaded = fs_filter_sort_load(filter_dict)
     grouped = group(loaded) # default: group by analyzer_histo (the fs histo 'ID')
-    return mc_stack_n_data_sum(grouped, merge_mc_key_func)
+    return mc_stack_n_data_sum(grouped, merge_mc_key_func, True)
 
 def canvas(grps, 
            decorators=list(), 
