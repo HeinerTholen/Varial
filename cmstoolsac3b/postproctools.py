@@ -19,6 +19,8 @@ class FSStackPlotter(postprocessing.PostProcTool):
                 rendering.BottomPlotRatio,
                 rendering.LegendRight
             ]
+        if not hasattr(self, "save_log_scale"):
+            self.save_log_scale = False
 
     def configure(self):
         pass
@@ -38,6 +40,8 @@ class FSStackPlotter(postprocessing.PostProcTool):
         )
 
     def set_up_save_canvas(self):
+        if self.save_log_scale:
+            self.stream_canvas = gen.switch_log_scale(self.stream_canvas)
         self.stream_canvas = gen.save(
             self.stream_canvas,
             lambda wrp: self.plot_output_dir + wrp.name,

@@ -587,6 +587,26 @@ def canvas(grps,
     grps = callback(grps, filter_dict=callback_filter, func=callback_func) # ...
     return build_canvas(grps)                   # and do the job
 
+def save_canvas_lin_log(cnvs, filename_func):
+    """
+    Saves canvasses, switches to logscale, saves again.
+
+    :param cnvs:            CanvasWrapper iterable
+    :param filename_func:   see function save(...) above
+    :yields:                CanvasWrapper
+    """
+    cnvs = save(
+        cnvs,
+        lambda c: filename_func(c) + "_lin"
+    )
+    cnvs = switch_log_scale(cnvs)
+    cnvs = save(
+        cnvs,
+        lambda c: filename_func(c) + "_log"
+    )
+    return cnvs
+
+
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
