@@ -70,7 +70,7 @@ class SimpleWebCreator(postprocessing.PostProcTool):
     """
 
     def __init__(self, name = None):
-        super(self.__class__, self).__init__(name)
+        super(SimpleWebCreator, self).__init__(name)
         self.working_dir = ""
         self.web_lines = []
         self.subfolders = []
@@ -190,6 +190,10 @@ class SimpleWebCreator(postprocessing.PostProcTool):
         with open(os.path.join(self.working_dir, "index.html"), "w") as f:
             f.writelines(self.web_lines)
 
+    def copy_page_to_destination(self):
+        """To Be Overwritten."""
+        pass
+
     def run(self):
         """Run the single steps."""
         self.configure()
@@ -202,4 +206,5 @@ class SimpleWebCreator(postprocessing.PostProcTool):
         self.make_image_divs()
         self.finalize_page()
         self.write_page()
+        self.copy_page_to_destination()
 
