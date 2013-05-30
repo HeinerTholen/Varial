@@ -98,13 +98,7 @@ def main(**settings_kws):
     # post processor
     pst = postprocessing.PostProcessor(not bool(executed_procs))
     cnt.all_finished.connect(pst.run)
-    for tool in settings.post_proc_tools:
-        #TODO: Move this into PostProcessor!
-        assert (isinstance(tool, postprocessing.PostProcTool)
-            or issubclass(tool, postprocessing.PostProcTool))
-        if not isinstance(tool, postprocessing.PostProcTool):
-            tool = tool()
-        pst.add_tool(tool)
+    pst.add_tools(settings.post_proc_tools)
 
     # create folders (for plottools)
     settings.create_folders()
@@ -131,9 +125,9 @@ def main(**settings_kws):
             return app.exec_()
         else:
             print "INFO: Answer was not yes. Starting post-processing..."
-            pst.run()
+            pst.run(cnt.finished_pros)
     elif settings.post_proc_tools:              # No jobs, but post-proc..
-        pst.run()
+        pst.run(cnt.finished_pros)
     else:                                       # Nothing to do.
         print "I've got nothing to do!"
 

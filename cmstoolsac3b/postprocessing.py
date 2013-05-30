@@ -14,7 +14,6 @@ class PostProcTool(object):
     def _connect_message_signal(self):
         self.messenger = monitor.Messenger()
         monitor.Monitor().connect_object_with_messenger(self)
-        self.message = self.messenger.message.emit
 
     def _set_plot_output_dir(self):
         plot_output_dir = settings.DIR_PLOTS + self.name + "/"
@@ -49,19 +48,43 @@ class PostProcessor(object):
     """
     tool_chain = []
     reuse = False
+    messanger = monitor.Messenger()
 
     def __init__(self, all_processes_reused):
         super(PostProcessor, self).__init__()
         self.reuse = all_processes_reused
+        self.messenger = monitor.Messenger()
+        monitor.Monitor().connect_object_with_messenger(self)
+
+    def add_tools(self, tools):
+        for tool in tools:
+            self.add_tool(tool)
 
     def add_tool(self, tool):
-        reuse = tool.wanna_reuse(self.reuse)
-        self.reuse = reuse
-        tool.reuse = reuse
+        assert (isinstance(tool, PostProcTool)
+                or issubclass(tool, PostProcTool))
+        if not isinstance(tool, PostProcTool):
+            tool = tool()
+        self.reuse = tool.wanna_reuse(self.reuse)
+        tool.reuse = self.reuse
         self.tool_chain.append(tool)
 
-    def run(self):
+    def remove_non_finished_samples(self, finished_procs):
+        finished_procs = map(lambda x: x.name, finished_procs)
+        for sample in settings.samples.keys():
+            if not sample in finished_procs:
+                self.message(
+                    "WARNING: Process '"
+                    + sample
+                    + "' unfinished. Removing sample from list."
+                )
+                del settings.samples[sample]
+
+    def run(self, finished_procs = None):
         """All tools in tool chain are executed."""
+        if finished_procs:
+            self.remove_non_finished_samples(finished_procs)
+
         for tool in self.tool_chain:
             if tool.reuse: continue
             tool.messenger.started.emit()

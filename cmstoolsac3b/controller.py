@@ -70,7 +70,7 @@ class Controller(QtCore.QObject):
         for process in self.running_pros[:]:
             if process.state() == 0:
                 self.running_pros.remove(process)
-                if process.exitCode() == 0:
+                if process.exitCode() == 0 and not process.sig_int:
                     self.finished_pros.append(process)
                     self.process_finished.emit(process)
                 else:
