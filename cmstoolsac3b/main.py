@@ -4,9 +4,25 @@ import sys
 import os
 import settings
 import sample
-import controller
+import controller as controller_module
 import postprocessing
 from PyQt4 import QtCore
+import threading
+import time
+
+# iPython mode
+def ipython_usage():
+    print "WARNING =================================================="
+    print "WARNING Detected iPython, going to interactive mode...    "
+    print "WARNING Before exiting, you must call main.tear_down() !!!"
+    print "WARNING =================================================="
+ipython_mode = False
+try:
+    __IPYTHON__
+    ipython_mode = True
+    ipython_usage()
+except NameError:
+    pass
 
 class SigintHandler(object):
     def __init__(self, controller):
@@ -15,9 +31,10 @@ class SigintHandler(object):
 
     def handle(self, signal_int, frame):
         if signal_int is signal.SIGINT:
-            if self.hits:
-                exit(-1)
-            print "WARNING: aborting all processes. Crtl-C again to kill immediately!"
+            if not ipython_mode:
+                if self.hits:
+                    exit(-1)
+                print "WARNING: aborting all processes. Crtl-C again to kill immediately!"
             sys.__stdout__.flush()
             self.hits += 1
             settings.recieved_sigint = True
@@ -72,10 +89,6 @@ def main(**settings_kws):
     # prepare...
     _process_settings_kws(settings_kws)
     _instanciate_samples()
-    app = QtCore.QCoreApplication(sys.argv)
-    if settings.logfilename:
-        sys.stdout = StdOutTee(settings.logfilename)
-        sys.stderr = sys.stdout
 
     # tweaks in working directory?
     tweak_name = settings.tweak
@@ -87,31 +100,25 @@ def main(**settings_kws):
         import imp
         settings.tweak = imp.load_source(tweak_name[:-3], tweak_name)
 
-    # create folders (for process confs)
+    # create folders (for process confs, etc.)
     settings.create_folders()
 
     # controller
-    cnt = controller.Controller()
-    cnt.setup_processes()
-    executed_procs = list(p for p in cnt.waiting_pros if not p.will_reuse_data)
+    controller.setup_processes()
+    executed_procs = list(p for p in controller.waiting_pros if not p.will_reuse_data)
 
     # post processor
     pst = postprocessing.PostProcessor(not bool(executed_procs))
-    cnt.all_finished.connect(pst.run)
+    controller.all_finished.connect(pst.run)
     pst.add_tools(settings.post_proc_tools)
 
     # create folders (for plottools)
     settings.create_folders()
 
-    # SIGINT handler
-    sig_handler = SigintHandler(cnt)
-    signal.signal(signal.SIGINT, sig_handler.handle)
-
     # connect for quiting
     # (all other finishing connections before this one)
-    cnt.all_finished.connect(app.quit)
+    controller.all_finished.connect(exec_quit)
 
-    # TODO: do not execute postproctools when crtl-c was hit.
     # GO!
     if executed_procs:                          # Got jobs to execute?
         if (settings.not_ask_execute
@@ -121,13 +128,14 @@ def main(**settings_kws):
                 + ",\n   ".join(map(str,executed_procs))
                 + "\n?? (type 'yes') "
             ) == "yes"):
-            cnt.start_processes()
-            return app.exec_()
+            if ipython_mode: ipython_usage()
+            controller.start_processes()
+            return exec_start()
         else:
             print "INFO: Answer was not yes. Starting post-processing..."
-            pst.run(cnt.finished_pros)
+            pst.run()
     elif settings.post_proc_tools:              # No jobs, but post-proc..
-        pst.run(cnt.finished_pros)
+        pst.run()
     else:                                       # Nothing to do.
         print "I've got nothing to do!"
 
