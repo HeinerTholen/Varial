@@ -29,6 +29,8 @@ class Controller(QtCore.QObject):
             + " cpu cores at max."
         )
 
+        settings.controller = self
+
     def setup_processes(self):
         """
         crp.CmsRunProcesses are set up, and filled into self.waiting_pros
@@ -41,6 +43,7 @@ class Controller(QtCore.QObject):
             process = crp.CmsRunProcess(sample, settings.try_reuse_results)
             process.message.connect(self.message)
             process.prepare_run_conf()
+            settings.cmsRun_procs.append(process)
             if process.will_reuse_data:
                 self.finished_pros.append(process)
             else:

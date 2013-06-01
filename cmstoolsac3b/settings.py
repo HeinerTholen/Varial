@@ -19,6 +19,9 @@ cfg_use_file_service    = True
 cfg_output_module_name  = "out"
 cfg_common_builtins     = {}
 
+cmsRun_procs = []
+controller   = None
+
 ########################################################### post-processing ###
 post_proc_tools = []
 
