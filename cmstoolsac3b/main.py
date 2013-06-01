@@ -53,18 +53,44 @@ def _instanciate_samples():
         if not isinstance(v, sample.Sample):
             settings.samples[k] = v()
 
+class Timer:
+    keep_alive = True
+    def timer_func(self):
+        while self.keep_alive:
+            app.processEvents()
+            time.sleep(0.1)
+    def kill(self):
+        time.sleep(1)
+        self.keep_alive = False
+
+timer       = Timer()
+app         = QtCore.QCoreApplication(sys.argv)
+controller  = controller_module.Controller()
+sig_handler = SigintHandler(controller)
+exec_thread = threading.Thread(target=timer.timer_func)
+exec_start  = app.exec_
+exec_quit   = app.quit
+
+def tear_down(*args):
+    sig_handler.hits = 0
+    sig_handler.handle(signal.SIGINT, None)
+    timer.kill()
+
+if ipython_mode:
+    exec_start  = exec_thread.start
+    exec_quit   = timer.kill
+    #import IPython.ipapi               ##### need to find a working exit hook
+    #IPython.ipapi.get().set_hook("shutdown_hook", exec_thread)
+else:
+    signal.signal(signal.SIGINT, sig_handler.handle)
+    if settings.logfilename:
+        sys.stdout = StdOutTee(settings.logfilename)
+        sys.stderr = sys.stdout
+
 def main(**settings_kws):
     """
-    Post processing and processing.
+    Processing and post processing.
 
-    :type   post_proc_tools: list
-    :param  post_proc_tools: ``PostProcTool`` subclasses.
-    :type   not_ask_execute:        bool
-    :param  not_ask_execute:        Suppress command line input check before
-                                    executing the cmsRun processes.
-    :type   logfilename:            string
-    :param  logfilename:            name of the logfile. No logging if
-                                    ``None`` .
     :param  settings_kws:           settings parameters given as keyword
                                     arguments are added to settings, e.g.
                                     ``samples={"mc":MCSample, ...}`` .
