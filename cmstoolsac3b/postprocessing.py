@@ -48,13 +48,10 @@ class PostProcessor(object):
     """
     tool_chain = []
     reuse = False
-    messanger = monitor.Messenger()
 
     def __init__(self, all_processes_reused):
         super(PostProcessor, self).__init__()
         self.reuse = all_processes_reused
-        self.messenger = monitor.Messenger()
-        monitor.Monitor().connect_object_with_messenger(self)
 
     def add_tools(self, tools):
         for tool in tools:
@@ -69,21 +66,8 @@ class PostProcessor(object):
         tool.reuse = self.reuse
         self.tool_chain.append(tool)
 
-    def remove_non_finished_samples(self, finished_procs):
-        finished_procs = map(lambda x: x.name, finished_procs)
-        for sample in settings.samples.keys():
-            if not sample in finished_procs:
-                self.message(
-                    "WARNING: Process '"
-                    + sample
-                    + "' unfinished. Removing sample from list."
-                )
-                del settings.samples[sample]
-
-    def run(self, finished_procs = None):
+    def run(self):
         """All tools in tool chain are executed."""
-        if finished_procs:
-            self.remove_non_finished_samples(finished_procs)
 
         for tool in self.tool_chain:
             if tool.reuse: continue

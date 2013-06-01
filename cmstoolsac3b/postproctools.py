@@ -5,6 +5,28 @@ import generators as gen
 import os
 
 
+class UnfinishedSampleRemover(postprocessing.PostProcTool):
+    """Removes unfinished samples from settings.samples"""
+
+    def _set_plot_output_dir(self):
+        pass
+
+    def run(self):
+        finished_procs = list(
+            p.name
+            for p in settings.cmsRun_procs
+            if p.exitCode() == 0 and not p.sig_int
+        )
+        for sample in settings.samples.keys():
+            if not sample in finished_procs:
+                self.message(
+                    "WARNING: Process '"
+                    + sample
+                    + "' unfinished. Removing sample from list."
+                )
+                del settings.samples[sample]
+
+
 class FSStackPlotter(postprocessing.PostProcTool):
     """A 'stack with data overlay' plotter. To be subclassed."""
 
