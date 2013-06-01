@@ -125,9 +125,9 @@ def main(**settings_kws):
             return app.exec_()
         else:
             print "INFO: Answer was not yes. Starting post-processing..."
-            pst.run(cnt.finished_pros)
+            pst.run()
     elif settings.post_proc_tools:              # No jobs, but post-proc..
-        pst.run(cnt.finished_pros)
+        pst.run()
     else:                                       # Nothing to do.
         print "I've got nothing to do!"
 
