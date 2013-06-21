@@ -158,7 +158,8 @@ class CmsRunProcess(QtCore.QProcess):
             return False
         if not os.path.exists(self.conf_filename):
             return False
-        if not os.path.exists(self.service_filename):
+        if (settings.cfg_use_file_service 
+        and not os.path.exists(self.service_filename)):
             return False
         if not os.path.exists(self.jobinfo_filename):
             return False
