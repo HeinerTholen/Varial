@@ -494,8 +494,8 @@ def mc_stack(wrps, merge_mc_key_func=None):
         mc_colord = apply_histo_fillcolor(mc_merged)
 
         # stack mc
-        mc_stack = op.stack(mc_colord)
-        yield mc_stack
+        stack = op.stack(mc_colord)
+        yield stack
 
 def fs_mc_stack(filter_dict=None, merge_mc_key_func=None):
     """
