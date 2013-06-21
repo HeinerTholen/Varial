@@ -59,7 +59,7 @@ DIR_JOBINFO     = ".jobInfo/"
 DIR_FILESERVICE = "outputFileService/"
 DIR_LOGS        = "outputLogs/"
 DIR_CONFS       = "outputConfs/"
-DIR_PLOTS       = "outputPlots/"
+DIR_PLOTS       = "outputPlots/"  #TODO: outputResult!!
 tool_folders    = {}
 
 def create_folders():
