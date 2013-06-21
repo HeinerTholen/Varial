@@ -135,6 +135,7 @@ def main(**settings_kws):
 
     # post processor
     pst = postprocessing.PostProcessor(not bool(executed_procs))
+    settings.postprocessor = pst
     controller.all_finished.connect(pst.run)
     pst.add_tools(settings.post_proc_tools)
 
