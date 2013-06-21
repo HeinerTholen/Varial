@@ -464,6 +464,12 @@ class BottomPlotRatio(BottomPlot):
         self.bottom_hist = wrp.histo
         #TODO: use HistoRenderer here
 
+    def draw_full_plot(self):
+        """Fix scale of ratio y axis."""
+        super(BottomPlotRatio, self).draw_full_plot()
+        if self.bottom_hist.GetMaximum() > 5.:
+            self.bottom_hist.GetYaxis().SetRangeUser(0., 5.)
+
 
 class TitleBox(dec.Decorator):
 
