@@ -269,7 +269,7 @@ def pool_content():
     """
     return dsp.HistoPool().get()
 
-def pool_store_items(wrps):
+def pool_store_items(wrps, callback = None):
     """
     Saves items in pool and yields them again.
 
@@ -279,6 +279,8 @@ def pool_store_items(wrps):
     pool = dsp.HistoPool()
     for wrp in wrps:
         for w in _iterableize(wrp):
+            if callback:
+                callback(w)
             pool.put(w)
         yield wrp
 
