@@ -166,6 +166,9 @@ class CmsRunProcess(QtCore.QProcess):
         prev_exit_code, parse_ok = self.jobinfo.value("exitCode", 255).toInt()
         return parse_ok and not prev_exit_code
 
+    def successful(self):
+        return self.exitCode() == 0 and not self.sig_int
+
     def start(self):
         """
         Start cmsRun with conf-file. If self.try_reuse is True and reuse is
