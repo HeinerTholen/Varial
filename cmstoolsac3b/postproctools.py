@@ -15,7 +15,7 @@ class UnfinishedSampleRemover(postprocessing.PostProcTool):
         finished_procs = list(
             p.name
             for p in settings.cmsRun_procs
-            if p.exitCode() == 0 and not p.sig_int
+            if p.successful()
         )
         for sample in settings.samples.keys():
             if not sample in finished_procs:
@@ -25,6 +25,41 @@ class UnfinishedSampleRemover(postprocessing.PostProcTool):
                     + "' unfinished. Removing sample from list."
                 )
                 del settings.samples[sample]
+
+
+class SampleEventCount(postprocessing.PostProcTool):
+    """Sets number of input events on samples."""
+
+    def __init__(self, name = None):
+        super(SampleEventCount, self).__init__(name)
+        if not hasattr(self, "counter_token"):
+            self.counter_token = "EventCountPrinter:"
+
+    def _set_plot_output_dir(self):
+        pass
+
+    def run(self):
+        finished_procs = list(
+            p 
+            for p in settings.cmsRun_procs
+            if p.successful()
+        )
+        for p in finished_procs:
+            if p.sample.is_data: 
+                continue
+            if p.sample.n_events is not -1:
+                continue
+            with open(p.log_filename) as f: 
+               for line in f:
+                   if self.counter_token in line:
+                       n_events = int(line.split()[-1])
+                       p.sample.n_events = n_events
+                       p.sample.lumi = n_events / p.sample.x_sec
+                       self.message(
+                           "INFO: Setting number of events for " 
+                            + p.name + " to " + str(n_events)
+                       )
+                       break
 
 
 class FSStackPlotter(postprocessing.PostProcTool):
