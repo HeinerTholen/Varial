@@ -29,6 +29,7 @@ controller   = None
 
 ########################################################### post-processing ###
 post_proc_tools = []
+web_target_dir = ""
 
 ################################################################### samples ###
 import wrappers as wrp

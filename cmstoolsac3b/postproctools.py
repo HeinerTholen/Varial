@@ -3,7 +3,7 @@ import postprocessing
 import rendering
 import generators as gen
 import os
-
+import shutil
 
 class UnfinishedSampleRemover(postprocessing.PostProcTool):
     """Removes unfinished samples from settings.samples"""
@@ -129,6 +129,7 @@ class SimpleWebCreator(postprocessing.PostProcTool):
     def __init__(self, name = None):
         super(SimpleWebCreator, self).__init__(name)
         self.working_dir = ""
+        self.target_dir = settings.web_target_dir
         self.web_lines = []
         self.subfolders = []
         self.image_names = []
@@ -248,8 +249,19 @@ class SimpleWebCreator(postprocessing.PostProcTool):
             f.writelines(self.web_lines)
 
     def copy_page_to_destination(self):
-        """To Be Overwritten."""
-        pass
+        """Copies .htaccess to cwd. If on top, copies everything to target."""
+        if not self.target_dir:
+            return
+        if not self.working_dir == settings.DIR_PLOTS:
+            shutil.copy2(os.path.join(self.target_dir, ".htaccess"), self.working_dir)
+        else:
+            shutil.copy2(os.path.join(self.working_dir, "index.html"), self.target_dir)
+            for f in self.subfolders:
+                shutil.rmtree(os.path.join(self.target_dir, f), True)
+                shutil.copytree(
+                    os.path.join(self.working_dir, f), 
+                    os.path.join(self.target_dir, f)
+                )
 
     def run(self):
         """Run the single steps."""
