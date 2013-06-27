@@ -7,7 +7,7 @@ import time
 
 tweak           = "tweak.py"
 logfilename     = time.strftime(
-    "cmstoolsac3b_%Y-%m-%dT%H:%M:%S.log", 
+    "cmstoolsac3b_%Y%m%dT%H%M%S.log", 
     time.localtime()
 )
 
