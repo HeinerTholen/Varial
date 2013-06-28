@@ -11,6 +11,9 @@ class UnfinishedSampleRemover(postprocessing.PostProcTool):
     def _set_plot_output_dir(self):
         pass
 
+    def wanna_reuse(self, all_reused_before_me):
+        return all_reused_before_me
+
     def run(self):
         finished_procs = list(
             p.name
@@ -34,6 +37,9 @@ class SampleEventCount(postprocessing.PostProcTool):
         super(SampleEventCount, self).__init__(name)
         if not hasattr(self, "counter_token"):
             self.counter_token = "EventCountPrinter:"
+
+    def wanna_reuse(self, all_reused_before_me):
+        return all_reused_before_me
 
     def _set_plot_output_dir(self):
         pass
@@ -78,6 +84,9 @@ class FSStackPlotter(postprocessing.PostProcTool):
             ]
         if not hasattr(self, "save_log_scale"):
             self.save_log_scale = False
+
+    def wanna_reuse(self, all_reused_before_me):
+        return all_reused_before_me
 
     def configure(self):
         pass
@@ -134,6 +143,9 @@ class SimpleWebCreator(postprocessing.PostProcTool):
         self.subfolders = []
         self.image_names = []
         self.image_postfix = None
+
+    def wanna_reuse(self, all_reused_before_me):
+        return all_reused_before_me
 
     def _set_plot_output_dir(self):
         pass
@@ -268,7 +280,7 @@ class SimpleWebCreator(postprocessing.PostProcTool):
         """Run the single steps."""
         self.configure()
         if not self.image_postfix: return # WARNING message above.
-        if (self.image_names or self.subfolders): 
+        if self.image_names or self.subfolders:
             self.message("INFO Building page in " + self.working_dir)
         else:
             return

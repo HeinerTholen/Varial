@@ -46,7 +46,7 @@ class PostProcessor(object):
 
     def __init__(self, all_processes_reused):
         super(PostProcessor, self).__init__()
-        self.reuse = all_processes_reused
+        self._reuse = all_processes_reused
 
     def add_tools(self, tools):
         for tool in tools:
@@ -57,15 +57,17 @@ class PostProcessor(object):
                 or issubclass(tool, PostProcTool))
         if not isinstance(tool, PostProcTool):
             tool = tool()
-        self.reuse = tool.wanna_reuse(self.reuse)
-        tool.reuse = self.reuse
+        self._reuse = tool.wanna_reuse(self._reuse)
+        tool._reuse = self._reuse
         self.tool_chain.append(tool)
 
     def run(self):
         """All tools in tool chain are executed."""
 
         for tool in self.tool_chain:
-            if tool.reuse: continue
+            if tool._reuse:
+                tool.message("INFO Reusing last round's data. Skipping...")
+                continue
             tool.messenger.started.emit()
             tool.run()
             tool.messenger.finished.emit()

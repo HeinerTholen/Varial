@@ -30,6 +30,7 @@ controller   = None
 ########################################################### post-processing ###
 post_proc_tools = []
 web_target_dir = ""
+enable_postproc_reuse = True
 
 ################################################################### samples ###
 import wrappers as wrp
