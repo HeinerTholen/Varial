@@ -22,6 +22,7 @@ class TestRendering(TestHistoToolsBase):
         self.assertIn(wrp1.histo, prim)
         self.assertIn(wrp2.histo, prim)
         self.test_wrp = wrp
+        self.fail()
 
     def test_canvas_info_file(self):
         fname = "test/cnv_save.info"
