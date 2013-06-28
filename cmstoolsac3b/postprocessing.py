@@ -11,10 +11,6 @@ class PostProcTool(object):
     A directory in <settings.DIR_PLOTS> with the class name of this tool is
     created. Messages can be printed with self.message().
     """
-    def _connect_message_signal(self):
-        self.messenger = monitor.Messenger()
-        monitor.Monitor().connect_object_with_messenger(self)
-
     def _set_plot_output_dir(self):
         plot_output_dir = settings.DIR_PLOTS + self.name + "/"
         settings.tool_folders[self.name] = plot_output_dir
@@ -30,8 +26,7 @@ class PostProcTool(object):
         self.plot_output_dir = settings.DIR_PLOTS
 
         self._set_plot_output_dir()
-        self._connect_message_signal()
-
+        monitor.Monitor().connect_object_with_messenger(self)
 
     def wanna_reuse(self, all_reused_before_me):
         """Overwrite! If True is returned, run is not called."""
