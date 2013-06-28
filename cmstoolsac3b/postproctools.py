@@ -149,8 +149,8 @@ class SimpleWebCreator(postprocessing.PostProcTool):
                 self.image_postfix = pf
                 break
         if not self.image_postfix:
-            self.message("WARNING: No image formats for web available!")
-            self.message("WARNING: settings.rootfile_postfixes:"
+            self.message("WARNING No image formats for web available!")
+            self.message("WARNING settings.rootfile_postfixes:"
                          + str(settings.rootfile_postfixes))
             return
 
@@ -255,6 +255,7 @@ class SimpleWebCreator(postprocessing.PostProcTool):
         if not self.working_dir == settings.DIR_PLOTS:
             shutil.copy2(os.path.join(self.target_dir, ".htaccess"), self.working_dir)
         else:
+            self.message("INFO Copying page to " + self.target_dir)
             shutil.copy2(os.path.join(self.working_dir, "index.html"), self.target_dir)
             for f in self.subfolders:
                 shutil.rmtree(os.path.join(self.target_dir, f), True)
@@ -267,7 +268,10 @@ class SimpleWebCreator(postprocessing.PostProcTool):
         """Run the single steps."""
         self.configure()
         if not self.image_postfix: return # WARNING message above.
-        if not (self.image_names or self.subfolders): return # Nothing to do
+        if (self.image_names or self.subfolders): 
+            self.message("INFO Building page in " + self.working_dir)
+        else:
+            return
         self.go4subdirs()
         self.make_html_head()
         self.make_headline()
