@@ -277,7 +277,7 @@ def dir_content(dir_path):
                     basenames.append(f[:-5])
         break
 
-def pool_content(filter_dict=None):
+def pool_content():
     """
     Yields all pool content.
 
