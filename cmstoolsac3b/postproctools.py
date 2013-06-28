@@ -148,7 +148,7 @@ class SimpleWebCreator(postprocessing.PostProcTool):
         return all_reused_before_me
 
     def _set_plot_output_dir(self):
-        pass
+        pass # Keep it to DIR_PLOTS.
 
     def configure(self):
         """A bit of initialization."""

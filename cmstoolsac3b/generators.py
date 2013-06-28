@@ -248,20 +248,36 @@ gen_int_l = generate_op(op.int_l)  #: This is ``generate_op(cmstoolsac3b.operati
 gen_int_r = generate_op(op.int_r)  #: This is ``generate_op(cmstoolsac3b.operations.int_r)``
 
 ############################################################### load / save ###
+import os
 import settings
 import histodispatch as dsp
 from ROOT import TFile
 
 def fs_content():
     """
-    Searches ``settings.DIR_FILESERVICE`` for samples and loads aliases.
+    Searches ``settings.DIR_FILESERVICE`` for samples and yields aliases.
 
     :yields:   FileServiceAlias
     """
     for alias in dsp.HistoDispatch().fileservice_aliases():
         yield alias
 
-def pool_content():
+#TODO get able to load dir content!!!!
+def dir_content(dir_path):
+    """
+    Searches directory for loadable wrapper-types. Yields aliases.
+
+    :yields:   FileServiceAlias
+    """
+    basenames = []
+    for cwd, dirs, files in os.walk(dir_path):
+        for f in files:
+            if (f[-5:] == ".info"
+                and f[:-5] + ".root" in files):
+                    basenames.append(f[:-5])
+        break
+
+def pool_content(filter_dict=None):
     """
     Yields all pool content.
 
