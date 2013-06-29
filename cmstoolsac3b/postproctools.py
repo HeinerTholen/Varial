@@ -7,12 +7,10 @@ import shutil
 
 class UnfinishedSampleRemover(postprocessing.PostProcTool):
     """Removes unfinished samples from settings.samples"""
+    can_reuse = False
 
     def _set_plot_output_dir(self):
         pass
-
-    def wanna_reuse(self, all_reused_before_me):
-        return all_reused_before_me
 
     def run(self):
         finished_procs = list(

@@ -1,8 +1,8 @@
 
 import settings
 import monitor
-from PyQt4 import QtCore
-
+import os
+import time
 
 class PostProcTool(object):
     """
@@ -11,6 +11,8 @@ class PostProcTool(object):
     A directory in <settings.DIR_PLOTS> with the class name of this tool is
     created. Messages can be printed with self.message().
     """
+    can_reuse = True
+
     def _set_plot_output_dir(self):
         plot_output_dir = settings.DIR_PLOTS + self.name + "/"
         settings.tool_folders[self.name] = plot_output_dir
@@ -57,17 +59,32 @@ class PostProcessor(object):
                 or issubclass(tool, PostProcTool))
         if not isinstance(tool, PostProcTool):
             tool = tool()
-        self._reuse = tool.wanna_reuse(self._reuse)
-        tool._reuse = self._reuse
         self.tool_chain.append(tool)
 
     def run(self):
         """All tools in tool chain are executed."""
 
         for tool in self.tool_chain:
-            if tool._reuse:
-                tool.message("INFO Reusing last round's data. Skipping...")
-                continue
+            tool_info_file = os.path.join(
+                settings.DIR_JOBINFO,
+                tool.name
+            )
+            if self._reuse and tool.can_reuse:
+                reuse = os.path.exists(tool_info_file)
+                reuse = tool.wanna_reuse(reuse)
+                tool._reuse = reuse
+                self._reuse = reuse
+                if reuse:
+                    tool.message("INFO Reusing last round's data. Skipping...")
+                    continue
+
+            if os.path.exists(tool_info_file):
+                os.remove(tool_info_file)
             tool.messenger.started.emit()
+            time_start = str(time.ctime())
             tool.run()
+            time_fin = str(time.ctime())
             tool.messenger.finished.emit()
+            with open(tool_info_file, "w") as f:
+                f.write(time_start)
+                f.write(time_fin)
