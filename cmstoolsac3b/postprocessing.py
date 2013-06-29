@@ -26,8 +26,8 @@ class PostProcTool(object):
         else:
             self.name = tool_name
         self.plot_output_dir = settings.DIR_PLOTS
-
         self._set_plot_output_dir()
+        self._reuse = os.path.exists(self.plot_output_dir)
         monitor.Monitor().connect_object_with_messenger(self)
 
     def wanna_reuse(self, all_reused_before_me):
@@ -69,10 +69,9 @@ class PostProcessor(object):
                 settings.DIR_JOBINFO,
                 tool.name
             )
-            if self._reuse and tool.can_reuse:
-                reuse = os.path.exists(tool_info_file)
+            if tool.can_reuse and self._reuse:
+                reuse = (os.path.exists(tool_info_file) and tool._reuse)
                 reuse = tool.wanna_reuse(reuse)
-                tool._reuse = reuse
                 self._reuse = reuse
                 if reuse:
                     tool.message("INFO Reusing last round's data. Skipping...")
@@ -81,9 +80,9 @@ class PostProcessor(object):
             if os.path.exists(tool_info_file):
                 os.remove(tool_info_file)
             tool.messenger.started.emit()
-            time_start = str(time.ctime())
+            time_start = time.ctime() + "\n"
             tool.run()
-            time_fin = str(time.ctime())
+            time_fin = time.ctime() + "\n"
             tool.messenger.finished.emit()
             with open(tool_info_file, "w") as f:
                 f.write(time_start)
