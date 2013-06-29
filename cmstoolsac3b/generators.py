@@ -91,6 +91,12 @@ def rejector(wrps, key_value_dict=None):
         wrps
     )
 
+def filter_active_samples(wrps):
+    return itertools.ifilter(
+        lambda w: w.sample in settings.active_samples,
+        wrps
+    )
+
 def callback(wrps, func=None, filter_dict=None):
     """
     Do a special treatment for selected wrps! All wrps are yielded.
@@ -470,6 +476,7 @@ def fs_filter_sort_load(filter_dict=None, sort_keys=None):
         return load(wrps)
     """
     wrps = fs_content()
+    wrps = filter_active_samples(wrps)
     wrps = filter(wrps, filter_dict)
     wrps = sort(wrps, sort_keys)
     return load(wrps)

@@ -35,19 +35,31 @@ enable_postproc_reuse = True
 ################################################################### samples ###
 import wrappers as wrp
 
-samples = {}       # all samples being processed
-samples_stack = [] # list of strings of samplenames for data/MC comparison
+samples = {}        # all samples being processed
+active_samples = [] # list of strings of samplenames (without systematic smpls)
 def mc_samples():
     """Returns a dict of all MC samples."""
-    return dict((k,v) for k,v in samples.iteritems() if not v.is_data)
+    return dict(
+        (k,v)
+        for k,v in samples.iteritems()
+        if k in active_samples and not v.is_data
+    )
 
 def data_samples():
     """Returns a dict of all real data samples."""
-    return dict((k,v) for k,v in samples.iteritems() if v.is_data)
+    return dict(
+        (k,v)
+        for k,v in samples.iteritems()
+        if k in active_samples and v.is_data
+    )
 
 def data_lumi_sum():
     """Returns the sum of luminosity in data samples."""
-    return sum(v.lumi for k,v in data_samples().iteritems())
+    return sum(
+        v.lumi
+        for k,v in data_samples().iteritems()
+        if k in active_samples
+    )
 
 def data_lumi_sum_wrp():
     """Returns the sum of data luminosity in as a FloatWrapper."""
