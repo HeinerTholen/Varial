@@ -13,11 +13,6 @@ class PostProcTool(object):
     """
     can_reuse = True
 
-    def _set_plot_output_dir(self):
-        plot_output_dir = settings.DIR_PLOTS + self.name + "/"
-        settings.tool_folders[self.name] = plot_output_dir
-        self.plot_output_dir = plot_output_dir
-
     def __init__(self, tool_name = None):
         super(PostProcTool, self).__init__()
 
@@ -28,27 +23,61 @@ class PostProcTool(object):
         self.plot_output_dir = settings.DIR_PLOTS
         self._set_plot_output_dir()
         self._reuse = os.path.exists(self.plot_output_dir)
+        self._info_file = os.path.join(
+            settings.DIR_JOBINFO,
+            self.name
+        )
         monitor.Monitor().connect_object_with_messenger(self)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+    def _set_plot_output_dir(self):
+        plot_output_dir = settings.DIR_PLOTS + self.name + "/"
+        settings.tool_folders[self.name] = plot_output_dir
+        self.plot_output_dir = plot_output_dir
 
     def wanna_reuse(self, all_reused_before_me):
         """Overwrite! If True is returned, run is not called."""
-        return False
+        return (self._reuse
+                and all_reused_before_me
+                and os.path.exists(self._info_file)
+                )
+
+    def starting(self):
+        self.messenger.started.emit()
+        self.time_start = time.ctime() + "\n"
+        if os.path.exists(self._info_file):
+            os.remove(self._info_file)
 
     def run(self):
         """Overwrite!"""
         pass
 
+    def finished(self):
+        self.time_fin = time.ctime() + "\n"
+        with open(self._info_file, "w") as f:
+            f.write(self.time_start)
+            f.write(self.time_fin)
+        self.messenger.finished.emit()
 
-class PostProcessor(object):
+
+class PostProcToolChain(PostProcTool):
     """
     Executes PostProcTools.
     """
-    tool_chain = []
-    reuse = False
+    can_reuse = False
 
-    def __init__(self, all_processes_reused):
-        super(PostProcessor, self).__init__()
-        self._reuse = all_processes_reused
+    def __init__(self, name = None):
+        super(PostProcToolChain, self).__init__(name)
+        self._reuse = False
+        self.tool_chain = []
+
+    def _set_plot_output_dir(self):
+        pass
 
     def add_tools(self, tools):
         for tool in tools:
@@ -62,28 +91,18 @@ class PostProcessor(object):
         self.tool_chain.append(tool)
 
     def run(self):
-        """All tools in tool chain are executed."""
-
         for tool in self.tool_chain:
-            tool_info_file = os.path.join(
-                settings.DIR_JOBINFO,
-                tool.name
-            )
-            if tool.can_reuse and self._reuse:
-                reuse = (os.path.exists(tool_info_file) and tool._reuse)
-                reuse = tool.wanna_reuse(reuse)
-                self._reuse = reuse
-                if reuse:
+            if tool.can_reuse:
+                if tool.wanna_reuse(self._reuse):
                     tool.message("INFO Reusing last round's data. Skipping...")
                     continue
+                else:
+                    self._reuse = False
 
-            if os.path.exists(tool_info_file):
-                os.remove(tool_info_file)
-            tool.messenger.started.emit()
-            time_start = time.ctime() + "\n"
-            tool.run()
-            time_fin = time.ctime() + "\n"
-            tool.messenger.finished.emit()
-            with open(tool_info_file, "w") as f:
-                f.write(time_start)
-                f.write(time_fin)
+            with tool as t:
+                t._reuse = self._reuse
+                t.starting()
+                t.run()
+                t.finished()
+                self._reuse = t._reuse
+
