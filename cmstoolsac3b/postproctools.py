@@ -5,6 +5,17 @@ import generators as gen
 import os
 import shutil
 
+class HistoPoolClearer(postprocessing.PostProcTool):
+    """Empties HistoPool"""
+    can_reuse = False
+
+    def _set_plot_output_dir(self):
+        pass
+
+    def run(self):
+        del settings.histo_pool[:]
+
+
 class UnfinishedSampleRemover(postprocessing.PostProcTool):
     """Removes unfinished samples from settings.samples"""
     can_reuse = False

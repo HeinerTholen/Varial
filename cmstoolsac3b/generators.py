@@ -273,7 +273,7 @@ def pool_content():
 
     :yields:    Wrappers
     """
-    return dsp.HistoPool().get()
+    return (w for w in settings.histo_pool)
 
 def pool_store_items(wrps, callback = None):
     """
@@ -282,12 +282,11 @@ def pool_store_items(wrps, callback = None):
     :param wrps:    Wrapper iterable
     :yields:        Wrapper
     """
-    pool = dsp.HistoPool()
     for wrp in wrps:
         for w in _iterableize(wrp):
             if callback:
                 callback(w)
-            pool.put(w)
+            settings.histo_pool.append(w)
         yield wrp
 
 def pool_consume_n_count(wrps):
