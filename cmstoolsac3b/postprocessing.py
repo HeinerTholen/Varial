@@ -153,12 +153,17 @@ class PostProcChainSystematics(PostProcChain):
         self.finish_with_systematic()
         settings.__dict__.update(self.old_settings_data)
         del self.old_settings_data
+        self.after_restore()
 
     def prepare_for_systematic(self):
         """Overwrite!"""
         pass
 
     def finish_with_systematic(self):
+        """Overwrite!"""
+        pass
+
+    def after_restore(self):
         """Overwrite!"""
         pass
 
