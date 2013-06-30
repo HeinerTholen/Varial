@@ -20,6 +20,12 @@ class UnfinishedSampleRemover(postprocessing.PostProcTool):
     """Removes unfinished samples from settings.samples"""
     can_reuse = False
 
+    class UnfinishedSampleStop(Exception): pass
+
+    def __init__(self, stop_on_unfinished = False):
+        super(UnfinishedSampleRemover, self).__init__()
+        self.stop_on_unfinished = stop_on_unfinished
+
     def _set_plot_output_dir(self):
         pass
 
@@ -31,12 +37,15 @@ class UnfinishedSampleRemover(postprocessing.PostProcTool):
         )
         for sample in settings.samples.keys():
             if not sample in finished_procs:
-                self.message(
-                    "WARNING: Process '"
-                    + sample
-                    + "' unfinished. Removing sample from list."
-                )
-                del settings.samples[sample]
+                if self.stop_on_unfinished:
+                    raise self.UnfinishedSampleStop()
+                else:
+                    self.message(
+                        "WARNING: Process '"
+                        + sample
+                        + "' unfinished. Removing sample from list."
+                    )
+                    del settings.samples[sample]
 
 
 class SampleEventCount(postprocessing.PostProcTool):
