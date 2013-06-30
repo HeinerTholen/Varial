@@ -70,6 +70,7 @@ import os
 import sys
 
 DIR_JOBINFO     = ".jobInfo/"
+DIR_PSTPRCINFO  = ".psrPrcInfo/"
 DIR_FILESERVICE = "outputFileService/"
 DIR_LOGS        = "outputLogs/"
 DIR_CONFS       = "outputConfs/"

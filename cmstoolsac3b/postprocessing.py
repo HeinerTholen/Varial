@@ -3,6 +3,8 @@ import settings
 import monitor
 import os
 import time
+import copy
+import inspect
 
 class PostProcTool(object):
     """
@@ -24,7 +26,7 @@ class PostProcTool(object):
         self._set_plot_output_dir()
         self._reuse = os.path.exists(self.plot_output_dir)
         self._info_file = os.path.join(
-            settings.DIR_JOBINFO,
+            settings.DIR_PSTPRCINFO,
             self.name
         )
         monitor.Monitor().connect_object_with_messenger(self)
@@ -36,9 +38,7 @@ class PostProcTool(object):
         pass
 
     def _set_plot_output_dir(self):
-        plot_output_dir = settings.DIR_PLOTS + self.name + "/"
-        settings.tool_folders[self.name] = plot_output_dir
-        self.plot_output_dir = plot_output_dir
+        self.plot_output_dir = settings.DIR_PLOTS + self.name + "/"
 
     def wanna_reuse(self, all_reused_before_me):
         """Overwrite! If True is returned, run is not called."""
@@ -48,6 +48,8 @@ class PostProcTool(object):
                 )
 
     def starting(self):
+        settings.tool_folders[self.name] = self.plot_output_dir
+        settings.create_folders()
         self.messenger.started.emit()
         self.time_start = time.ctime() + "\n"
         if os.path.exists(self._info_file):
@@ -90,6 +92,24 @@ class PostProcToolChain(PostProcTool):
             tool = tool()
         self.tool_chain.append(tool)
 
+    def starting(self):
+        self.old_PSTPRCINFO = settings.DIR_PSTPRCINFO
+        self.old_PLOTS = settings.DIR_PLOTS
+        settings.DIR_PSTPRCINFO += self.name + "/"
+        settings.DIR_PLOTS += self.name + "/"
+        for tool in self.tool_chain:
+            tool.__init__(tool.name)
+        self._info_file = os.path.join(
+            settings.DIR_PSTPRCINFO,
+            self.name
+        )
+        super(PostProcToolChain, self).starting()
+
+    def finished(self):
+        super(PostProcToolChain, self).finished()
+        settings.DIR_PSTPRCINFO = self.old_PSTPRCINFO
+        settings.DIR_PLOTS = self.old_PLOTS
+
     def run(self):
         for tool in self.tool_chain:
             if tool.can_reuse:
@@ -105,4 +125,32 @@ class PostProcToolChain(PostProcTool):
                 t.run()
                 t.finished()
                 self._reuse = t._reuse
+
+
+class PostProcSystematics(PostProcToolChain):
+    """Makes a shallow copy of settings, restores on exit."""
+    def __enter__(self):
+        old_settings_data = {}
+        for key, val in settings.__dict__.iteritems():
+            if not (
+                key[:2] == "__"
+                or key == "gROOT"
+                or inspect.ismodule(val)
+                or callable(val)
+                ):
+                old_settings_data[key] = copy.copy(val)
+        self.old_settings_data = old_settings_data
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        settings.__dict__.update(self.old_settings_data)
+        del self.old_settings_data
+
+
+
+
+
+
+
+
 
