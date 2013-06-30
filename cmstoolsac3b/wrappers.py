@@ -80,7 +80,7 @@ class Wrapper(_dict_base):
 
     def __init__(self, **kws):
         self.name           = kws.get("name", "")
-        self.title          = kws.get("title", "")
+        self.title          = kws.get("title", self.name)
         self.history        = kws.get("history", "")
 
     def write_info_file(self, info_filename):
