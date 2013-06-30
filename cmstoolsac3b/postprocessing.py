@@ -67,16 +67,19 @@ class PostProcTool(object):
         self.messenger.finished.emit()
 
 
-class PostProcToolChain(PostProcTool):
+class PostProcChain(PostProcTool):
     """
     Executes PostProcTools.
     """
     can_reuse = False
 
-    def __init__(self, name = None):
-        super(PostProcToolChain, self).__init__(name)
+    def __init__(self, name = None, tools = None):
+        super(PostProcChain, self).__init__(name)
         self._reuse = False
-        self.tool_chain = []
+        if not hasattr(self, "tool_chain"):
+            self.tool_chain = []
+        if tools:
+            self.add_tools(tools)
 
     def _set_plot_output_dir(self):
         pass
@@ -103,10 +106,10 @@ class PostProcToolChain(PostProcTool):
             settings.DIR_PSTPRCINFO,
             self.name
         )
-        super(PostProcToolChain, self).starting()
+        super(PostProcChain, self).starting()
 
     def finished(self):
-        super(PostProcToolChain, self).finished()
+        super(PostProcChain, self).finished()
         settings.DIR_PSTPRCINFO = self.old_PSTPRCINFO
         settings.DIR_PLOTS = self.old_PLOTS
 
@@ -127,7 +130,7 @@ class PostProcToolChain(PostProcTool):
                 self._reuse = t._reuse
 
 
-class PostProcSystematics(PostProcToolChain):
+class PostProcChainSystematics(PostProcChain):
     """Makes a shallow copy of settings, restores on exit."""
     def __enter__(self):
         old_settings_data = {}
@@ -135,19 +138,29 @@ class PostProcSystematics(PostProcToolChain):
             if not (
                 key[:2] == "__"
                 or key == "gROOT"
+                or key == "persistent_dict"
                 or inspect.ismodule(val)
                 or callable(val)
                 ):
                 old_settings_data[key] = copy.copy(val)
         self.old_settings_data = old_settings_data
+        self.message("INFO Clearing settings.histopool")
+        del settings.histo_pool[:]
+        self.prepare_for_systematic()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.finish_with_systematic()
         settings.__dict__.update(self.old_settings_data)
         del self.old_settings_data
 
+    def prepare_for_systematic(self):
+        """Overwrite!"""
+        pass
 
-
+    def finish_with_systematic(self):
+        """Overwrite!"""
+        pass
 
 
 

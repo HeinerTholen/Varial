@@ -134,7 +134,7 @@ def main(**settings_kws):
     executed_procs = list(p for p in controller.waiting_pros if not p.will_reuse_data)
 
     # post processor
-    pst = postprocessing.PostProcToolChain()
+    pst = postprocessing.PostProcChain()
     pst._reuse = settings.enable_postproc_reuse and not bool(executed_procs)
 
     settings.postprocessor = pst
@@ -181,7 +181,7 @@ def standalone(post_proc_tool_classes, **settings_kws):
     _instanciate_samples()
     settings.create_folders()
 
-    pst = postprocessing.PostProcToolChain(False)
+    pst = postprocessing.PostProcChain(False)
     for tool in post_proc_tool_classes:
         pst.add_tool(tool())
     settings.create_folders()
