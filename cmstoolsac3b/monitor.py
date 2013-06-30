@@ -6,7 +6,6 @@ from PyQt4 import QtCore
 
 class QSingleton(singleton.Singleton, type(QtCore.QObject)): pass
 
-
 class Messenger(QtCore.QObject):
     """
     Message stub. Used to connect to Monitor.
@@ -27,6 +26,7 @@ class Monitor(QtCore.QObject):
     Mechanism is used.
     """
     __metaclass__ = QSingleton
+    indent = 0
 
     def __init__(self):
         super(Monitor, self).__init__()
@@ -64,12 +64,20 @@ class Monitor(QtCore.QObject):
     def all_finished(self):
         print "INFO All processes finished"
 
+    def started(self, obj, message):
+        self.message(obj, message)
+        self.indent += 1
+
     def message(self, sender, string):
         if hasattr(sender, "name"):
             sender = sender.name
         elif not type(sender) == str:
             sender = str(type(sender))
-        print string + " (" + sender + ")"
+        print self.indent*"  " + string + " (" + sender + ")"
+
+    def finished(self, obj, message):
+        self.indent -= 1
+        self.message(obj, message)
 
     def connect_controller(self, controller):
         controller.process_enqueued.connect(self.proc_enqueued)
@@ -83,10 +91,10 @@ class Monitor(QtCore.QObject):
         obj.messenger = Messenger()
         obj.message = obj.messenger.message.emit
         obj.messenger.started.connect(
-            lambda: self.message(obj, "INFO started"))
+            lambda: self.started(obj, "INFO started"))
         obj.messenger.message.connect(
             lambda message: self.message(obj, message))
         obj.messenger.finished.connect(
-            lambda: self.message(obj, "INFO finished"))
+            lambda: self.finished(obj, "INFO finished"))
 
 
