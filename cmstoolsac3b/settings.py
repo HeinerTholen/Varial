@@ -28,10 +28,12 @@ cmsRun_procs = []
 controller   = None
 
 ########################################################### post-processing ###
-post_proc_tools = []
-web_target_dir = ""
-enable_postproc_reuse = True
-histo_pool = []
+post_proc_tools         = []
+web_target_dir          = ""
+enable_postproc_reuse   = True
+histo_pool              = []
+post_proc_dict          = {} # Data storage for post proc tools
+persistent_dict         = {} # PostProcChainSystematics will not touch this.
 
 ################################################################### samples ###
 import wrappers as wrp
