@@ -81,9 +81,6 @@ class PostProcChain(PostProcTool):
         if tools:
             self.add_tools(tools)
 
-    def _set_plot_output_dir(self):
-        pass
-
     def add_tools(self, tools):
         for tool in tools:
             self.add_tool(tool)
