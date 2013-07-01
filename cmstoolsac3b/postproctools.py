@@ -210,6 +210,9 @@ class SimpleWebCreator(postprocessing.PostProcTool):
             '//--></script>',
             '</head>',
             '<body>'
+            '<h2>'
+            'DISCLAIMER: latest-super-preliminary-nightly-build-work-in-progress-analysis-snapshot'
+            '</h2>'
         ]
 
     def make_headline(self):
