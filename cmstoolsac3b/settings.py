@@ -29,11 +29,25 @@ controller   = None
 
 ########################################################### post-processing ###
 post_proc_tools         = []
+postprocessor           = None
 web_target_dir          = ""
 enable_postproc_reuse   = True
 histo_pool              = []
 post_proc_dict          = {} # Data storage for post proc tools
 persistent_dict         = {} # PostProcChainSystematics will not touch this.
+persistent_data         = [  # PostProcChainSystematics will not touch these.
+    "cmsRun_procs",
+    "controller",
+    "post_proc_tools",
+    "postprocessor",
+    "persistent_dict",
+    "persistent_data",
+    "gROOT",
+    "StyleClass",
+    "TStyle",
+    "TGaxis",
+    "root_style",
+]
 
 ################################################################### samples ###
 import wrappers as wrp

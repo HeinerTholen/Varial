@@ -128,18 +128,23 @@ class PostProcChain(PostProcTool):
 
 
 class PostProcChainSystematics(PostProcChain):
-    """Makes a shallow copy of settings, restores on exit."""
+    """Makes a deep copy of settings, restores on exit."""
     def __enter__(self):
         old_settings_data = {}
         for key, val in settings.__dict__.iteritems():
             if not (
                 key[:2] == "__"
-                or key == "gROOT"
-                or key == "persistent_dict"
+                or key in settings.persistent_data
                 or inspect.ismodule(val)
                 or callable(val)
                 ):
-                old_settings_data[key] = copy.copy(val)
+                try:
+                    old_settings_data[key] = copy.deepcopy(val)
+                except TypeError, e:
+                    if not str(e) == "cannot deepcopy this pattern object":
+                        raise
+                    else:
+                        self.message("WARNING Cannot deepcopy: " + key)
         self.old_settings_data = old_settings_data
         self.message("INFO Clearing settings.histopool")
         del settings.histo_pool[:]
