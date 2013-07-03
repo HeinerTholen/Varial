@@ -1,6 +1,7 @@
 import settings
 import postprocessing
 import rendering
+import wrappers
 import generators as gen
 import os
 import shutil
@@ -148,13 +149,14 @@ class SimpleWebCreator(postprocessing.PostProcTool):
     all directories.
     """
 
-    def __init__(self, name = None):
+    def __init__(self, name = None, working_dir = ""):
         super(SimpleWebCreator, self).__init__(name)
-        self.working_dir = ""
+        self.working_dir = working_dir
         self.target_dir = settings.web_target_dir
         self.web_lines = []
         self.subfolders = []
         self.image_names = []
+        self.plain_info = []
         self.image_postfix = None
 
     def _set_plot_output_dir(self):
@@ -180,9 +182,11 @@ class SimpleWebCreator(postprocessing.PostProcTool):
         for wd, dirs, files in os.walk(self.working_dir):
             self.subfolders += dirs
             for f in files:
-                if (f[-5:] == ".info" and
-                    f[:-5] + self.image_postfix in files):
-                    self.image_names.append(f[:-5])
+                if (f[-5:] == ".info"):
+                    if (f[:-5] + self.image_postfix in files):
+                        self.image_names.append(f[:-5])
+                    else:
+                        self.plain_info.append(f)
             break
 
     def go4subdirs(self):
@@ -233,6 +237,27 @@ class SimpleWebCreator(postprocessing.PostProcTool):
                 + '</a></p>',
             )
         self.web_lines += ('<hr width="60%">', "")
+
+    def make_info_file_divs(self):
+        self.web_lines += ('<h2>Info files:</h2>',)
+        for nfo in self.plain_info:
+            try:
+                wrp = wrappers.Wrapper.create_from_file(
+                    os.path.join(self.working_dir, nfo)
+                )
+            except TypeError:
+                continue
+            self.web_lines += (
+                '<div>',
+                '<p>',
+                '<b>' + nfo[:-5] + '</b>',
+                '<p>',
+                '<pre>',
+                str(wrp),
+                '</pre>',
+                '</div>',
+                '<hr width="95%">',
+            )
 
     def make_image_divs(self):
         self.web_lines += ('<h2>Images:</h2>',)
@@ -292,7 +317,7 @@ class SimpleWebCreator(postprocessing.PostProcTool):
         """Run the single steps."""
         self.configure()
         if not self.image_postfix: return # WARNING message above.
-        if self.image_names or self.subfolders:
+        if self.image_names or self.subfolders or self.plain_info:
             self.message("INFO Building page in " + self.working_dir)
         else:
             return
@@ -300,6 +325,7 @@ class SimpleWebCreator(postprocessing.PostProcTool):
         self.make_html_head()
         self.make_headline()
         self.make_subfolder_links()
+        self.make_info_file_divs()
         self.make_image_divs()
         self.finalize_page()
         self.write_page()

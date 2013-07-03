@@ -108,7 +108,7 @@ class Wrapper(_dict_base):
         self.history = history
 
     @classmethod
-    def create_from_file(cls, info_filename, wrapped_obj):
+    def create_from_file(cls, info_filename, wrapped_obj = None):
         """
         Reads serialized dict and creates wrapper.
 
@@ -127,7 +127,15 @@ class Wrapper(_dict_base):
         this_mod = sys.modules[__name__]
         klass = getattr(this_mod, info.get("klass"))
         del info["klass"]
-        return klass(wrapped_obj, **info)
+        if wrapped_obj:
+            wrp = klass(wrapped_obj, **info)
+        elif klass == FloatWrapper:
+            wrp = klass(info["float"], **info)
+        else:
+            wrp = klass(**info)
+        for k, v in info.iteritems():
+            setattr(wrp, k, v)
+        return wrp
 
     def primary_object(self):
         """Overwrite! Should returned wrapped object."""
