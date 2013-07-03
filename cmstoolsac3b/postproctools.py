@@ -240,8 +240,7 @@ class SimpleWebCreator(postprocessing.PostProcTool):
             #TODO get history from full wrapper!!
             history_lines = ""
             with open(os.path.join(self.working_dir,img + ".info")) as f:
-                f.next() #skip first two lines
-                f.next() #skip first two lines
+                while f.next() != "\n": continue #skip ahead to history
                 for line in f:
                     history_lines += line
             h_id = "history_" + img

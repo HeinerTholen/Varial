@@ -16,7 +16,7 @@ class _dict_base(object):
         Writes all __dict__ entries into a string.
         """
         txt = "_____________" + self.__class__.__name__ + "____________\n"
-        txt += str(self.__dict__)
+        txt += self.pretty_info_lines()
         txt += "\n"
         return txt
 
@@ -28,6 +28,12 @@ class _dict_base(object):
         Returns copy of self.__dict__.
         """
         return dict(self.__dict__)
+
+    def pretty_info_lines(self):
+        keys = sorted(self.__dict__.keys())
+        return "{\n" + ",\n".join(
+            repr(k) + ": " + repr(getattr(self, k)) for k in keys
+        ) + ",\n}"
 
 
 class Alias(_dict_base):
@@ -95,7 +101,8 @@ class Wrapper(_dict_base):
         self.klass = self.__class__.__name__
         history, self.history = self.history, repr(str(self.history))
         with open(info_filename, "w") as file:
-            file.write(repr(self.all_info())+" \n\n")
+            file.write(repr(self.all_info()) + " \n")
+            file.write(self.pretty_info_lines() + " \n\n")
             file.write(str(history))
         del self.klass
         self.history = history
