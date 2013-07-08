@@ -32,7 +32,7 @@ class _dict_base(object):
     def pretty_info_lines(self):
         keys = sorted(self.__dict__.keys())
         return "{\n" + ",\n".join(
-            repr(k) + ": " + repr(getattr(self, k)) for k in keys
+            "%20s: "%k + repr(getattr(self, k)) for k in keys
         ) + ",\n}"
 
 
