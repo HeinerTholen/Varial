@@ -31,6 +31,7 @@ controller   = None
 post_proc_tools         = []
 postprocessor           = None
 web_target_dir          = ""
+tex_target_dir          = ""
 enable_postproc_reuse   = True
 histo_pool              = []
 post_proc_dict          = {} # Data storage for post proc tools
