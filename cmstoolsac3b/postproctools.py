@@ -256,7 +256,7 @@ class SimpleWebCreator(postprocessing.PostProcTool):
                 str(wrp),
                 '</pre>',
                 '</div>',
-                '<hr width="95%">',
+                '<hr width="60%">',
             )
 
     def make_image_divs(self):
