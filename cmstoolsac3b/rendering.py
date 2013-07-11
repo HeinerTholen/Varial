@@ -70,10 +70,10 @@ class StackRenderer(HistoRenderer, wrappers.StackWrapper):
     def __init__(self, wrp):
         super(StackRenderer, self).__init__(wrp)
         # prepare the sum histo
-        self.histo.SetFillColor(1)
+        self.histo.SetFillColor(922)
         self.histo.SetMarkerColor(1)
         self.histo.SetMarkerSize(0)
-        self.histo.SetFillStyle(3005)
+        self.histo.SetFillStyle(3008)
         self.histo.SetLineColor(1)
         self.histo.SetTitle("stat. uncert. MC")
         self.draw_option_sum = "sameE2"
