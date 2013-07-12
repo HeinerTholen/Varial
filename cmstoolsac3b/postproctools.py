@@ -9,9 +9,7 @@ import shutil
 class HistoPoolClearer(postprocessing.PostProcTool):
     """Empties HistoPool"""
     can_reuse = False
-
-    def _set_plot_output_dir(self):
-        pass
+    has_output_dir = False
 
     def run(self):
         del settings.histo_pool[:]
@@ -20,15 +18,13 @@ class HistoPoolClearer(postprocessing.PostProcTool):
 class UnfinishedSampleRemover(postprocessing.PostProcTool):
     """Removes unfinished samples from settings.samples"""
     can_reuse = False
+    has_output_dir = False
 
     class UnfinishedSampleStop(Exception): pass
 
     def __init__(self, stop_on_unfinished = False):
         super(UnfinishedSampleRemover, self).__init__()
         self.stop_on_unfinished = stop_on_unfinished
-
-    def _set_plot_output_dir(self):
-        pass
 
     def run(self):
         finished_procs = list(
@@ -51,14 +47,12 @@ class UnfinishedSampleRemover(postprocessing.PostProcTool):
 
 class SampleEventCount(postprocessing.PostProcTool):
     """Sets number of input events on samples."""
+    has_output_dir = False
 
     def __init__(self, name = None):
         super(SampleEventCount, self).__init__(name)
         if not hasattr(self, "counter_token"):
             self.counter_token = "EventCountPrinter:"
-
-    def _set_plot_output_dir(self):
-        pass
 
     def run(self):
         finished_procs = list(
@@ -148,6 +142,7 @@ class SimpleWebCreator(postprocessing.PostProcTool):
     Browses through settings.DIR_PLOTS and generates webpages recursively for
     all directories.
     """
+    has_output_dir = False
 
     def __init__(self, name = None, working_dir = ""):
         super(SimpleWebCreator, self).__init__(name)
@@ -158,9 +153,6 @@ class SimpleWebCreator(postprocessing.PostProcTool):
         self.image_names = []
         self.plain_info = []
         self.image_postfix = None
-
-    def _set_plot_output_dir(self):
-        pass
 
     def configure(self):
         """A bit of initialization."""

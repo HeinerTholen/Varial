@@ -14,6 +14,7 @@ class PostProcTool(object):
     created. Messages can be printed with self.message().
     """
     can_reuse = True
+    has_output_dir = True
 
     def __init__(self, tool_name = None):
         super(PostProcTool, self).__init__()
@@ -23,7 +24,8 @@ class PostProcTool(object):
         else:
             self.name = tool_name
         self.plot_output_dir = settings.DIR_PLOTS
-        self._set_plot_output_dir()
+        if self.has_output_dir:
+            self._set_plot_output_dir()
         self._reuse = os.path.exists(self.plot_output_dir)
         self._info_file = os.path.join(
             settings.DIR_PSTPRCINFO,
