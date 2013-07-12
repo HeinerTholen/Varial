@@ -11,6 +11,6 @@ class Singleton(type):
 
 
     def __call__(self, *args, **kws):
-        if self._instance is None:
+        if not self._instance:
             self._instance = super(Singleton, self).__call__(*args, **kws)
         return self._instance

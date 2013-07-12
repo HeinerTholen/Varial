@@ -10,17 +10,10 @@ from PyQt4 import QtCore
 import threading
 import time
 
-# iPython mode
-def ipython_usage():
-    print "WARNING =================================================="
-    print "WARNING Detected iPython, going to interactive mode...    "
-    print "WARNING Before exiting, you must call main.tear_down() !!!"
-    print "WARNING =================================================="
 ipython_mode = False
 try:
     __IPYTHON__
     ipython_mode = True
-    ipython_usage()
 except NameError:
     pass
 
@@ -31,17 +24,19 @@ class SigintHandler(object):
 
     def handle(self, signal_int, frame):
         if signal_int is signal.SIGINT:
-            if not ipython_mode:
+            if ipython_mode:
+                print "Shutting down..."
+            else:
+                print "WARNING: aborting all processes. Crtl-C again to kill immediately!"
                 if self.hits:
                     exit(-1)
-                print "WARNING: aborting all processes. Crtl-C again to kill immediately!"
             sys.__stdout__.flush()
             self.hits += 1
             settings.recieved_sigint = True
             self.controller.abort_all_processes()
 
 
-class StdOutTee:
+class StdOutTee(object):
     def __init__(self, logfilename):
         self.logfile = open(logfilename, "w")
 
@@ -55,6 +50,10 @@ class StdOutTee:
     def flush(self):
         sys.__stdout__.flush()
         self.logfile.flush()
+
+    def close(self):
+        sys.__stdout__.close()
+        self.logfile.close()
 
 
 def _process_settings_kws(kws):
@@ -77,7 +76,6 @@ class Timer:
             app.processEvents()
             time.sleep(0.1)
     def kill(self):
-        time.sleep(1)
         self.keep_alive = False
 
 timer       = Timer()
@@ -88,22 +86,42 @@ exec_thread = threading.Thread(target=timer.timer_func)
 exec_start  = app.exec_
 exec_quit   = app.quit
 
-def tear_down(*args):
-    sig_handler.hits = 0
-    sig_handler.handle(signal.SIGINT, None)
+
+def quit_qt_app():
     timer.kill()
+    app.quit()
+
+def tear_down(*args):
+    sig_handler.handle(signal.SIGINT, None)
+    time.sleep(1)
+    quit_qt_app()
+
+# iPython mode
+def ipython_usage():
+    print "WARNING =================================================="
+    print "WARNING Detected iPython, going to interactive mode...    "
+    print "WARNING =================================================="
+
+def ipython_exit(*args):
+    tear_down()
+    __IPYTHON__.exit_now = True
 
 if ipython_mode:
+    ipython_usage()
     exec_start  = exec_thread.start
-    exec_quit   = timer.kill
-    #import IPython.ipapi               ##### need to find a working exit hook
-    #IPython.ipapi.get().set_hook("shutdown_hook", exec_thread)
+    exec_quit   = quit_qt_app
+    __IPYTHON__.exit = ipython_exit
+    if settings.logfilename:
+        import monitor
+        monitor.Monitor().outstream = StdOutTee(settings.logfilename)
 else:
     signal.signal(signal.SIGINT, sig_handler.handle)
     if settings.logfilename:
         sys.stdout = StdOutTee(settings.logfilename)
         sys.stderr = sys.stdout
 
+
+###################################################################### main ###
 def main(**settings_kws):
     """
     Processing and post processing.
