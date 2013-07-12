@@ -24,9 +24,7 @@ class SigintHandler(object):
 
     def handle(self, signal_int, frame):
         if signal_int is signal.SIGINT:
-            if ipython_mode:
-                print "Shutting down..."
-            else:
+            if not ipython_mode:
                 print "WARNING: aborting all processes. Crtl-C again to kill immediately!"
                 if self.hits:
                     exit(-1)
@@ -74,7 +72,7 @@ def _instanciate_samples():
             settings.samples[k] = v()
 
 class Timer:
-    keep_alive = True
+    keep_alive = False
     def timer_func(self):
         while self.keep_alive:
             app.processEvents()
@@ -90,6 +88,10 @@ exec_thread = threading.Thread(target=timer.timer_func)
 exec_start  = app.exec_
 exec_quit   = app.quit
 
+
+def start_qt_app():
+    timer.keep_alive = True
+    exec_thread.start()
 
 def quit_qt_app():
     timer.kill()
@@ -107,12 +109,15 @@ def ipython_usage():
     print "WARNING =================================================="
 
 def ipython_exit(*args):
-    tear_down()
+    print "Shutting down..."
+    if timer.keep_alive:
+        print "Wait for qt app shutdown..."
+        tear_down()
     __IPYTHON__.exit_now = True
 
 if ipython_mode:
     ipython_usage()
-    exec_start  = exec_thread.start
+    exec_start  = start_qt_app
     exec_quit   = quit_qt_app
     __IPYTHON__.exit = ipython_exit
 else:
