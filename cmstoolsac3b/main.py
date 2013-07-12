@@ -56,6 +56,10 @@ class StdOutTee(object):
         self.logfile.close()
 
 
+if settings.logfilename:
+    import monitor
+    monitor.Monitor().outstream = StdOutTee(settings.logfilename)
+
 def _process_settings_kws(kws):
     # replace setting, if its name already exists.
     for k,v in kws.iteritems():
@@ -111,14 +115,8 @@ if ipython_mode:
     exec_start  = exec_thread.start
     exec_quit   = quit_qt_app
     __IPYTHON__.exit = ipython_exit
-    if settings.logfilename:
-        import monitor
-        monitor.Monitor().outstream = StdOutTee(settings.logfilename)
 else:
     signal.signal(signal.SIGINT, sig_handler.handle)
-    if settings.logfilename:
-        sys.stdout = StdOutTee(settings.logfilename)
-        sys.stderr = sys.stdout
 
 
 ###################################################################### main ###
