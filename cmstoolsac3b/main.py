@@ -108,20 +108,20 @@ def ipython_usage():
     print "WARNING Detected iPython, going to interactive mode...    "
     print "WARNING =================================================="
 
-ipython_exit_func = __IPYTHON__.exit
-
-def ipython_exit(*args):
-    print "Shutting down..."
-    if timer.keep_alive:
-        print "Wait for qt app shutdown..."
-        tear_down()
-    ipython_exit_func()
-
 if ipython_mode:
     ipython_usage()
     exec_start  = start_qt_app
     exec_quit   = quit_qt_app
+
+    ipython_exit_func = __IPYTHON__.exit
+    def ipython_exit(*args):
+        print "Shutting down..."
+        if timer.keep_alive:
+            print "Wait for qt app shutdown..."
+            tear_down()
+        ipython_exit_func()
     __IPYTHON__.exit = ipython_exit
+
 else:
     signal.signal(signal.SIGINT, sig_handler.handle)
 
