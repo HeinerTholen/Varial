@@ -162,33 +162,31 @@ class PostProcChainSystematics(PostProcChain):
                     else:
                         self.message("WARNING Cannot deepcopy: " + key)
         self.old_settings_data = old_settings_data
-        self.prepare_for_systematic()
-        self.message("INFO Clearing settings.histopool and settings.post_proc_dict")
-        del settings.histo_pool[:]
-        settings.post_proc_dict.clear()
         return res
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.finish_with_systematic()
         settings.__dict__.update(self.old_settings_data)
         del self.old_settings_data
-        self.after_restore()
         super(PostProcChainSystematics, self).__exit__(exc_type, exc_val,exc_tb)
 
     def starting(self):
         super(PostProcChainSystematics, self).starting()
+        self.prepare_for_systematic()
+        self.message("INFO Clearing settings.histopool and settings.post_proc_dict")
+        del settings.histo_pool[:]
+        settings.post_proc_dict.clear()
         self.message("INFO Resetting tools.")
         self._reset()
+
+    def finished(self):
+        self.finish_with_systematic()
+        super(PostProcChainSystematics, self).finished()
 
     def prepare_for_systematic(self):
         """Overwrite!"""
         pass
 
     def finish_with_systematic(self):
-        """Overwrite!"""
-        pass
-
-    def after_restore(self):
         """Overwrite!"""
         pass
 
