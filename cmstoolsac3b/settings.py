@@ -44,7 +44,10 @@ persistent_data         = [  # PostProcChainSystematics will not touch these.
     "postprocessor",
     "persistent_dict",
     "persistent_data",
+    "stack_dir_result",
+    "stack_dir_pstprc"
     "gROOT",
+    "ROOT",
     "StyleClass",
     "TStyle",
     "TGaxis",
@@ -94,7 +97,26 @@ DIR_FILESERVICE = "outputFileService/"
 DIR_LOGS        = "outputLogs/"
 DIR_CONFS       = "outputConfs/"
 DIR_PLOTS       = "outputPlots/"  #TODO: outputResult!!
-tool_folders    = {}
+
+dir_result      = DIR_PLOTS
+dir_pstprc      = DIR_PSTPRCINFO
+
+stack_dir_result = [DIR_PLOTS]
+stack_dir_pstprc = [DIR_PSTPRCINFO]
+
+def push_tool_dir(name):
+    stack_dir_result.append(name)
+    stack_dir_pstprc.append(name)
+    _set_dir_vars()
+
+def pop_tool_dir():
+    stack_dir_result.pop()
+    stack_dir_pstprc.pop()
+    _set_dir_vars()
+
+def create_folder(path):
+    if not os.path.exists(path):
+        os.mkdir(path)
 
 def create_folders():
     """
@@ -107,11 +129,13 @@ def create_folders():
     for name in dir(this_mod):
         if name[0:3] == "DIR":
             path = getattr(this_mod, name)
-            if not os.path.exists(path):
-                os.mkdir(path)
-    for key, folder in tool_folders.iteritems():
-        if not os.path.exists(folder):
-            os.mkdir(folder)
+            create_folder(path)
+
+def _set_dir_vars():
+    this_mod = sys.modules[__name__]
+    this_mod.dir_result = "/".join(stack_dir_result) + "/"
+    this_mod.dir_pstprc = "/".join(stack_dir_pstprc) + "/"
+
 
 ########################################################### style constants ###
 canvas_size_x = 800
