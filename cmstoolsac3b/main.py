@@ -127,6 +127,8 @@ else:
 
 
 ###################################################################### main ###
+main_args = {}
+
 def main(**settings_kws):
     """
     Processing and post processing.
@@ -136,6 +138,7 @@ def main(**settings_kws):
                                     ``samples={"mc":MCSample, ...}`` .
     """
     # prepare...
+    main_args.update(settings_kws)
     _process_settings_kws(settings_kws)
     _instanciate_samples()
 
