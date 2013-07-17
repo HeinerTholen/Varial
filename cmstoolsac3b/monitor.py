@@ -92,12 +92,12 @@ class Monitor(QtCore.QObject):
 
     def connect_object_with_messenger(self, obj):
         obj.messenger = Messenger()
-        obj.message = obj.messenger.message.emit
         obj.messenger.started.connect(
             lambda: self.started(obj, "INFO started"))
         obj.messenger.message.connect(
             lambda message: self.message(obj, message))
         obj.messenger.finished.connect(
             lambda: self.finished(obj, "INFO finished"))
+        return obj.messenger.message.emit
 
 
