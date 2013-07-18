@@ -15,7 +15,8 @@ class _dict_base(object):
         """
         Writes all __dict__ entries into a string.
         """
-        txt = "_____________" + self.__class__.__name__ + "____________\n"
+        name = self.__dict__.get("name", self.__class__.__name__)
+        txt = "_____________" + name + "____________\n"
         txt += self.pretty_info_lines()
         txt += "\n"
         return txt
