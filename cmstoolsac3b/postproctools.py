@@ -61,6 +61,8 @@ class FSStackPlotter(postprocessing.PostProcTool):
             ]
         if not hasattr(self, "save_log_scale"):
             self.save_log_scale = False
+        if not hasattr(self, "save_lin_log_scale"):
+            self.save_lin_log_scale = False
         self.save_name_lambda = lambda wrp: self.plot_output_dir + wrp.name
 
     def configure(self):
@@ -81,12 +83,19 @@ class FSStackPlotter(postprocessing.PostProcTool):
         )
 
     def set_up_save_canvas(self):
-        if self.save_log_scale:
-            self.stream_canvas = gen.switch_log_scale(self.stream_canvas)
-        self.stream_canvas = gen.save(
-            self.stream_canvas,
-            self.save_name_lambda,
-        )
+        if self.save_lin_log_scale:
+            self.stream_canvas = gen.save_canvas_lin_log(
+                self.stream_canvas,
+                self.save_name_lambda,
+            )
+        else:
+            if self.save_log_scale:
+                self.stream_canvas = gen.switch_log_scale(self.stream_canvas)
+            self.stream_canvas = gen.save(
+                self.stream_canvas,
+                self.save_name_lambda,
+            )
+
 
     def run_sequence(self):
         count = gen.consume_n_count(self.stream_canvas)
