@@ -1,5 +1,6 @@
 
 import settings
+import wrappers
 import monitor
 import os
 import time
@@ -61,6 +62,7 @@ class PostProcTool(PostProcBase):
     def __init__(self, name=None):
         super(PostProcTool, self).__init__(name)
         self.plot_output_dir = None
+        self.result = None
         self._info_file = None
 
     def __enter__(self):
@@ -85,6 +87,15 @@ class PostProcTool(PostProcBase):
             and output_dir_ok
         )
 
+    def reuse(self):
+        self.message("INFO Reusing!")
+        res_file = self.plot_output_dir + "result.info"
+        if self.has_output_dir and os.path.exists(res_file):
+            self.message("INFO Fetching last round's data: ")
+            res = wrappers.Wrapper.create_from_file(res_file)
+            settings.post_proc_dict[self.name] = res
+            self.message(str(res))
+
     def starting(self):
         super(PostProcTool, self).starting()
         self.time_start = time.ctime() + "\n"
@@ -92,6 +103,10 @@ class PostProcTool(PostProcBase):
             os.remove(self._info_file)
 
     def finished(self):
+        if self.result:
+            self.result.name = self.name
+            self.result.write_info_file(self.plot_output_dir + "result.info")
+            settings.post_proc_dict[self.name] = self.result
         self.time_fin = time.ctime() + "\n"
         with open(self._info_file, "w") as f:
             f.write(self.time_start)
@@ -99,10 +114,9 @@ class PostProcTool(PostProcBase):
         super(PostProcTool, self).finished()
 
 
+#TODO: make option to rerun group if any if its tools must rerun.
 class PostProcChain(PostProcBase):
-    """
-    Executes PostProcTools.
-    """
+    """Executes PostProcTools."""
 
     def __init__(self, name = None, tools = None):
         super(PostProcChain, self).__init__(name)
@@ -130,7 +144,7 @@ class PostProcChain(PostProcBase):
         for tool in self.tool_chain:
             with tool as t:
                 if tool.wanna_reuse(self._reuse):
-                    tool.message("INFO Reusing last round's data. Skipping...")
+                    tool.reuse()
                     continue
                 elif tool.can_reuse:
                     self._reuse = False
@@ -142,10 +156,24 @@ class PostProcChain(PostProcBase):
                 self._reuse = t._reuse
 
 
-class PostProcChainSystematics(PostProcChain):
+class PostProcChainIndie(PostProcChain):
+    """Same as chain, but always reuses."""
+
+    def starting(self):
+        super(PostProcChainIndie, self).starting()
+        self._outer_reuse = self._reuse
+        self._reuse = True
+
+    def finished(self):
+        self._reuse = self._outer_reuse
+        del self._outer_reuse
+        super(PostProcChainIndie, self).finished()
+
+
+class PostProcChainVanilla(PostProcChain):
     """Makes a deep copy of settings, restores on exit. Tools are reset."""
     def __enter__(self):
-        res = super(PostProcChainSystematics, self).__enter__()
+        res = super(PostProcChainVanilla, self).__enter__()
         old_settings_data = {}
         for key, val in settings.__dict__.iteritems():
             if not (
@@ -167,10 +195,10 @@ class PostProcChainSystematics(PostProcChain):
     def __exit__(self, exc_type, exc_val, exc_tb):
         settings.__dict__.update(self.old_settings_data)
         del self.old_settings_data
-        super(PostProcChainSystematics, self).__exit__(exc_type, exc_val,exc_tb)
+        super(PostProcChainVanilla, self).__exit__(exc_type, exc_val,exc_tb)
 
     def starting(self):
-        super(PostProcChainSystematics, self).starting()
+        super(PostProcChainVanilla, self).starting()
         self.prepare_for_systematic()
         self.message("INFO Clearing settings.histopool and settings.post_proc_dict")
         del settings.histo_pool[:]
@@ -180,7 +208,7 @@ class PostProcChainSystematics(PostProcChain):
 
     def finished(self):
         self.finish_with_systematic()
-        super(PostProcChainSystematics, self).finished()
+        super(PostProcChainVanilla, self).finished()
 
     def prepare_for_systematic(self):
         """Overwrite!"""

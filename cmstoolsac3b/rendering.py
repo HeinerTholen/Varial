@@ -30,7 +30,9 @@ class HistoRenderer(Renderer, wrappers.HistoWrapper):
     """
     def __init__(self, wrp):
         super(HistoRenderer, self).__init__(wrp)
-        if self.is_data:
+        if hasattr(wrp, "draw_option"):
+            self.draw_option = wrp.draw_option
+        elif self.is_data:
             self.draw_option = "E1X0"
         else:
             self.draw_option = "hist"
@@ -54,8 +56,8 @@ class HistoRenderer(Renderer, wrappers.HistoWrapper):
         if min_val < 1e-23 < histo.GetMaximum(): # should be greater than zero
             min_val = min(
                 histo.GetBinContent(i)
-                    for i in xrange(nbins + 1)
-                    if histo.GetBinContent(i) > 1e-23
+                for i in xrange(nbins + 1)
+                if histo.GetBinContent(i) > 1e-23
             )
         return min_val
 
@@ -153,7 +155,7 @@ class CanvasBuilder(object):
         if not isinstance(wrps, collections.Iterable):
             raise self.NoInputError("CanvasBuilder wants iterable of wrps!")
         super(CanvasBuilder, self).__init__()
-        self.kws            = kws
+        self.kws = kws
 
         # only one stack, which should be one first place
         rnds = _renderize_iter(wrps)
@@ -174,9 +176,10 @@ class CanvasBuilder(object):
 
     def __del__(self):
         """Remove the pads first."""
+        if self.main_pad:
+            self.main_pad.Delete()
         if self.second_pad:
-            self.main_pad.Delete()
-            self.main_pad.Delete()
+            self.second_pad.Delete()
 
     def configure(self):
         """Called at first. Can be used to initialize decorators."""
@@ -268,6 +271,7 @@ class CanvasBuilder(object):
             **self.kws
         )
         self._del_builder_refs()
+        self.canvas_wrp = wrp
         return wrp
 
     #TODO: Think about making CanvasWrapper and CanvasBuilder one object
@@ -276,6 +280,19 @@ class CanvasBuilder(object):
 import decorator as dec
 import operations as op
 from ROOT import TLegend, TPad, TPaveText
+
+class TextBoxDecorator(dec.Decorator):
+    """Draw Textboxes individually by renderer name"""
+    def __init__(self, inner, dd = True, **kws):
+        super(TextBoxDecorator, self).__init__(inner, dd, **kws)
+        self.dec_par.update(kws)
+        assert(self.dec_par.has_key("textbox_dict"))
+
+    def do_final_cosmetics(self):
+        self.decoratee.do_final_cosmetics()
+        textbox = self.dec_par["textbox_dict"][self.renderers[0].name]
+        textbox.Draw()
+
 
 class Legend(dec.Decorator):
     """
@@ -287,13 +304,7 @@ class Legend(dec.Decorator):
     """
     def __init__(self, inner, dd = "True", **kws):
         super(Legend, self).__init__(inner, dd)
-        self.dec_par["x1"]          = 0.43
-        self.dec_par["x2"]          = 0.67
-        self.dec_par["y2"]          = 0.88
-        self.dec_par["y_shift"]     = 0.04
-        self.dec_par["opt"]         = "f"
-        self.dec_par["opt_data"]    = "p"
-        self.dec_par["reverse"]     = True
+        self.dec_par.update(settings.defaults_Legend)
         self.dec_par.update(kws)
 
     def make_entry_tupels(self, legend):
@@ -303,15 +314,29 @@ class Legend(dec.Decorator):
             obj = entry.GetObject()
             label = entry.GetLabel()
             is_data = ("Data" in label) or ("data" in label)
+            draw_opt = self.dec_par["opt"]
+            if is_data:
+                draw_opt = self.dec_par["opt_data"]
             for rnd in rnds:
                 if isinstance(rnd, StackRenderer): continue
                 if rnd.primary_object() is obj:
-                    is_data = rnd.is_data
                     if hasattr(rnd, "legend"):
                         label = rnd.legend
+                    if hasattr(rnd, "draw_option_legend"):
+                        draw_opt = rnd.draw_option_legend
                     break
-            entries.append((obj, label, is_data))
+            entries.append((obj, label, draw_opt))
         return entries
+
+    def _calc_bounds(self, n_entries):
+        par = self.dec_par
+        x_pos   = par["x_pos"]
+        y_pos   = par["y_pos"]
+        width   = par["label_width"]
+        height  = par["label_height"] * n_entries
+        x_pos *= (1. - width)  # adjust for space left
+        y_pos *= (1. - height) # adjust for space left
+        return x_pos, y_pos, x_pos + width, y_pos + height
 
     def do_final_cosmetics(self):
         """
@@ -328,44 +353,29 @@ class Legend(dec.Decorator):
         self.main_pad.GetListOfPrimitives().Remove(tmp_leg)
         tmp_leg.Delete()
 
-        par = self.dec_par
-        x1, x2, y2, y_shift = par["x1"], par["x2"], par["y2"], par["y_shift"]
-        y1 = y2 - (len(entries) * y_shift)
-        legend = TLegend(x1, y1, x2, y2)
+        bounds = self._calc_bounds(len(entries))
+        legend = TLegend(*bounds)
         legend.SetBorderSize(0)
+        par = self.dec_par
         if par["reverse"]:
             entries.reverse()
-        for obj, label, is_data in entries:
-            if is_data:
-                legend.AddEntry(obj, label, par["opt_data"])
-            else:
-                legend.AddEntry(obj, label, par["opt"])
+        for obj, label, draw_opt in entries:
+            legend.AddEntry(obj, label, draw_opt)
         legend.Draw()
         self.legend = legend
         self.decoratee.do_final_cosmetics()         # Call next inner class!!
 
 
-class LegendLeft(Legend):
-    """Just as Legend, but plotted on the left."""
-    def __init__(self, inner, dd = "True", **kws):
-        kws["x1"] = 0.19
-        kws["x2"] = 0.43
-        super(LegendLeft, self).__init__(inner, dd, **kws)
-
-
-class LegendRight(Legend):
-    """Just as Legend, but plotted on the right."""
-    def __init__(self, inner, dd = "True", **kws):
-        kws["x1"] = 0.67
-        kws["x2"] = 0.88
-        super(LegendRight, self).__init__(inner, dd, **kws)
-
-
 class BottomPlot(dec.Decorator):
     """Base class for all plot business at the bottom of the canvas."""
-    def __init__(self, inner, dd = "True", **kws):
+    def __init__(self, inner, dd = True, **kws):
         super(BottomPlot, self).__init__(inner, dd, **kws)
-        self.dec_par["draw_opt"] = kws.get("draw_opt", "E1")
+        self.dec_par.update(settings.defaults_BottomPlot)
+        self.dec_par.update(kws)
+
+    def configure(self):
+        self.decoratee.configure()
+        self.__dict__["no_second_histo"] = len(self.renderers) < 2
 
     def define_bottom_hist(self):
         """Overwrite this method and give a histo-ref to self.bottom_hist."""
@@ -375,6 +385,8 @@ class BottomPlot(dec.Decorator):
         """Instanciate canvas with two pads."""
         # canvas
         self.decoratee.make_empty_canvas()
+        if self.no_second_histo:
+            return
         name = self.name
         self.main_pad = TPad(
             "main_pad_" + name, 
@@ -408,6 +420,8 @@ class BottomPlot(dec.Decorator):
         # draw main histogram
         self.main_pad.cd()
         self.decoratee.draw_full_plot()
+        if self.no_second_histo:
+            return
         first_drawn = self.first_drawn
         first_drawn.GetYaxis().CenterTitle(1)
         first_drawn.GetYaxis().SetTitleSize(0.055)
@@ -436,7 +450,6 @@ class BottomPlot(dec.Decorator):
         )
 
         bottom_hist.SetTitle("")
-        bottom_hist.SetYTitle("Ratio")
         bottom_hist.SetLineColor(1)
         bottom_hist.SetLineStyle(1)
 #        y_min = self.dec_par["y_min"]
@@ -449,6 +462,16 @@ class BottomPlot(dec.Decorator):
 #            y_max = hist_max
 #        bottom_hist.GetYaxis().SetRangeUser(y_min, y_max)
         bottom_hist.Draw(self.dec_par["draw_opt"])
+        if bottom_hist.GetMinimum() < self.dec_par["x_min"]:
+            bottom_hist.GetYaxis().SetRangeUser(
+                self.dec_par["x_min"],
+                bottom_hist.GetMaximum()
+            )
+        if self.bottom_hist.GetMaximum() > self.dec_par["x_max"]:
+            self.bottom_hist.GetYaxis().SetRangeUser(
+                bottom_hist.GetMinimum(),
+                self.dec_par["x_max"]
+            )
 
         # set focus on main_pad for further drawing
         self.main_pad.cd()
@@ -458,17 +481,52 @@ class BottomPlotRatio(BottomPlot):
     """Ratio of first and second histogram in canvas."""
     def define_bottom_hist(self):
         rnds = self.renderers
-        assert(len(rnds) > 1)
         wrp = op.div(iter(rnds))
-        wrp.histo.SetYTitle("Data/MC")
+        wrp.histo.SetYTitle("MC/Data")
         self.bottom_hist = wrp.histo
-        #TODO: use HistoRenderer here
+
+
+
+class BottomPlotRatioSplitErr(BottomPlot):
+    """Same as BottomPlotRatio, but split MC and data uncertainties."""
+    def define_bottom_hist(self):
+        rnds = self.renderers
+        mc_histo = rnds[0].histo.Clone()
+        da_histo = rnds[1].histo.Clone()
+        div_hist = da_histo.Clone()
+        div_hist.Divide(mc_histo)
+        for i in xrange(1, mc_histo.GetNbinsX() + 1):
+            mc_val = mc_histo.GetBinContent(i)
+            mc_err = mc_histo.GetBinError(i)
+            da_val = da_histo.GetBinContent(i)
+            da_err = da_histo.GetBinError(i)
+            mc_histo.SetBinContent(i, 1.)
+            if mc_val > 1e-37:
+                mc_histo.SetBinError(i, mc_err / mc_val)
+            else:
+                mc_histo.SetBinError(i, 0.)
+            if da_val > 1e-37:
+                div_hist.SetBinError(i, da_err / da_val)
+        div_hist.SetYTitle("Data/MC")
+        div_hist.SetMarkerSize(0)
+        mc_histo.SetYTitle("Data/MC")
+        mc_histo.SetFillColor(921)
+        mc_histo.SetMarkerColor(1)
+        mc_histo.SetMarkerSize(0)
+        mc_histo.SetFillStyle(3008)
+        mc_histo.SetLineColor(1)
+        self.bottom_hist = div_hist
+        self.bottom_hist_mc_err = mc_histo
 
     def draw_full_plot(self):
-        """Fix scale of ratio y axis."""
-        super(BottomPlotRatio, self).draw_full_plot()
-        if self.bottom_hist.GetMaximum() > 5.:
-            self.bottom_hist.GetYaxis().SetRangeUser(0., 5.)
+        """Draw mc error histo underneat data ratio."""
+        super(BottomPlotRatioSplitErr, self).draw_full_plot()
+        if self.no_second_histo:
+            return
+        self.second_pad.cd()
+        self.bottom_hist_mc_err.Draw("sameE2")
+        self.bottom_hist.Draw(self.dec_par["draw_opt"] + "same")
+        self.main_pad.cd()
 
 
 class TitleBox(dec.Decorator):

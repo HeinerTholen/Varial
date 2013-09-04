@@ -1,9 +1,9 @@
 # HistoOperations.py
 
 import sys
-import settings # only imported for ROOT-system startup
-from ROOT import TH1, THStack, TCanvas
+from ROOT import TH1, THStack, TCanvas, TFile, TObject
 from ast import literal_eval
+import histodispatch # TODO: no circular dependance!
 
 class _dict_base(object):
     """
@@ -12,10 +12,9 @@ class _dict_base(object):
     class NoDictInFileError(Exception): pass
 
     def __str__(self):
-        """
-        Writes all __dict__ entries into a string.
-        """
-        txt = "_____________" + self.__class__.__name__ + "____________\n"
+        """Writes all __dict__ entries into a string."""
+        name = self.__dict__.get("name", self.__class__.__name__)
+        txt = "_____________" + name + "____________\n"
         txt += self.pretty_info_lines()
         txt += "\n"
         return txt
@@ -24,10 +23,16 @@ class _dict_base(object):
         return str(self)
 
     def all_info(self):
-        """
-        Returns copy of self.__dict__.
-        """
+        """Returns copy of self.__dict__."""
         return dict(self.__dict__)
+
+    def all_writeable_info(self):
+        """Like all_info, but removes root objects."""
+        return dict(
+            (k,v)
+            for k,v in self.__dict__.iteritems()
+            if not isinstance(v, TObject)
+        )
 
     def pretty_info_lines(self):
         keys = sorted(self.__dict__.keys())
@@ -45,8 +50,9 @@ class Alias(_dict_base):
     :type   in_file_path:   list of strings
     """
     def __init__(self, filename, in_file_path):
-        self.filename = filename
-        self.in_file_path = in_file_path
+        self.klass          = self.__class__.__name__
+        self.filename       = filename
+        self.in_file_path   = in_file_path
 
 
 class FileServiceAlias(Alias):
@@ -88,6 +94,8 @@ class Wrapper(_dict_base):
         self.name           = kws.get("name", "")
         self.title          = kws.get("title", self.name)
         self.history        = kws.get("history", "")
+        self.klass          = self.__class__.__name__
+        self.__dict__.update(kws)
 
     def write_info_file(self, info_filename):
         """
@@ -98,14 +106,24 @@ class Wrapper(_dict_base):
 
         :param  info_filename:  filename to store wrapper infos with suffix.
         """
-        self.klass = self.__class__.__name__
         history, self.history = self.history, repr(str(self.history))
         with open(info_filename, "w") as file:
-            file.write(repr(self.all_info()) + " \n")
+            file.write(repr(self.all_writeable_info()) + " \n")
             file.write(self.pretty_info_lines() + " \n\n")
             file.write(str(history))
-        del self.klass
         self.history = history
+
+    def write_root_file(self, root_filename):
+        """"""
+        f = TFile.Open(root_filename, "UPDATE")
+        self.root_filename = root_filename
+        self.root_file_obj_paths  = {}
+        for key, value in self.__dict__.iteritems():
+            if not isinstance(value, TObject):
+                continue
+            value.Write()
+            self.root_file_obj_paths[key] = value.GetName()
+        f.Close()
 
     @classmethod
     def create_from_file(cls, info_filename, wrapped_obj = None):
@@ -136,6 +154,17 @@ class Wrapper(_dict_base):
         for k, v in info.iteritems():
             setattr(wrp, k, v)
         return wrp
+
+    def read_root_objs_from_file(self):
+        if not hasattr(self, "root_filename"):
+            return
+        dispatch = histodispatch.HistoDispatch()
+        for name, path in self.root_file_obj_paths:
+            obj = dispatch._get_obj_from_file(
+                self.root_filename,
+                path
+            )
+            setattr(self, name, obj)
 
     def primary_object(self):
         """Overwrite! Should returned wrapped object."""

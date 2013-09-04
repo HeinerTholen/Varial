@@ -329,8 +329,9 @@ def norm_to_lumi(wrp):
             + str(wrp)
         )
     histo = wrp.histo.Clone()
-    info = wrp.all_info()
     histo.Scale(1. / wrp.lumi)
+    info = wrp.all_info()
+    info["lumi"] = 1.
     return wrappers.HistoWrapper(histo, **info)
 
 @history.track_history
@@ -351,13 +352,15 @@ def norm_to_integral(wrp, useBinWidth=False):
     """
     if not isinstance(wrp, wrappers.HistoWrapper):
         raise WrongInputError(
-            "norm_to_lumi needs argument of type HistoWrapper. histo: "
+            "norm_to_integral needs argument of type HistoWrapper. histo: "
             + str(wrp)
         )
     histo = wrp.histo.Clone()
-    info = wrp.all_info()
     option = "width" if useBinWidth else ""
-    histo.Scale(1. / wrp.histo.Integral(option))
+    integral = wrp.histo.Integral(option)
+    histo.Scale(1. / integral)
+    info = wrp.all_info()
+    info["lumi"] /= integral
     return wrappers.HistoWrapper(histo, **info)
 
 @history.track_history
