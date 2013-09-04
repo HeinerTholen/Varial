@@ -1,5 +1,6 @@
 
 import sys
+import time
 import singleton
 import settings
 from PyQt4 import QtCore
@@ -27,6 +28,7 @@ class Monitor(QtCore.QObject):
     """
     __metaclass__ = QSingleton
     indent = 0
+    n_procs = 0
 
     def __init__(self):
         super(Monitor, self).__init__()
@@ -44,18 +46,18 @@ class Monitor(QtCore.QObject):
     def proc_started(self, process):
         if settings.suppress_cmsRun_exec or process.reused_old_data:
             return
-        self("INFO process started :   cmsRun ", process.conf_filename, "PID: ", process.pid())
+        self("INFO process started  "+time.ctime()+":   cmsRun ", process.conf_filename, "PID: ", process.pid())
 
     def proc_finished(self, process):
         if settings.suppress_cmsRun_exec or process.reused_old_data:
             return
         if hasattr(settings, "recieved_sigint"):
-            self("INFO process aborted:   cmsRun ", process.conf_filename)
+            self("INFO process aborted "+time.ctime()+":   cmsRun ", process.conf_filename)
         else:
-            self("INFO process finished:   cmsRun ", process.conf_filename)
+            self("INFO process finished "+time.ctime()+":   cmsRun ", process.conf_filename)
 
     def proc_failed(self, process):
-        self("WARNING process FAILED  :   cmsRun ", process.conf_filename)
+        self("WARNING process FAILED "+time.ctime()+"  :   cmsRun ", process.conf_filename)
         if not self.error_logs_opened:
             self("_______________________________________begin_cmsRun_logfile")
             with open(process.log_filename, "r") as logfile:
@@ -65,7 +67,7 @@ class Monitor(QtCore.QObject):
             self.error_logs_opened += 1
 
     def all_finished(self):
-        self("INFO All processes finished")
+        self("INFO All processes finished, "+time.ctime())
 
     def started(self, obj, message):
         self.message(obj, message)

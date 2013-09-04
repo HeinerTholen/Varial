@@ -35,16 +35,18 @@ class Decorator(object):
     in FooDecorator.f2()
     in Foo.f2()
     """
-    def __init__(self, target, deep_decoration = True):
+    def __init__(self, target, deep_decoration = True, **kws):
         """
         Init a decorator. "deep_decoration" activates a wrapping of the
         original methods. If true, direct calls to the inner object methods
         will go through all decorators. This is especially sensible, when the
         inner object calls methods of its own.
         """
-        # the only datamember of a decorator
+        if not self.__dict__.has_key('dec_par'):
+            self.__dict__['dec_par'] = dict()
+        if not target:
+            return
         self.__dict__['decoratee']  = target
-        self.__dict__['dec_par'] = dict()
 
         # this is automatically forwarded to the inner decoratee
         target._outermost_decorator = self
@@ -76,15 +78,28 @@ class Decorator(object):
     def __setattr__(self, name, value):
         setattr(self.decoratee, name, value)
 
-    def get_decorator(self, name):
+    def __call__(self, target, dd = True):
+        Decorator.__init__(self, target, dd)
+        return self
+
+    def get_decorator(self, klass):
         """
-        Runs over all inner decorators, returns the one according to 'name'.
+        Runs over all inner decorators, returns the match.
+
+        If klass is str, then __class__.__name__ must be equal.
+        If klass is a class object, then all subclasses are returned as well.
         """
         inner = self
-        while isinstance(inner, Decorator):
-            inner = inner.decoratee
-            if inner.__class__.__name__ == name:
-                return inner
+        if type(klass) == str:
+            while isinstance(inner, Decorator):
+                if inner.__class__.__name__ == klass:
+                    return inner
+                inner = inner.decoratee
+        elif type(klass) == type:
+            while isinstance(inner, Decorator):
+                if isinstance(inner, klass):
+                    return inner
+                inner = inner.decoratee
 
     def insert_decorator(self, new_dec):
         """

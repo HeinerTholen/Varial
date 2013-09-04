@@ -214,5 +214,6 @@ def standalone(post_proc_tool_classes, **settings_kws):
     pst.run()
 
 
+#TODO: get rid of QT!
 #TODO: reimplement buildFollowUp
 

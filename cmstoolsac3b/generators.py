@@ -253,6 +253,14 @@ gen_integral   = generate_op(op.integral)    #: This is ``generate_op(cmstoolsac
 gen_int_l = generate_op(op.int_l)  #: This is ``generate_op(cmstoolsac3b.operations.int_l)``
 gen_int_r = generate_op(op.int_r)  #: This is ``generate_op(cmstoolsac3b.operations.int_r)``
 
+def gen_norm_to_data_lumi(wrps):
+    return gen_prod(
+        itertools.izip(
+            gen_norm_to_lumi(wrps),
+            itertools.repeat(settings.data_lumi_sum_wrp())
+        )
+    )
+
 ############################################################### load / save ###
 import settings
 import histodispatch as dsp
@@ -337,6 +345,14 @@ def save(wrps, filename_func, suffices = None):
             if hasattr(wrp, "write_info_file"):
                 wrp.write_info_file(filename + ".info")
         yield wrp
+
+def get_from_post_proc_dict(key):
+    """
+    Yields from settings.post_proc_dict. Sets key as "post_proc_key" on items.
+    """
+    for w in settings.post_proc_dict.get(key, list()):
+        w.post_proc_key = key
+        yield w
 
 ################################################################## plotting ###
 import rendering as rnd
@@ -470,6 +486,7 @@ def fs_filter_sort_load(filter_dict=None, sort_keys=None):
     **Implementation:** ::
 
         wrps = fs_content()
+        wrps = filter_active_samples(wrps)
         wrps = filter(wrps, filter_dict)
         wrps = sort(wrps, key_list)
         return load(wrps)
@@ -537,7 +554,12 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=False):
         data, mc = split_data_mc(grp)
 
         # sum up data
-        data_sum = op.sum(data)
+        data_sum = None
+        try:
+            data_sum = op.sum(data)
+        except op.TooFewWrpsError:
+            print "WARNING generators.mc_stack_n_data_sum(..): "\
+                  "No data histos present! I will yield only mc."
         if use_all_data_lumi:
             data_lumi = settings.data_lumi_sum_wrp()
         else:
@@ -551,8 +573,20 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=False):
 
         # stack mc
         mc_norm = gen_prod(itertools.izip(mc_colord, itertools.repeat(data_lumi)))
-        mc_stack = op.stack(mc_norm)
-        yield mc_stack, data_sum
+        mc_stck = None
+        try:
+            mc_stck = op.stack(mc_norm)
+        except op.TooFewWrpsError:
+            print "WARNING generators.mc_stack_n_data_sum(..): " \
+                  "No mc histos present! I will yield only data"
+        if mc_stck and data_sum:
+            yield mc_stck, data_sum
+        elif mc_stck:
+            yield (mc_stck, )
+        elif data_sum:
+            yield (data_sum, )
+        else:
+            raise op.TooFewWrpsError("Neither data nor mc histos present!")
 
 def fs_mc_stack_n_data_sum(filter_dict=None, merge_mc_key_func=None):
     """
@@ -571,17 +605,13 @@ def fs_mc_stack_n_data_sum(filter_dict=None, merge_mc_key_func=None):
     return mc_stack_n_data_sum(grouped, merge_mc_key_func, True)
 
 def canvas(grps, 
-           decorators=list(), 
-           callback_filter=None, 
-           callback_func=None):
+           decorators=list()):
     """
     Packaging of canvas builder, decorating, callback and canvas building.
 
     :param grps:            grouped or ungrouped Wrapper iterable
                             if grouped: on canvas for each group
     :param decorators:      see function decorate(...) above
-    :param callback_filter: see function callback(...) above (param filter_dict there)
-    :param callback_func:   see function callback(...) above
     :yields:                CanvasWrapper
     """
     def put_ana_histo_name(grps):
@@ -592,7 +622,6 @@ def canvas(grps,
     grps = make_canvas_builder(grps)            # a builder for every group
     grps = put_ana_histo_name(grps)             # only applies to fs histos
     grps = decorate(grps, decorators)           # apply decorators
-    grps = callback(grps, filter_dict=callback_filter, func=callback_func) # ...
     return build_canvas(grps)                   # and do the job
 
 def save_canvas_lin_log(cnvs, filename_func):

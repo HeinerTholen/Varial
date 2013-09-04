@@ -1,7 +1,6 @@
 """
 This module contains project wide settings.
 """
-
 ################################################################### general ###
 import time
 
@@ -34,6 +33,20 @@ web_target_dir          = ""
 tex_target_dir          = ""
 plot_target_dir         = ""
 enable_postproc_reuse   = True
+defaults_Legend         = {
+    "x_pos"         : 0.92,
+    "y_pos"         : 0.83,
+    "label_width"   : 0.24,
+    "label_height"  : 0.04,
+    "opt"           : "f",
+    "opt_data"      : "p",
+    "reverse"       : True
+}
+defaults_BottomPlot     = {
+    "draw_opt"  : "E1",
+    "x_min"     : 0.,
+    "x_max"     : 3.,
+}
 histo_pool              = []
 post_proc_dict          = {} # Data storage for post proc tools
 persistent_dict         = {} # PostProcChainSystematics will not touch this.
@@ -47,12 +60,12 @@ persistent_data         = [  # PostProcChainSystematics will not touch these.
     "stack_dir_result",
     "stack_dir_pstprc"
     "gROOT",
-    "ROOT",
     "StyleClass",
     "TStyle",
     "TGaxis",
     "root_style",
 ]
+#TODO split into settings (static stuff) and config (variable stuff)
 
 ################################################################### samples ###
 import wrappers as wrp
@@ -166,9 +179,7 @@ def get_stack_position(sample):
         return legend
 
 ################################################################ root style ###
-from ROOT import gROOT
-gROOT.SetBatch()
-from ROOT import TStyle, TGaxis
+from ROOT import gROOT, TStyle, TGaxis
 
 class StyleClass(TStyle):
     """

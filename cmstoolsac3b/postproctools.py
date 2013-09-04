@@ -45,6 +45,7 @@ class UnfinishedSampleRemover(postprocessing.PostProcTool):
                     del settings.samples[sample]
 
 
+#TODO: Make a new Plotter Interface with Composition: the functions should be non-class methods
 class FSStackPlotter(postprocessing.PostProcTool):
     """A 'stack with data overlay' plotter. To be subclassed."""
 
@@ -56,9 +57,15 @@ class FSStackPlotter(postprocessing.PostProcTool):
             self.filter_dict = None
         if not hasattr(self, "canvas_decorators"):
             self.canvas_decorators = [
-                rendering.BottomPlotRatio,
-                rendering.LegendRight
+                rendering.BottomPlotRatioSplitErr,
+                rendering.Legend
             ]
+        if not hasattr(self, "hook_loaded_histos"):
+            self.hook_loaded_histos = None
+        if not hasattr(self, "hook_pre_canvas_build"):
+            self.hook_pre_canvas_build = None
+        if not hasattr(self, "hook_post_canvas_build"):
+            self.hook_post_canvas_build = None
         if not hasattr(self, "save_log_scale"):
             self.save_log_scale = False
         if not hasattr(self, "save_lin_log_scale"):
@@ -73,14 +80,32 @@ class FSStackPlotter(postprocessing.PostProcTool):
             raise self.NoFilterDictError(
                 "filter_dict not set: subclass and overwrite configure()"
             )
-        stream_stack = gen.fs_mc_stack_n_data_sum(self.filter_dict)
-        self.stream_stack = gen.pool_store_items(stream_stack)
+        wrps = gen.fs_filter_sort_load(self.filter_dict)
+        if self.hook_loaded_histos:
+            wrps = self.hook_loaded_histos(wrps)
+        wrps = gen.group(wrps)
+        wrps = gen.mc_stack_n_data_sum(wrps, None, True)
+        wrps = gen.pool_store_items(wrps)
+        self.stream_stack = wrps
 
     def set_up_make_canvas(self):
-        self.stream_canvas = gen.canvas(
-            self.stream_stack,
-            self.canvas_decorators
-        )
+        def put_ana_histo_name(grps):
+            for grp in grps:
+                grp.name = grp.renderers[0].analyzer+"_"+grp.name
+                yield grp
+        def run_build_procedure(bldr):
+            for b in bldr:
+                b.run_procedure()
+                yield b
+        bldr = gen.make_canvas_builder(self.stream_stack)
+        bldr = put_ana_histo_name(bldr)
+        bldr = gen.decorate(bldr, self.canvas_decorators)
+        if self.hook_pre_canvas_build:
+            bldr = self.hook_pre_canvas_build(bldr)
+        bldr = run_build_procedure(bldr)
+        if self.hook_post_canvas_build:
+            bldr = self.hook_post_canvas_build(bldr)
+        self.stream_canvas = gen.build_canvas(bldr)
 
     def set_up_save_canvas(self):
         if self.save_lin_log_scale:
@@ -95,7 +120,6 @@ class FSStackPlotter(postprocessing.PostProcTool):
                 self.stream_canvas,
                 self.save_name_lambda,
             )
-
 
     def run_sequence(self):
         count = gen.consume_n_count(self.stream_canvas)
