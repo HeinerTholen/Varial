@@ -1,18 +1,30 @@
 import settings
 import postprocessing
 import rendering
+import wrappers
 import generators as gen
 import os
 import shutil
 
+class HistoPoolClearer(postprocessing.PostProcTool):
+    """Empties HistoPool"""
+    can_reuse = False
+    has_output_dir = False
+
+    def run(self):
+        del settings.histo_pool[:]
+
+
 class UnfinishedSampleRemover(postprocessing.PostProcTool):
     """Removes unfinished samples from settings.samples"""
+    can_reuse = False
+    has_output_dir = False
 
-    def _set_plot_output_dir(self):
-        pass
+    class UnfinishedSampleStop(Exception): pass
 
-    def wanna_reuse(self, all_reused_before_me):
-        return all_reused_before_me
+    def __init__(self, stop_on_unfinished = False):
+        super(UnfinishedSampleRemover, self).__init__()
+        self.stop_on_unfinished = stop_on_unfinished
 
     def run(self):
         finished_procs = list(
@@ -22,50 +34,15 @@ class UnfinishedSampleRemover(postprocessing.PostProcTool):
         )
         for sample in settings.samples.keys():
             if not sample in finished_procs:
-                self.message(
-                    "WARNING: Process '"
-                    + sample
-                    + "' unfinished. Removing sample from list."
-                )
-                del settings.samples[sample]
-
-
-class SampleEventCount(postprocessing.PostProcTool):
-    """Sets number of input events on samples."""
-
-    def __init__(self, name = None):
-        super(SampleEventCount, self).__init__(name)
-        if not hasattr(self, "counter_token"):
-            self.counter_token = "EventCountPrinter:"
-
-    def wanna_reuse(self, all_reused_before_me):
-        return all_reused_before_me
-
-    def _set_plot_output_dir(self):
-        pass
-
-    def run(self):
-        finished_procs = list(
-            p 
-            for p in settings.cmsRun_procs
-            if p.successful()
-        )
-        for p in finished_procs:
-            if p.sample.is_data: 
-                continue
-            if p.sample.n_events is not -1:
-                continue
-            with open(p.log_filename) as f: 
-               for line in f:
-                   if self.counter_token in line:
-                       n_events = int(line.split()[-1])
-                       p.sample.n_events = n_events
-                       p.sample.lumi = n_events / p.sample.x_sec
-                       self.message(
-                           "INFO: Setting number of events for " 
-                            + p.name + " to " + str(n_events)
-                       )
-                       break
+                if self.stop_on_unfinished:
+                    raise self.UnfinishedSampleStop()
+                else:
+                    self.message(
+                        "WARNING: Process '"
+                        + sample
+                        + "' unfinished. Removing sample from list."
+                    )
+                    del settings.samples[sample]
 
 
 class FSStackPlotter(postprocessing.PostProcTool):
@@ -84,9 +61,7 @@ class FSStackPlotter(postprocessing.PostProcTool):
             ]
         if not hasattr(self, "save_log_scale"):
             self.save_log_scale = False
-
-    def wanna_reuse(self, all_reused_before_me):
-        return all_reused_before_me
+        self.save_name_lambda = lambda wrp: self.plot_output_dir + wrp.name
 
     def configure(self):
         pass
@@ -110,7 +85,7 @@ class FSStackPlotter(postprocessing.PostProcTool):
             self.stream_canvas = gen.switch_log_scale(self.stream_canvas)
         self.stream_canvas = gen.save(
             self.stream_canvas,
-            lambda wrp: self.plot_output_dir + wrp.name,
+            self.save_name_lambda,
         )
 
     def run_sequence(self):
@@ -134,21 +109,17 @@ class SimpleWebCreator(postprocessing.PostProcTool):
     Browses through settings.DIR_PLOTS and generates webpages recursively for
     all directories.
     """
+    has_output_dir = False
 
-    def __init__(self, name = None):
+    def __init__(self, name = None, working_dir = ""):
         super(SimpleWebCreator, self).__init__(name)
-        self.working_dir = ""
+        self.working_dir = working_dir
         self.target_dir = settings.web_target_dir
         self.web_lines = []
         self.subfolders = []
         self.image_names = []
+        self.plain_info = []
         self.image_postfix = None
-
-    def wanna_reuse(self, all_reused_before_me):
-        return all_reused_before_me
-
-    def _set_plot_output_dir(self):
-        pass
 
     def configure(self):
         """A bit of initialization."""
@@ -170,9 +141,11 @@ class SimpleWebCreator(postprocessing.PostProcTool):
         for wd, dirs, files in os.walk(self.working_dir):
             self.subfolders += dirs
             for f in files:
-                if (f[-5:] == ".info" and
-                    f[:-5] + self.image_postfix in files):
-                    self.image_names.append(f[:-5])
+                if (f[-5:] == ".info"):
+                    if (f[:-5] + self.image_postfix in files):
+                        self.image_names.append(f[:-5])
+                    else:
+                        self.plain_info.append(f)
             break
 
     def go4subdirs(self):
@@ -200,6 +173,9 @@ class SimpleWebCreator(postprocessing.PostProcTool):
             '//--></script>',
             '</head>',
             '<body>'
+            '<h2>'
+            'DISCLAIMER: latest-super-preliminary-nightly-build-work-in-progress-analysis-snapshot'
+            '</h2>'
         ]
 
     def make_headline(self):
@@ -221,14 +197,34 @@ class SimpleWebCreator(postprocessing.PostProcTool):
             )
         self.web_lines += ('<hr width="60%">', "")
 
+    def make_info_file_divs(self):
+        self.web_lines += ('<h2>Info files:</h2>',)
+        for nfo in self.plain_info:
+            try:
+                wrp = wrappers.Wrapper.create_from_file(
+                    os.path.join(self.working_dir, nfo)
+                )
+            except TypeError:
+                continue
+            self.web_lines += (
+                '<div>',
+                '<p>',
+                '<b>' + nfo[:-5] + '</b>',
+                '<p>',
+                '<pre>',
+                str(wrp),
+                '</pre>',
+                '</div>',
+                '<hr width="60%">',
+            )
+
     def make_image_divs(self):
         self.web_lines += ('<h2>Images:</h2>',)
         for img in self.image_names:
             #TODO get history from full wrapper!!
             history_lines = ""
             with open(os.path.join(self.working_dir,img + ".info")) as f:
-                f.next() #skip first two lines
-                f.next() #skip first two lines
+                while f.next() != "\n": continue #skip ahead to history
                 for line in f:
                     history_lines += line
             h_id = "history_" + img
@@ -280,7 +276,7 @@ class SimpleWebCreator(postprocessing.PostProcTool):
         """Run the single steps."""
         self.configure()
         if not self.image_postfix: return # WARNING message above.
-        if self.image_names or self.subfolders:
+        if self.image_names or self.subfolders or self.plain_info:
             self.message("INFO Building page in " + self.working_dir)
         else:
             return
@@ -288,6 +284,7 @@ class SimpleWebCreator(postprocessing.PostProcTool):
         self.make_html_head()
         self.make_headline()
         self.make_subfolder_links()
+        self.make_info_file_divs()
         self.make_image_divs()
         self.finalize_page()
         self.write_page()

@@ -28,26 +28,60 @@ cmsRun_procs = []
 controller   = None
 
 ########################################################### post-processing ###
-post_proc_tools = []
-web_target_dir = ""
-enable_postproc_reuse = True
+post_proc_tools         = []
+postprocessor           = None
+web_target_dir          = ""
+tex_target_dir          = ""
+plot_target_dir         = ""
+enable_postproc_reuse   = True
+histo_pool              = []
+post_proc_dict          = {} # Data storage for post proc tools
+persistent_dict         = {} # PostProcChainSystematics will not touch this.
+persistent_data         = [  # PostProcChainSystematics will not touch these.
+    "cmsRun_procs",
+    "controller",
+    "post_proc_tools",
+    "postprocessor",
+    "persistent_dict",
+    "persistent_data",
+    "stack_dir_result",
+    "stack_dir_pstprc"
+    "gROOT",
+    "ROOT",
+    "StyleClass",
+    "TStyle",
+    "TGaxis",
+    "root_style",
+]
 
 ################################################################### samples ###
 import wrappers as wrp
 
-samples = {}       # all samples being processed
-samples_stack = [] # list of strings of samplenames for data/MC comparison
+samples = {}        # all samples being processed
+active_samples = [] # list of strings of samplenames (without systematic smpls)
 def mc_samples():
     """Returns a dict of all MC samples."""
-    return dict((k,v) for k,v in samples.iteritems() if not v.is_data)
+    return dict(
+        (k,v)
+        for k,v in samples.iteritems()
+        if k in active_samples and not v.is_data
+    )
 
 def data_samples():
     """Returns a dict of all real data samples."""
-    return dict((k,v) for k,v in samples.iteritems() if v.is_data)
+    return dict(
+        (k,v)
+        for k,v in samples.iteritems()
+        if k in active_samples and v.is_data
+    )
 
 def data_lumi_sum():
     """Returns the sum of luminosity in data samples."""
-    return sum(v.lumi for k,v in data_samples().iteritems())
+    return sum(
+        v.lumi
+        for k,v in data_samples().iteritems()
+        if k in active_samples
+    )
 
 def data_lumi_sum_wrp():
     """Returns the sum of data luminosity in as a FloatWrapper."""
@@ -58,11 +92,31 @@ import os
 import sys
 
 DIR_JOBINFO     = ".jobInfo/"
+DIR_PSTPRCINFO  = ".psrPrcInfo/"
 DIR_FILESERVICE = "outputFileService/"
 DIR_LOGS        = "outputLogs/"
 DIR_CONFS       = "outputConfs/"
 DIR_PLOTS       = "outputPlots/"  #TODO: outputResult!!
-tool_folders    = {}
+
+dir_result      = DIR_PLOTS
+dir_pstprc      = DIR_PSTPRCINFO
+
+stack_dir_result = [DIR_PLOTS]
+stack_dir_pstprc = [DIR_PSTPRCINFO]
+
+def push_tool_dir(name):
+    stack_dir_result.append(name)
+    stack_dir_pstprc.append(name)
+    _set_dir_vars()
+
+def pop_tool_dir():
+    stack_dir_result.pop()
+    stack_dir_pstprc.pop()
+    _set_dir_vars()
+
+def create_folder(path):
+    if not os.path.exists(path):
+        os.mkdir(path)
 
 def create_folders():
     """
@@ -75,11 +129,13 @@ def create_folders():
     for name in dir(this_mod):
         if name[0:3] == "DIR":
             path = getattr(this_mod, name)
-            if not os.path.exists(path):
-                os.mkdir(path)
-    for key, folder in tool_folders.iteritems():
-        if not os.path.exists(folder):
-            os.mkdir(folder)
+            create_folder(path)
+
+def _set_dir_vars():
+    this_mod = sys.modules[__name__]
+    this_mod.dir_result = "/".join(stack_dir_result) + "/"
+    this_mod.dir_pstprc = "/".join(stack_dir_pstprc) + "/"
+
 
 ########################################################### style constants ###
 canvas_size_x = 800

@@ -16,7 +16,7 @@ class _dict_base(object):
         Writes all __dict__ entries into a string.
         """
         txt = "_____________" + self.__class__.__name__ + "____________\n"
-        txt += str(self.__dict__)
+        txt += self.pretty_info_lines()
         txt += "\n"
         return txt
 
@@ -28,6 +28,12 @@ class _dict_base(object):
         Returns copy of self.__dict__.
         """
         return dict(self.__dict__)
+
+    def pretty_info_lines(self):
+        keys = sorted(self.__dict__.keys())
+        return "{\n" + ",\n".join(
+            "%20s: "%k + repr(getattr(self, k)) for k in keys
+        ) + ",\n}"
 
 
 class Alias(_dict_base):
@@ -80,7 +86,7 @@ class Wrapper(_dict_base):
 
     def __init__(self, **kws):
         self.name           = kws.get("name", "")
-        self.title          = kws.get("title", "")
+        self.title          = kws.get("title", self.name)
         self.history        = kws.get("history", "")
 
     def write_info_file(self, info_filename):
@@ -95,13 +101,14 @@ class Wrapper(_dict_base):
         self.klass = self.__class__.__name__
         history, self.history = self.history, repr(str(self.history))
         with open(info_filename, "w") as file:
-            file.write(repr(self.all_info())+" \n\n")
+            file.write(repr(self.all_info()) + " \n")
+            file.write(self.pretty_info_lines() + " \n\n")
             file.write(str(history))
         del self.klass
         self.history = history
 
     @classmethod
-    def create_from_file(cls, info_filename, wrapped_obj):
+    def create_from_file(cls, info_filename, wrapped_obj = None):
         """
         Reads serialized dict and creates wrapper.
 
@@ -120,7 +127,15 @@ class Wrapper(_dict_base):
         this_mod = sys.modules[__name__]
         klass = getattr(this_mod, info.get("klass"))
         del info["klass"]
-        return klass(wrapped_obj, **info)
+        if wrapped_obj:
+            wrp = klass(wrapped_obj, **info)
+        elif klass == FloatWrapper:
+            wrp = klass(info["float"], **info)
+        else:
+            wrp = klass(**info)
+        for k, v in info.iteritems():
+            setattr(wrp, k, v)
+        return wrp
 
     def primary_object(self):
         """Overwrite! Should returned wrapped object."""

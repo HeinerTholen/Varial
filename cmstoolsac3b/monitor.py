@@ -1,11 +1,10 @@
 
-import os
+import sys
 import singleton
 import settings
 from PyQt4 import QtCore
 
 class QSingleton(singleton.Singleton, type(QtCore.QObject)): pass
-
 
 class Messenger(QtCore.QObject):
     """
@@ -27,49 +26,61 @@ class Monitor(QtCore.QObject):
     Mechanism is used.
     """
     __metaclass__ = QSingleton
+    indent = 0
 
     def __init__(self):
         super(Monitor, self).__init__()
         self.error_logs_opened = 0
+        self.outstream = sys.stdout
+
+    def __call__(self, *args):
+        for arg in args:
+            print >> self.outstream, arg,
+        print >> self.outstream
 
     def proc_enqueued(self, process):
-        print "INFO process enqueued:   cmsRun ", process.conf_filename
+        self("INFO process enqueued:   cmsRun ", process.conf_filename)
 
     def proc_started(self, process):
         if settings.suppress_cmsRun_exec or process.reused_old_data:
             return
-        print "INFO process started :   cmsRun ", process.conf_filename, "PID: ", process.pid()
+        self("INFO process started :   cmsRun ", process.conf_filename, "PID: ", process.pid())
 
     def proc_finished(self, process):
         if settings.suppress_cmsRun_exec or process.reused_old_data:
             return
         if hasattr(settings, "recieved_sigint"):
-            print "INFO process aborted:   cmsRun ", process.conf_filename
+            self("INFO process aborted:   cmsRun ", process.conf_filename)
         else:
-            print "INFO process finished:   cmsRun ", process.conf_filename
+            self("INFO process finished:   cmsRun ", process.conf_filename)
 
     def proc_failed(self, process):
-        print "WARNING process FAILED  :   cmsRun ", process.conf_filename
+        self("WARNING process FAILED  :   cmsRun ", process.conf_filename)
         if not self.error_logs_opened:
-            print "_______________________________________begin_cmsRun_logfile"
-            try:
-                logfile = open(process.log_filename, "r")
-                for line in logfile.readlines(): print line,
-            finally:
-                logfile.close()
-            print "______________end of log for " + process.conf_filename
-            print "_________________________________________end_cmsRun_logfile"
+            self("_______________________________________begin_cmsRun_logfile")
+            with open(process.log_filename, "r") as logfile:
+                self(logfile.read())
+            self("______________end of log for " + process.conf_filename)
+            self("_________________________________________end_cmsRun_logfile")
             self.error_logs_opened += 1
 
     def all_finished(self):
-        print "INFO All processes finished"
+        self("INFO All processes finished")
+
+    def started(self, obj, message):
+        self.message(obj, message)
+        self.indent += 1
 
     def message(self, sender, string):
         if hasattr(sender, "name"):
             sender = sender.name
         elif not type(sender) == str:
             sender = str(type(sender))
-        print string + " (" + sender + ")"
+        self(self.indent*"  " + string + " (" + sender + ")")
+
+    def finished(self, obj, message):
+        self.indent -= 1
+        self.message(obj, message)
 
     def connect_controller(self, controller):
         controller.process_enqueued.connect(self.proc_enqueued)
@@ -81,12 +92,12 @@ class Monitor(QtCore.QObject):
 
     def connect_object_with_messenger(self, obj):
         obj.messenger = Messenger()
-        obj.message = obj.messenger.message.emit
         obj.messenger.started.connect(
-            lambda: self.message(obj, "INFO started"))
+            lambda: self.started(obj, "INFO started"))
         obj.messenger.message.connect(
             lambda message: self.message(obj, message))
         obj.messenger.finished.connect(
-            lambda: self.message(obj, "INFO finished"))
+            lambda: self.finished(obj, "INFO finished"))
+        return obj.messenger.message.emit
 
 

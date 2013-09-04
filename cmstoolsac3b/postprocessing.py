@@ -1,73 +1,197 @@
 
 import settings
 import monitor
-from PyQt4 import QtCore
+import os
+import time
+import copy
+import inspect
 
-
-class PostProcTool(object):
+class PostProcBase(object):
     """
-    Base class for post processing tool.
-
-    A directory in <settings.DIR_PLOTS> with the class name of this tool is
-    created. Messages can be printed with self.message().
+    Base class for post processing.
     """
-    def _set_plot_output_dir(self):
-        plot_output_dir = settings.DIR_PLOTS + self.name + "/"
-        settings.tool_folders[self.name] = plot_output_dir
-        self.plot_output_dir = plot_output_dir
+    can_reuse = False
+    has_output_dir = True
 
     def __init__(self, tool_name = None):
-        super(PostProcTool, self).__init__()
+        super(PostProcBase, self).__init__()
 
+        # name
         if not tool_name:
             self.name = self.__class__.__name__
         else:
             self.name = tool_name
-        self.plot_output_dir = settings.DIR_PLOTS
 
-        self._set_plot_output_dir()
-        monitor.Monitor().connect_object_with_messenger(self)
+        # messenger
+        if not hasattr(self, "message"):
+            self.message = monitor.Monitor().connect_object_with_messenger(self)
+
+    def __enter__(self):
+        settings.push_tool_dir(self.name)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        settings.pop_tool_dir()
+
+    def _reset(self):
+        self.__init__(self.name)
 
     def wanna_reuse(self, all_reused_before_me):
         """Overwrite! If True is returned, run is not called."""
-        return False
+        return self.can_reuse and all_reused_before_me
+
+    def starting(self):
+        settings.create_folder(settings.dir_pstprc)
+        if self.has_output_dir:
+            settings.create_folder(settings.dir_result)
+        self.messenger.started.emit()
 
     def run(self):
         """Overwrite!"""
         pass
 
+    def finished(self):
+        self.messenger.finished.emit()
 
-class PostProcessor(object):
+
+class PostProcTool(PostProcBase):
+    """"""
+    can_reuse = True
+
+    def __init__(self, name=None):
+        super(PostProcTool, self).__init__(name)
+        self.plot_output_dir = None
+        self._info_file = None
+
+    def __enter__(self):
+        res = super(PostProcTool, self).__enter__()
+        self.plot_output_dir = settings.dir_result
+        self._info_file = os.path.join(settings.dir_pstprc, self.name)
+        return res
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.plot_output_dir = None
+        self._info_file = None
+        super(PostProcTool, self).__exit__(exc_type, exc_val, exc_tb)
+
+    def wanna_reuse(self, all_reused_before_me):
+        if self.has_output_dir:
+            output_dir_ok = os.path.exists(self.plot_output_dir)
+        else:
+            output_dir_ok = True
+        return (
+            super(PostProcTool, self).wanna_reuse(all_reused_before_me)
+            and os.path.exists(self._info_file)
+            and output_dir_ok
+        )
+
+    def starting(self):
+        super(PostProcTool, self).starting()
+        self.time_start = time.ctime() + "\n"
+        if os.path.exists(self._info_file):
+            os.remove(self._info_file)
+
+    def finished(self):
+        self.time_fin = time.ctime() + "\n"
+        with open(self._info_file, "w") as f:
+            f.write(self.time_start)
+            f.write(self.time_fin)
+        super(PostProcTool, self).finished()
+
+
+class PostProcChain(PostProcBase):
     """
     Executes PostProcTools.
     """
-    tool_chain = []
-    reuse = False
 
-    def __init__(self, all_processes_reused):
-        super(PostProcessor, self).__init__()
-        self._reuse = all_processes_reused
+    def __init__(self, name = None, tools = None):
+        super(PostProcChain, self).__init__(name)
+        self._reuse = False
+        self.tool_chain = []
+        if tools:
+            self.add_tools(tools)
+
+    def _reset(self):
+        for t in self.tool_chain:
+            t._reset()
 
     def add_tools(self, tools):
         for tool in tools:
             self.add_tool(tool)
 
     def add_tool(self, tool):
-        assert (isinstance(tool, PostProcTool)
-                or issubclass(tool, PostProcTool))
-        if not isinstance(tool, PostProcTool):
+        assert (isinstance(tool, PostProcBase)
+                or issubclass(tool, PostProcBase))
+        if not isinstance(tool, PostProcBase):
             tool = tool()
-        self._reuse = tool.wanna_reuse(self._reuse)
-        tool._reuse = self._reuse
         self.tool_chain.append(tool)
 
     def run(self):
-        """All tools in tool chain are executed."""
-
         for tool in self.tool_chain:
-            if tool._reuse:
-                tool.message("INFO Reusing last round's data. Skipping...")
-                continue
-            tool.messenger.started.emit()
-            tool.run()
-            tool.messenger.finished.emit()
+            with tool as t:
+                if tool.wanna_reuse(self._reuse):
+                    tool.message("INFO Reusing last round's data. Skipping...")
+                    continue
+                elif tool.can_reuse:
+                    self._reuse = False
+
+                t._reuse = self._reuse
+                t.starting()
+                t.run()
+                t.finished()
+                self._reuse = t._reuse
+
+
+class PostProcChainSystematics(PostProcChain):
+    """Makes a deep copy of settings, restores on exit. Tools are reset."""
+    def __enter__(self):
+        res = super(PostProcChainSystematics, self).__enter__()
+        old_settings_data = {}
+        for key, val in settings.__dict__.iteritems():
+            if not (
+                key[:2] == "__"
+                or key in settings.persistent_data
+                or inspect.ismodule(val)
+                or callable(val)
+                ):
+                try:
+                    old_settings_data[key] = copy.deepcopy(val)
+                except TypeError, e:
+                    if not str(e) == "cannot deepcopy this pattern object":
+                        raise
+                    else:
+                        self.message("WARNING Cannot deepcopy: " + key)
+        self.old_settings_data = old_settings_data
+        return res
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        settings.__dict__.update(self.old_settings_data)
+        del self.old_settings_data
+        super(PostProcChainSystematics, self).__exit__(exc_type, exc_val,exc_tb)
+
+    def starting(self):
+        super(PostProcChainSystematics, self).starting()
+        self.prepare_for_systematic()
+        self.message("INFO Clearing settings.histopool and settings.post_proc_dict")
+        del settings.histo_pool[:]
+        settings.post_proc_dict.clear()
+        self.message("INFO Resetting tools.")
+        self._reset()
+
+    def finished(self):
+        self.finish_with_systematic()
+        super(PostProcChainSystematics, self).finished()
+
+    def prepare_for_systematic(self):
+        """Overwrite!"""
+        pass
+
+    def finish_with_systematic(self):
+        """Overwrite!"""
+        pass
+
+
+
+
+
+

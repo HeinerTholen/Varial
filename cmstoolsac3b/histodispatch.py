@@ -131,18 +131,3 @@ class HistoDispatch(object):
             file = TFile.Open(filename, "READ")
             self.open_root_files[filename] = file
         return file
-
-
-class HistoPool(object):
-    """Storage for all kinds of Wrappers"""
-    __metaclass__ = singleton.Singleton
-    _pool = []
-
-    def put(self, wrp):
-        self._pool.append(wrp)
-
-    def get(self):
-        return (wrp for wrp in self._pool)
-
-    def reset(self):
-        del self._pool[:]
