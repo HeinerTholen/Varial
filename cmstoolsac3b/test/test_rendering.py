@@ -1,8 +1,9 @@
 import os
+from ROOT import TCanvas
 from cmstoolsac3b.test.test_histotoolsbase import TestHistoToolsBase
 from cmstoolsac3b.rendering import CanvasBuilder
 from cmstoolsac3b.wrappers import HistoWrapper
-from ROOT import TCanvas
+import cmstoolsac3b.diskio as diskio
 
 class TestRendering(TestHistoToolsBase):
     def setUp(self):
@@ -26,13 +27,11 @@ class TestRendering(TestHistoToolsBase):
     def test_canvas_info_file(self):
         fname = "test/cnv_save.info"
         self.test_canvasBuilder_make()
-        self.test_wrp.write_info_file(fname)
-        # file should have 6 lines (with history written out)
-        n_lines = 0
+        diskio.write(self.test_wrp, fname)
+
+        # file should have 23 lines (with history written out)
         with open(fname) as fhandle:
-            for line in fhandle:
-                n_lines += 1
-        self.assertEqual(n_lines, 6)
+            self.assertEqual(len(list(fhandle)), 23)
 
 
 import unittest

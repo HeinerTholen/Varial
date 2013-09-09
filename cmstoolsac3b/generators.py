@@ -4,6 +4,7 @@
 import collections
 import itertools
 import operator
+import diskio
 
 def _iterableize(obj_or_iterable):
     """provides iterable for [obj OR iterable(obj)]"""
@@ -264,7 +265,7 @@ def gen_norm_to_data_lumi(wrps):
 ############################################################### load / save ###
 import os
 import settings
-import histodispatch as dsp
+import diskio
 from ROOT import TFile
 
 def fs_content():
@@ -273,7 +274,7 @@ def fs_content():
 
     :yields:   FileServiceAlias
     """
-    for alias in dsp.HistoDispatch().fileservice_aliases():
+    for alias in diskio.fileservice_aliases():
         yield alias
 
 #TODO get able to load dir content!!!!
@@ -330,9 +331,8 @@ def load(aliases):
     :param aliases: Alias iterable
     :yields:        HistoWrapper
     """
-    hd = dsp.HistoDispatch()
     for alias in aliases:
-        yield hd.load_histogram(alias)
+        yield diskio.load_histogram(alias)
 
 def save(wrps, filename_func, suffices = None):
     """
@@ -353,13 +353,11 @@ def save(wrps, filename_func, suffices = None):
     """
     if not suffices: suffices = settings.rootfile_postfixes
     for wrp in wrps:
-        if hasattr(wrp, "primary_object"):
-            filename = filename_func(wrp)
-            prim_obj = wrp.primary_object()
-            for suffix in suffices:
-                prim_obj.SaveAs(filename + suffix)
-            if hasattr(wrp, "write_info_file"):
-                wrp.write_info_file(filename + ".info")
+        filename = filename_func(wrp)
+        prim_obj = wrp.primary_object()
+        for suffix in suffices:
+            prim_obj.SaveAs(filename + suffix)
+        diskio.write(wrp, filename)
         yield wrp
 
 def get_from_post_proc_dict(key):
@@ -502,10 +500,18 @@ def fs_filter_sort_load(filter_dict=None, sort_keys=None):
     **Implementation:** ::
 
         wrps = fs_content()
-        wrps = filter_active_samples(wrps)
         wrps = filter(wrps, filter_dict)
         wrps = sort(wrps, key_list)
         return load(wrps)
+    """
+    wrps = fs_content()
+    wrps = filter(wrps, filter_dict)
+    wrps = sort(wrps, sort_keys)
+    return load(wrps)
+
+def fs_filter_active_sort_load(filter_dict=None, sort_keys=None):
+    """
+    Just as fs_filter_sort_load, but also filter for active samples.
     """
     wrps = fs_content()
     wrps = filter_active_samples(wrps)
@@ -545,7 +551,7 @@ def fs_mc_stack(filter_dict=None, merge_mc_key_func=None):
                                 tries to sort after stack position
     :yields:                    StackWrapper
     """
-    loaded = fs_filter_sort_load(filter_dict)
+    loaded = fs_filter_active_sort_load(filter_dict)
     grouped = group(loaded)
     return mc_stack(grouped, merge_mc_key_func)
 
@@ -616,7 +622,7 @@ def fs_mc_stack_n_data_sum(filter_dict=None, merge_mc_key_func=None):
                                 tries to sort after stack position
     :yields:                    (StackWrapper, HistoWrapper)
     """
-    loaded = fs_filter_sort_load(filter_dict)
+    loaded = fs_filter_active_sort_load(filter_dict)
     grouped = group(loaded) # default: group by analyzer_histo (the fs histo 'ID')
     return mc_stack_n_data_sum(grouped, merge_mc_key_func, True)
 
