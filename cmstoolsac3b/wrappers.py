@@ -91,11 +91,11 @@ class Wrapper(_dict_base):
         """Exception for false type."""
 
     def __init__(self, **kws):
-        self.name           = kws.get("name", "")
-        self.title          = kws.get("title", self.name)
-        self.history        = kws.get("history", "")
-        self.klass          = self.__class__.__name__
+        self.name           = ""
+        self.title          = self.name
+        self.history        = ""
         self.__dict__.update(kws)
+        self.klass          = self.__class__.__name__
 
     def write_info_file(self, info_filename):
         """
