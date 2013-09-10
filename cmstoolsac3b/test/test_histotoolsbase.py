@@ -1,17 +1,17 @@
 import unittest
-import cmstoolsac3b.settings as settings
 import os
 import shutil
 from ROOT import TH1I, gROOT, kRed, kBlue
+import cmstoolsac3b.settings as settings
+import cmstoolsac3b.diskio as diskio
+import cmstoolsac3b.sample as sample
 from cmstoolsac3b.history import History
 from cmstoolsac3b.wrappers import HistoWrapper
-from cmstoolsac3b.histodispatch import HistoDispatch
 
 class TestHistoToolsBase(unittest.TestCase):
     def setUp(self):
         super(TestHistoToolsBase, self).setUp()
 
-        self.dispatch = HistoDispatch()
         test_fs = "fileservice/"
         settings.DIR_FILESERVICE = test_fs
         if (not os.path.exists(test_fs + "tt.root")) \
@@ -20,17 +20,25 @@ class TestHistoToolsBase(unittest.TestCase):
             self.skipTest("Fileservice testfiles not present!")
 
         # create samples
-        class Sample(object): is_data = False
-        settings.samples["tt"] = Sample()
-        settings.samples["tt"].is_data = True
-        settings.samples["tt"].lumi = 3.
-        settings.samples["tt"].legend = "Data"
-        settings.samples["ttgamma"] = Sample()
-        settings.samples["ttgamma"].lumi = 4.
-        settings.samples["ttgamma"].legend = "tt gamma"
-        settings.samples["zjets"] = Sample()
-        settings.samples["zjets"].lumi = 0.1
-        settings.samples["zjets"].legend = "z jets"
+        settings.samples["tt"] = sample.Sample(
+            name = "tt",
+            is_data = True,
+            lumi = 3.,
+            legend = "pseudo data",
+            input_files = "none",
+        )
+        settings.samples["ttgamma"] = sample.Sample(
+            name = "ttgamma",
+            lumi = 4.,
+            legend = "tt gamma",
+            input_files = "none",
+        )
+        settings.samples["zjets"] = sample.Sample(
+            name = "zjets",
+            lumi = 0.1,
+            legend = "z jets",
+            input_files = "none",
+        )
         settings.colors = {
             "tt gamma": kRed,
             "z jets": kBlue
@@ -39,7 +47,7 @@ class TestHistoToolsBase(unittest.TestCase):
             "tt gamma",
             "z jets"
         ]
-        self.settings = settings
+        settings.active_samples = settings.samples.keys()
 
         #create a test wrapper
         h1 = TH1I("h1", "H1", 2, .5, 4.5)
@@ -57,13 +65,12 @@ class TestHistoToolsBase(unittest.TestCase):
 
     def tearDown(self):
         super(TestHistoToolsBase, self).tearDown()
-        del self.dispatch
 
         if os.path.exists("test"):
             shutil.rmtree("test")
 
-        if hasattr(self.test_wrp, "histo"):
-            del self.test_wrp.histo
         del self.test_wrp
+
+        diskio.drop_io_refs()
         gROOT.Reset()
 

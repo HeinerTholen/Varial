@@ -1,11 +1,11 @@
 
-import settings
-import wrappers
-import monitor
 import os
 import time
 import copy
 import inspect
+import settings
+import diskio
+import monitor
 
 class PostProcBase(object):
     """
@@ -92,7 +92,7 @@ class PostProcTool(PostProcBase):
         res_file = self.plot_output_dir + "result.info"
         if self.has_output_dir and os.path.exists(res_file):
             self.message("INFO Fetching last round's data: ")
-            res = wrappers.Wrapper.create_from_file(res_file)
+            res = diskio.read(res_file)
             settings.post_proc_dict[self.name] = res
             self.message(str(res))
 

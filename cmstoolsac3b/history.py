@@ -13,18 +13,18 @@ class History(object):
     >>> h.add_args(["w1", "w2"])
     >>> print str(h)
     some_op(
-        'w1',
-        'w2'
+        w1,
+        w2
     )
     >>> h.add_kws({"a_keyword": "a_value"})
     >>> print str(h)
     some_op(
-        'w1',
-        'w2',
+        w1,
+        w2,
         {'a_keyword': 'a_value'}
     )
     >>> h
-    some_op('w1','w2',{'a_keyword':'a_value'})
+    some_op(w1,w2,{'a_keyword':'a_value'})
     >>> h.add_args([History("another_op")])
     >>> print str(h)
     some_op(

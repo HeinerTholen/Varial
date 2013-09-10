@@ -90,11 +90,11 @@ def data_samples():
 
 def data_lumi_sum():
     """Returns the sum of luminosity in data samples."""
-    return sum(
+    return float(sum(
         v.lumi
         for k,v in data_samples().iteritems()
         if k in active_samples
-    )
+    ))
 
 def data_lumi_sum_wrp():
     """Returns the sum of data luminosity in as a FloatWrapper."""

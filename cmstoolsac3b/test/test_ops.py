@@ -33,7 +33,7 @@ class TestOps(unittest.TestCase):
     def test_history(self):
         self.wrp2.lumi=2.
         res = stack([self.wrp1, self.wrp2])
-        history = "stack(\n    'wrp1',\n    'wrp2'\n)"
+        history = "stack(\n    wrp1,\n    wrp2\n)"
         self.assertEqual(str(res.history), history)
         self.wrp1.history = History("one")
         res = stack([self.wrp1, self.wrp2])

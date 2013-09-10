@@ -1,10 +1,11 @@
+
+import os
+import shutil
 import settings
 import postprocessing
 import rendering
-import wrappers
+import diskio
 import generators as gen
-import os
-import shutil
 
 class HistoPoolClearer(postprocessing.PostProcTool):
     """Empties HistoPool"""
@@ -32,7 +33,7 @@ class UnfinishedSampleRemover(postprocessing.PostProcTool):
             for p in settings.cmsRun_procs
             if p.successful()
         )
-        for sample in settings.samples.keys():
+        for sample in settings.samples.iterkeys():
             if not sample in finished_procs:
                 if self.stop_on_unfinished:
                     raise self.UnfinishedSampleStop()
@@ -80,7 +81,7 @@ class FSStackPlotter(postprocessing.PostProcTool):
             raise self.NoFilterDictError(
                 "filter_dict not set: subclass and overwrite configure()"
             )
-        wrps = gen.fs_filter_sort_load(self.filter_dict)
+        wrps = gen.fs_filter_active_sort_load(self.filter_dict)
         if self.hook_loaded_histos:
             wrps = self.hook_loaded_histos(wrps)
         wrps = gen.group(wrps)
@@ -234,7 +235,7 @@ class SimpleWebCreator(postprocessing.PostProcTool):
         self.web_lines += ('<h2>Info files:</h2>',)
         for nfo in self.plain_info:
             try:
-                wrp = wrappers.Wrapper.create_from_file(
+                wrp = diskio.read(
                     os.path.join(self.working_dir, nfo)
                 )
             except TypeError:

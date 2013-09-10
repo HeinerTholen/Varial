@@ -1,16 +1,10 @@
-# HistoOperations.py
 
-import sys
-from ROOT import TH1, THStack, TCanvas, TFile, TObject
-from ast import literal_eval
-import histodispatch # TODO: no circular dependance!
+from ROOT import TH1, THStack, TCanvas, TObject
 
 class _dict_base(object):
     """
     Overwrites __str__ to print classname and __dict__
     """
-    class NoDictInFileError(Exception): pass
-
     def __str__(self):
         """Writes all __dict__ entries into a string."""
         name = self.__dict__.get("name", self.__class__.__name__)
@@ -35,11 +29,15 @@ class _dict_base(object):
         )
 
     def pretty_info_lines(self):
-        keys = sorted(self.__dict__.keys())
-        return "{\n" + ",\n".join(
-            "%20s: "%k + repr(getattr(self, k)) for k in keys
-        ) + ",\n}"
+        return self._pretty_lines(sorted(self.__dict__.keys()))
 
+    def pretty_writeable_lines(self):
+        return self._pretty_lines(sorted(self.all_writeable_info().keys()))
+
+    def _pretty_lines(self, keys):
+        return "{\n" + ",\n".join(
+            "%20s: "%("'"+k+"'") + repr(getattr(self, k)) for k in keys
+        ) + ",\n}"
 
 class Alias(_dict_base):
     """
@@ -87,9 +85,6 @@ class Wrapper(_dict_base):
     >>> info["name"]
     'n'
     """
-    class FalseObjectError(Exception):
-        """Exception for false type."""
-
     def __init__(self, **kws):
         self.name           = ""
         self.title          = self.name
@@ -97,77 +92,36 @@ class Wrapper(_dict_base):
         self.__dict__.update(kws)
         self.klass          = self.__class__.__name__
 
-    def write_info_file(self, info_filename):
-        """
-        Serializes Wrapper to python code dict.
-
-        Class is encoded as 'klass',
-        history (see :ref:`history-module`) is printed out nicely.
-
-        :param  info_filename:  filename to store wrapper infos with suffix.
-        """
-        history, self.history = self.history, repr(str(self.history))
-        with open(info_filename, "w") as file:
-            file.write(repr(self.all_writeable_info()) + " \n")
-            file.write(self.pretty_info_lines() + " \n\n")
-            file.write(str(history))
-        self.history = history
-
-    def write_root_file(self, root_filename):
-        """"""
-        f = TFile.Open(root_filename, "UPDATE")
-        self.root_filename = root_filename
-        self.root_file_obj_paths  = {}
-        for key, value in self.__dict__.iteritems():
-            if not isinstance(value, TObject):
-                continue
-            value.Write()
-            self.root_file_obj_paths[key] = value.GetName()
-        f.Close()
-
-    @classmethod
-    def create_from_file(cls, info_filename, wrapped_obj = None):
-        """
-        Reads serialized dict and creates wrapper.
-
-        :param  info_filename:  filename to read wrapper infos from.
-        :param  wrapped_obj:    object to be wrapped by the newly instantiated wrapper.
-        :type   wrapped_obj:    TH1/THStack/TCanvas/...
-        :returns:               Wrapper type according to info file
-        """
-        with open(info_filename, "r") as file:
-            line = file.readline()
-            info = literal_eval(line)
-        if not type(info) == dict:
-            raise cls.NoDictInFileError(
-                "Could not read file: " + info_filename
+    def _check_object_type(self, obj, typ):
+        if not isinstance(obj, typ):
+            raise TypeError(
+                self.__class__.__name__
+                + " needs a "
+                + str(self.typ)
+                + " instance as first argument! He got "
+                + str(obj)
+                + "."
             )
-        this_mod = sys.modules[__name__]
-        klass = getattr(this_mod, info.get("klass"))
-        del info["klass"]
-        if wrapped_obj:
-            wrp = klass(wrapped_obj, **info)
-        elif klass == FloatWrapper:
-            wrp = klass(info["float"], **info)
-        else:
-            wrp = klass(**info)
-        for k, v in info.iteritems():
-            setattr(wrp, k, v)
-        return wrp
-
-    def read_root_objs_from_file(self):
-        if not hasattr(self, "root_filename"):
-            return
-        dispatch = histodispatch.HistoDispatch()
-        for name, path in self.root_file_obj_paths:
-            obj = dispatch._get_obj_from_file(
-                self.root_filename,
-                path
-            )
-            setattr(self, name, obj)
 
     def primary_object(self):
         """Overwrite! Should returned wrapped object."""
+
+    def write_info_file(self, info_filename):
+        """Functionality moved to package diskio."""
+        raise Exception("Don't use this method! Check module diskio")
+
+    def write_root_file(self, root_filename):
+        """Functionality moved to package diskio."""
+        raise Exception("Don't use this method! Check module diskio")
+
+    @classmethod
+    def create_from_file(cls, info_filename, wrapped_obj = None):
+        """Functionality moved to package diskio."""
+        raise Exception("Don't use this method! Check module diskio")
+
+    def read_root_objs_from_file(self):
+        """Functionality moved to package diskio."""
+        raise Exception("Don't use this method! Check module diskio")
 
 
 class FloatWrapper(Wrapper):
@@ -176,15 +130,13 @@ class FloatWrapper(Wrapper):
 
     **Keywords:** See superclass.
 
-    :raises: self.FalseObjectError
+    :raises: TypeError
     """
-    def __init__(self, value, **kws):
+    val_type = float
+    def __init__(self, float, **kws):
+        self._check_object_type(float, self.val_type)
         super(FloatWrapper, self).__init__(**kws)
-        if not (type(value) == float or type(value) == int):
-            raise self.FalseObjectError(
-                "FloatWrapper needs a float or int as first argument"
-            )
-        self.float = float(value)
+        self.float = float
 
 
 class HistoWrapper(Wrapper):
@@ -198,13 +150,10 @@ class HistoWrapper(Wrapper):
     ``analyzer``,
     and also see superclass.
 
-    :raises: self.FalseObjectError
+    :raises: TypeError
     """
     def __init__(self, histo, **kws):
-        if not isinstance(histo, TH1):
-            raise self.FalseObjectError(
-                "HistoWrapper needs a TH1 instance as first argument"
-            )
+        self._check_object_type(histo, TH1)
         super(HistoWrapper, self).__init__(**kws)
         self.histo          = histo
         self.name           = histo.GetName()
@@ -238,13 +187,10 @@ class StackWrapper(HistoWrapper):
 
     **Keywords:** See superclass.
 
-    :raises: self.FalseObjectError
+    :raises: TypeError
     """
     def __init__(self, stack, **kws):
-        if not isinstance(stack, THStack):
-            raise self.FalseObjectError(
-                "StackWrapper needs a THStack instance as first argument"
-            )
+        self._check_object_type(stack, THStack)
         super(StackWrapper, self).__init__(
             self._add_stack_up(stack),
             **kws
@@ -280,15 +226,14 @@ class CanvasWrapper(Wrapper):
 
     **Keywords:** ``lumi`` and also see superclass.
 
-    :raises: self.FalseObjectError
+    :raises: TypeError
     """
     def __init__(self, canvas, **kws):
-        if not isinstance(canvas, TCanvas):
-            raise self.FalseObjectError(
-                "CanvasWrapper needs a TCanvas instance as first argument!"
-            )
+        self._check_object_type(canvas, TCanvas)
         super(CanvasWrapper, self).__init__(**kws)
         self.canvas     = canvas
+        self.name       = canvas.GetName()
+        self.title      = canvas.GetTitle()
         self.main_pad   = kws.get("main_pad", canvas)
         self.second_pad = kws.get("second_pad")
         self.legend     = kws.get("legend")
@@ -297,8 +242,6 @@ class CanvasWrapper(Wrapper):
         self.y_bounds   = kws.get("y_bounds")
         self.y_min_gr_0 = kws.get("y_min_gr_0")
         self.lumi       = kws.get("lumi", 1.)
-        self.name       = canvas.GetName()
-        self.title      = canvas.GetTitle()
 
     def primary_object(self):
         self.canvas.Modified()

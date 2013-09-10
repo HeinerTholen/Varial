@@ -24,7 +24,8 @@ class Sample(wrappers._dict_base):
     """
     class MissingDefinition(Exception): pass
 
-    def __init__(self):
+    def __init__(self, **kws):
+        self.__dict__.update(kws)
         if not hasattr(self, "is_data"):
             self.is_data         = False
         if not hasattr(self, "x_sec"):
