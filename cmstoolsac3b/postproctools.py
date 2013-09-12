@@ -253,7 +253,7 @@ class SimpleWebCreator(postprocessing.PostProcTool):
             )
 
     def make_tex_file_divs(self):
-        self.web_lines += ('<h2>tex files:</h2>',)
+        self.web_lines += ('<h2>Tex files:</h2>',)
         for tex in self.plain_tex:
             with open(os.path.join(self.working_dir, tex), "r") as f:
                 self.web_lines += (
