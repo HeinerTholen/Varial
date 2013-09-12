@@ -78,7 +78,7 @@ class Monitor(QtCore.QObject):
             sender = sender.name
         elif not type(sender) == str:
             sender = str(type(sender))
-        self(self.indent*"  " + string + " (" + sender + ")")
+        self(self.indent*"  " + str(string) + " (" + sender + ")")
 
     def finished(self, obj, message):
         self.indent -= 1
