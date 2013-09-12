@@ -153,6 +153,7 @@ class SimpleWebCreator(postprocessing.PostProcTool):
         self.subfolders = []
         self.image_names = []
         self.plain_info = []
+        self.plain_tex = []
         self.image_postfix = None
 
     def configure(self):
@@ -175,11 +176,13 @@ class SimpleWebCreator(postprocessing.PostProcTool):
         for wd, dirs, files in os.walk(self.working_dir):
             self.subfolders += dirs
             for f in files:
-                if (f[-5:] == ".info"):
-                    if (f[:-5] + self.image_postfix in files):
+                if f[-5:] == ".info":
+                    if f[:-5] + self.image_postfix in files:
                         self.image_names.append(f[:-5])
                     else:
                         self.plain_info.append(f)
+                if f[-4:] == ".tex":
+                    self.plain_tex.append(f)
             break
 
     def go4subdirs(self):
@@ -234,16 +237,13 @@ class SimpleWebCreator(postprocessing.PostProcTool):
     def make_info_file_divs(self):
         self.web_lines += ('<h2>Info files:</h2>',)
         for nfo in self.plain_info:
-            try:
-                wrp = diskio.read(
-                    os.path.join(self.working_dir, nfo)
-                )
-            except TypeError:
-                continue
+            wrp = diskio.read(
+                os.path.join(self.working_dir, nfo)
+            )
             self.web_lines += (
                 '<div>',
                 '<p>',
-                '<b>' + nfo[:-5] + '</b>',
+                '<b>' + nfo + '</b>',
                 '<p>',
                 '<pre>',
                 str(wrp),
@@ -251,6 +251,24 @@ class SimpleWebCreator(postprocessing.PostProcTool):
                 '</div>',
                 '<hr width="60%">',
             )
+
+    def make_tex_file_divs(self):
+        self.web_lines += ('<h2>tex files:</h2>',)
+        for tex in self.plain_tex:
+            with open(os.path.join(self.working_dir, tex), "r") as f:
+                self.web_lines += (
+                    '<div>',
+                    '<p>',
+                    '<b>' + tex + '</b>',
+                    '<p>',
+                    '<pre>',
+                )
+                self.web_lines += f.readlines()
+                self.web_lines += (
+                    '</pre>',
+                    '</div>',
+                    '<hr width="60%">',
+                )
 
     def make_image_divs(self):
         self.web_lines += ('<h2>Images:</h2>',)
@@ -319,6 +337,7 @@ class SimpleWebCreator(postprocessing.PostProcTool):
         self.make_headline()
         self.make_subfolder_links()
         self.make_info_file_divs()
+        self.make_tex_file_divs()
         self.make_image_divs()
         self.finalize_page()
         self.write_page()
