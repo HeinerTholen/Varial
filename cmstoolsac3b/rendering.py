@@ -496,17 +496,18 @@ class BottomPlotRatioSplitErr(BottomPlot):
         div_hist = da_histo.Clone()
         div_hist.Divide(mc_histo)
         for i in xrange(1, mc_histo.GetNbinsX() + 1):
-            mc_val = mc_histo.GetBinContent(i)
-            mc_err = mc_histo.GetBinError(i)
-            da_val = da_histo.GetBinContent(i)
-            da_err = da_histo.GetBinError(i)
+            mc_val  = mc_histo.GetBinContent(i)
+            mc_err  = mc_histo.GetBinError(i)
+            da_val  = da_histo.GetBinContent(i)
+            da_err  = da_histo.GetBinError(i)
+            div_val = div_hist.GetBinContent(i)
             mc_histo.SetBinContent(i, 1.)
             if mc_val > 1e-37:
                 mc_histo.SetBinError(i, mc_err / mc_val)
             else:
                 mc_histo.SetBinError(i, 0.)
             if da_val > 1e-37:
-                div_hist.SetBinError(i, da_err / da_val)
+                div_hist.SetBinError(i, da_err * div_val / da_val)
         div_hist.SetYTitle("Data/MC")
         div_hist.SetMarkerSize(0)
         mc_histo.SetYTitle("Data/MC")

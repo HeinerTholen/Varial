@@ -34,11 +34,14 @@ def write(wrp, filename=None):
         filename = os.path.join(settings.dir_result, wrp.name)
     if filename[-5:] == ".info":
         filename = filename[:-5]
-    wrp.root_filename = filename+".root"
-    f = TFile.Open(wrp.root_filename, "UPDATE")
-    f.cd()
-    _write_wrapper_objs(wrp)
-    f.Close()
+    # write root objects (if any)
+    if any(isinstance(o, TObject) for o in wrp.__dict__.itervalues()):
+        wrp.root_filename = filename+".root"
+        f = TFile.Open(wrp.root_filename, "UPDATE")
+        f.cd()
+        _write_wrapper_objs(wrp)
+        f.Close()
+    # write wrapper infos
     with open(filename+".info", "w") as f:
         _write_wrapper_info(wrp, f)
     _clean_wrapper(wrp)
@@ -68,7 +71,8 @@ def read(filename):
         filename += ".info"
     with open(filename, "r") as f:
         info = _read_wrapper_info(f)
-    _read_wrapper_objs(info)
+    if info.has_key("root_filename"):
+        _read_wrapper_objs(info)
     klass = getattr(wrappers, info.get("klass"))
     wrp = klass(**info)
     _clean_wrapper(wrp)
