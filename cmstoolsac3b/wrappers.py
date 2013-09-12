@@ -35,9 +35,12 @@ class _dict_base(object):
         return self._pretty_lines(sorted(self.all_writeable_info().keys()))
 
     def _pretty_lines(self, keys):
+        size = max(len(k) for k in keys) + 2
         return "{\n" + ",\n".join(
-            "%20s: "%("'"+k+"'") + repr(getattr(self, k)) for k in keys
-        ) + ",\n}"
+                    ("%"+str(size)+"s: ")%("'"+k+"'")
+                    + repr(getattr(self, k))
+                    for k in keys
+                ) + ",\n}"
 
 class Alias(_dict_base):
     """
@@ -97,7 +100,7 @@ class Wrapper(_dict_base):
             raise TypeError(
                 self.__class__.__name__
                 + " needs a "
-                + str(self.typ)
+                + str(typ)
                 + " instance as first argument! He got "
                 + str(obj)
                 + "."
@@ -108,20 +111,20 @@ class Wrapper(_dict_base):
 
     def write_info_file(self, info_filename):
         """Functionality moved to package diskio."""
-        raise Exception("Don't use this method! Check module diskio")
+        raise Exception("Don't use this method! Use write() in module diskio.")
 
     def write_root_file(self, root_filename):
         """Functionality moved to package diskio."""
-        raise Exception("Don't use this method! Check module diskio")
+        raise Exception("Don't use this method! Use write() in module diskio.")
 
     @classmethod
     def create_from_file(cls, info_filename, wrapped_obj = None):
         """Functionality moved to package diskio."""
-        raise Exception("Don't use this method! Check module diskio")
+        raise Exception("Don't use this method! Use read() in module diskio.")
 
     def read_root_objs_from_file(self):
         """Functionality moved to package diskio."""
-        raise Exception("Don't use this method! Check module diskio")
+        raise Exception("Don't use this method! Use read() in module diskio.")
 
 
 class FloatWrapper(Wrapper):
@@ -132,9 +135,9 @@ class FloatWrapper(Wrapper):
 
     :raises: TypeError
     """
-    val_type = float
+    float_type = float
     def __init__(self, float, **kws):
-        self._check_object_type(float, self.val_type)
+        self._check_object_type(float, self.float_type)
         super(FloatWrapper, self).__init__(**kws)
         self.float = float
 
@@ -191,10 +194,9 @@ class StackWrapper(HistoWrapper):
     """
     def __init__(self, stack, **kws):
         self._check_object_type(stack, THStack)
-        super(StackWrapper, self).__init__(
-            self._add_stack_up(stack),
-            **kws
-        )
+        if not kws.has_key("histo"):
+            kws["histo"] = self._add_stack_up(stack)
+        super(StackWrapper, self).__init__(**kws)
         self.stack          = stack
         self.name           = stack.GetName()
         self.title          = stack.GetTitle()
