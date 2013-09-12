@@ -4,6 +4,7 @@ import time
 import copy
 import inspect
 import settings
+import wrappers
 import diskio
 import monitor
 
@@ -89,12 +90,16 @@ class PostProcTool(PostProcBase):
 
     def reuse(self):
         self.message("INFO Reusing!")
-        res_file = self.plot_output_dir + "result.info"
-        if self.has_output_dir and os.path.exists(res_file):
+        res_file = self.plot_output_dir + "result"
+        if self.has_output_dir and os.path.exists(res_file+".info"):
             self.message("INFO Fetching last round's data: ")
             res = diskio.read(res_file)
-            settings.post_proc_dict[self.name] = res
             self.message(str(res))
+            if hasattr(res, "RESULT_WRAPPERS"):
+                self.result = list(diskio.read(f) for f in res.RESULT_WRAPPERS)
+            else:
+                self.result = res
+            settings.post_proc_dict[self.name] = self.result
 
     def starting(self):
         super(PostProcTool, self).starting()
@@ -103,9 +108,25 @@ class PostProcTool(PostProcBase):
             os.remove(self._info_file)
 
     def finished(self):
-        if self.result:
+        res_file = self.plot_output_dir + "result"
+        if isinstance(self.result, wrappers.Wrapper):
             self.result.name = self.name
-            self.result.write_info_file(self.plot_output_dir + "result.info")
+            diskio.write(self.result, res_file)
+            settings.post_proc_dict[self.name] = self.result
+        elif isinstance(self.result, list) or isinstance(self.result, tuple):
+            filenames = []
+            for i, wrp in enumerate(self.result):
+                num_str = "_%03d" % i
+                wrp.name = self.name + num_str
+                filenames.append(res_file + num_str)
+                diskio.write(wrp, res_file + num_str)
+            diskio.write(
+                wrappers.Wrapper(
+                    name            = self.name,
+                    RESULT_WRAPPERS = filenames
+                ),
+                res_file
+            )
             settings.post_proc_dict[self.name] = self.result
         self.time_fin = time.ctime() + "\n"
         with open(self._info_file, "w") as f:
