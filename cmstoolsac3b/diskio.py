@@ -5,7 +5,7 @@ from ast import literal_eval
 from itertools import takewhile
 import settings
 import wrappers
-from ROOT import TFile, TDirectoryFile, TH1, TObject
+from ROOT import TFile, TH1, TObject
 
 class NoDictInFileError(Exception): pass
 class NoObjectError(Exception): pass
@@ -37,9 +37,9 @@ def write(wrp, filename=None):
     # write root objects (if any)
     if any(isinstance(o, TObject) for o in wrp.__dict__.itervalues()):
         wrp.root_filename = filename+".root"
-        f = TFile.Open(wrp.root_filename, "UPDATE")
+        f = TFile.Open(wrp.root_filename, "RECREATE")
         f.cd()
-        _write_wrapper_objs(wrp)
+        _write_wrapper_objs(wrp, f)
         f.Close()
     # write wrapper infos
     with open(filename+".info", "w") as f:
@@ -53,13 +53,13 @@ def _write_wrapper_info(wrp, file_handle):
     file_handle.write(wrp.history + "\n")
     wrp.history = history
 
-def _write_wrapper_objs(wrp):
+def _write_wrapper_objs(wrp, file_handle):
     """Writes root objects on wrapper to disk."""
     wrp.root_file_obj_names  = {}
     for key, value in wrp.__dict__.iteritems():
         if not isinstance(value, TObject):
             continue
-        dirfile = TDirectoryFile(key, key)
+        dirfile = file_handle.mkdir(key, key)
         dirfile.cd()
         value.Write()
         dirfile.Close()
