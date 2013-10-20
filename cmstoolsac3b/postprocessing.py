@@ -111,22 +111,24 @@ class PostProcTool(PostProcBase):
         res_file = self.plot_output_dir + "result"
         if isinstance(self.result, wrappers.Wrapper):
             self.result.name = self.name
-            diskio.write(self.result, res_file)
+            if self.has_output_dir:
+                diskio.write(self.result, res_file)
             settings.post_proc_dict[self.name] = self.result
         elif isinstance(self.result, list) or isinstance(self.result, tuple):
-            filenames = []
-            for i, wrp in enumerate(self.result):
-                num_str = "_%03d" % i
-                wrp.name = self.name + num_str
-                filenames.append(res_file + num_str)
-                diskio.write(wrp, res_file + num_str)
-            diskio.write(
-                wrappers.Wrapper(
-                    name            = self.name,
-                    RESULT_WRAPPERS = filenames
-                ),
-                res_file
-            )
+            if self.has_output_dir:
+                filenames = []
+                for i, wrp in enumerate(self.result):
+                    num_str = "_%03d" % i
+                    wrp.name = self.name + num_str
+                    filenames.append(res_file + num_str)
+                    diskio.write(wrp, res_file + num_str)
+                diskio.write(
+                    wrappers.Wrapper(
+                        name            = self.name,
+                        RESULT_WRAPPERS = filenames
+                    ),
+                    res_file
+                )
             settings.post_proc_dict[self.name] = self.result
         self.time_fin = time.ctime() + "\n"
         with open(self._info_file, "w") as f:

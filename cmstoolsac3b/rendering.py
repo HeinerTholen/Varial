@@ -44,7 +44,7 @@ class HistoRenderer(Renderer, wrappers.HistoWrapper):
         return self.histo.GetXaxis().GetXmax()
 
     def y_min(self):
-        return self.histo.GetMinimum()
+        return self.histo.GetMinimum() + 1e-23 # > 0 cuts away half numbers
 
     def y_max(self):
         return self.histo.GetMaximum()
@@ -220,7 +220,7 @@ class CanvasBuilder(object):
         y_min, y_max = self.y_bounds
         self.first_drawn.GetXaxis().SetNoExponent()
         self.first_drawn.GetXaxis().SetLabelSize(0.052)
-        #self.first_drawn.SetMinimum(y_min * 0.9)
+        self.first_drawn.SetMinimum(y_max / 10000.)
         self.first_drawn.SetMaximum(y_max * 1.1)
 
     def run_procedure(self):
@@ -274,7 +274,6 @@ class CanvasBuilder(object):
         self.canvas_wrp = wrp
         return wrp
 
-    #TODO: Think about making CanvasWrapper and CanvasBuilder one object
 
 ############################################# customization with decorators ###
 import decorator as dec

@@ -317,11 +317,13 @@ class SimpleWebCreator(postprocessing.PostProcTool):
         else:
             self.message("INFO Copying page to " + self.target_dir)
             shutil.copy2(os.path.join(self.working_dir, "index.html"), self.target_dir)
+            ign_pat = shutil.ignore_patterns("*.root", "*.pdf", "*.eps", "*.info")
             for f in self.subfolders:
                 shutil.rmtree(os.path.join(self.target_dir, f), True)
                 shutil.copytree(
                     os.path.join(self.working_dir, f), 
-                    os.path.join(self.target_dir, f)
+                    os.path.join(self.target_dir, f),
+                    ignore=ign_pat
                 )
 
     def run(self):

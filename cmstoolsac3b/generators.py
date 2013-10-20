@@ -265,7 +265,6 @@ def gen_norm_to_data_lumi(wrps):
 ############################################################### load / save ###
 import os
 import settings
-import diskio
 from ROOT import TFile
 
 def fs_content():

@@ -10,6 +10,7 @@ import collections
 import settings
 import history
 import wrappers
+import __builtin__
 from ROOT import THStack
 
 class OperationError(Exception): pass
@@ -65,7 +66,7 @@ def stack(wrps):
             sample = wrp.sample
         elif lumi != wrp.lumi:                                  # lumi check
             raise NoLumiMatchError(
-                "stack needs lumis to match."
+                "stack needs lumis to match. (%f != %f)" % (lumi, wrp.lumi)
             )
         if sample != wrp.sample:                                # add to stack
             sample = ""
@@ -251,8 +252,8 @@ def div(wrps):
     wrps = iterableize(wrps)
     wrps = iter(wrps)
     try:
-        nominator = wrps.next()
-        denominator = wrps.next()
+        nominator = next(wrps)
+        denominator = next(wrps)
     except StopIteration:
         raise TooFewWrpsError("div needs exactly two Wrappers.")
     try:
@@ -513,6 +514,46 @@ def int_r(wrp, useBinWidth=False):
         int_histo.SetBinError(i, error.value)
     info = wrp.all_info()
     return wrappers.HistoWrapper(int_histo, **info)
+
+@history.track_history
+def chi2(wrps, x_min=0, x_max=0):
+    """
+    Expects two Histowrappers. Returns FloatWrapper.
+    """
+    wrps = iterableize(wrps)
+    wrps = iter(wrps)
+    try:
+        first, second = next(wrps), next(wrps)
+    except StopIteration:
+        raise TooFewWrpsError("chi2 needs exactly two HistoWrappers.")
+    try:
+        wrps.next()
+        raise TooManyWrpsError("chi2 needs exactly two HistoWrappers.")
+    except StopIteration:
+        pass
+    for w in (first, second):
+        if not isinstance(w, wrappers.HistoWrapper):
+            raise WrongInputError(
+                "chi2 needs type HistoWrapper. w: "
+                + str(w)
+            )
+    if not first.histo.GetNbinsX() == second.histo.GetNbinsX():
+        raise WrongInputError(
+            "chi2 needs histos with same number of bins."
+        )
+    if not x_max:
+        x_max = first.histo.GetNbinsX() - 1
+    chi2_val = __builtin__.sum(
+        (first.histo.GetBinContent(i+1) - second.histo.GetBinContent(i+1))**2
+        / (first.histo.GetBinError(i+1)**2 + second.histo.GetBinError(i+1)**2)
+        for i in xrange(x_min, x_max)
+    )
+    info = second.all_info()
+    info.update(first.all_info())
+    return wrappers.FloatWrapper(
+        chi2_val,
+        **info
+    )
 
 
 if __name__ == "__main__":

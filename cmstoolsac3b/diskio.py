@@ -5,28 +5,48 @@ from ast import literal_eval
 from itertools import takewhile
 import settings
 import wrappers
+import monitor
 from ROOT import TFile, TH1, TObject
+
 
 class NoDictInFileError(Exception): pass
 class NoObjectError(Exception): pass
 class NoHistogramError(Exception): pass
 
+
 class IoRefPool(object):
-    open_root_files = {}
+    _open_root_files = {}
     aliases = []
+
+    def get_root_file(self, filename):
+        if filename in self._open_root_files:
+            file_handle = io_ref_pool._open_root_files[filename]
+        else:
+            if len(self._open_root_files) > 998:
+                monitor.Monitor().message(
+                    "diskio",
+                    "WARNING to many open root files. Closing all. "
+                    "Please check for lost histograms. (Use hist.SetDirectory(0) to keep them)"
+                )
+                self.close_files()
+            file_handle = TFile.Open(filename, "READ")
+            self._open_root_files[filename] = file_handle
+        return file_handle
 
     def __del__(self):
         self.close_files()
 
     def close_files(self):
-        for name, file in self.open_root_files.iteritems():
-            file.Close()
-        self.open_root_files.clear()
+        for name, file_handle in self._open_root_files.iteritems():
+            file_handle.Close()
+        self._open_root_files.clear()
         del self.aliases[:]
 io_ref_pool = IoRefPool()
 
+
 def drop_io_refs():
     io_ref_pool.close_files()
+
 
 def write(wrp, filename=None):
     """Writes wrapper to disk, including root objects."""
@@ -46,12 +66,14 @@ def write(wrp, filename=None):
         _write_wrapper_info(wrp, f)
     _clean_wrapper(wrp)
 
+
 def _write_wrapper_info(wrp, file_handle):
     """Serializes Wrapper to python code dict."""
     history, wrp.history = wrp.history, str(wrp.history)
     file_handle.write(wrp.pretty_writeable_lines() + " \n\n")
     file_handle.write(wrp.history + "\n")
     wrp.history = history
+
 
 def _write_wrapper_objs(wrp, file_handle):
     """Writes root objects on wrapper to disk."""
@@ -65,18 +87,21 @@ def _write_wrapper_objs(wrp, file_handle):
         dirfile.Close()
         wrp.root_file_obj_names[key] = value.GetName()
 
+
 def read(filename):
     """Reads wrapper from disk, including root objects."""
     if filename[-5:] != ".info":
         filename += ".info"
-    with open(filename, "r") as f:
-        info = _read_wrapper_info(f)
+    f = open(filename, "r")
+    info = _read_wrapper_info(f)
+    f.close()
     if info.has_key("root_filename"):
         _read_wrapper_objs(info)
     klass = getattr(wrappers, info.get("klass"))
     wrp = klass(**info)
     _clean_wrapper(wrp)
     return wrp
+
 
 def _read_wrapper_info(file_handle):
     """Instaciates Wrapper from info file, without root objects."""
@@ -88,18 +113,23 @@ def _read_wrapper_info(file_handle):
         raise NoDictInFileError("Could not read file: "+file_handle.name)
     return info
 
+
 def _read_wrapper_objs(info):
     root_file = info["root_filename"]
     obj_paths = info["root_file_obj_names"]
     for key, value in obj_paths.iteritems():
         obj = _get_obj_from_file(root_file, [key, value])
+        if hasattr(obj, "SetDirectory"):
+            obj.SetDirectory(0)
         info[key] = obj
+
 
 def _clean_wrapper(wrp):
     del_attrs = ["root_filename", "root_file_obj_names", "wrapped_object_key"]
     for attr in del_attrs:
         if hasattr(wrp, attr):
             delattr(wrp, attr)
+
 
 def fileservice_aliases():
     """Produces list of all fileservice histograms for registered samples."""
@@ -108,7 +138,7 @@ def fileservice_aliases():
     fs_filenames = glob.glob(_get_fileservice_filename("*"))
     aliases = []
     for filename in fs_filenames:
-        fs_file = _get_root_file(filename)
+        fs_file = io_ref_pool.get_root_file(filename)
         sample_name = os.path.basename(filename)[:-5]
         if not settings.samples.has_key(sample_name):
             continue
@@ -131,6 +161,7 @@ def fileservice_aliases():
     io_ref_pool.aliases = aliases
     return aliases
 
+
 def load_histogram(alias):
     """
     Returns a wrapper with a fileservice histogram.
@@ -148,6 +179,7 @@ def load_histogram(alias):
         histo.history = repr(alias)
     return histo
 
+
 def _load_fileservice_histo(alias):
     histo = _get_obj_from_file(
         _get_fileservice_filename(alias.sample),
@@ -163,6 +195,7 @@ def _load_fileservice_histo(alias):
     wrp.lumi = settings.samples[alias.sample].lumi
     return wrp
 
+
 def _load_non_fileservice_histo(alias):
     histo = _get_obj_from_file(
         alias.filename,
@@ -174,8 +207,9 @@ def _load_non_fileservice_histo(alias):
         )
     return wrappers.HistoWrapper(histo, **alias.all_info())
 
+
 def _get_obj_from_file(filename, in_file_path):
-    file = _get_root_file(filename)
+    file = io_ref_pool.get_root_file(filename)
     obj = file
     # browse through file
     for name in in_file_path:
@@ -191,15 +225,9 @@ def _get_obj_from_file(filename, in_file_path):
         obj = obj_key.ReadObj()
     return obj
 
+
 def _get_fileservice_filename(sample):
     return settings.DIR_FILESERVICE + sample + ".root"
 
-def _get_root_file(filename):
-    if io_ref_pool.open_root_files.has_key(filename):
-        file = io_ref_pool.open_root_files[filename]
-    else:
-        file = TFile.Open(filename, "READ")
-        io_ref_pool.open_root_files[filename] = file
-    return file
 
 
