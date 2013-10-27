@@ -365,6 +365,38 @@ def norm_to_integral(wrp, useBinWidth=False):
     return wrappers.HistoWrapper(histo, **info)
 
 @history.track_history
+def copy(wrp):
+    """
+    Applies to HistoWrapper. Returns HistoWrapper.
+    
+    >>> from ROOT import TH1I
+    >>> h1 = TH1I("h1", "", 2, .5, 2.5)
+    >>> h1.Fill(1, 4)
+    1
+    >>> w1 = wrappers.HistoWrapper(h1, lumi=2.)
+    >>> w2=copy(w1)
+    >>> w2.histo.GetName()
+    'h1'
+    >>> w1.name == w2.name
+    True
+    >>> w1.histo.Integral() == w2.histo.Integral()
+    True
+    >>> w1.histo != w2.histo
+    True
+    """
+    if not isinstance(wrp, wrappers.HistoWrapper):
+        raise WrongInputError(
+            "copy needs argument of type HistoWrapper. histo: "
+            + str(wrp)
+        )
+    histo = wrp.histo.Clone()
+    info = wrp.all_info()
+    return wrappers.HistoWrapper(histo, **info)
+
+
+
+
+@history.track_history
 def mv_in(wrp, overflow=True, underflow=True):
     """
     Moves under- and/or overflow bin into first/last bin.
