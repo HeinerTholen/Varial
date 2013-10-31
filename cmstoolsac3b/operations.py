@@ -542,7 +542,7 @@ def chi2(wrps, x_min=0, x_max=0):
             "chi2 needs histos with same number of bins."
         )
     if not x_max:
-        x_max = first.histo.GetNbinsX() - 1
+        x_max = int(first.histo.GetNbinsX() - 1)
     chi2_val = __builtin__.sum(
         (first.histo.GetBinContent(i+1) - second.histo.GetBinContent(i+1))**2
         / (first.histo.GetBinError(i+1)**2 + second.histo.GetBinError(i+1)**2)
