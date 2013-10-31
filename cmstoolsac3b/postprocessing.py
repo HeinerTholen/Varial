@@ -8,6 +8,33 @@ import wrappers
 import diskio
 import monitor
 
+
+def deepish_copy(obj):
+    if (
+        isinstance(obj, type)
+        or callable(obj)
+        or inspect.ismodule(obj)
+        or inspect.isclass(obj)
+        or str(type(obj)) == "<type 'generator'>"
+    ):
+        return obj
+    if type(obj) == list:
+        return list(deepish_copy(o) for o in obj)
+    if type(obj) == tuple:
+        return tuple(deepish_copy(o) for o in obj)
+    if type(obj) == dict:
+        return dict((k, deepish_copy(v)) for k, v in obj.iteritems())
+    if type(obj) == set:
+        return set(deepish_copy(o) for o in obj)
+    if hasattr(obj, "__dict__"):
+        cp = copy.copy(obj)
+        cp.__dict__.clear()
+        for k, v in obj.__dict__.iteritems():
+            cp.__dict__[k] = deepish_copy(v)
+        return cp
+    return obj
+
+
 class PostProcBase(object):
     """
     Base class for post processing.
@@ -65,6 +92,8 @@ class PostProcTool(PostProcBase):
         self.plot_output_dir = None
         self.result = None
         self._info_file = None
+        self.time_start = None
+        self.time_fin = None
 
     def __enter__(self):
         res = super(PostProcTool, self).__enter__()
@@ -204,14 +233,8 @@ class PostProcChainVanilla(PostProcChain):
                 or key in settings.persistent_data
                 or inspect.ismodule(val)
                 or callable(val)
-                ):
-                try:
-                    old_settings_data[key] = copy.deepcopy(val)
-                except TypeError, e:
-                    if not str(e) == "cannot deepcopy this pattern object":
-                        raise
-                    else:
-                        self.message("WARNING Cannot deepcopy: " + key)
+            ):
+                old_settings_data[key] = deepish_copy(val)
         self.old_settings_data = old_settings_data
         return res
 
