@@ -17,7 +17,7 @@ class TestHistoToolsBase(unittest.TestCase):
         if (not os.path.exists(test_fs + "tt.root")) \
         or (not os.path.exists(test_fs + "ttgamma.root")) \
         or (not os.path.exists(test_fs + "ttgamma.root")):
-            self.skipTest("Fileservice testfiles not present!")
+            self.fail("Fileservice testfiles not present!")
 
         # create samples
         settings.samples["tt"] = sample.Sample(

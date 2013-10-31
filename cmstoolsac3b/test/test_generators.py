@@ -22,8 +22,8 @@ class TestGenerators(TestHistoToolsBase):
         aliases       = gen.fs_content()
         zjets_cutflow = gen.filter(aliases, {"name": "cutflow", "sample":"zjets"})
         wrp           = gen.load(zjets_cutflow).next()
-        self.assertIsInstance(wrp.histo, TH1F)
-        self.assertAlmostEqual(wrp.histo.Integral(), 2889.0, delta = 0.001)
+        self.assertTrue(isinstance(wrp.histo, TH1F))
+        self.assertAlmostEqual(wrp.histo.Integral(), 2889.0)
 
     def test_gen_save(self):
         wrps = gen.fs_filter_sort_load({
@@ -47,7 +47,7 @@ class TestGenerators(TestHistoToolsBase):
         self.assertTrue(os.path.exists("test/cutflow_zjets.root"))
         self.assertTrue(os.path.exists("test/cutflow_zjets.info"))
         self.tfile = TFile.Open("test/cutflow_ttgamma.root")
-        self.assertTrue(self.tfile.GetKey("cutflow"))
+        self.assertTrue(self.tfile.GetKey("histo"))
 
     def test_gen_filter(self):
         import re
@@ -77,7 +77,7 @@ class TestGenerators(TestHistoToolsBase):
                 self.n_times_called = 0
             def __call__(self, alias):
                 self.n_times_called += 1
-                self.test.assertIn(alias.sample, sample)
+                self.test.assertTrue(alias.sample in sample)
                 self.test.assertEqual(alias.name, name)
         treat_func = TreatCls(self)
         treated = gen.callback(
@@ -95,9 +95,9 @@ class TestGenerators(TestHistoToolsBase):
         s_name       = map(lambda x:x.name, sorted)
         s_sample     = map(lambda x:x.sample, sorted)
         s_is_data    = map(lambda x:x.is_data, sorted)
-        self.assertLess(s_sample.index("ttgamma"), s_sample.index("zjets"))
-        self.assertLess(s_name.index("sihihEB"), s_name.index("sihihEE"))
-        self.assertLess(s_is_data.index(False), s_is_data.index(True))
+        self.assertTrue(s_sample.index("ttgamma") < s_sample.index("zjets"))
+        self.assertTrue(s_name.index("sihihEB") < s_name.index("sihihEE"))
+        self.assertTrue(s_is_data.index(False) < s_is_data.index(True))
 
     def test_gen_group(self):
         from_fs  = gen.fs_content()
@@ -123,7 +123,7 @@ class TestGenerators(TestHistoToolsBase):
         s_is_data = map(lambda x: x.is_data, wrps)
 
         # just check for sorting and overall length
-        self.assertLess(s_is_data.index(False), s_is_data.index(True))
+        self.assertTrue(s_is_data.index(False) < s_is_data.index(True))
         self.assertEqual(len(wrps), 2)
         self.assertEqual(wrps[1].lumi, 3.0)
 
@@ -134,8 +134,8 @@ class TestGenerators(TestHistoToolsBase):
         mc, data = res.next()
 
         # correct instances
-        self.assertIsInstance(mc, StackWrapper)
-        self.assertIsInstance(data, HistoWrapper)
+        self.assertTrue(isinstance(mc, StackWrapper))
+        self.assertTrue(isinstance(data, HistoWrapper))
 
         # ... of equal lumi (from data)
         self.assertEqual(mc.lumi, settings.data_samples()["tt"].lumi)
@@ -143,11 +143,11 @@ class TestGenerators(TestHistoToolsBase):
 
         # check stacking order by history
         h = str(mc.history)
-        self.assertLess(h.index("ttgamma"), h.index("zjets"))
+        self.assertTrue(h.index("ttgamma") < h.index("zjets"))
         settings.stacking_order.reverse()
         mc, data = res.next()
         h = str(mc.history)
-        self.assertLess(h.index("zjets"), h.index("ttgamma"))
+        self.assertTrue(h.index("zjets") < h.index("ttgamma"))
 
 #    # THIS TEST SEEMS TO FIND A ROOT BUG:
 #    def test_gen_canvas(self):

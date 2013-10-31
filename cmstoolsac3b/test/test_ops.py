@@ -26,7 +26,7 @@ class TestOps(unittest.TestCase):
         res = stack([self.wrp1, self.wrp2])
         self.assertEqual(res.histo.Integral(), 13.0)
         self.assertEqual(res.lumi, 2.0)
-        self.assertIsInstance(res.stack, THStack)
+        self.assertTrue(isinstance(res.stack, THStack))
         self.assertEqual(res.stack.GetHists()[0], self.wrp1.histo)
         self.assertEqual(res.stack.GetHists()[1], self.wrp2.histo)
 

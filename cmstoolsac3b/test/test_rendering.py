@@ -20,8 +20,8 @@ class TestRendering(TestHistoToolsBase):
 
         # check for stack and data to be in canvas primitives
         prim = wrp.canvas.GetListOfPrimitives()
-        self.assertIn(wrp1.histo, prim)
-        self.assertIn(wrp2.histo, prim)
+        self.assertTrue(wrp1.histo in prim)
+        self.assertTrue(wrp2.histo in prim)
         self.test_wrp = wrp
 
     def test_canvas_info_file(self):

@@ -19,19 +19,19 @@ class TestDiskio(TestHistoToolsBase):
 
         # Are sample names correct?
         samples = set(a.sample for a in aliases)
-        self.assertIn("tt", samples)
-        self.assertIn("ttgamma", samples)
-        self.assertIn("zjets", samples)
+        self.assertTrue("tt" in samples)
+        self.assertTrue("ttgamma" in samples)
+        self.assertTrue("zjets" in samples)
 
         # Check for some analyzers
         analyzers = set(a.analyzer for a in aliases)
-        self.assertIn("realTemplate", analyzers)
-        self.assertIn("analyzer_ET", analyzers)
+        self.assertTrue("realTemplate" in analyzers)
+        self.assertTrue("analyzer_ET" in analyzers)
 
         # Check for some histonames
         histos = set(a.name for a in aliases)
-        self.assertIn("histo", histos)
-        self.assertIn("sihihEB", histos)
+        self.assertTrue("histo" in histos)
+        self.assertTrue("sihihEB" in histos)
 
     def test_load_histogram(self):
         test_alias = FileServiceAlias("cutflow", "analyzeSelection", "ttgamma", "ttgamma")
@@ -39,8 +39,8 @@ class TestDiskio(TestHistoToolsBase):
         self.assertEqual(wrp.name, test_alias.name)
         self.assertEqual(wrp.analyzer, test_alias.analyzer)
         self.assertEqual(wrp.sample, test_alias.sample)
-        self.assertIsInstance(wrp.histo, TH1F)
-        self.assertAlmostEqual(wrp.histo.Integral(), 280555.0, delta=0.001)
+        self.assertTrue(isinstance(wrp.histo, TH1F))
+        self.assertAlmostEqual(wrp.histo.Integral(), 280555.0)
 
     def test_write(self):
         fname = "test/wrp_save.info"
