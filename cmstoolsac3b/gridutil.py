@@ -2,15 +2,18 @@
 import os
 import subprocess
 
+
 def gen_filter_htholen(src):
     """My datasets and files have 'htholen' as a token inside."""
     for line in src:
         if "htholen" in line:
             yield line
 
+
 def gen_srmls_lines_to_file_lines(srmls_lines):
     for line in srmls_lines:
         yield line.split()[-1]
+
 
 def srmls_lines(dcache_path):
     proc = subprocess.Popen(["srmls", dcache_path],
@@ -22,6 +25,7 @@ def srmls_lines(dcache_path):
     if proc.returncode:
         raise RuntimeError("srmls failed:" + str(res))
     return res
+
 
 def dbs_query(query_str):
     cmd = [
@@ -41,17 +45,20 @@ def dbs_query(query_str):
         raise RuntimeError("dbs failed:" + str(res))
     return list(res[0].split())
 
+
 def dbs_query_for_files(datasetname):
     return dbs_query("find file where dataset = "+datasetname)
+
 
 def dbs_query_for_dataset(query_str):
     return dbs_query("find dataset where dataset = "+query_str)
 
-def copy_file_from_dcache(src, dest_dir):
+
+def copy_file_from_dcache(dcache_path, dest_dir=None):
     proc = subprocess.Popen([
             "uberftp " +
             "grid-ftp.physik.rwth-aachen.de " +
-            '"get '+src+'"',
+            '"get '+dcache_path+'"',
         ],
         cwd=dest_dir,
         stdout=subprocess.PIPE,
@@ -61,6 +68,7 @@ def copy_file_from_dcache(src, dest_dir):
     res = proc.communicate()
     if proc.returncode:
         raise RuntimeError("uberftp failed:" + str(res))
+
 
 def copy_all_datasets(query_str, sample_name_func):
     all_datasets = list(gen_filter_htholen(dbs_query_for_dataset(query_str)))
