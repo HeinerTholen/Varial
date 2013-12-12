@@ -77,7 +77,7 @@ class StackRenderer(HistoRenderer, wrappers.StackWrapper):
         self.histo.SetMarkerSize(0)
         self.histo.SetFillStyle(3008)
         self.histo.SetLineColor(1)
-        self.histo.SetTitle("stat. uncert. MC")
+        self.histo.SetTitle("Stat. uncert. MC")
         self.draw_option_sum = "sameE2"
 
     def y_min_gr_zero(self, histo=None):
@@ -355,6 +355,7 @@ class Legend(dec.Decorator):
         bounds = self._calc_bounds(len(entries))
         legend = TLegend(*bounds)
         legend.SetBorderSize(0)
+        legend.SetTextSize(settings.box_text_size)
         par = self.dec_par
         if par["reverse"]:
             entries.reverse()
@@ -433,7 +434,7 @@ class BottomPlot(dec.Decorator):
         bottom_hist = self.bottom_hist
 
         bottom_hist.GetYaxis().CenterTitle(1)
-        bottom_hist.GetYaxis().SetTitleSize(0.165) #0.11
+        bottom_hist.GetYaxis().SetTitleSize(0.15) #0.11
         bottom_hist.GetYaxis().SetTitleOffset(0.44) #0.55
         bottom_hist.GetYaxis().SetLabelSize(0.16)
         bottom_hist.GetYaxis().SetNdivisions(205)
@@ -481,7 +482,7 @@ class BottomPlotRatio(BottomPlot):
     def define_bottom_hist(self):
         rnds = self.renderers
         wrp = op.div(iter(rnds))
-        wrp.histo.SetYTitle("MC/Data")
+        wrp.histo.SetYTitle(self.dec_par["y_title"])
         self.bottom_hist = wrp.histo
 
 
@@ -507,9 +508,9 @@ class BottomPlotRatioSplitErr(BottomPlot):
                 mc_histo.SetBinError(i, 0.)
             if da_val > 1e-37:
                 div_hist.SetBinError(i, da_err * div_val / da_val)
-        div_hist.SetYTitle("Data/MC")
+        div_hist.SetYTitle(self.dec_par["y_title"])
         div_hist.SetMarkerSize(0)
-        mc_histo.SetYTitle("Data/MC")
+        mc_histo.SetYTitle(self.dec_par["y_title"])
         mc_histo.SetFillColor(921)
         mc_histo.SetMarkerColor(1)
         mc_histo.SetMarkerSize(0)

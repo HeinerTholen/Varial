@@ -33,6 +33,7 @@ web_target_dir          = ""
 tex_target_dir          = ""
 plot_target_dir         = ""
 enable_postproc_reuse   = True
+box_text_size           = 0.037
 defaults_Legend         = {
     "x_pos"         : 0.92,
     "y_pos"         : 0.83,
@@ -43,6 +44,7 @@ defaults_Legend         = {
     "reverse"       : True
 }
 defaults_BottomPlot     = {
+    "y_title"   : "Data/MC",
     "draw_opt"  : "E1",
     "x_min"     : 0.,
     "x_max"     : 3.,
