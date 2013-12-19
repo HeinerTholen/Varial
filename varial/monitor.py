@@ -1,11 +1,25 @@
 
 import sys
 import time
-import singleton
 import settings
 from PyQt4 import QtCore
 
-class QSingleton(singleton.Singleton, type(QtCore.QObject)): pass
+class Singleton(type):
+    """
+    Use as metaclass! Example use in ``utilities/monitor.py`` .
+    """
+
+    def __init__(self, *args, **kws):
+        super(Singleton, self).__init__(*args, **kws)
+        self._instance = None
+
+
+    def __call__(self, *args, **kws):
+        if not self._instance:
+            self._instance = super(Singleton, self).__call__(*args, **kws)
+        return self._instance
+
+class QSingleton(Singleton, type(QtCore.QObject)): pass
 
 class Messenger(QtCore.QObject):
     """
