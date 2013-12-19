@@ -1,8 +1,8 @@
 import os
 from ROOT import TH1F
-from cmstoolsac3b.test.test_histotoolsbase import TestHistoToolsBase
-from cmstoolsac3b.wrappers import FileServiceAlias
-import cmstoolsac3b.diskio as diskio
+from test_histotoolsbase import TestHistoToolsBase
+from varial.wrappers import FileServiceAlias
+import varial.diskio as diskio
 
 class TestDiskio(TestHistoToolsBase):
 

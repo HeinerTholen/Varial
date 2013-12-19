@@ -7,12 +7,12 @@ from test_rendering import suite as rnd_suite
 #from test_postproctools import suite as pst_suite
 
 import doctest
-import cmstoolsac3b.generators as gen
-import cmstoolsac3b.diskio as dsp
-import cmstoolsac3b.history as hst
-import cmstoolsac3b.operations as ops
-import cmstoolsac3b.rendering as rnd
-import cmstoolsac3b.wrappers as wrp
+import varial.generators as gen
+import varial.diskio as dsp
+import varial.history as hst
+import varial.operations as ops
+import varial.rendering as rnd
+import varial.wrappers as wrp
 
 suite = unittest.TestSuite((
     doctest.DocTestSuite(wrp),

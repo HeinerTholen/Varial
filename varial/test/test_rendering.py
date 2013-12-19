@@ -1,9 +1,9 @@
 import os
 from ROOT import TCanvas
-from cmstoolsac3b.test.test_histotoolsbase import TestHistoToolsBase
-from cmstoolsac3b.rendering import CanvasBuilder
-from cmstoolsac3b.wrappers import HistoWrapper
-import cmstoolsac3b.diskio as diskio
+from test_histotoolsbase import TestHistoToolsBase
+from varial.rendering import CanvasBuilder
+from varial.wrappers import HistoWrapper
+import varial.diskio as diskio
 
 class TestRendering(TestHistoToolsBase):
     def setUp(self):

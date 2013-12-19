@@ -1,11 +1,11 @@
 import os
-import cmstoolsac3b.generators as gen
+import varial.generators as gen
 from ROOT import TH1F, TFile
-from cmstoolsac3b.test.test_histotoolsbase import TestHistoToolsBase
-from cmstoolsac3b.wrappers import \
+from test_histotoolsbase import TestHistoToolsBase
+from varial.wrappers import \
     StackWrapper, \
     HistoWrapper
-import cmstoolsac3b.settings as settings
+import varial.settings as settings
 
 class TestGenerators(TestHistoToolsBase):
     def tearDown(self):

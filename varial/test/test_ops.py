@@ -1,7 +1,7 @@
 import unittest
-from cmstoolsac3b.operations import stack, NoLumiMatchError
-from cmstoolsac3b.wrappers import HistoWrapper
-from cmstoolsac3b.history import History
+from varial.operations import stack, NoLumiMatchError
+from varial.wrappers import HistoWrapper
+from varial.history import History
 from ROOT import TH1I, THStack
 
 class TestOps(unittest.TestCase):

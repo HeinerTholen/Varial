@@ -2,19 +2,19 @@
 An example Sample definition.
 """
 
-import cmstoolsac3b.sample as smp
+from varial import sample
 
 common_input_path   = "/the/path/to/all/input/files/"
 common_output_path  =  "/a/folder/for/all/eventoutput/"
 
 
-class FirstMCSample(smp.Sample):
+class FirstMCSample(sample.Sample):
     """Shortest possible Declaration"""
     input_files = [common_input_path + "some/dir/qcd*.root"] #: specify input files. Globbing is use, so '*' is fine.
     lumi        = 50000.                                     #: Luminosity: Unit has to be consistent over all samples.
 
 
-class TheDataSample(smp.Sample):
+class TheDataSample(sample.Sample):
     """Data sample: notice 'is_data'!"""
     input_files = [common_input_path + "data/dir/*.root"]
     lumi        = 4700.
@@ -23,7 +23,7 @@ class TheDataSample(smp.Sample):
     is_data     = True                                      #: set this to 'True' for data samples.
 
 
-class OtherMCSample(smp.Sample):
+class OtherMCSample(sample.Sample):
     """Extensive Declaration"""
     enable          = True                                  #: Force usage. Also see settings.default_enable_sample
     input_files     = [common_input_path + "some/dir/muon*.root"]

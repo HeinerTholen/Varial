@@ -3,11 +3,11 @@ Post processing tools that can be used nearly out-of-the-box.
 """
 
 
-import cmstoolsac3b.generators as gen     # histogram stream processing
-import cmstoolsac3b.postprocessing       # base class for post processing
-import itertools                        # very useful!!
+from varial import generators as gen     # histogram stream processing
+from varial import postprocessing        # base class for post processing
+import itertools                         # very useful!!
 
-class StackPlusDataPlotter(cmstoolsac3b.postprocessing.PostProcTool):
+class StackPlusDataPlotter(postprocessing.PostProcTool):
     """
     Subclass me and feed the data members!
     """

@@ -5,7 +5,7 @@ Settings example for post processing. Taken from an existing analysis.
 def dummy_func():
     """This is just a dummy to include this source file."""
 
-import cmstoolsac3b.settings as s
+from varial import settings as s
 
 # Postfixes. Default is only ".root"
 s.rootfile_postfixes += [".png", ".eps"]

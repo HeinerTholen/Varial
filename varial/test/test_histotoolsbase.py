@@ -2,11 +2,11 @@ import unittest
 import os
 import shutil
 from ROOT import TH1I, gROOT, kRed, kBlue
-import cmstoolsac3b.settings as settings
-import cmstoolsac3b.diskio as diskio
-import cmstoolsac3b.sample as sample
-from cmstoolsac3b.history import History
-from cmstoolsac3b.wrappers import HistoWrapper
+import varial.settings as settings
+import varial.diskio as diskio
+import varial.sample as sample
+from varial.history import History
+from varial.wrappers import HistoWrapper
 
 class TestHistoToolsBase(unittest.TestCase):
     def setUp(self):

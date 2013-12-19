@@ -1,14 +1,14 @@
 """
 Example use of the CmsAnalysisAC3B toolkit.
 """
-import settingsprofile_postproc                # default color, legend names, ...
-import cmstoolsac3b.settings as settings
-import cmstoolsac3b.postprocessing             # to build a tool
-import cmstoolsac3b.generators as gen          # histogram stream processing
-import cmstoolsac3b.rendering                  # canvas decorators
+import settingsprofile_postproc               # default color, legend names, ...
+from varial import settings
+from varial import postprocessing             # to build a tool
+from varial import generators as gen          # histogram stream processing
+from varial import rendering                  # canvas decorators
 
 
-class CrtlFiltStackPlotter(cmstoolsac3b.postprocessing.PostProcTool):
+class CrtlFiltStackPlotter(postprocessing.PostProcTool):
     """An cmstoolsac3b_example stack plotter with data overlay."""
 
     def run(self):
@@ -27,7 +27,7 @@ class CrtlFiltStackPlotter(cmstoolsac3b.postprocessing.PostProcTool):
         # plot (stack, data) pairs into canvases, with legend
         stream_canvas = gen.canvas(
             stream_stack_n_data,
-            [cmstoolsac3b.rendering.Legend]
+            [rendering.Legend]
         )
 
         # store into dir of this tool

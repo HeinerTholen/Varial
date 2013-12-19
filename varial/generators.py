@@ -58,7 +58,7 @@ def filter(wrps, key_value_dict=None):
     Only wrappers with specified attributes can pass this generator.
 
     :param  wrps:           Wrapper iterable
-    :param  key_value_dict: dictionary of attributes, see cmstoolsac3b_example
+    :param  key_value_dict: dictionary of attributes, see varial_example
     :yields:                Wrapper
 
     **Example:** (Every key in the given dictonairy is tested, where the key
@@ -217,7 +217,7 @@ def generate_op(op_func):
     below (notice that ``w1``,``w2`` and ``w3`` are iterables):
 
     >>> from ROOT import TH1I
-    >>> from cmstoolsac3b.wrappers import HistoWrapper
+    >>> from varial.wrappers import HistoWrapper
     >>> h1 = TH1I("h1", "", 2, .5, 4.5)
     >>> h1.Fill(1)
     1
@@ -241,19 +241,19 @@ def generate_op(op_func):
             yield op_func(wrp, **kws)
     return gen_op
 
-gen_stack = generate_op(op.stack)  #: This is ``generate_op(cmstoolsac3b.operations.stack)``
-gen_sum   = generate_op(op.sum)    #: This is ``generate_op(cmstoolsac3b.operations.sum)``
-gen_merge = generate_op(op.merge)  #: This is ``generate_op(cmstoolsac3b.operations.merge)``
-gen_prod  = generate_op(op.prod)   #: This is ``generate_op(cmstoolsac3b.operations.prod)``
-gen_div   = generate_op(op.div)    #: This is ``generate_op(cmstoolsac3b.operations.div)``
-gen_lumi  = generate_op(op.lumi)   #: This is ``generate_op(cmstoolsac3b.operations.lumi)``
-gen_norm_to_lumi  = generate_op(op.norm_to_lumi)   #: This is ``generate_op(cmstoolsac3b.operations.norm_to_lumi)``
-gen_norm_to_integral = generate_op(op.norm_to_integral)   #: This is ``generate_op(cmstoolsac3b.operations.norm_to_integral)``
-gen_copy = generate_op(op.copy)   #: This is ``generate_op(cmstoolsac3b.operations.copy)``
-gen_mv_in = generate_op(op.mv_in)  #: This is ``generate_op(cmstoolsac3b.operations.mv_in)``
-gen_integral   = generate_op(op.integral)    #: This is ``generate_op(cmstoolsac3b.operations.integral)``
-gen_int_l = generate_op(op.int_l)  #: This is ``generate_op(cmstoolsac3b.operations.int_l)``
-gen_int_r = generate_op(op.int_r)  #: This is ``generate_op(cmstoolsac3b.operations.int_r)``
+gen_stack = generate_op(op.stack)  #: This is ``generate_op(varial.operations.stack)``
+gen_sum   = generate_op(op.sum)    #: This is ``generate_op(varial.operations.sum)``
+gen_merge = generate_op(op.merge)  #: This is ``generate_op(varial.operations.merge)``
+gen_prod  = generate_op(op.prod)   #: This is ``generate_op(varial.operations.prod)``
+gen_div   = generate_op(op.div)    #: This is ``generate_op(varial.operations.div)``
+gen_lumi  = generate_op(op.lumi)   #: This is ``generate_op(varial.operations.lumi)``
+gen_norm_to_lumi  = generate_op(op.norm_to_lumi)   #: This is ``generate_op(varial.operations.norm_to_lumi)``
+gen_norm_to_integral = generate_op(op.norm_to_integral)   #: This is ``generate_op(varial.operations.norm_to_integral)``
+gen_copy = generate_op(op.copy)   #: This is ``generate_op(varial.operations.copy)``
+gen_mv_in = generate_op(op.mv_in)  #: This is ``generate_op(varial.operations.mv_in)``
+gen_integral   = generate_op(op.integral)    #: This is ``generate_op(varial.operations.integral)``
+gen_int_l = generate_op(op.int_l)  #: This is ``generate_op(varial.operations.int_l)``
+gen_int_r = generate_op(op.int_r)  #: This is ``generate_op(varial.operations.int_r)``
 
 def gen_norm_to_data_lumi(wrps):
     return gen_prod(

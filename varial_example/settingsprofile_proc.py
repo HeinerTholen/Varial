@@ -5,7 +5,7 @@ These are the default settings of the utilities.settings module, so this file
 is really only for demonstrative purposes.
 """
 
-import cmstoolsac3b.settings as s
+from varial import settings as s
 
 def dummy_func():
     """This is just a dummy to include this source file."""
