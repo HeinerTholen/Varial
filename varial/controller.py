@@ -36,12 +36,11 @@ class Controller(QtCore.QObject):
         crp.CmsRunProcesses are set up, and filled into self.waiting_pros
         crp.CmsRunProcess.prepare_run_conf() is called for every process.
         """
-        if self.waiting_pros: #setup has been done already
+        if self.waiting_pros:  # setup has been done already
             return
 
         for name, sample in settings.samples.iteritems():
             process = crp.CmsRunProcess(sample, settings.try_reuse_results)
-            process.message.connect(self.message)
             process.prepare_run_conf()
             settings.cmsRun_procs.append(process)
             if process.will_reuse_data:
@@ -71,9 +70,9 @@ class Controller(QtCore.QObject):
     def finish_processes(self):
         """Remove finished processes from self.running_pros."""
         for process in self.running_pros[:]:
-            if process.state() == 0:
+            if process.time_end:
                 self.running_pros.remove(process)
-                if process.exitCode() == 0 and not process.sig_int:
+                if process.successful():
                     self.finished_pros.append(process)
                     self.process_finished.emit(process)
                 else:

@@ -1,25 +1,29 @@
-import time
-import os
 import glob
+import subprocess
+import time
+import threading
+import os
 import settings
 import sample
+import monitor
 from PyQt4 import QtCore
 
-class CmsRunProcess(QtCore.QProcess):
+
+class CmsRunProcess(object):
     """
     This class hosts a cmsRun process.
     cmsRun output is streamed into logfile.
     """
-    message = QtCore.pyqtSignal(object, str)
 
-    def __init__(self, sample_inst, try_reuse_old_data = False, cfg_filename=None):
+    def __init__(self, sample_inst, try_reuse_old_data=False, cfg_filename=None):
         super(CmsRunProcess, self).__init__()
 
         assert isinstance(sample_inst, sample.Sample)
         self.sample             = sample_inst
         self.name               = sample_inst.name
         self.cfg_filename       = settings.cfg_main_import_path
-        if cfg_filename: self.cfg_filename = cfg_filename
+        if cfg_filename:
+            self.cfg_filename = cfg_filename
         self.exe                = "cmsRun"
         self.log_filename       = settings.DIR_LOGS + sample_inst.name + ".log"
         self.conf_filename      = settings.DIR_CONFS + sample_inst.name + ".py"
@@ -30,12 +34,12 @@ class CmsRunProcess(QtCore.QProcess):
         self.will_reuse_data    = False
         self.reused_old_data    = False
         self.sig_int            = False
-
-        # set all environment
-        self.setWorkingDirectory(os.getcwd())
-        self.setProcessChannelMode(1)
-        self.setEnvironment(QtCore.QProcess.systemEnvironment())
-        self.finished.connect(self.write_job_info)
+        self.subprocess         = None
+        self.thread             = None
+        self.callbacks_on_exit  = []
+        self.time_start         = None
+        self.time_end           = None
+        self.message = monitor.Monitor().connect_object_with_messenger(self)
 
     def __str__(self):
         return "CmsRunProcess(" + self.name + ")"
@@ -62,16 +66,15 @@ class CmsRunProcess(QtCore.QProcess):
         ]
 
         # set __builtin__ variables
-        sample = self.sample
+        smpl = self.sample
         builtin_dict = {
-            "lumi"      : sample.lumi,
-            "is_data"   : sample.is_data,
-            "legend"    : sample.legend,
-            "sample"    : sample.name
+            "lumi"      : smpl.lumi,
+            "is_data"   : smpl.is_data,
+            "legend"    : smpl.legend,
+            "sample"    : smpl.name
         }
         builtin_dict.update(settings.cfg_common_builtins)
-        builtin_dict.update(sample.cfg_builtin)
-
+        builtin_dict.update(smpl.cfg_builtin)
 
         conf_lines.append("import __builtin__")
         conf_lines.append("__builtin__.cms_var = " + repr(builtin_dict))
@@ -84,11 +87,11 @@ class CmsRunProcess(QtCore.QProcess):
 
         # do input filename statements
         conf_lines.append("process.source.fileNames = [")
-        for in_file in sample.input_files:
+        for in_file in smpl.input_files:
             if in_file[:5] == "file:":
                 files_in_dir = glob.glob(in_file[5:])
                 if not files_in_dir:
-                    self.message.emit(
+                    self.message(
                         self,
                         "WARNING: no input files found for "+in_file[5:]
                     )
@@ -99,8 +102,8 @@ class CmsRunProcess(QtCore.QProcess):
         conf_lines.append("]")
 
         # do output filename statements
-        if sample.output_file:
-            filename = sample.output_file
+        if smpl.output_file:
+            filename = smpl.output_file
             if filename[-5:] != ".root":
                 filename += self.name + ".root"
             conf_lines.append(
@@ -116,12 +119,12 @@ class CmsRunProcess(QtCore.QProcess):
             conf_lines.append(
                 "process.TFileService.fileName = '"
                 + settings.DIR_FILESERVICE
-                + sample.name + ".root'"
+                + smpl.name + ".root'"
             )
             conf_lines.append("")
 
         # custom code
-        conf_lines += sample.cfg_add_lines
+        conf_lines += smpl.cfg_add_lines
 
         # write out file
         conf_file = open(self.conf_filename, "w")
@@ -158,8 +161,8 @@ class CmsRunProcess(QtCore.QProcess):
             return False
         if not os.path.exists(self.conf_filename):
             return False
-        if (settings.cfg_use_file_service 
-        and not os.path.exists(self.service_filename)):
+        if (settings.cfg_use_file_service and
+                not os.path.exists(self.service_filename)):
             return False
         if not os.path.exists(self.jobinfo_filename):
             return False
@@ -167,28 +170,41 @@ class CmsRunProcess(QtCore.QProcess):
         return parse_ok and not prev_exit_code
 
     def successful(self):
-        return self.exitCode() == 0 and not self.sig_int
+        return (self.time_end
+                and self.subprocess.returncode == 0
+                and not self.sig_int)
 
     def start(self):
         """
         Start cmsRun with conf-file. If self.try_reuse is True and reuse is
         possible, just calls 'cmsRun --help' and pipes output to /dev/null.
         """
-        self.time_start =  time.ctime()
+        self.time_start = time.ctime()
         if self.will_reuse_data or settings.suppress_cmsRun_exec:
-            self.setStandardOutputFile("/dev/null")
             self.reused_old_data = True
-            if not settings.suppress_cmsRun_exec: #TODO too complicated!!
-                self.message.emit(self, "INFO reusing data for " + self.name)
-            super(CmsRunProcess, self).start(self.exe, ["--help"])
+            if not settings.suppress_cmsRun_exec:
+                self.message(self, "INFO reusing data for " + self.name)
+            with open("/dev/null", "w") as logfile:
+                self.subprocess = subprocess.Popen(["echo"], stdout=logfile)
         else:
             self.jobinfo.clear()
             self.jobinfo.sync()
-            self.setStandardOutputFile(self.log_filename)
-            super(CmsRunProcess, self).start(
-                self.exe, 
-                [self.conf_filename] + self.sample.cmsRun_args
-            )
+
+            # python has no callback on exit, workaround with thread:
+            def called_in_thread():
+                with open(self.log_filename, "w") as logfile:
+                    self.subprocess = subprocess.Popen(
+                        [self.exe, self.conf_filename]+self.sample.cmsRun_args,
+                        stdout=logfile,
+                        stderr=subprocess.STDOUT
+                    )
+                    self.subprocess.wait()
+                    for cb in self.callbacks_on_exit:
+                        cb()
+                    self.write_job_info(self.subprocess.returncode)
+
+            self.thread = threading.Thread(target=called_in_thread)
+            self.thread.start()
 
     def terminate(self):
         """
@@ -196,4 +212,4 @@ class CmsRunProcess(QtCore.QProcess):
         terminate.
         """
         self.sig_int = True
-        super(CmsRunProcess,self).terminate()
+        self.subprocess.terminate()
