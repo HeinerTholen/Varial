@@ -73,14 +73,14 @@ class PostProcBase(object):
         settings.create_folder(settings.dir_pstprc)
         if self.has_output_dir:
             settings.create_folder(settings.dir_result)
-        self.messenger.started.emit()
+        self.message.started()
 
     def run(self):
         """Overwrite!"""
         pass
 
     def finished(self):
-        self.messenger.finished.emit()
+        self.message.finished()
 
 
 class PostProcTool(PostProcBase):

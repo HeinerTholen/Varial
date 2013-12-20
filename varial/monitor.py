@@ -4,6 +4,7 @@ import time
 import settings
 from PyQt4 import QtCore
 
+
 class Singleton(type):
     """
     Use as metaclass! Example use in ``utilities/monitor.py`` .
@@ -13,24 +14,33 @@ class Singleton(type):
         super(Singleton, self).__init__(*args, **kws)
         self._instance = None
 
-
     def __call__(self, *args, **kws):
         if not self._instance:
             self._instance = super(Singleton, self).__call__(*args, **kws)
         return self._instance
 
-class QSingleton(Singleton, type(QtCore.QObject)): pass
 
-class Messenger(QtCore.QObject):
+class QSingleton(Singleton, type(QtCore.QObject)):
+    pass
+
+
+class Messenger(object):
     """
     Message stub. Used to connect to Monitor.
-
-    This class eliminates the need for other classes to subclass
-    ``PyQt4.QtCore.QObject`` if messaging is wanted.
     """
-    started  = QtCore.pyqtSignal()
-    message  = QtCore.pyqtSignal(str)
-    finished = QtCore.pyqtSignal()
+    def __init__(self, connected_obj):
+        super(Messenger, self).__init__()
+        self.monitor = Monitor()
+        self.connected_obj = connected_obj
+
+    def __call__(self, message):
+        self.monitor.message(self.connected_obj, message)
+
+    def started(self):
+        self.monitor.started(self.connected_obj, "INFO started")
+
+    def finished(self):
+        self.monitor.finished(self.connected_obj, "INFO finished")
 
 
 class Monitor(QtCore.QObject):
@@ -107,13 +117,7 @@ class Monitor(QtCore.QObject):
         controller.message.connect(self.message)
 
     def connect_object_with_messenger(self, obj):
-        obj.messenger = Messenger()
-        obj.messenger.started.connect(
-            lambda: self.started(obj, "INFO started"))
-        obj.messenger.message.connect(
-            lambda message: self.message(obj, message))
-        obj.messenger.finished.connect(
-            lambda: self.finished(obj, "INFO finished"))
-        return obj.messenger.message.emit
+        obj.messenger = Messenger(obj)
+        return obj.messenger
 
 
