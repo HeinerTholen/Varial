@@ -10,13 +10,14 @@ def gen_filter_htholen(src):
             yield line
 
 
-def gen_srmls_lines_to_file_lines(srmls_lines):
-    for line in srmls_lines:
+def gen_srmls_lines_to_file_lines(srmls_lns):
+    for line in srmls_lns:
         yield line.split()[-1]
 
 
 def srmls_lines(dcache_path):
-    proc = subprocess.Popen(["srmls", dcache_path],
+    proc = subprocess.Popen(
+        ["srmls", dcache_path],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         shell=True,
@@ -31,7 +32,8 @@ def dbs_query(query_str):
     cmd = [
         "dbs " +
         "search " +
-        '--url="https://cmsdbsprod.cern.ch:8443/cms_dbs_ph_analysis_02_writer/servlet/DBSServlet" ' +
+        '--url="https://cmsdbsprod.cern.ch:8443/cms_d' +
+        'bs_ph_analysis_02_writer/servlet/DBSServlet" ' +
         '--query "'+query_str+'"'
     ]
     proc = subprocess.Popen(
@@ -55,7 +57,8 @@ def dbs_query_for_dataset(query_str):
 
 
 def copy_file_from_dcache(dcache_path, dest_dir=None):
-    proc = subprocess.Popen([
+    proc = subprocess.Popen(
+        [
             "uberftp " +
             "grid-ftp.physik.rwth-aachen.de " +
             '"get '+dcache_path+'"',
@@ -80,8 +83,11 @@ def copy_all_datasets(query_str, sample_name_func):
             os.mkdir(sample)
         else:
             continue
-        for file in files:
-            copy_file_from_dcache("/pnfs/physik.rwth-aachen.de/cms"+file, sample)
+        for f in files:
+            copy_file_from_dcache(
+                "/pnfs/physik.rwth-aachen.de/cms" + f,
+                sample
+            )
 
 
 

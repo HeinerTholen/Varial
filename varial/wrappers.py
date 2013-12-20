@@ -42,6 +42,8 @@ class _dict_base(object):
                     for k in keys
                 ) + ",\n}"
 
+
+#TODO: filename with full path, function for path / name, Wrapper inherits Alias
 class Alias(_dict_base):
     """
     Alias of a histogram on disk.

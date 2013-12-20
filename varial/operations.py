@@ -7,17 +7,18 @@ Module operations
 
 import ctypes
 import collections
-import settings
 import history
 import wrappers
 import __builtin__
 from ROOT import THStack
+
 
 class OperationError(Exception): pass
 class TooFewWrpsError(OperationError): pass
 class TooManyWrpsError(OperationError): pass
 class WrongInputError(OperationError): pass
 class NoLumiMatchError(OperationError): pass
+
 
 def iterableize(obj):
     if isinstance(obj, collections.Iterable):

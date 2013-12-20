@@ -1,7 +1,9 @@
+
 import re
 import functools
 import collections
 import wrappers
+
 
 class History(object):
     """
@@ -72,6 +74,7 @@ def gen_catch_history(wrps, list_of_histories):
         if hasattr(wrp, "history"):
             list_of_histories.append(wrp.history)
         yield wrp
+
 
 def track_history(func):
     """
