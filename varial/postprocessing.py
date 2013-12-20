@@ -53,7 +53,7 @@ class PostProcBase(object):
 
         # messenger
         if not hasattr(self, "message"):
-            self.message = monitor.Monitor().connect_object_with_messenger(self)
+            self.message = monitor.connect_object_with_messenger(self)
 
     def __enter__(self):
         settings.push_tool_dir(self.name)

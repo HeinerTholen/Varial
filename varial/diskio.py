@@ -23,7 +23,7 @@ class IoRefPool(object):
             file_handle = io_ref_pool._open_root_files[filename]
         else:
             if len(self._open_root_files) > 998:
-                monitor.Monitor().message(
+                monitor.message(
                     "diskio",
                     "WARNING to many open root files. Closing all. "
                     "Please check for lost histograms. (Use hist.SetDirectory(0) to keep them)"

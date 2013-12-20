@@ -15,8 +15,7 @@ class Controller(object):
         self.failed_pros   = []
         self.callbacks_on_all_finished = []
 
-        self.monitor = monitor.Monitor()
-        self.monitor.connect_controller(self)
+        monitor.connect_controller(self)
         settings.controller = self
 
     def setup_processes(self):
@@ -35,7 +34,7 @@ class Controller(object):
                 self.finished_pros.append(process)
             else:
                 self.waiting_pros.append(process)
-            self.monitor.proc_enqueued(process)
+            monitor.proc_enqueued(process)
 
     def start_processes(self):
         """Starts the queued processes."""
@@ -50,7 +49,7 @@ class Controller(object):
         process.callbacks_on_exit.append(self.finish_processes)
         process.start()
         self.running_pros.append(process)
-        self.monitor.proc_started(process)
+        monitor.proc_started(process)
 
         # recursively
         self.start_processes()
@@ -62,10 +61,10 @@ class Controller(object):
                 self.running_pros.remove(process)
                 if process.successful():
                     self.finished_pros.append(process)
-                    self.monitor.proc_finished(process)
+                    monitor.proc_finished(process)
                 else:
                     self.failed_pros.append(process)
-                    self.monitor.proc_failed(process)
+                    monitor.proc_failed(process)
 
         # see if there is new processes to start
         self.start_processes()

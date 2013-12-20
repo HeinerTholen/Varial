@@ -39,7 +39,7 @@ class CmsRunProcess(object):
         self.callbacks_on_exit  = []
         self.time_start         = None
         self.time_end           = None
-        self.message = monitor.Monitor().connect_object_with_messenger(self)
+        self.message = monitor.connect_object_with_messenger(self)
 
     def __str__(self):
         return "CmsRunProcess(" + self.name + ")"
