@@ -2,7 +2,6 @@
 import sys
 import time
 import settings
-from PyQt4 import QtCore
 
 
 class Singleton(type):
@@ -18,10 +17,6 @@ class Singleton(type):
         if not self._instance:
             self._instance = super(Singleton, self).__call__(*args, **kws)
         return self._instance
-
-
-class QSingleton(Singleton, type(QtCore.QObject)):
-    pass
 
 
 class Messenger(object):
@@ -43,14 +38,14 @@ class Messenger(object):
         self.monitor.finished(self.connected_obj, "INFO finished")
 
 
-class Monitor(QtCore.QObject):
+class Monitor(object):
     """
     Interface for system outputs.
 
     Can be interfaced to a future GUI. Therefore the PyQt Signal and Slot
     Mechanism is used.
     """
-    __metaclass__ = QSingleton
+    __metaclass__ = Singleton
     indent = 0
     n_procs = 0
 
