@@ -1,12 +1,13 @@
 import glob
+import json
 import subprocess
 import time
 import threading
 import os
+
+import monitor
 import settings
 import sample
-import monitor
-from PyQt4 import QtCore
 
 
 class CmsRunProcess(object):
@@ -29,7 +30,6 @@ class CmsRunProcess(object):
         self.conf_filename      = settings.DIR_CONFS + sample_inst.name + ".py"
         self.service_filename   = settings.DIR_FILESERVICE + sample_inst.name + ".root"
         self.jobinfo_filename   = settings.DIR_JOBINFO + sample_inst.name + ".ini"
-        self.jobinfo            = QtCore.QSettings(self.jobinfo_filename, 1)
         self.try_reuse_old_data = try_reuse_old_data
         self.will_reuse_data    = False
         self.reused_old_data    = False
@@ -144,12 +144,16 @@ class CmsRunProcess(object):
         if self.sig_int or self.reused_old_data:
             return
 
-        # collect lines to be written at once TODO: pythonify
-        job_info = QtCore.QSettings(self.jobinfo_filename, 1)
-        job_info.setValue("startTime", self.time_start)
-        job_info.setValue("endTime", self.time_end)
-        job_info.setValue("exitCode", str(exit_code))
-        job_info.sync()
+        # write out in json format
+        with open(self.jobinfo_filename, "w") as info_file:
+            json.dump(
+                {
+                    "startTime": self.time_start,
+                    "endTime": self.time_end,
+                    "exitCode": str(exit_code),
+                },
+                info_file
+            )
 
     def check_reuse_possible(self):
         """
@@ -166,8 +170,10 @@ class CmsRunProcess(object):
             return False
         if not os.path.exists(self.jobinfo_filename):
             return False
-        prev_exit_code, parse_ok = self.jobinfo.value("exitCode", 255).toInt()
-        return parse_ok and not prev_exit_code
+        with open(self.jobinfo_filename) as info_file:
+            info = json.load(info_file)
+            if type(info) == dict and not int(info.get("exitCode", 255)):
+                return True
 
     def successful(self):
         return (self.time_end
