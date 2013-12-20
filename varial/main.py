@@ -17,6 +17,7 @@ try:
 except NameError:
     pass
 
+
 class SigintHandler(object):
     def __init__(self, controller):
         self.controller = controller
@@ -58,11 +59,13 @@ if settings.logfilename:
     import monitor
     monitor.Monitor().outstream = StdOutTee(settings.logfilename)
 
+
 def _process_settings_kws(kws):
     # replace setting, if its name already exists.
     for k,v in kws.iteritems():
         if hasattr(settings, k):
             setattr(settings, k, v)
+
 
 def _instanciate_samples():
     if not type(settings.samples) is dict:
@@ -70,6 +73,7 @@ def _instanciate_samples():
     for k,v in settings.samples.items():
         if not isinstance(v, sample.Sample):
             settings.samples[k] = v()
+
 
 class Timer:
     keep_alive = False
@@ -93,14 +97,17 @@ def start_qt_app():
     timer.keep_alive = True
     exec_thread.start()
 
+
 def quit_qt_app():
     timer.kill()
     app.quit()
+
 
 def tear_down(*args):
     sig_handler.handle(signal.SIGINT, None)
     time.sleep(1)
     quit_qt_app()
+
 
 # iPython mode
 def ipython_usage():
@@ -128,6 +135,7 @@ else:
 
 ###################################################################### main ###
 main_args = {}
+
 
 def main(**settings_kws):
     """
@@ -183,7 +191,14 @@ def main(**settings_kws):
                 + ",\n   ".join(map(str,executed_procs))
                 + "\n?? (type 'yes') "
             ) == "yes"):
-            if ipython_mode: ipython_usage()
+            if ipython_mode:
+                ipython_usage()
+            monitor.Monitor().message(
+                "main",
+                "INFO: Using "
+                + str(settings.max_num_processes)
+                + " cpu cores at max."
+            )
             controller.start_processes()
             return exec_start()
         else:
@@ -193,6 +208,7 @@ def main(**settings_kws):
         pst.run()
     else:                                       # Nothing to do.
         print "I've got nothing to do!"
+
 
 def standalone(post_proc_tool_classes, **settings_kws):
     """

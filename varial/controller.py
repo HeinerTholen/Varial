@@ -20,15 +20,7 @@ class Controller(QtCore.QObject):
         self.finished_pros = []
         self.failed_pros   = []
 
-        mon = monitor.Monitor()
-        mon.connect_controller(self)
-        mon.message(
-            self,
-            "INFO: Using "
-            + str(settings.max_num_processes)
-            + " cpu cores at max."
-        )
-
+        monitor.Monitor().connect_controller(self)
         settings.controller = self
 
     def setup_processes(self):
