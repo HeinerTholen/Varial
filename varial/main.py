@@ -6,7 +6,6 @@ import settings
 import sample
 import controller as controller_module
 import postprocessing
-from PyQt4 import QtCore
 import threading
 import time
 
@@ -26,7 +25,8 @@ class SigintHandler(object):
     def handle(self, signal_int, frame):
         if signal_int is signal.SIGINT:
             if not ipython_mode:
-                print "WARNING: aborting all processes. Crtl-C again to kill immediately!"
+                print "WARNING: aborting all processes. " \
+                      "Crtl-C again to kill immediately!"
                 if self.hits:
                     exit(-1)
             sys.__stdout__.flush()
@@ -76,39 +76,27 @@ def _instanciate_samples():
 
 
 class Timer(object):
-    keep_alive = False
+    keep_alive = True
 
     def timer_func(self):
         while self.keep_alive:
-            app.processEvents()
-            time.sleep(0.1)
+            time.sleep(1)
 
     def kill(self):
         self.keep_alive = False
 
 timer       = Timer()
-app         = QtCore.QCoreApplication(sys.argv)
 controller  = controller_module.Controller()
 sig_handler = SigintHandler(controller)
 exec_thread = threading.Thread(target=timer.timer_func)
-exec_start  = app.exec_
-exec_quit   = app.quit
-
-
-def start_qt_app():
-    timer.keep_alive = True
-    exec_thread.start()
-
-
-def quit_qt_app():
-    timer.kill()
-    app.quit()
+exec_start  = exec_thread.start
+exec_quit   = timer.kill
 
 
 def tear_down(*args):
     sig_handler.handle(signal.SIGINT, None)
     time.sleep(1)
-    quit_qt_app()
+    exec_quit()
 
 
 # iPython mode
@@ -119,15 +107,13 @@ def ipython_usage():
 
 if ipython_mode:
     ipython_usage()
-    exec_start  = start_qt_app
-    exec_quit   = quit_qt_app
 
     ipython_exit_func = __IPYTHON__.exit
 
     def ipython_exit(*args):
         print "Shutting down..."
         if timer.keep_alive:
-            print "Wait for qt app shutdown..."
+            print "Waiting for processes to shutdown..."
             tear_down()
         ipython_exit_func()
     __IPYTHON__.exit = ipython_exit
@@ -194,7 +180,7 @@ def main(**settings_kws):
             or settings.suppress_cmsRun_exec
             or raw_input(
                 "Really run these processes:\n   "
-                + ",\n   ".join(map(str,executed_procs))
+                + ",\n   ".join(map(str, executed_procs))
                 + "\n?? (type 'yes') "
             ) == "yes"):
             if ipython_mode:
