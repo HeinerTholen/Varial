@@ -109,12 +109,7 @@ class Monitor(QtCore.QObject):
         self.message(obj, message)
 
     def connect_controller(self, controller):
-        controller.process_enqueued.connect(self.proc_enqueued)
-        controller.process_started.connect(self.proc_started)
-        controller.process_finished.connect(self.proc_finished)
-        controller.process_failed.connect(self.proc_failed)
-        controller.all_finished.connect(self.all_finished)
-        controller.message.connect(self.message)
+        controller.callbacks_on_all_finished.append(self.all_finished)
 
     def connect_object_with_messenger(self, obj):
         obj.messenger = Messenger(obj)

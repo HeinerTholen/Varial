@@ -172,7 +172,7 @@ def main(**settings_kws):
     pst._reuse = settings.enable_postproc_reuse and not bool(executed_procs)
 
     settings.postprocessor = pst
-    controller.all_finished.connect(pst.run)
+    controller.callbacks_on_all_finished.append(pst.run)
     pst.add_tools(settings.post_proc_tools)
 
     # create folders (for plottools)
@@ -180,7 +180,7 @@ def main(**settings_kws):
 
     # connect for quiting
     # (all other finishing connections before this one)
-    controller.all_finished.connect(exec_quit)
+    controller.callbacks_on_all_finished.append(exec_quit)
 
     # GO!
     if executed_procs:                          # Got jobs to execute?

@@ -1,17 +1,11 @@
 
-from PyQt4 import QtCore
 import settings
 import monitor
 import cmsrunprocess as crp
 
-class Controller(QtCore.QObject):
-    """Generates, starts and finishes crp.CmsRunProcesses."""
-    process_enqueued  = QtCore.pyqtSignal(crp.CmsRunProcess)
-    process_started   = QtCore.pyqtSignal(crp.CmsRunProcess)
-    process_finished  = QtCore.pyqtSignal(crp.CmsRunProcess)
-    process_failed    = QtCore.pyqtSignal(crp.CmsRunProcess)
-    message           = QtCore.pyqtSignal(object, str)
-    all_finished      = QtCore.pyqtSignal(list)
+
+class Controller(object):
+    """Generates, starts and finishes cmsrunprocess instances."""
 
     def __init__(self):
         super(Controller, self).__init__()
@@ -19,8 +13,10 @@ class Controller(QtCore.QObject):
         self.running_pros  = []
         self.finished_pros = []
         self.failed_pros   = []
+        self.callbacks_on_all_finished = []
 
-        monitor.Monitor().connect_controller(self)
+        self.monitor = monitor.Monitor()
+        self.monitor.connect_controller(self)
         settings.controller = self
 
     def setup_processes(self):
@@ -39,7 +35,7 @@ class Controller(QtCore.QObject):
                 self.finished_pros.append(process)
             else:
                 self.waiting_pros.append(process)
-            self.process_enqueued.emit(process)
+            self.monitor.proc_enqueued(process)
 
     def start_processes(self):
         """Starts the queued processes."""
@@ -51,10 +47,10 @@ class Controller(QtCore.QObject):
 
         # start processing
         process = self.waiting_pros.pop(0)
-        process.finished.connect(self.finish_processes)
+        process.callbacks_on_exit.append(self.finish_processes)
         process.start()
         self.running_pros.append(process)
-        self.process_started.emit(process)
+        self.monitor.proc_started(process)
 
         # recursively
         self.start_processes()
@@ -66,15 +62,16 @@ class Controller(QtCore.QObject):
                 self.running_pros.remove(process)
                 if process.successful():
                     self.finished_pros.append(process)
-                    self.process_finished.emit(process)
+                    self.monitor.proc_finished(process)
                 else:
                     self.failed_pros.append(process)
-                    self.process_failed.emit(process)
+                    self.monitor.proc_failed(process)
 
         # see if there is new processes to start
         self.start_processes()
         if not len(self.running_pros):
-            self.all_finished.emit(self.finished_pros)
+            for cb in self.callbacks_on_all_finished:
+                cb()
 
     def abort_all_processes(self):
         self.waiting_pros = []
