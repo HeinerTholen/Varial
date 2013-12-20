@@ -13,6 +13,7 @@ import varial.history as hst
 import varial.operations as ops
 import varial.rendering as rnd
 import varial.wrappers as wrp
+import varial.decorator as dec
 
 suite = unittest.TestSuite((
     doctest.DocTestSuite(wrp),
@@ -21,6 +22,7 @@ suite = unittest.TestSuite((
     doctest.DocTestSuite(dsp),
     doctest.DocTestSuite(rnd),
     doctest.DocTestSuite(gen),
+    doctest.DocTestSuite(dec),
     ops_suite,
     dip_suite,
     gen_suite,
