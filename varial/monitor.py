@@ -60,23 +60,39 @@ class Monitor(object):
         print >> self.outstream
 
     def proc_enqueued(self, process):
-        self("INFO process enqueued:   cmsRun ", process.conf_filename)
+        self(
+            "INFO process enqueued:   cmsRun ",
+            process.conf_filename
+        )
 
     def proc_started(self, process):
         if settings.suppress_cmsRun_exec or process.reused_old_data:
             return
-        self("INFO process started  "+time.ctime()+":   cmsRun ", process.conf_filename, "PID: ", process.subprocess.pid)
+        self(
+            "INFO process started  "+time.ctime()+":   cmsRun ",
+            process.conf_filename, "PID: ",
+            process.subprocess.pid
+        )
 
     def proc_finished(self, process):
         if settings.suppress_cmsRun_exec or process.reused_old_data:
             return
         if hasattr(settings, "recieved_sigint"):
-            self("INFO process aborted "+time.ctime()+":   cmsRun ", process.conf_filename)
+            self(
+                "INFO process aborted "+time.ctime()+":   cmsRun ",
+                process.conf_filename
+            )
         else:
-            self("INFO process finished "+time.ctime()+":   cmsRun ", process.conf_filename)
+            self(
+                "INFO process finished "+time.ctime()+":   cmsRun ",
+                process.conf_filename
+            )
 
     def proc_failed(self, process):
-        self("WARNING process FAILED "+time.ctime()+"  :   cmsRun ", process.conf_filename)
+        self(
+            "WARNING process FAILED "+time.ctime()+"  :   cmsRun ",
+            process.conf_filename
+        )
         if not self.error_logs_opened:
             self("_______________________________________begin_cmsRun_logfile")
             with open(process.log_filename, "r") as logfile:
