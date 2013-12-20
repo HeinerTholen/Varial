@@ -19,8 +19,8 @@ except NameError:
 
 
 class SigintHandler(object):
-    def __init__(self, controller):
-        self.controller = controller
+    def __init__(self, controller_obj):
+        self.controller = controller_obj
         self.hits = 0
 
     def handle(self, signal_int, frame):
@@ -62,7 +62,7 @@ if settings.logfilename:
 
 def _process_settings_kws(kws):
     # replace setting, if its name already exists.
-    for k,v in kws.iteritems():
+    for k, v in kws.iteritems():
         if hasattr(settings, k):
             setattr(settings, k, v)
 
@@ -70,17 +70,19 @@ def _process_settings_kws(kws):
 def _instanciate_samples():
     if not type(settings.samples) is dict:
         settings.samples = sample.load_samples(settings.samples)
-    for k,v in settings.samples.items():
+    for k, v in settings.samples.items():
         if not isinstance(v, sample.Sample):
             settings.samples[k] = v()
 
 
-class Timer:
+class Timer(object):
     keep_alive = False
+
     def timer_func(self):
         while self.keep_alive:
             app.processEvents()
             time.sleep(0.1)
+
     def kill(self):
         self.keep_alive = False
 
@@ -121,6 +123,7 @@ if ipython_mode:
     exec_quit   = quit_qt_app
 
     ipython_exit_func = __IPYTHON__.exit
+
     def ipython_exit(*args):
         print "Shutting down..."
         if timer.keep_alive:
@@ -156,7 +159,8 @@ def main(**settings_kws):
         print ("WARNING I found "
                + tweak_name
                + " and I am going to dump it first and then import it!")
-        with open(tweak_name, 'r') as f: print f.read()
+        with open(tweak_name, 'r') as f:
+            print f.read()
         import imp
         settings.tweak = imp.load_source(tweak_name[:-3], tweak_name)
 
@@ -165,7 +169,9 @@ def main(**settings_kws):
 
     # controller
     controller.setup_processes()
-    executed_procs = list(p for p in controller.waiting_pros if not p.will_reuse_data)
+    executed_procs = list(
+        p for p in controller.waiting_pros if not p.will_reuse_data
+    )
 
     # post processor
     pst = postprocessing.PostProcChain()
