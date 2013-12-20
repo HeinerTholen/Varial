@@ -1,6 +1,8 @@
+
 from new import function, instancemethod
 from inspect import getmembers, ismethod
 from functools import wraps
+
 
 def _decorator_sensitive(f):
     """
@@ -10,6 +12,7 @@ def _decorator_sensitive(f):
     def dec_sens(self, *args, **kws):
         return f(self._outermost_decorator, *args, **kws)
     return dec_sens
+
 
 class Decorator(object):
     """

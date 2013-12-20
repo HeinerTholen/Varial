@@ -1,11 +1,12 @@
+
 import os.path
 import glob
-import copy
 import settings
 import collections
 import itertools
 import wrappers
 import inspect
+
 
 class Sample(wrappers._dict_base):
     """
@@ -80,6 +81,7 @@ def _check_n_load(field):
             return {smp.name: smp}
     return {}
 
+
 def load_samples(module):
     """
     Get sample instances from a module.
@@ -101,6 +103,7 @@ def load_samples(module):
             except TypeError: # not an iterable
                 samples.update(_check_n_load(field))
     return samples
+
 
 def generate_samples(in_filenames, in_path="", out_path=""):
     """
@@ -126,6 +129,7 @@ def generate_samples(in_filenames, in_path="", out_path=""):
             output_file = out_path
         samples[samplename] = sample_subclass
     return samples
+
 
 def generate_samples_glob(glob_path, out_path):
     """Globs for files and creates according samples."""
