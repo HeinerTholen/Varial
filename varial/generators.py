@@ -6,6 +6,7 @@ import itertools
 import operator
 import diskio
 
+
 def _iterableize(obj_or_iterable):
     """provides iterable for [obj OR iterable(obj)]"""
     if (isinstance(obj_or_iterable, collections.Iterable)
@@ -15,6 +16,7 @@ def _iterableize(obj_or_iterable):
     else:
         yield obj_or_iterable
 
+
 def _filt_items(wrp, key, value_list):
     """yields True/False for every value in value_list"""
     for val in value_list:
@@ -23,11 +25,13 @@ def _filt_items(wrp, key, value_list):
         except AttributeError:
             yield getattr(wrp,key," ") == val
 
+
 def _filt_req(wrp, filter_dict):
     """Yields True/False for each item in filter_dict"""
     for key, value in filter_dict.iteritems():
         value = _iterableize(value)
         yield any(_filt_items(wrp, key, value))
+
 
 def debug_printer(iterable, print_obj=True):
     """
@@ -42,6 +46,7 @@ def debug_printer(iterable, print_obj=True):
             print "DEBUG: debug_printer: obj:      ", obj
         yield obj
 
+
 def consume_n_count(iterable):
     """
     Walks over iterable and counts number of items.
@@ -52,6 +57,7 @@ def consume_n_count(iterable):
     for obj in iterable:
         count += 1
     return count
+
 
 def filter(wrps, key_value_dict=None):
     """
@@ -83,6 +89,7 @@ def filter(wrps, key_value_dict=None):
         wrps
     )
 
+
 def rejector(wrps, key_value_dict=None):
     """Just as filter, only rejects items with the given properites."""
     if not key_value_dict: key_value_dict = {}
@@ -92,11 +99,13 @@ def rejector(wrps, key_value_dict=None):
         wrps
     )
 
+
 def filter_active_samples(wrps):
     return itertools.ifilter(
         lambda w: w.sample in settings.active_samples,
         wrps
     )
+
 
 def callback(wrps, func=None, filter_dict=None):
     """
@@ -128,6 +137,7 @@ def callback(wrps, func=None, filter_dict=None):
                 func(wrp)
             yield wrp
 
+
 def sort(wrps, key_list=None):
     """
     Sort stream after items in key_list. Loads full stream into memory.
@@ -143,6 +153,7 @@ def sort(wrps, key_list=None):
     for key in reversed(list(_iterableize(key_list))):
         wrps = sorted(wrps, key=operator.attrgetter(key))
     return wrps
+
 
 def group(wrps, key_func=None):
     """
@@ -160,9 +171,11 @@ def group(wrps, key_func=None):
         wrappers = group(wrappers)
         # result is like: [ ("h1", "h1"), ("h2", "h2") ]
     """
-    if not key_func: key_func = lambda w: w.analyzer+"_"+w.name
-    for k,g in itertools.groupby(wrps, key_func):
+    if not key_func:
+        key_func = lambda w: w.analyzer+"_"+w.name
+    for k, g in itertools.groupby(wrps, key_func):
         yield g
+
 
 def interleave(*grouped_wrps):
     """
@@ -177,6 +190,7 @@ def interleave(*grouped_wrps):
     for grp in zipped:
         yield itertools.chain(*grp)
 
+
 def split_data_mc(wrps):
     """
     Split stream into data and mc stream.
@@ -188,6 +202,7 @@ def split_data_mc(wrps):
     data         = itertools.ifilter(lambda w: w.is_data, wrp_a)
     mcee         = itertools.ifilter(lambda w: not w.is_data, wrp_b)
     return data, mcee
+
 
 def debug_print(wrps, prefix="DEBUG "):
     """
@@ -203,8 +218,10 @@ def debug_print(wrps, prefix="DEBUG "):
         print prefix, wrp.all_info()
         yield wrp
 
+
 ################################################################ operations ###
 import operations as op
+
 
 def generate_op(op_func):
     """
@@ -232,28 +249,30 @@ def generate_op(op_func):
     >>> w3 = list(gen_int(w1))
     >>> w3[0].float
     2.0
-    >>> w4 = list(gen_int(w1, useBinWidth=True))
+    >>> w4 = list(gen_int(w1, use_bin_width=True))
     >>> w4[0].float
     4.0
     """
-    def gen_op(wrps, **kws):
+    def gen_op(wrps, *args, **kws):
         for wrp in wrps:
-            yield op_func(wrp, **kws)
+            yield op_func(wrp, *args, **kws)
     return gen_op
 
-gen_stack = generate_op(op.stack)  #: This is ``generate_op(varial.operations.stack)``
-gen_sum   = generate_op(op.sum)    #: This is ``generate_op(varial.operations.sum)``
-gen_merge = generate_op(op.merge)  #: This is ``generate_op(varial.operations.merge)``
-gen_prod  = generate_op(op.prod)   #: This is ``generate_op(varial.operations.prod)``
-gen_div   = generate_op(op.div)    #: This is ``generate_op(varial.operations.div)``
-gen_lumi  = generate_op(op.lumi)   #: This is ``generate_op(varial.operations.lumi)``
-gen_norm_to_lumi  = generate_op(op.norm_to_lumi)   #: This is ``generate_op(varial.operations.norm_to_lumi)``
-gen_norm_to_integral = generate_op(op.norm_to_integral)   #: This is ``generate_op(varial.operations.norm_to_integral)``
-gen_copy = generate_op(op.copy)   #: This is ``generate_op(varial.operations.copy)``
-gen_mv_in = generate_op(op.mv_in)  #: This is ``generate_op(varial.operations.mv_in)``
-gen_integral   = generate_op(op.integral)    #: This is ``generate_op(varial.operations.integral)``
-gen_int_l = generate_op(op.int_l)  #: This is ``generate_op(varial.operations.int_l)``
-gen_int_r = generate_op(op.int_r)  #: This is ``generate_op(varial.operations.int_r)``
+gen_stack = generate_op(op.stack)
+gen_sum   = generate_op(op.sum)
+gen_merge = generate_op(op.merge)
+gen_prod  = generate_op(op.prod)
+gen_div   = generate_op(op.div)
+gen_lumi  = generate_op(op.lumi)
+gen_norm_to_lumi  = generate_op(op.norm_to_lumi)
+gen_norm_to_integral = generate_op(op.norm_to_integral)
+gen_copy = generate_op(op.copy)
+gen_mv_in = generate_op(op.mv_in)
+gen_rebin = generate_op(op.rebin)
+gen_trim = generate_op(op.trim)
+gen_integral   = generate_op(op.integral)
+gen_int_l = generate_op(op.int_l)
+gen_int_r = generate_op(op.int_r)
 
 def gen_norm_to_data_lumi(wrps):
     return gen_prod(
@@ -263,10 +282,11 @@ def gen_norm_to_data_lumi(wrps):
         )
     )
 
+
 ############################################################### load / save ###
-import os
+import os, glob
 import settings
-from ROOT import TFile
+
 
 def fs_content():
     """
@@ -277,20 +297,16 @@ def fs_content():
     for alias in diskio.fileservice_aliases():
         yield alias
 
-#TODO get able to load dir content!!!!
-def dir_content(dir_path):
-    """
-    Searches directory for loadable wrapper-types. Yields aliases.
 
-    :yields:   FileServiceAlias
+#TODO get able to load dir content!!!!
+def dir_content(dir_path="./"):
     """
-    basenames = []
-    for cwd, dirs, files in os.walk(dir_path):
-        for f in files:
-            if (f[-5:] == ".info"
-                and f[:-5] + ".root" in files):
-                    basenames.append(f[:-5])
-        break
+    Proxy of diskio.generate_aliases(directory)
+
+    :yields:   Alias
+    """
+    return diskio.generate_aliases(dir_path)
+
 
 def pool_content():
     """
@@ -300,7 +316,8 @@ def pool_content():
     """
     return (w for w in settings.histo_pool)
 
-def pool_store_items(wrps, callback = None):
+
+def pool_store_items(wrps, call_back=None):
     """
     Saves items in pool and yields them again.
 
@@ -309,10 +326,11 @@ def pool_store_items(wrps, callback = None):
     """
     for wrp in wrps:
         for w in _iterableize(wrp):
-            if callback:
-                callback(w)
+            if call_back:
+                call_back(w)
             settings.histo_pool.append(w)
         yield wrp
+
 
 def pool_consume_n_count(wrps):
     """
@@ -324,6 +342,13 @@ def pool_consume_n_count(wrps):
     """
     return consume_n_count(pool_store_items(wrps))
 
+
+def load_wrappers(dir_path="./"):
+    """Scans directory for .info files and loads them."""
+    for f in glob.iglob(os.path.join(dir_path, "*.info")):
+        yield diskio.read(f)
+
+
 def load(aliases):
     """
     Loads histograms in histowrappers for aliases.
@@ -333,6 +358,7 @@ def load(aliases):
     """
     for alias in aliases:
         yield diskio.load_histogram(alias)
+
 
 def save(wrps, filename_func, suffices = None):
     """
@@ -360,6 +386,7 @@ def save(wrps, filename_func, suffices = None):
         diskio.write(wrp, filename)
         yield wrp
 
+
 def get_from_post_proc_dict(key):
     """
     Yields from settings.post_proc_dict. Sets key as "post_proc_key" on items.
@@ -368,8 +395,10 @@ def get_from_post_proc_dict(key):
         w.post_proc_key = key
         yield w
 
+
 ################################################################## plotting ###
 import rendering as rnd
+
 
 def apply_histo_fillcolor(wrps, colors=None):
     """
@@ -391,6 +420,7 @@ def apply_histo_fillcolor(wrps, colors=None):
                 wrp.histo.SetFillColor(color)
         yield wrp
 
+
 def apply_histo_linecolor(wrps, colors=None):
     """
     Uses ``histo.SetLineColor``. Colors from settings, if not given.
@@ -411,6 +441,7 @@ def apply_histo_linecolor(wrps, colors=None):
                 wrp.histo.SetLineColor(color)
         yield wrp
 
+
 def apply_histo_linewidth(wrps, linewidth=2):
     """
     Uses ``histo.SetLineWidth``. Default is 2.
@@ -424,6 +455,7 @@ def apply_histo_linewidth(wrps, linewidth=2):
             wrp.histo.SetLineWidth(2)
         yield wrp
 
+
 def make_canvas_builder(grps):
     """
     Yields instanciated CanvasBuilders.
@@ -435,6 +467,7 @@ def make_canvas_builder(grps):
     for grp in grps:
         grp = _iterableize(grp)
         yield rnd.CanvasBuilder(grp)
+
 
 def decorate(wrps, decorators=None):
     """
@@ -455,6 +488,7 @@ def decorate(wrps, decorators=None):
             wrp = dec(wrp)
         yield wrp
 
+
 def build_canvas(bldrs):
     """
     Calls the ``build_canvas()`` method and returns the result.
@@ -464,6 +498,7 @@ def build_canvas(bldrs):
     """
     for bldr in bldrs:
         yield bldr.build_canvas()
+
 
 def switch_log_scale(cnvs, y_axis=True, x_axis=False):
     """
@@ -488,6 +523,7 @@ def switch_log_scale(cnvs, y_axis=True, x_axis=False):
             cnv.main_pad.SetLogy(0)
         yield cnv
 
+
 ################################################### application & packaging ###
 def fs_filter_sort_load(filter_dict=None, sort_keys=None):
     """
@@ -509,6 +545,7 @@ def fs_filter_sort_load(filter_dict=None, sort_keys=None):
     wrps = sort(wrps, sort_keys)
     return load(wrps)
 
+
 def fs_filter_active_sort_load(filter_dict=None, sort_keys=None):
     """
     Just as fs_filter_sort_load, but also filter for active samples.
@@ -518,6 +555,7 @@ def fs_filter_active_sort_load(filter_dict=None, sort_keys=None):
     wrps = filter(wrps, filter_dict)
     wrps = sort(wrps, sort_keys)
     return load(wrps)
+
 
 def mc_stack(wrps, merge_mc_key_func=None):
     """
@@ -542,6 +580,7 @@ def mc_stack(wrps, merge_mc_key_func=None):
         stack = op.stack(mc_colord)
         yield stack
 
+
 def fs_mc_stack(filter_dict=None, merge_mc_key_func=None):
     """
     Delivers only MC stacks, no data, from fileservice.
@@ -554,6 +593,7 @@ def fs_mc_stack(filter_dict=None, merge_mc_key_func=None):
     loaded = fs_filter_active_sort_load(filter_dict)
     grouped = group(loaded)
     return mc_stack(grouped, merge_mc_key_func)
+
 
 def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=False):
     """
@@ -610,6 +650,7 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=False):
         else:
             raise op.TooFewWrpsError("Neither data nor mc histos present!")
 
+
 def fs_mc_stack_n_data_sum(filter_dict=None, merge_mc_key_func=None):
     """
     The full job to stacked histos and data, directly from fileservice.
@@ -625,6 +666,7 @@ def fs_mc_stack_n_data_sum(filter_dict=None, merge_mc_key_func=None):
     loaded = fs_filter_active_sort_load(filter_dict)
     grouped = group(loaded) # default: group by analyzer_histo (the fs histo 'ID')
     return mc_stack_n_data_sum(grouped, merge_mc_key_func, True)
+
 
 def canvas(grps, 
            decorators=list()):
@@ -645,6 +687,7 @@ def canvas(grps,
     grps = put_ana_histo_name(grps)             # only applies to fs histos
     grps = decorate(grps, decorators)           # apply decorators
     return build_canvas(grps)                   # and do the job
+
 
 def save_canvas_lin_log(cnvs, filename_func):
     """

@@ -6,7 +6,7 @@ from itertools import takewhile
 import settings
 import wrappers
 import monitor
-from ROOT import TFile, TH1, TObject
+from ROOT import TFile, TDirectory, TH1, TObject
 
 
 class NoDictInFileError(Exception): pass
@@ -158,8 +158,37 @@ def fileservice_aliases():
                         is_data
                     )
                 )
-    io_ref_pool.aliases = aliases
+    io_ref_pool.aliases = aliases   #TODO this should be dict path->aliases
     return aliases
+
+
+def generate_aliases(directory="./"):
+    """Looks only for *.root files and produces aliases."""
+    for filename in glob.iglob(os.path.join(directory, "*.root")):
+        root_file = io_ref_pool.get_root_file(filename)
+        for alias in _recursive_make_alias(
+            root_file,
+            os.path.abspath(filename),
+            []
+        ):
+            yield alias
+
+
+def _recursive_make_alias(root_dir, filename, in_file_path):
+    for key in root_dir.GetListOfKeys():
+        in_file_path += [key.GetName()]
+        if key.IsFolder():
+            _recursive_make_alias(
+                key.ReadObj(),
+                filename,
+                in_file_path
+            )
+        else:
+            yield wrappers.Alias(
+                filename,
+                in_file_path[:]
+            )
+        in_file_path.pop(-1)
 
 
 def load_histogram(alias):

@@ -5,6 +5,7 @@ Module operations
 """
 #TODO: Guideline write an operation: arguments and return values for good history
 
+import array
 import ctypes
 import collections
 import history
@@ -25,6 +26,7 @@ def iterableize(obj):
         return obj
     else:
         return [obj]
+
 
 @history.track_history
 def stack(wrps):
@@ -80,6 +82,7 @@ def stack(wrps):
         del info["sample"]
     return wrappers.StackWrapper(stk_wrp, **info)
 
+
 @history.track_history
 def sum(wrps):
     """
@@ -125,6 +128,7 @@ def sum(wrps):
     info["lumi"] = lumi
     return wrappers.HistoWrapper(histo, **info)
 
+
 @history.track_history
 def merge(wrps):
     """
@@ -168,6 +172,7 @@ def merge(wrps):
         )
     info["lumi"] = 1.
     return wrappers.HistoWrapper(histo, **info)
+
 
 @history.track_history
 def prod(wrps):
@@ -228,6 +233,7 @@ def prod(wrps):
     info["lumi"] = lumi
     return wrappers.HistoWrapper(histo, **info)
 
+
 @history.track_history
 def div(wrps):
     """
@@ -286,6 +292,7 @@ def div(wrps):
     info["lumi"] = lumi
     return wrappers.HistoWrapper(histo, **info)
 
+
 @history.track_history
 def lumi(wrp):
     """
@@ -308,6 +315,7 @@ def lumi(wrp):
 
     info = wrp.all_info()
     return wrappers.FloatWrapper(wrp.lumi, **info)
+
 
 @history.track_history
 def norm_to_lumi(wrp):
@@ -336,8 +344,9 @@ def norm_to_lumi(wrp):
     info["lumi"] = 1.
     return wrappers.HistoWrapper(histo, **info)
 
+
 @history.track_history
-def norm_to_integral(wrp, useBinWidth=False):
+def norm_to_integral(wrp, use_bin_width=False):
     """
     Applies to HistoWrapper. Returns HistoWrapper.
     
@@ -358,12 +367,13 @@ def norm_to_integral(wrp, useBinWidth=False):
             + str(wrp)
         )
     histo = wrp.histo.Clone()
-    option = "width" if useBinWidth else ""
-    integral = wrp.histo.Integral(option)
-    histo.Scale(1. / integral)
+    option = "width" if use_bin_width else ""
+    integr = wrp.histo.Integral(option)
+    histo.Scale(1. / integr)
     info = wrp.all_info()
-    info["lumi"] /= integral
+    info["lumi"] /= integr
     return wrappers.HistoWrapper(histo, **info)
+
 
 @history.track_history
 def copy(wrp):
@@ -395,6 +405,101 @@ def copy(wrp):
     return wrappers.HistoWrapper(histo, **info)
 
 
+@history.track_history
+def rebin(wrp, bin_bounds, norm_by_bin_width=False):
+    """Applies to HistoWrapper. Returns Histowrapper."""
+    # TODO write test for op.rebin!!
+    if not isinstance(wrp, wrappers.HistoWrapper):
+        raise WrongInputError(
+            "rebin needs argument of type HistoWrapper. histo: "
+            + str(wrp)
+        )
+    if len(bin_bounds) < 2:
+        raise OperationError(
+            "Number of bins < 2, must include at least one bin!"
+        )
+    bin_bounds = array.array("d", bin_bounds)
+    orig_bin_width = wrp.histo.GetBinWidth(1)
+    histo = wrp.histo.Rebin(
+        len(bin_bounds) - 1,
+        wrp.name,
+        bin_bounds
+    )
+    if norm_by_bin_width:
+        for i in xrange(histo.GetNbinsX()+1):
+            factor = histo.GetBinWidth(i) / orig_bin_width
+            histo.SetBinContent(i, histo.GetBinContent(i) / factor)
+            histo.SetBinError(i, histo.GetBinError(i) / factor)
+    info = wrp.all_info()
+    return wrappers.HistoWrapper(histo, **info)
+
+
+@history.track_history
+def trim(wrp, left=True, right=True):
+    """
+    Applies to HistoWrapper. Returns Histowrapper.
+
+    If left / right are set to values, these are applied. Otherwise empty bins
+    are cut off.
+
+    >>> from ROOT import TH1I
+    >>> w1 = wrappers.HistoWrapper(TH1I("h1", "", 10, .5, 10.5))
+    >>> w1.histo.Fill(5)
+    5
+    >>> w2 = trim(w1)
+    >>> w2.histo.GetNbinsX()
+    1
+    >>> w2.histo.GetXaxis().GetXmin()
+    4.5
+    >>> w2.histo.GetXaxis().GetXmax()
+    5.5
+    >>> w2 = trim(w1, 3.5, 7.5)
+    >>> w2.histo.GetNbinsX()
+    4
+    >>> w2.histo.GetXaxis().GetXmin()
+    3.5
+    >>> w2.histo.GetXaxis().GetXmax()
+    7.5
+    """
+    if not isinstance(wrp, wrappers.HistoWrapper):
+        raise WrongInputError(
+            "trim needs argument of type HistoWrapper. histo: "
+            + str(wrp)
+        )
+
+    # find left / right values if not given
+    histo = wrp.histo
+    axis = histo.GetXaxis()
+    n_bins = histo.GetNbinsX()
+    if type(left) == bool:
+        if left:
+            for i in xrange(n_bins+1):
+                if histo.GetBinContent(i):
+                    left = axis.GetBinLowEdge(i)
+                    break
+        else:
+            left = axis.GetXmin()
+    if type(right) == bool:
+        if right:
+            for i in xrange(n_bins+1, 0, -1):
+                if histo.GetBinContent(i):
+                    right = axis.GetBinUpEdge(i)
+                    break
+        else:
+            right = axis.GetXmax()
+    if left > right:
+        raise OperationError("bounds: left > right")
+
+    # create new bin_bounds
+    index = 0
+    while axis.GetBinLowEdge(index) < left:
+        index += 1
+    bin_bounds = [axis.GetBinLowEdge(index)]
+    while axis.GetBinUpEdge(index) <= right:
+        bin_bounds.append(axis.GetBinUpEdge(index))
+        index += 1
+
+    return rebin(wrp, bin_bounds)
 
 
 @history.track_history
@@ -443,8 +548,9 @@ def mv_in(wrp, overflow=True, underflow=True):
         histo.SetBinContent(histo.GetNbinsX() + 1, 0.)
     return wrappers.HistoWrapper(histo, **wrp.all_info())
 
+
 @history.track_history
-def integral(wrp, useBinWidth=False):
+def integral(wrp, use_bin_width=False):
     """
     Integral. Applies to HistoWrapper. Returns FloatWrapper.
     
@@ -467,12 +573,13 @@ def integral(wrp, useBinWidth=False):
             "int needs argument of type HistoWrapper. histo: "
             + str(wrp)
         )
-    option = "width" if useBinWidth else ""
+    option = "width" if use_bin_width else ""
     info = wrp.all_info()
     return wrappers.FloatWrapper(wrp.histo.Integral(option), **info)
 
+
 @history.track_history
-def int_l(wrp, useBinWidth=False):
+def int_l(wrp, use_bin_width=False):
     """
     Left-sided integral. Applies to HistoWrapper. Returns HistoWrapper.
     
@@ -500,7 +607,7 @@ def int_l(wrp, useBinWidth=False):
             + str(wrp)
         )
     int_histo = wrp.histo.Clone()
-    option = "width" if useBinWidth else ""
+    option = "width" if use_bin_width else ""
     for i in xrange(int_histo.GetNbinsX(), 0, -1):
         error = ctypes.c_double()
         value = int_histo.IntegralAndError(1, i, error, option)
@@ -509,8 +616,9 @@ def int_l(wrp, useBinWidth=False):
     info = wrp.all_info()
     return wrappers.HistoWrapper(int_histo, **info)
 
+
 @history.track_history
-def int_r(wrp, useBinWidth=False):
+def int_r(wrp, use_bin_width=False):
     """
     Applies to HistoWrapper. Returns HistoWrapper.
     
@@ -538,7 +646,7 @@ def int_r(wrp, useBinWidth=False):
             + str(wrp)
         )
     int_histo = wrp.histo.Clone()
-    option = "width" if useBinWidth else ""
+    option = "width" if use_bin_width else ""
     n_bins = int_histo.GetNbinsX()
     for i in xrange(1, 1 + n_bins):
         error = ctypes.c_double()
@@ -547,6 +655,7 @@ def int_r(wrp, useBinWidth=False):
         int_histo.SetBinError(i, error.value)
     info = wrp.all_info()
     return wrappers.HistoWrapper(int_histo, **info)
+
 
 @history.track_history
 def chi2(wrps, x_min=0, x_max=0):
