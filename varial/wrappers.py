@@ -56,6 +56,7 @@ class Alias(_dict_base):
         self.klass          = self.__class__.__name__
         self.filename       = filename
         self.in_file_path   = in_file_path
+        self.name           = in_file_path[-1]
 
 
 class FileServiceAlias(Alias):
