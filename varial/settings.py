@@ -108,7 +108,7 @@ import sys
 
 DIR_JOBINFO     = ".jobInfo/"
 DIR_PSTPRCINFO  = ".psrPrcInfo/"
-DIR_FILESERVICE = "outputFileService/"
+DIR_FILESERVICE = "outputFileService/"   #TODO: eliminate with process -> tool!!
 DIR_LOGS        = "outputLogs/"
 DIR_CONFS       = "outputConfs/"
 DIR_PLOTS       = "outputPlots/"  #TODO: outputResult!!
@@ -176,7 +176,7 @@ def get_stack_position(sample):
     """Returns the stacking position (integer)"""
     legend = samples[sample].legend
     if legend in stacking_order:
-        return str(stacking_order.index(legend) * 0.001) #print enough digits
+        return str(stacking_order.index(legend) * 0.001)  # print enough digits
     else:
         return legend
 
