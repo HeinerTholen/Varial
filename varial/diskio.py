@@ -178,11 +178,12 @@ def _recursive_make_alias(root_dir, filename, in_file_path):
     for key in root_dir.GetListOfKeys():
         in_file_path += [key.GetName()]
         if key.IsFolder():
-            _recursive_make_alias(
+            for alias in _recursive_make_alias(
                 key.ReadObj(),
                 filename,
                 in_file_path
-            )
+            ):
+                yield alias
         else:
             yield wrappers.Alias(
                 filename,
