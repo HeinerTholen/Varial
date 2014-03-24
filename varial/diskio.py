@@ -20,7 +20,7 @@ class IoRefPool(object):
 
     def get_root_file(self, filename):
         if filename in self._open_root_files:
-            file_handle = io_ref_pool._open_root_files[filename]
+            file_handle = _io_ref_pool._open_root_files[filename]
         else:
             if len(self._open_root_files) > 998:
                 monitor.message(
@@ -41,11 +41,31 @@ class IoRefPool(object):
             file_handle.Close()
         self._open_root_files.clear()
         del self.aliases[:]
-io_ref_pool = IoRefPool()
+_io_ref_pool = IoRefPool()
 
 
 def drop_io_refs():
-    io_ref_pool.close_files()
+    _io_ref_pool.close_files()
+
+
+class FileService(object):
+    _files = {}
+
+    def __del__(self):
+        settings.create_folders()
+        for f in self._files.itervalues():
+            write(f)
+
+    def get(self, filename):
+        if not filename in self._files:
+            self._files[filename] = wrappers.Wrapper(name=filename)
+        return self._files[filename]
+_file_service = FileService()
+
+
+def fileservice(filename="fileservice"):
+    """Return FileService Wrapper for automatic storage."""
+    return _file_service.get(filename)
 
 
 def write(wrp, filename=None):
@@ -56,8 +76,8 @@ def write(wrp, filename=None):
         filename = filename[:-5]
     # write root objects (if any)
     if any(isinstance(o, TObject) for o in wrp.__dict__.itervalues()):
-        wrp.root_filename = filename+".root"
-        f = TFile.Open(wrp.root_filename, "RECREATE")
+        wrp.root_filename = os.path.basename(filename+".root")
+        f = TFile.Open(filename+".root", "RECREATE")
         f.cd()
         _write_wrapper_objs(wrp, f)
         f.Close()
@@ -95,8 +115,8 @@ def read(filename):
     f = open(filename, "r")
     info = _read_wrapper_info(f)
     f.close()
-    if info.has_key("root_filename"):
-        _read_wrapper_objs(info)
+    if "root_filename" in info:
+        _read_wrapper_objs(info, os.path.dirname(filename))
     klass = getattr(wrappers, info.get("klass"))
     wrp = klass(**info)
     _clean_wrapper(wrp)
@@ -114,8 +134,8 @@ def _read_wrapper_info(file_handle):
     return info
 
 
-def _read_wrapper_objs(info):
-    root_file = info["root_filename"]
+def _read_wrapper_objs(info, path):
+    root_file = os.path.join(path, info["root_filename"])
     obj_paths = info["root_file_obj_names"]
     for key, value in obj_paths.iteritems():
         obj = _get_obj_from_file(root_file, [key, value])
@@ -133,12 +153,12 @@ def _clean_wrapper(wrp):
 
 def fileservice_aliases():
     """Produces list of all fileservice histograms for registered samples."""
-    if io_ref_pool.aliases:
-        return io_ref_pool.aliases
+    if _io_ref_pool.aliases:
+        return _io_ref_pool.aliases
     fs_filenames = glob.glob(_get_fileservice_filename("*"))
     aliases = []
     for filename in fs_filenames:
-        fs_file = io_ref_pool.get_root_file(filename)
+        fs_file = _io_ref_pool.get_root_file(filename)
         sample_name = os.path.basename(filename)[:-5]
         if not settings.samples.has_key(sample_name):
             continue
@@ -158,14 +178,14 @@ def fileservice_aliases():
                         is_data
                     )
                 )
-    io_ref_pool.aliases = aliases   #TODO this should be dict path->aliases
+    _io_ref_pool.aliases = aliases   #TODO this should be dict path->aliases
     return aliases
 
 
 def generate_aliases(directory="./"):
     """Looks only for *.root files and produces aliases."""
     for filename in glob.iglob(os.path.join(directory, "*.root")):
-        root_file = io_ref_pool.get_root_file(filename)
+        root_file = _io_ref_pool.get_root_file(filename)
         for alias in _recursive_make_alias(
             root_file,
             os.path.abspath(filename),
@@ -239,8 +259,7 @@ def _load_non_fileservice_histo(alias):
 
 
 def _get_obj_from_file(filename, in_file_path):
-    file = io_ref_pool.get_root_file(filename)
-    obj = file
+    obj = _io_ref_pool.get_root_file(filename)
     # browse through file
     for name in in_file_path:
         obj_key = obj.GetKey(name)
