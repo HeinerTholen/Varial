@@ -71,6 +71,6 @@ class TestHistoToolsBase(unittest.TestCase):
 
         del self.test_wrp
 
-        diskio.drop_io_refs()
+        diskio.close_open_root_files()
         gROOT.Reset()
 
