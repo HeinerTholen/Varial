@@ -1,4 +1,5 @@
 
+import atexit
 import os
 import glob
 from ast import literal_eval
@@ -14,60 +15,54 @@ class NoObjectError(Exception): pass
 class NoHistogramError(Exception): pass
 
 
-class IoRefPool(object):
-    _open_root_files = {}
-    aliases = []
-
-    def get_root_file(self, filename):
-        if filename in self._open_root_files:
-            file_handle = _io_ref_pool._open_root_files[filename]
-        else:
-            if len(self._open_root_files) > 998:
-                monitor.message(
-                    "diskio",
-                    "WARNING to many open root files. Closing all. "
-                    "Please check for lost histograms. (Use hist.SetDirectory(0) to keep them)"
-                )
-                self.close_files()
-            file_handle = TFile.Open(filename, "READ")
-            self._open_root_files[filename] = file_handle
-        return file_handle
-
-    def __del__(self):
-        self.close_files()
-
-    def close_files(self):
-        for name, file_handle in self._open_root_files.iteritems():
-            file_handle.Close()
-        self._open_root_files.clear()
-        del self.aliases[:]
-_io_ref_pool = IoRefPool()
+############################################################# root file refs ###
+_open_root_files = {}
+_aliases = []
 
 
-def drop_io_refs():
-    _io_ref_pool.close_files()
+def get_open_root_file(filename):
+    if filename in _open_root_files:
+        file_handle = _open_root_files[filename]
+    else:
+        if len(_open_root_files) > 998:
+            monitor.message(
+                "diskio",
+                "WARNING to many open root files. Closing all. "
+                "Please check for lost histograms. "
+                "(Use hist.SetDirectory(0) to keep them)"
+            )
+            close_open_root_files()
+        file_handle = TFile.Open(filename, "READ")
+        _open_root_files[filename] = file_handle
+    return file_handle
 
 
-class FileService(object):
-    _files = {}
+def close_open_root_files():
+    for name, file_handle in _open_root_files.iteritems():
+        file_handle.Close()
+    _open_root_files.clear()
+    del _aliases[:]
 
-    def __del__(self):
-        settings.create_folders()
-        for f in self._files.itervalues():
-            write(f)
 
-    def get(self, filename):
-        if not filename in self._files:
-            self._files[filename] = wrappers.Wrapper(name=filename)
-        return self._files[filename]
-_file_service = FileService()
+############################################################### file service ###
+_file_service = {}
 
 
 def fileservice(filename="fileservice"):
     """Return FileService Wrapper for automatic storage."""
-    return _file_service.get(filename)
+    if not filename in _file_service:
+        _file_service[filename] = wrappers.Wrapper(name=filename)
+    return _file_service[filename]
 
 
+def write_fileservice():
+    print "write"
+    settings.create_folders()
+    for wrp in _file_service.itervalues():
+        write(wrp)
+
+
+############################################################### read / write ###
 def write(wrp, filename=None):
     """Writes wrapper to disk, including root objects."""
     if not filename:
@@ -77,7 +72,7 @@ def write(wrp, filename=None):
     # write root objects (if any)
     if any(isinstance(o, TObject) for o in wrp.__dict__.itervalues()):
         wrp.root_filename = os.path.basename(filename+".root")
-        f = TFile.Open(filename+".root", "RECREATE")
+        f = TFile.Open(filename+".root", "RECREATE")   #TODO check for validity
         f.cd()
         _write_wrapper_objs(wrp, f)
         f.Close()
@@ -153,12 +148,12 @@ def _clean_wrapper(wrp):
 
 def fileservice_aliases():
     """Produces list of all fileservice histograms for registered samples."""
-    if _io_ref_pool.aliases:
-        return _io_ref_pool.aliases
+    if len(_aliases):
+        return _aliases[:]
     fs_filenames = glob.glob(_get_fileservice_filename("*"))
     aliases = []
     for filename in fs_filenames:
-        fs_file = _io_ref_pool.get_root_file(filename)
+        fs_file = get_open_root_file(filename)
         sample_name = os.path.basename(filename)[:-5]
         if not settings.samples.has_key(sample_name):
             continue
@@ -178,14 +173,14 @@ def fileservice_aliases():
                         is_data
                     )
                 )
-    _io_ref_pool.aliases = aliases   #TODO this should be dict path->aliases
+    _aliases[:] = aliases #TODO this should be dict path->aliases
     return aliases
 
 
 def generate_aliases(directory="./"):
     """Looks only for *.root files and produces aliases."""
     for filename in glob.iglob(os.path.join(directory, "*.root")):
-        root_file = _io_ref_pool.get_root_file(filename)
+        root_file = get_open_root_file(filename)
         for alias in _recursive_make_alias(
             root_file,
             os.path.abspath(filename),
@@ -259,7 +254,7 @@ def _load_non_fileservice_histo(alias):
 
 
 def _get_obj_from_file(filename, in_file_path):
-    obj = _io_ref_pool.get_root_file(filename)
+    obj = get_open_root_file(filename)
     # browse through file
     for name in in_file_path:
         obj_key = obj.GetKey(name)
@@ -279,4 +274,6 @@ def _get_fileservice_filename(sample):
     return settings.DIR_FILESERVICE + sample + ".root"
 
 
-
+#################################################### write and close on exit ###
+atexit.register(write_fileservice)
+atexit.register(close_open_root_files)
