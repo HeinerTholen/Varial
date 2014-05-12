@@ -108,10 +108,10 @@ import sys
 
 DIR_JOBINFO     = ".jobInfo/"
 DIR_PSTPRCINFO  = ".psrPrcInfo/"
-DIR_FILESERVICE = "outputFileService/"   #TODO: eliminate with process -> tool!!
-DIR_LOGS        = "outputLogs/"
-DIR_CONFS       = "outputConfs/"
-DIR_PLOTS       = "outputPlots/"  #TODO: outputResult!!
+DIR_FILESERVICE = "./"   #TODO: eliminate with process -> tool!!
+DIR_LOGS        = "./"
+DIR_CONFS       = "./"
+DIR_PLOTS       = "./"  #TODO: outputResult!!
 
 dir_result      = DIR_PLOTS
 dir_pstprc      = DIR_PSTPRCINFO

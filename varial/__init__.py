@@ -1,6 +1,3 @@
-import ROOT
-#ROOT.gROOT.SetBatch()
-
 import diskio
 import generators
 import gridutil
@@ -12,7 +9,19 @@ import sample
 import settings
 import wrappers
 
-for member in dir(settings):
-    if member[:4] == "DIR_":
-        setattr(settings, member, "./")
-settings.dir_result = "./"
+
+def use_fancy_folders():
+    s = settings
+    s.DIR_FILESERVICE = "outputFileService/"
+    s.DIR_LOGS        = "outputLogs/"
+    s.DIR_CONFS       = "outputConfs/"
+    s.DIR_PLOTS       = "outputPlots/"
+    s.dir_result      = s.DIR_PLOTS
+    s.dir_pstprc      = s.DIR_PSTPRCINFO
+    s.stack_dir_result = [s.DIR_PLOTS]
+    s.stack_dir_pstprc = [s.DIR_PSTPRCINFO]
+
+
+def use_root_batch():
+    import ROOT
+    ROOT.gROOT.SetBatch()
