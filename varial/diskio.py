@@ -56,7 +56,6 @@ def fileservice(filename="fileservice"):
 
 
 def write_fileservice():
-    print "write"
     settings.create_folders()
     for wrp in _file_service.itervalues():
         write(wrp)
