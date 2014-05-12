@@ -15,3 +15,4 @@ import wrappers
 for member in dir(settings):
     if member[:4] == "DIR_":
         setattr(settings, member, "./")
+settings.dir_result = "./"
