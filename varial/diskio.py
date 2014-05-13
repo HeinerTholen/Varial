@@ -48,11 +48,14 @@ def close_open_root_files():
 _file_service = {}
 
 
-def fileservice(filename="fileservice"):
+def fileservice(filename="fileservice", autosave=True):
     """Return FileService Wrapper for automatic storage."""
-    if not filename in _file_service:
-        _file_service[filename] = wrappers.Wrapper(name=filename)
-    return _file_service[filename]
+    if autosave:
+        if not filename in _file_service:
+            _file_service[filename] = wrappers.Wrapper(name=filename)
+        return _file_service[filename]
+    else:
+        return wrappers.Wrapper(name=filename)
 
 
 def write_fileservice():
