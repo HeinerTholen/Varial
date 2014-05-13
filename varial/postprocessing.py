@@ -241,7 +241,7 @@ class PostProcChainVanilla(PostProcChain):
     def __exit__(self, exc_type, exc_val, exc_tb):
         settings.__dict__.update(self.old_settings_data)
         del self.old_settings_data
-        super(PostProcChainVanilla, self).__exit__(exc_type, exc_val,exc_tb)
+        super(PostProcChainVanilla, self).__exit__(exc_type, exc_val, exc_tb)
 
     def starting(self):
         super(PostProcChainVanilla, self).starting()
@@ -263,8 +263,6 @@ class PostProcChainVanilla(PostProcChain):
     def finish_with_systematic(self):
         """Overwrite!"""
         pass
-
-
 
 
 
