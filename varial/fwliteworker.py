@@ -1,4 +1,5 @@
 import ROOT
+import itertools
 import hashlib
 import random
 import multiprocessing
@@ -29,23 +30,28 @@ def _add_results(results_iter):
     return res_sums
 
 
-def _worker_init(workers):
-    def start_workers(event_handle):
+def _start_workers(args):
+    event_handle, workers = args
+    for w in workers:
+        w.node_setup()
+    for event in event_handle:
         for w in workers:
-            w.node_setup()
-        for event in event_handle:
-            for w in workers:
-                w.node_process_event(event)
-        results = list(
-            w.node_finalize() for w in workers
-        )
-        return results
-    return start_workers
+            w.node_process_event(event)
+    results = list(
+        w.node_finalize() for w in workers
+    )
+    return results
 
 
 def start_work(workers, event_handles):
     pool = multiprocessing.Pool()
-    results_iter = pool.imap_unordered(_worker_init(workers), event_handles)
+    results_iter = pool.imap_unordered(
+        _start_workers,
+        zip(
+            event_handles,
+            itertools.repeat(workers),
+        )
+    )
     _add_results(results_iter)
 
 
