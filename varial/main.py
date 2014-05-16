@@ -57,7 +57,7 @@ class StdOutTee(object):
 
 if settings.logfilename:
     import monitor
-    monitor.Monitor().outstream = StdOutTee(settings.logfilename)
+    monitor.MonitorInfo.outstream = StdOutTee(settings.logfilename)
 
 
 def _process_settings_kws(kws):
@@ -185,7 +185,7 @@ def main(**settings_kws):
             ) == "yes"):
             if ipython_mode:
                 ipython_usage()
-            monitor.Monitor().message(
+            monitor.message(
                 "main",
                 "INFO: Using "
                 + str(settings.max_num_processes)

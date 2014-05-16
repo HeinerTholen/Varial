@@ -191,8 +191,8 @@ class CmsRunProcess(object):
             self.reused_old_data = True
             if not settings.suppress_cmsRun_exec:
                 self.message(self, "INFO reusing data for " + self.name)
-            with open("/dev/null", "w") as logfile:
-                self.subprocess = subprocess.Popen(["echo"], stdout=logfile)
+            for cb in self.callbacks_on_exit:
+                cb()
         else:
             self.jobinfo.clear()
             self.jobinfo.sync()
