@@ -7,7 +7,7 @@ from varial import generators as gen     # histogram stream processing
 from varial import postprocessing        # base class for post processing
 import itertools                         # very useful!!
 
-class StackPlusDataPlotter(postprocessing.PostProcTool):
+class StackPlusDataPlotter(postprocessing.Tool):
     """
     Subclass me and feed the data members!
     """
@@ -62,7 +62,7 @@ class StackPlusDataPlotter(postprocessing.PostProcTool):
         # store into dir of this tool
         stream_canvas = gen.save(
             stream_canvas,
-            lambda wrp: self.plot_output_dir + wrp.analyzer
+            lambda wrp: self.result_dir + wrp.analyzer
         )
 
         # pull everything through the stream

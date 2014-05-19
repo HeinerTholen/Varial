@@ -4,6 +4,7 @@ import time
 import copy
 import inspect
 import settings
+import analysis
 import wrappers
 import diskio
 import monitor
@@ -35,15 +36,14 @@ def deepish_copy(obj):
     return obj
 
 
-class PostProcBase(object):
+class _ToolBase(object):
     """
     Base class for post processing.
     """
     can_reuse = False
-    has_output_dir = True
 
-    def __init__(self, tool_name = None):
-        super(PostProcBase, self).__init__()
+    def __init__(self, tool_name=None):
+        super(_ToolBase, self).__init__()
 
         # name
         if not tool_name:
@@ -52,8 +52,7 @@ class PostProcBase(object):
             self.name = tool_name
 
         # messenger
-        if not hasattr(self, "message"):
-            self.message = monitor.connect_object_with_messenger(self)
+        self.message = monitor.connect_object_with_messenger(self)
 
     def __enter__(self):
         settings.push_tool_dir(self.name)
@@ -62,134 +61,117 @@ class PostProcBase(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         settings.pop_tool_dir()
 
-    def _reset(self):
-        self.__init__(self.name)
+    def reset(self):
+        self.__init__(self.name)  # TODO: make something better here...
 
     def wanna_reuse(self, all_reused_before_me):
-        """Overwrite! If True is returned, run is not called."""
+        """If True is returned, run is not called."""
         return self.can_reuse and all_reused_before_me
 
     def starting(self):
-        settings.create_folder(settings.dir_pstprc)
-        if self.has_output_dir:
-            settings.create_folder(settings.dir_result)
+        settings.create_folder(settings.dir_result)
         self.message.started()
 
     def run(self):
-        """Overwrite!"""
         pass
 
     def finished(self):
         self.message.finished()
 
 
-class PostProcTool(PostProcBase):
+class Tool(_ToolBase):
     """"""
     can_reuse = True
 
     def __init__(self, name=None):
-        super(PostProcTool, self).__init__(name)
-        self.plot_output_dir = None
+        super(Tool, self).__init__(name)
+        self.result_dir = None
         self.result = None
-        self._info_file = None
+        self.logfile = None
         self.time_start = None
         self.time_fin = None
 
     def __enter__(self):
-        res = super(PostProcTool, self).__enter__()
-        self.plot_output_dir = settings.dir_result
-        self._info_file = os.path.join(settings.dir_pstprc, self.name)
+        res = super(Tool, self).__enter__()
+        self.result_dir = settings.dir_result
+        self.logfile = os.path.join(self.result_dir, '%s.log' % self.name)
         return res
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.plot_output_dir = None
-        self._info_file = None
-        super(PostProcTool, self).__exit__(exc_type, exc_val, exc_tb)
+        self.result_dir = None
+        self.logfile = None
+        super(Tool, self).__exit__(exc_type, exc_val, exc_tb)
 
     def wanna_reuse(self, all_reused_before_me):
-        if self.has_output_dir:
-            output_dir_ok = os.path.exists(self.plot_output_dir)
-        else:
-            output_dir_ok = True
         return (
-            super(PostProcTool, self).wanna_reuse(all_reused_before_me)
-            and os.path.exists(self._info_file)
-            and output_dir_ok
+            super(Tool, self).wanna_reuse(all_reused_before_me)
+            and os.path.exists(self.logfile)
         )
 
     def reuse(self):
         self.message("INFO Reusing!")
-        res_file = self.plot_output_dir + "result"
-        if self.has_output_dir and os.path.exists(res_file+".info"):
+        res_file = os.path.join(self.result_dir, "result")
+        if os.path.exists(res_file+".info"):
             self.message("INFO Fetching last round's data: ")
             res = diskio.read(res_file)
-            self.message(str(res))
+            #self.message(str(res))
             if hasattr(res, "RESULT_WRAPPERS"):
                 self.result = list(diskio.read(f) for f in res.RESULT_WRAPPERS)
             else:
                 self.result = res
-            settings.post_proc_dict[self.name] = self.result
 
     def starting(self):
-        super(PostProcTool, self).starting()
+        super(Tool, self).starting()
         self.time_start = time.ctime() + "\n"
-        if os.path.exists(self._info_file):
-            os.remove(self._info_file)
+        if os.path.exists(self.logfile):
+            os.remove(self.logfile)
 
     def finished(self):
-        res_file = self.plot_output_dir + "result"
+        res_file = self.result_dir + "result"
         if isinstance(self.result, wrappers.Wrapper):
             self.result.name = self.name
-            if self.has_output_dir:
-                diskio.write(self.result, res_file)
-            settings.post_proc_dict[self.name] = self.result
+            diskio.write(self.result, res_file)
         elif isinstance(self.result, list) or isinstance(self.result, tuple):
-            if self.has_output_dir:
-                filenames = []
-                for i, wrp in enumerate(self.result):
-                    num_str = "_%03d" % i
-                    wrp.name = self.name + num_str
-                    filenames.append(res_file + num_str)
-                    diskio.write(wrp, res_file + num_str)
-                diskio.write(
-                    wrappers.Wrapper(
-                        name            = self.name,
-                        RESULT_WRAPPERS = filenames
-                    ),
-                    res_file
-                )
-            settings.post_proc_dict[self.name] = self.result
+            filenames = []
+            for i, wrp in enumerate(self.result):
+                num_str = "_%03d" % i
+                wrp.name = self.name + num_str
+                filenames.append(res_file + num_str)
+                diskio.write(wrp, res_file + num_str)
+            diskio.write(
+                wrappers.Wrapper(
+                    name=self.name,
+                    RESULT_WRAPPERS=filenames
+                ),
+                res_file
+            )
         self.time_fin = time.ctime() + "\n"
-        with open(self._info_file, "w") as f:
+        with open(self.logfile, "w") as f:
             f.write(self.time_start)
             f.write(self.time_fin)
-        super(PostProcTool, self).finished()
+        super(Tool, self).finished()
 
 
-#TODO: make option to rerun group if any if its tools must rerun.
-class PostProcChain(PostProcBase):
+class ToolChain(_ToolBase):
     """Executes PostProcTools."""
 
-    def __init__(self, name = None, tools = None):
-        super(PostProcChain, self).__init__(name)
+    def __init__(self, name=None, tools=None):
+        super(ToolChain, self).__init__(name)
         self._reuse = False
         self.tool_chain = []
         if tools:
             self.add_tools(tools)
 
-    def _reset(self):
+    def reset(self):
         for t in self.tool_chain:
-            t._reset()
+            t.reset()
 
     def add_tools(self, tools):
         for tool in tools:
             self.add_tool(tool)
 
     def add_tool(self, tool):
-        assert (isinstance(tool, PostProcBase)
-                or issubclass(tool, PostProcBase))
-        if not isinstance(tool, PostProcBase):
-            tool = tool()
+        assert isinstance(tool, _ToolBase)
         self.tool_chain.append(tool)
 
     def run(self):
@@ -208,53 +190,52 @@ class PostProcChain(PostProcBase):
                 self._reuse = t._reuse
 
 
-class PostProcChainIndie(PostProcChain):
+class ToolChainIndie(ToolChain):
     """Same as chain, but always reuses."""
 
     def starting(self):
-        super(PostProcChainIndie, self).starting()
+        super(ToolChainIndie, self).starting()
         self._outer_reuse = self._reuse
         self._reuse = True
 
     def finished(self):
         self._reuse = self._outer_reuse
         del self._outer_reuse
-        super(PostProcChainIndie, self).finished()
+        super(ToolChainIndie, self).finished()
 
 
-class PostProcChainVanilla(PostProcChain):
+class ToolChainVanilla(ToolChain):
     """Makes a deep copy of settings, restores on exit. Tools are reset."""
     def __enter__(self):
-        res = super(PostProcChainVanilla, self).__enter__()
-        old_settings_data = {}
-        for key, val in settings.__dict__.iteritems():
+        res = super(ToolChainVanilla, self).__enter__()
+        old_analysis_data = {}
+        for key, val in analysis.__dict__.iteritems():
             if not (
                 key[:2] == "__"
-                or key in settings.persistent_data
                 or inspect.ismodule(val)
                 or callable(val)
             ):
-                old_settings_data[key] = deepish_copy(val)
-        self.old_settings_data = old_settings_data
+                old_analysis_data[key] = deepish_copy(val)
+        self.old_analysis_data = old_analysis_data
         return res
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        settings.__dict__.update(self.old_settings_data)
-        del self.old_settings_data
-        super(PostProcChainVanilla, self).__exit__(exc_type, exc_val, exc_tb)
+        settings.__dict__.update(self.old_analysis_data)
+        del self.old_analysis_data
+        super(ToolChainVanilla, self).__exit__(exc_type, exc_val, exc_tb)
 
     def starting(self):
-        super(PostProcChainVanilla, self).starting()
+        super(ToolChainVanilla, self).starting()
         self.prepare_for_systematic()
         self.message("INFO Clearing settings.histopool and settings.post_proc_dict")
-        del settings.histo_pool[:]
-        settings.post_proc_dict.clear()
+        del analysis.histo_pool[:]
+        analysis.post_proc_dict.clear()
         self.message("INFO Resetting tools.")
-        self._reset()
+        self.reset()
 
     def finished(self):
         self.finish_with_systematic()
-        super(PostProcChainVanilla, self).finished()
+        super(ToolChainVanilla, self).finished()
 
     def prepare_for_systematic(self):
         """Overwrite!"""

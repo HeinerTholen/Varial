@@ -160,7 +160,7 @@ def main(**settings_kws):
     )
 
     # post processor
-    pst = postprocessing.PostProcChain()
+    pst = postprocessing.ToolChain()
     pst._reuse = settings.enable_postproc_reuse and not bool(executed_procs)
 
     settings.postprocessor = pst
@@ -215,7 +215,7 @@ def standalone(post_proc_tool_classes, **settings_kws):
     _instanciate_samples()
     settings.create_folders()
 
-    pst = postprocessing.PostProcChain(False)
+    pst = postprocessing.ToolChain(False)
     for tool in post_proc_tool_classes:
         pst.add_tool(tool())
     settings.create_folders()

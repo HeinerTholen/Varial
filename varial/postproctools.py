@@ -7,7 +7,7 @@ import rendering
 import diskio
 import generators as gen
 
-class HistoPoolClearer(postprocessing.PostProcTool):
+class HistoPoolClearer(postprocessing.Tool):
     """Empties HistoPool"""
     can_reuse = False
     has_output_dir = False
@@ -16,7 +16,7 @@ class HistoPoolClearer(postprocessing.PostProcTool):
         del settings.histo_pool[:]
 
 
-class UnfinishedSampleRemover(postprocessing.PostProcTool):
+class UnfinishedSampleRemover(postprocessing.Tool):
     """Removes unfinished samples from settings.samples"""
     can_reuse = False
     has_output_dir = False
@@ -47,7 +47,7 @@ class UnfinishedSampleRemover(postprocessing.PostProcTool):
 
 
 #TODO: Make a new Plotter Interface with Composition: the functions should be non-class methods
-class FSStackPlotter(postprocessing.PostProcTool):
+class FSStackPlotter(postprocessing.Tool):
     """A 'stack with data overlay' plotter. To be subclassed."""
 
     class NoFilterDictError(Exception): pass
@@ -71,7 +71,7 @@ class FSStackPlotter(postprocessing.PostProcTool):
             self.save_log_scale = False
         if not hasattr(self, "save_lin_log_scale"):
             self.save_lin_log_scale = False
-        self.save_name_lambda = lambda wrp: self.plot_output_dir + wrp.name
+        self.save_name_lambda = lambda wrp: self.result_dir + wrp.name
 
     def configure(self):
         pass
@@ -138,7 +138,7 @@ class FSStackPlotter(postprocessing.PostProcTool):
         self.run_sequence()
 
 
-class SimpleWebCreator(postprocessing.PostProcTool):
+class SimpleWebCreator(postprocessing.Tool):
     """
     Browses through settings.DIR_PLOTS and generates webpages recursively for
     all directories.

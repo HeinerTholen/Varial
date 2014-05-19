@@ -8,7 +8,7 @@ from varial import generators as gen          # histogram stream processing
 from varial import rendering                  # canvas decorators
 
 
-class CrtlFiltStackPlotter(postprocessing.PostProcTool):
+class CrtlFiltStackPlotter(postprocessing.Tool):
     """An cmstoolsac3b_example stack plotter with data overlay."""
 
     def run(self):
@@ -33,7 +33,7 @@ class CrtlFiltStackPlotter(postprocessing.PostProcTool):
         # store into dir of this tool
         stream_canvas = gen.save(
             stream_canvas,
-            lambda wrp: self.plot_output_dir + wrp.name,  # this function returns a path without postfix
+            lambda wrp: self.result_dir + wrp.name,  # this function returns a path without postfix
             settings.rootfile_postfixes
         )
 
