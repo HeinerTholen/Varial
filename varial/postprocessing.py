@@ -1,39 +1,43 @@
-
 import os
 import time
-import copy
 import inspect
 import settings
 import analysis
 import wrappers
 import diskio
 import monitor
+from util import deepish_copy
 
 
-def deepish_copy(obj):
-    if (
-        isinstance(obj, type)
-        or callable(obj)
-        or inspect.ismodule(obj)
-        or inspect.isclass(obj)
-        or str(type(obj)) == "<type 'generator'>"
-    ):
-        return obj
-    if type(obj) == list:
-        return list(deepish_copy(o) for o in obj)
-    if type(obj) == tuple:
-        return tuple(deepish_copy(o) for o in obj)
-    if type(obj) == dict:
-        return dict((k, deepish_copy(v)) for k, v in obj.iteritems())
-    if type(obj) == set:
-        return set(deepish_copy(o) for o in obj)
-    if hasattr(obj, "__dict__"):
-        cp = copy.copy(obj)
-        cp.__dict__.clear()
-        for k, v in obj.__dict__.iteritems():
-            cp.__dict__[k] = deepish_copy(v)
-        return cp
-    return obj
+_tool_init_states = {}
+
+
+def wrap_init(init_func):
+    def init_hook(inst, *args, **kws):
+        if inst not in _tool_init_states:
+            _tool_init_states[inst] = None
+            res = init_func(inst, *args, **kws)
+            _tool_init_states[inst] = deepish_copy(inst.__dict__)
+            return res
+        else:
+            return init_func(inst, *args, **kws)
+    return init_hook
+
+
+def reset(inst):
+    inst.__dict__.clear()
+    inst.__dict__.update(
+        deepish_copy(_tool_init_states[inst])
+    )
+
+
+class _Resettable(type):
+    """Wraps __init__ to store object _after_ init."""
+    def __new__(mcs, *more):
+        mcs = super(_Resettable, mcs).__new__(mcs, *more)
+        mcs.__init__ = wrap_init(mcs.__init__)
+        mcs.reset = reset
+        return mcs
 
 
 class _ToolBase(object):
@@ -62,7 +66,7 @@ class _ToolBase(object):
         settings.pop_tool_dir()
 
     def reset(self):
-        self.__init__(self.name)  # TODO: make something better here...
+        pass
 
     def wanna_reuse(self, all_reused_before_me):
         """If True is returned, run is not called."""
@@ -81,6 +85,7 @@ class _ToolBase(object):
 
 class Tool(_ToolBase):
     """"""
+    __metaclass__ = _Resettable
     can_reuse = True
 
     def __init__(self, name=None):
@@ -205,7 +210,9 @@ class ToolChainIndie(ToolChain):
 
 
 class ToolChainVanilla(ToolChain):
-    """Makes a deep copy of settings, restores on exit. Tools are reset."""
+    """
+    Makes a deep copy of analysis module, restores on exit. Tools are reset.
+    """
     def __enter__(self):
         res = super(ToolChainVanilla, self).__enter__()
         old_analysis_data = {}
@@ -216,20 +223,17 @@ class ToolChainVanilla(ToolChain):
                 or callable(val)
             ):
                 old_analysis_data[key] = deepish_copy(val)
-        self.old_analysis_data = old_analysis_data
+        self._old_analysis_data = old_analysis_data
         return res
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        settings.__dict__.update(self.old_analysis_data)
-        del self.old_analysis_data
+        settings.__dict__.update(self._old_analysis_data)
+        del self._old_analysis_data
         super(ToolChainVanilla, self).__exit__(exc_type, exc_val, exc_tb)
 
     def starting(self):
         super(ToolChainVanilla, self).starting()
         self.prepare_for_systematic()
-        self.message("INFO Clearing settings.histopool and settings.post_proc_dict")
-        del analysis.histo_pool[:]
-        analysis.post_proc_dict.clear()
         self.message("INFO Resetting tools.")
         self.reset()
 
@@ -238,11 +242,9 @@ class ToolChainVanilla(ToolChain):
         super(ToolChainVanilla, self).finished()
 
     def prepare_for_systematic(self):
-        """Overwrite!"""
         pass
 
     def finish_with_systematic(self):
-        """Overwrite!"""
         pass
 
 
