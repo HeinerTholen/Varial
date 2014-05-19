@@ -99,7 +99,7 @@ class CmsRunProcess(object):
                 for fid in files_in_dir:
                     conf_lines.append("    'file:" + fid + "',")
             else:
-                conf_lines.append("    '" + in_file + "',")
+                conf_lines.append("    '" + in_file.strip() + "',")
         conf_lines.append("]")
 
         # do output filename statements
@@ -111,7 +111,7 @@ class CmsRunProcess(object):
                 "process."
                 + settings.cfg_output_module_name
                 + ".fileName = '"
-                + filename
+                + filename.strip()
                 + "'"
             )
 
@@ -194,8 +194,9 @@ class CmsRunProcess(object):
             for cb in self.callbacks_on_exit:
                 cb()
         else:
-            self.jobinfo.clear()
-            self.jobinfo.sync()
+            # delete jobinfo file
+            if os.path.exists(self.jobinfo_filename):
+                os.remove(self.jobinfo_filename)
 
             # python has no callback on exit, workaround with thread:
             def called_in_thread():
@@ -212,6 +213,8 @@ class CmsRunProcess(object):
 
             self.thread = threading.Thread(target=called_in_thread)
             self.thread.start()
+            time.sleep(0.1)  # give time to start the thread
+                             # TODO: make persistent worker threads
 
     def terminate(self):
         """
