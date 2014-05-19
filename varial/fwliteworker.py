@@ -36,7 +36,19 @@ def work(workers, event_handles):
     pool = multiprocessing.Pool()
     results_iter = pool.imap_unordered(
         _run_workers,
-        zip(
+        itertools.izip(
+            event_handles,
+            itertools.repeat(workers),
+        )
+    )
+    return _add_results(results_iter)
+
+
+def work_no_mp(workers, event_handles):
+    """This is usefull for debugging, as multiprocess cuts the stacktrace."""
+    results_iter = itertools.imap(
+        _run_workers,
+        itertools.izip(
             event_handles,
             itertools.repeat(workers),
         )
