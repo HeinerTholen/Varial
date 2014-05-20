@@ -1,4 +1,3 @@
-
 import glob
 import json
 import subprocess
@@ -9,6 +8,7 @@ import os
 import monitor
 import settings
 import sample
+import toolinterface
 
 
 class CmsRunProcess(object):
@@ -223,3 +223,7 @@ class CmsRunProcess(object):
         """
         self.sig_int = True
         self.subprocess.terminate()
+
+
+class CmsRunProxy(toolinterface.Tool):
+    pass

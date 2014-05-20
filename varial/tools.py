@@ -7,6 +7,9 @@ import rendering
 import settings
 import toolinterface
 
+from cmsrunprocess import CmsRunProxy
+from fwliteworker import FwliteProxy
+
 
 # TODO: Make a new Plotter Interface with Composition:
 # TODO: the functions should be non-class methods
