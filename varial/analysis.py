@@ -129,8 +129,6 @@ def lookup(key, default=None):
         return _results_base.lookup(keys) or default
 
 
-
-
-
+# TODO add some sort of support for fileservice
 
 

@@ -1,13 +1,15 @@
-
 import atexit
 import os
 import glob
 from ast import literal_eval
 from itertools import takewhile
+from ROOT import TFile, TDirectory, TH1, TObject
+
+import analysis
 import settings
 import wrappers
 import monitor
-from ROOT import TFile, TDirectory, TH1, TObject
+
 
 
 class NoDictInFileError(Exception): pass
@@ -59,7 +61,6 @@ def fileservice(filename="fileservice", autosave=True):
 
 
 def write_fileservice():
-    settings.create_folders()
     for wrp in _file_service.itervalues():
         write(wrp)
 
@@ -68,7 +69,7 @@ def write_fileservice():
 def write(wrp, filename=None):
     """Writes wrapper to disk, including root objects."""
     if not filename:
-        filename = os.path.join(settings.dir_result, wrp.name)
+        filename = os.path.join(analysis.cwd, wrp.name)
     if filename[-5:] == ".info":
         filename = filename[:-5]
     # write root objects (if any)
@@ -94,7 +95,7 @@ def _write_wrapper_info(wrp, file_handle):
 
 def _write_wrapper_objs(wrp, file_handle):
     """Writes root objects on wrapper to disk."""
-    wrp.root_file_obj_names  = {}
+    wrp.root_file_obj_names = {}
     for key, value in wrp.__dict__.iteritems():
         if not isinstance(value, TObject):
             continue
@@ -157,10 +158,10 @@ def fileservice_aliases():
     for filename in fs_filenames:
         fs_file = get_open_root_file(filename)
         sample_name = os.path.basename(filename)[:-5]
-        if not settings.samples.has_key(sample_name):
+        if sample_name not in settings.all_samples:
             continue
-        is_data = settings.samples[sample_name].is_data
-        legend = settings.samples[sample_name].legend
+        is_data = settings.all_samples[sample_name].is_data
+        legend = settings.all_samples[sample_name].legend
         for analyzer_key in fs_file.GetListOfKeys():
             analyzer = analyzer_key.ReadObj()
             analyzer_name = analyzer_key.GetName()
@@ -175,7 +176,7 @@ def fileservice_aliases():
                         is_data
                     )
                 )
-    _aliases[:] = aliases #TODO this should be dict path->aliases
+    _aliases[:] = aliases  # TODO this should be dict path->aliases
     return aliases
 
 
@@ -239,7 +240,7 @@ def _load_fileservice_histo(alias):
     histo.Sumw2()
     histo.SetTitle(alias.legend)
     wrp = wrappers.HistoWrapper(histo, **alias.all_info())
-    wrp.lumi = settings.samples[alias.sample].lumi
+    wrp.lumi = settings.all_samples[alias.sample].lumi
     return wrp
 
 
@@ -273,7 +274,7 @@ def _get_obj_from_file(filename, in_file_path):
 
 
 def _get_fileservice_filename(sample):
-    return settings.DIR_FILESERVICE + sample + ".root"
+    return analysis.cwd + sample + ".root"   # FIXME
 
 
 #################################################### write and close on exit ###
