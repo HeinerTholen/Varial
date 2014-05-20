@@ -1,7 +1,7 @@
-
-import re
-import functools
 import collections
+import functools
+import re
+
 import wrappers
 
 

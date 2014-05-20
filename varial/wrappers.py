@@ -1,5 +1,5 @@
-
 from ROOT import TH1, THStack, TCanvas, TObject
+
 
 class _dict_base(object):
     """
@@ -43,7 +43,6 @@ class _dict_base(object):
                 ) + ",\n}"
 
 
-#TODO: filename with full path, function for path / name, Wrapper inherits Alias
 class Alias(_dict_base):
     """
     Alias of a histogram on disk.
