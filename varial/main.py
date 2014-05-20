@@ -177,7 +177,7 @@ def main(**settings_kws):
     # GO!
     if executed_procs:                          # Got jobs to execute?
         if (settings.not_ask_execute
-            or settings.suppress_cmsRun_exec
+            or settings.suppress_eventloop_exec
             or raw_input(
                 "Really run these processes:\n   "
                 + ",\n   ".join(map(str, executed_procs))

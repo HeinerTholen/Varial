@@ -12,7 +12,7 @@ def dummy_func():
 
 import multiprocessing
 s.max_num_processes       = multiprocessing.cpu_count()
-s.suppress_cmsRun_exec    = False
+s.suppress_eventloop_exec    = False
 s.try_reuse_results       = False
 s.default_enable_sample   = True
 s.cfg_main_import_path       = ""

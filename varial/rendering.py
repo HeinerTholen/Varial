@@ -1,8 +1,7 @@
-# rendering.py
-
 ################################################################# renderers ###
 import collections
 import wrappers
+
 
 class Renderer(object):
     """
@@ -50,10 +49,11 @@ class HistoRenderer(Renderer, wrappers.HistoWrapper):
         return self.histo.GetMaximum()
 
     def y_min_gr_zero(self, histo=None):
-        if not histo: histo = self.histo
+        if not histo:
+            histo = self.histo
         nbins = histo.GetNbinsX()
-        min_val = histo.GetMinimum() # min on y axis
-        if min_val < 1e-23 < histo.GetMaximum(): # should be greater than zero
+        min_val = histo.GetMinimum()  # min on y axis
+        if min_val < 1e-23 < histo.GetMaximum():  # should be greater than zero
             min_val = min(
                 histo.GetBinContent(i)
                 for i in xrange(nbins + 1)
@@ -96,13 +96,15 @@ import settings
 import history
 from ROOT import TCanvas, TObject
 
-def _renderize(wrp): #TODO maybe use reflection here??
+
+def _renderize(wrp):  # TODO maybe use reflection here??
     if isinstance(wrp, Renderer):
         return wrp
     if isinstance(wrp, wrappers.StackWrapper):
         return StackRenderer(wrp)
     if isinstance(wrp, wrappers.HistoWrapper):
         return HistoRenderer(wrp)
+
 
 def _renderize_iter(wrps):
     rnds = []
@@ -182,7 +184,7 @@ class CanvasBuilder(object):
             self.second_pad.Delete()
 
     def configure(self):
-        """Called at first. Can be used to initialize decorators."""
+        pass
 
     def find_x_y_bounds(self):
         """Scan ROOT-objects for x and y bounds."""
@@ -276,11 +278,11 @@ class CanvasBuilder(object):
 
 
 ############################################# customization with decorators ###
-import decorator as dec
+import util
 import operations as op
 from ROOT import TLegend, TPad, TPaveText
 
-class TextBoxDecorator(dec.Decorator):
+class TextBoxDecorator(util.Decorator):
     """Draw Textboxes individually by renderer name"""
     def __init__(self, inner, dd = True, **kws):
         super(TextBoxDecorator, self).__init__(inner, dd, **kws)
@@ -293,7 +295,7 @@ class TextBoxDecorator(dec.Decorator):
         textbox.Draw()
 
 
-class Legend(dec.Decorator):
+class Legend(util.Decorator):
     """
     Adds a legend to the main_pad.
 
@@ -366,7 +368,7 @@ class Legend(dec.Decorator):
         self.decoratee.do_final_cosmetics()         # Call next inner class!!
 
 
-class BottomPlot(dec.Decorator):
+class BottomPlot(util.Decorator):
     """Base class for all plot business at the bottom of the canvas."""
     def __init__(self, inner, dd = True, **kws):
         super(BottomPlot, self).__init__(inner, dd, **kws)
@@ -486,7 +488,6 @@ class BottomPlotRatio(BottomPlot):
         self.bottom_hist = wrp.histo
 
 
-
 class BottomPlotRatioSplitErr(BottomPlot):
     """Same as BottomPlotRatio, but split MC and data uncertainties."""
     def define_bottom_hist(self):
@@ -530,7 +531,7 @@ class BottomPlotRatioSplitErr(BottomPlot):
         self.main_pad.cd()
 
 
-class TitleBox(dec.Decorator):
+class TitleBox(util.Decorator):
 
     def make_title(self):
         return "subclass TitleBox and overwrite get_title()!"

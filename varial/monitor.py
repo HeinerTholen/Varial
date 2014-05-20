@@ -47,7 +47,7 @@ def proc_enqueued(process):
 
 
 def proc_started(process):
-    if settings.suppress_cmsRun_exec or process.reused_old_data:
+    if settings.suppress_eventloop_exec or process.reused_old_data:
         return
     write_out(
         "INFO process started  "+time.ctime()+":   cmsRun ",
@@ -57,9 +57,9 @@ def proc_started(process):
 
 
 def proc_finished(process):
-    if settings.suppress_cmsRun_exec or process.reused_old_data:
+    if settings.suppress_eventloop_exec or process.reused_old_data:
         return
-    if hasattr(settings, "recieved_sigint"):
+    if settings.recieved_sigint:
         write_out(
             "INFO process aborted "+time.ctime()+":   cmsRun ",
             process.conf_filename
@@ -91,7 +91,7 @@ def all_finished():
 
 def started(obj, message_obj):
     message(obj, message_obj)
-    _info.indent += 1
+    _info.indent += 2
 
 
 def message(sender, string):
@@ -103,7 +103,7 @@ def message(sender, string):
 
 
 def finished(obj, message_obj):
-    _info.indent -= 1
+    _info.indent -= 2
     message(obj, message_obj)
 
 

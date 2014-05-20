@@ -187,9 +187,9 @@ class CmsRunProcess(object):
         possible, just calls 'cmsRun --help' and pipes output to /dev/null.
         """
         self.time_start = time.ctime()
-        if self.will_reuse_data or settings.suppress_cmsRun_exec:
+        if self.will_reuse_data or settings.suppress_eventloop_exec:
             self.reused_old_data = True
-            if not settings.suppress_cmsRun_exec:
+            if not settings.suppress_eventloop_exec:
                 self.message(self, "INFO reusing data for " + self.name)
             for cb in self.callbacks_on_exit:
                 cb()
