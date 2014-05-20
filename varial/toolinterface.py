@@ -5,38 +5,7 @@ import analysis
 import wrappers
 import diskio
 import monitor
-from util import deepish_copy
-
-
-_tool_init_states = {}
-
-
-def wrap_init(init_func):
-    def init_hook(inst, *args, **kws):
-        if inst not in _tool_init_states:
-            _tool_init_states[inst] = None
-            res = init_func(inst, *args, **kws)
-            _tool_init_states[inst] = deepish_copy(inst.__dict__)
-            return res
-        else:
-            return init_func(inst, *args, **kws)
-    return init_hook
-
-
-def reset(inst):
-    inst.__dict__.clear()
-    inst.__dict__.update(
-        deepish_copy(_tool_init_states[inst])
-    )
-
-
-class _Resettable(type):
-    """Wraps __init__ to store object _after_ init."""
-    def __new__(mcs, *more):
-        mcs = super(_Resettable, mcs).__new__(mcs, *more)
-        mcs.__init__ = wrap_init(mcs.__init__)
-        mcs.reset = reset
-        return mcs
+from util import ResettableType, deepish_copy
 
 
 class _ToolBase(object):
@@ -86,8 +55,8 @@ class _ToolBase(object):
 
 
 class Tool(_ToolBase):
-    """"""
-    __metaclass__ = _Resettable
+    """Tool is the host for your business code."""
+    __metaclass__ = ResettableType
     can_reuse = True
 
     def __init__(self, name=None):

@@ -60,16 +60,38 @@ def deepish_copy(obj):
     return obj
 
 
+############################################################ ResettableType ###
+_instance_init_states = {}
 
 
+def _wrap_init(original__init__):
+    def init_hook(inst, *args, **kws):
+        if inst not in _instance_init_states:
+            _instance_init_states[inst] = None
+            res = original__init__(inst, *args, **kws)
+            _instance_init_states[inst] = deepish_copy(inst.__dict__)
+            return res
+        else:
+            return original__init__(inst, *args, **kws)
+    return init_hook
 
 
+def _reset(inst):
+    inst.__dict__.clear()
+    inst.__dict__.update(
+        deepish_copy(_instance_init_states[inst])
+    )
 
 
+def _update_init_state(inst):
+    _instance_init_states[inst] = deepish_copy(inst.__dict__)
 
 
-
-
-
-
-
+class ResettableType(type):
+    """Wraps __init__ to store object _after_ init."""
+    def __new__(mcs, *more):
+        mcs = super(ResettableType, mcs).__new__(mcs, *more)
+        mcs.__init__ = _wrap_init(mcs.__init__)
+        mcs.reset = _reset
+        mcs.update = _update_init_state
+        return mcs
