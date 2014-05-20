@@ -4,103 +4,27 @@ This module contains project wide settings.
 ################################################################### general ###
 import time
 
-tweak           = "tweak.py"
-logfilename     = time.strftime(
+tweak = "tweak.py"
+logfilename = time.strftime(
     "cmstoolsac3b_%Y%m%dT%H%M%S.log", 
     time.localtime()
 )
 
-################################################################ processing ###
+############################################## cmsRun and fwlite processing ###
 import multiprocessing
 
-max_num_processes       = multiprocessing.cpu_count()
-not_ask_execute         = False
-suppress_cmsRun_exec    = False
-try_reuse_results       = False
-default_enable_sample   = True
-cfg_main_import_path    = ""
-cfg_use_file_service    = True
-cfg_output_module_name  = "out"
-cfg_common_builtins     = {}
-
-cmsRun_procs = []
-controller   = None
-
-########################################################### post-processing ###
-post_proc_tools         = []
-postprocessor           = None
-web_target_dir          = ""
-tex_target_dir          = ""
-plot_target_dir         = ""
-enable_postproc_reuse   = True
-box_text_size           = 0.037
-defaults_Legend         = {
-    "x_pos"         : 0.92,
-    "y_pos"         : 0.83,
-    "label_width"   : 0.24,
-    "label_height"  : 0.04,
-    "opt"           : "f",
-    "opt_data"      : "p",
-    "reverse"       : True
-}
-defaults_BottomPlot     = {
-    "y_title"   : "Data/MC",
-    "draw_opt"  : "E1",
-    "x_min"     : 0.,
-    "x_max"     : 3.,
-}
-histo_pool              = []
-post_proc_dict          = {} # Data storage for post proc tools
-persistent_dict         = {} # PostProcChainSystematics will not touch this.
-persistent_data         = [  # PostProcChainSystematics will not touch these.
-    "cmsRun_procs",
-    "controller",
-    "post_proc_tools",
-    "postprocessor",
-    "persistent_dict",
-    "persistent_data",
-    "stack_dir_result",
-    "stack_dir_pstprc"
-    "gROOT",
-    "StyleClass",
-    "TStyle",
-    "TGaxis",
-    "root_style",
-]
-#TODO split into settings (static stuff) and config (variable stuff)
+max_num_processes = multiprocessing.cpu_count()
+not_ask_execute = False
+suppress_cmsRun_exec = False
+try_reuse_results = False
+default_enable_sample = True
+cfg_main_import_path = ""
+cfg_use_file_service = True
+cfg_output_module_name = "out"
+cfg_common_builtins = {}
 
 ################################################################### samples ###
-import wrappers as wrp
-
-samples = {}        # all samples being processed
-active_samples = [] # list of strings of samplenames (without systematic smpls)
-def mc_samples():
-    """Returns a dict of all MC samples."""
-    return dict(
-        (k,v)
-        for k,v in samples.iteritems()
-        if k in active_samples and not v.is_data
-    )
-
-def data_samples():
-    """Returns a dict of all real data samples."""
-    return dict(
-        (k,v)
-        for k,v in samples.iteritems()
-        if k in active_samples and v.is_data
-    )
-
-def data_lumi_sum():
-    """Returns the sum of luminosity in data samples."""
-    return float(sum(
-        v.lumi
-        for k,v in data_samples().iteritems()
-        if k in active_samples
-    ))
-
-def data_lumi_sum_wrp():
-    """Returns the sum of data luminosity in as a FloatWrapper."""
-    return wrp.FloatWrapper(data_lumi_sum(), history="DataLumiSum")
+all_samples = {}
 
 ######################################################### folder management ###
 import os
@@ -143,32 +67,36 @@ def _set_dir_vars():
 canvas_size_x = 800
 canvas_size_y = 800
 
+web_target_dir = ""
+tex_target_dir = ""
+plot_target_dir = ""
+
+box_text_size = 0.037
+defaults_Legend = {
+    "x_pos": 0.92,
+    "y_pos": 0.83,
+    "label_width": 0.24,
+    "label_height": 0.04,
+    "opt": "f",
+    "opt_data": "p",
+    "reverse": True
+}
+defaults_BottomPlot = {
+    "y_title": "Data/MC",
+    "draw_opt": "E1",
+    "x_min": 0.,
+    "x_max": 3.,
+}
+
 rootfile_postfixes = [".root"]
-
+colors = {}  # legend entries => fill colors
 pretty_names = {}
-def get_pretty_name(key):
-    """Simple dict call for names, e.g. axis labels."""
-    return pretty_names.get(key, key)
-
-colors = {} # map legend entries to fill colors
-def get_color(sample_or_legend_name):
-    """Gives a ROOT color value back for sample or legend name."""
-    if colors.has_key(sample_or_legend_name):
-        return colors[sample_or_legend_name]
-    elif samples.has_key(sample_or_legend_name):
-        return colors.get(samples[sample_or_legend_name].legend)
-
 stacking_order = []
-def get_stack_position(sample):
-    """Returns the stacking position (integer)"""
-    legend = samples[sample].legend
-    if legend in stacking_order:
-        return str(stacking_order.index(legend) * 0.001)  # print enough digits
-    else:
-        return legend
+
 
 ################################################################ root style ###
 from ROOT import gROOT, TStyle, TGaxis
+
 
 class StyleClass(TStyle):
     """
@@ -245,4 +173,4 @@ class StyleClass(TStyle):
         self.markers = [20, 21, 22, 23, 24, 25, 26, 27, 28]
         self.styles = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-root_style = StyleClass() #! reference to the TStyle class instance.
+root_style = StyleClass()  #! reference to the TStyle class instance.
