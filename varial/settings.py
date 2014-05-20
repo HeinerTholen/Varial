@@ -5,19 +5,16 @@ This module contains project wide settings.
 
 ################################################################### general ###
 import time
-
 tweak = "tweak.py"
 logfilename = time.strftime(
     "cmstoolsac3b_%Y%m%dT%H%M%S.log", 
     time.localtime()
 )
 varial_working_dir = "./"
-all_samples = {}
 
 
 ############################################## cmsRun and fwlite processing ###
 import multiprocessing
-
 max_num_processes = multiprocessing.cpu_count()
 not_ask_execute = False
 suppress_cmsRun_exec = False
