@@ -40,7 +40,7 @@ def deepish_copy(obj):
         or callable(obj)
         or inspect.ismodule(obj)
         or inspect.isclass(obj)
-        or str(type(obj)) == "<type 'generator'>"
+        #or str(type(obj)) == "<type 'generator'>"
     ):
         return obj
     if type(obj) == list:
@@ -58,3 +58,18 @@ def deepish_copy(obj):
             cp.__dict__[k] = deepish_copy(v)
         return cp
     return obj
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

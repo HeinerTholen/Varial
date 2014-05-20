@@ -2,10 +2,9 @@
 This module containes all analysis specific information and various helpers.
 """
 
-import settings
-
 
 ################################################################### samples ###
+import settings
 import wrappers
 active_samples = []  # list of samplenames without systematic samples
 
@@ -67,9 +66,71 @@ def get_stack_position(sample):
         return legend                                       # to be comparable
 
 
-########################################################### tool management ###
+################################################ result / folder management ###
+import os
+cwd = settings.varial_working_dir
+_tool_stack = []
+_results_base = None
+_current_result = None
 
 
-#todo get_tool_abs(string)
-#todo get_tool_rel(string)
-#todo or similar with __getattr__
+def _mktooldir():
+    global cwd
+    cwd = settings.varial_working_dir + "/".join(t.name for t in _tool_stack)
+    if not os.path.exists(cwd):
+        os.mkdir(cwd)
+
+
+class _ResultProxy(object):
+    def __init__(self, tool, parent):
+        self.name = tool.name
+        self.parent = parent
+        self.children = {}
+        self.result = None
+        if parent:
+            parent.children[self.name] = self
+
+    def lookup(self, keys):
+        k = keys.pop(0)
+        if k == self.name:
+            return self.result
+        elif k == '..':
+            if self.parent:
+                return self.parent.lookup(keys)
+        elif k in self.children:
+            return self.children[k].lookup(keys)
+
+
+def push_tool(tool):
+    _tool_stack.append(tool)
+    _mktooldir()
+    global _current_result
+    global _results_base
+    _current_result = _ResultProxy(tool, _current_result)
+    if not _results_base:
+        _results_base = _current_result
+
+
+def pop_tool():
+    t = _tool_stack.pop()
+    _mktooldir()
+    global _current_result
+    _current_result.result = getattr(t, 'result')
+    _current_result = _current_result.parent
+
+
+def lookup(key, default=None):
+    if not _current_result:
+        return default
+    keys = key.split('/')
+    if keys[0] == '..':
+        return _current_result.lookup(keys) or default
+    else:
+        return _results_base.lookup(keys) or default
+
+
+
+
+
+
+

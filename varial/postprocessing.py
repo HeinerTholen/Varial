@@ -1,7 +1,6 @@
 import os
 import time
 import inspect
-import settings
 import analysis
 import wrappers
 import diskio
@@ -59,11 +58,11 @@ class _ToolBase(object):
         self.message = monitor.connect_object_with_messenger(self)
 
     def __enter__(self):
-        settings.push_tool_dir(self.name)
+        analysis.push_tool(self)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        settings.pop_tool_dir()
+        analysis.pop_tool()
 
     def reset(self):
         pass
@@ -73,7 +72,6 @@ class _ToolBase(object):
         return self.can_reuse and all_reused_before_me
 
     def starting(self):
-        settings.create_folder(settings.dir_result)
         self.message.started()
 
     def run(self):
@@ -81,6 +79,10 @@ class _ToolBase(object):
 
     def finished(self):
         self.message.finished()
+
+    @staticmethod
+    def lookup(key, default=None):
+        analysis.lookup(key, default)
 
 
 class Tool(_ToolBase):
@@ -98,7 +100,7 @@ class Tool(_ToolBase):
 
     def __enter__(self):
         res = super(Tool, self).__enter__()
-        self.result_dir = settings.dir_result
+        self.result_dir = analysis.cwd
         self.logfile = os.path.join(self.result_dir, '%s.log' % self.name)
         return res
 
@@ -164,6 +166,7 @@ class ToolChain(_ToolBase):
         super(ToolChain, self).__init__(name)
         self._reuse = False
         self.tool_chain = []
+        self.tool_names = {}
         if tools:
             self.add_tools(tools)
 
@@ -176,7 +179,9 @@ class ToolChain(_ToolBase):
             self.add_tool(tool)
 
     def add_tool(self, tool):
-        assert isinstance(tool, _ToolBase)
+        assert isinstance(tool, _ToolBase)  # TODO: make exception
+        assert tool.name not in self.tool_names
+        self.tool_names[tool.name] = None
         self.tool_chain.append(tool)
 
     def run(self):
@@ -223,11 +228,14 @@ class ToolChainVanilla(ToolChain):
                 or callable(val)
             ):
                 old_analysis_data[key] = deepish_copy(val)
+            else:
+                old_analysis_data[key] = val
         self._old_analysis_data = old_analysis_data
         return res
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        settings.__dict__.update(self._old_analysis_data)
+        analysis.__dict__.clear()
+        analysis.__dict__.update(self._old_analysis_data)
         del self._old_analysis_data
         super(ToolChainVanilla, self).__exit__(exc_type, exc_val, exc_tb)
 

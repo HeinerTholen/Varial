@@ -58,6 +58,7 @@ def work_no_mp(workers, event_handles):
 
 class FwliteWorker(object):
     def __init__(self, name):
+        self.name = name
         self.result = diskio.fileservice(name, False)
 
     def node_setup(self, event_handle):

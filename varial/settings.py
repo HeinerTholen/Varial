@@ -1,6 +1,8 @@
 """
 This module contains project wide settings.
 """
+
+
 ################################################################### general ###
 import time
 
@@ -9,6 +11,9 @@ logfilename = time.strftime(
     "cmstoolsac3b_%Y%m%dT%H%M%S.log", 
     time.localtime()
 )
+varial_working_dir = "./"
+all_samples = {}
+
 
 ############################################## cmsRun and fwlite processing ###
 import multiprocessing
@@ -23,45 +28,6 @@ cfg_use_file_service = True
 cfg_output_module_name = "out"
 cfg_common_builtins = {}
 
-################################################################### samples ###
-all_samples = {}
-
-######################################################### folder management ###
-import os
-import sys
-
-DIR_WORKING = "./"
-dir_result = DIR_WORKING
-stack_dir_result = [DIR_WORKING]
-
-
-def push_tool_dir(name):
-    stack_dir_result.append(name)
-    _set_dir_vars()
-
-
-def pop_tool_dir():
-    stack_dir_result.pop()
-    _set_dir_vars()
-
-
-def create_folder(path):
-    if not os.path.exists(path):
-        os.mkdir(path)
-
-
-def create_folders():
-    """Create all "DIR" prefixed folders."""
-    this_mod = sys.modules[__name__]
-    for name in dir(this_mod):
-        if name[0:3] == "DIR":
-            path = getattr(this_mod, name)
-            create_folder(path)
-
-
-def _set_dir_vars():
-    this_mod = sys.modules[__name__]
-    this_mod.dir_result = "/".join(stack_dir_result) + "/"
 
 ########################################################### style constants ###
 canvas_size_x = 800
