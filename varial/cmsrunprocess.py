@@ -2,10 +2,11 @@ import glob
 import json
 import subprocess
 import time
-import threading
 import os
+join = os.path.join
 
 import analysis
+import diskio
 import monitor
 import settings
 import sample
@@ -18,27 +19,21 @@ class CmsRunProcess(object):
     cmsRun output is streamed into logfile.
     """
 
-    def __init__(self, sample_inst, try_reuse_old_data=False, cfg_filename=None):
+    def __init__(self, sample_inst, try_reuse_data, cfg_filename):
         super(CmsRunProcess, self).__init__()
 
         assert isinstance(sample_inst, sample.Sample)
+        name = sample_inst.name
         self.sample             = sample_inst
-        self.name               = sample_inst.name
-        self.cfg_filename       = settings.cfg_main_import_path
-        if cfg_filename:
-            self.cfg_filename = cfg_filename
-        self.exe                = "cmsRun"
-        self.log_filename       = settings.DIR_LOGS + sample_inst.name + ".log"
-        self.conf_filename      = settings.DIR_CONFS + sample_inst.name + ".py"
-        self.service_filename   = settings.DIR_FILESERVICE + sample_inst.name + ".root"
-        self.jobinfo_filename   = settings.DIR_JOBINFO + sample_inst.name + ".ini"
-        self.try_reuse_old_data = try_reuse_old_data
-        self.will_reuse_data    = False
-        self.reused_old_data    = False
-        self.sig_int            = False
+        self.name               = name
+        self.cfg_filename       = cfg_filename
+        self.log_file           = None
+        self.log_filename       = join(analysis.cwd, 'logs', name) + '.log'
+        self.conf_filename      = join(analysis.cwd, 'confs', name) + '.py'
+        self.service_filename   = join(analysis.cwd, 'fs', name) + '.root'
+        self.jobinfo_filename   = join(analysis.cwd, 'report', name) + '.ini'
+        self.try_reuse_data     = try_reuse_data
         self.subprocess         = None
-        self.thread             = None
-        self.callbacks_on_exit  = []
         self.time_start         = None
         self.time_end           = None
         self.message = monitor.connect_object_with_messenger(self)
@@ -51,13 +46,10 @@ class CmsRunProcess(object):
 
     def prepare_run_conf(self):
         """
-        Takes all infos about the cmsRun to be started and builds a configuration file
-        with python code, which is passed to cmsRun on calling start(). Conf-file
-        stored in settings.DIR_CONFS.
+        Takes all infos about the cmsRun to be started and builds a
+        configuration file with python code, which is passed to cmsRun on
+        calling start().
         """
-        if self.try_reuse_old_data and self.check_reuse_possible():
-            self.will_reuse_data = True
-            return
 
         # collect lines to write out at once.
         conf_lines = [
@@ -78,14 +70,15 @@ class CmsRunProcess(object):
         builtin_dict.update(settings.cfg_common_builtins)
         builtin_dict.update(smpl.cfg_builtin)
 
-        conf_lines.append("import __builtin__")
-        conf_lines.append("__builtin__.cms_var = " + repr(builtin_dict))
-        conf_lines.append("")
-        conf_lines.append("")
+        # builtin, imports
+        conf_lines += [
+            "import __builtin__",
+            "__builtin__.cms_var = %s" % repr(builtin_dict),
+            "",
+            "from " + self.cfg_filename + " import *",
+            "",
 
-        # do import statement
-        conf_lines.append("from " + self.cfg_filename + " import *")
-        conf_lines.append("")
+        ]
 
         # do input filename statements
         conf_lines.append("process.source.fileNames = [")
@@ -120,8 +113,7 @@ class CmsRunProcess(object):
         if settings.cfg_use_file_service:
             conf_lines.append(
                 "process.TFileService.fileName = '"
-                + settings.DIR_FILESERVICE
-                + smpl.name + ".root'"
+                + self.service_filename
             )
             conf_lines.append("")
 
@@ -129,10 +121,9 @@ class CmsRunProcess(object):
         conf_lines += smpl.cfg_add_lines
 
         # write out file
-        conf_file = open(self.conf_filename, "w")
-        for line in conf_lines:
-            conf_file.write(line + "\n")
-        conf_file.close()
+        with open(self.conf_filename, "w") as conf_file:
+            for line in conf_lines:
+                conf_file.write(line + "\n")
 
     def write_job_info(self, exit_code):
         """
@@ -140,13 +131,9 @@ class CmsRunProcess(object):
         in settings.DIR_JOBINFO.
         If self.sigint is true, it does not write anything.
         """
-        self.time_end = time.ctime()
-
-        # on SIGINT or reuse, do not write the process info
-        if self.sig_int or self.reused_old_data:
+        if settings.recieved_sigint:
             return
 
-        # write out in json format
         with open(self.jobinfo_filename, "w") as info_file:
             json.dump(
                 {
@@ -163,6 +150,8 @@ class CmsRunProcess(object):
         process was finished successfully before. If yes returns True,
         because the previous results can be used again.
         """
+        if not self.try_reuse_data:
+            return False
         if not os.path.exists(self.log_filename):
             return False
         if not os.path.exists(self.conf_filename):
@@ -180,49 +169,35 @@ class CmsRunProcess(object):
     def successful(self):
         return (self.time_end
                 and self.subprocess.returncode == 0
-                and not self.sig_int)
+                and not settings.recieved_sigint)
+
+    def finalize(self):
+        self.time_end = time.ctime()
+        if self.log_file:
+            self.log_file.close()
+        if self.subprocess:
+            self.write_job_info(self.subprocess.returncode)
 
     def start(self):
         """
-        Start cmsRun with conf-file. If self.try_reuse is True and reuse is
-        possible, just calls 'cmsRun --help' and pipes output to /dev/null.
+        Start cmsRun with conf-file.
         """
         self.time_start = time.ctime()
-        if self.will_reuse_data or settings.suppress_eventloop_exec:
-            self.reused_old_data = True
-            if not settings.suppress_eventloop_exec:
-                self.message(self, "INFO reusing data for " + self.name)
-            for cb in self.callbacks_on_exit:
-                cb()
-        else:
-            # delete jobinfo file
-            if os.path.exists(self.jobinfo_filename):
-                os.remove(self.jobinfo_filename)
+        self.prepare_run_conf()
 
-            # python has no callback on exit, workaround with thread:
-            def called_in_thread():
-                with open(self.log_filename, "w") as logfile:
-                    self.subprocess = subprocess.Popen(
-                        [self.exe, self.conf_filename]+self.sample.cmsRun_args,
-                        stdout=logfile,
-                        stderr=subprocess.STDOUT
-                    )
-                    self.subprocess.wait()
-                    for cb in self.callbacks_on_exit:
-                        cb()
-                    self.write_job_info(self.subprocess.returncode)
+        # delete jobinfo file
+        if os.path.exists(self.jobinfo_filename):
+            os.remove(self.jobinfo_filename)
 
-            self.thread = threading.Thread(target=called_in_thread)
-            self.thread.start()
-            time.sleep(0.1)  # give time to start the thread
-                             # TODO: make persistent worker threads
+        # aaand go for it!
+        self.log_file = open(self.log_filename, "w")
+        self.subprocess = subprocess.Popen(
+            ["cmsRun", self.conf_filename]+self.sample.cmsRun_args,
+            stdout=self.log_file,
+            stderr=subprocess.STDOUT
+        )
 
     def terminate(self):
-        """
-        Overwrites terminate method, set's flag for infofile first, then calls
-        terminate.
-        """
-        self.sig_int = True
         self.subprocess.terminate()
 
 
@@ -235,70 +210,84 @@ class CmsRunProxy(toolinterface.Tool):
         self.running_pros = []
         self.finished_pros = []
         self.failed_pros = []
-        self.callbacks_on_all_finished = []
+        self.cfg_filename = settings.cfg_main_import_path
+        self.try_reuse = settings.try_reuse_results
         monitor.connect_controller(self)
         settings.controller = self
 
-    def setup_processes(self):
-        """
-        crp.CmsRunProcesses are set up, and filled into self.waiting_pros
-        crp.CmsRunProcess.prepare_run_conf() is called for every process.
-        """
-        if self.waiting_pros:  # setup has been done already
+    def wanna_reuse(self, all_reused_before_me):
+        self.setup_processes()
+        return bool(self.waiting_pros)
+
+    def reuse(self):
+        self.finalize()
+
+    def run(self):
+        if settings.suppress_eventloop_exec:
+            self.message(
+                self, "INFO settings.suppress_eventloop_exec == True, pass...")
             return
+        self.handle_processes()
+        while self.running_pros:
+            if settings.recieved_sigint:
+                self.abort_all_processes()
+            time.sleep(0.2)
+            self.handle_processes()
+        self.finalize()
+
+    def setup_processes(self):
+        for d in ('logs', 'confs', 'fs', 'report'):
+            path = join(self.result_dir, d)
+            if not os.path.exists(path):
+                os.mkdir(path)
 
         for name, smpl in analysis.all_samples.iteritems():
-            process = CmsRunProcess(smpl, settings.try_reuse_results)
-            process.prepare_run_conf()
-            if process.will_reuse_data:
+            process = CmsRunProcess(smpl, self.try_reuse, self.cfg_filename)
+            if process.check_reuse_possible():
                 self.finished_pros.append(process)
             else:
                 self.waiting_pros.append(process)
-            monitor.proc_enqueued(process)
+                monitor.proc_enqueued(process)
 
-    def start_processes(self):
-        """Starts the queued processes."""
-        # check if launch is possible
-        if len(self.waiting_pros) == 0:
-            return
-        if len(self.running_pros) >= settings.max_num_processes:
-            return
-
+    def handle_processes(self):
         # start processing
-        process = self.waiting_pros.pop(0)
-        process.callbacks_on_exit.append(self.finish_processes)
-        process.start()
-        self.running_pros.append(process)
-        monitor.proc_started(process)
+        if (len(self.running_pros) >= settings.max_num_processes
+                and self.waiting_pros):
+            process = self.waiting_pros.pop(0)
+            process.start()
+            monitor.proc_started(process)
+            self.running_pros.append(process)
 
-        # recursively
-        self.start_processes()
-
-    def finish_processes(self):
-        """Remove finished processes from self.running_pros."""
+        # finish processes
         for process in self.running_pros[:]:
-            if process.time_end:
-                self.running_pros.remove(process)
-                if process.successful():
-                    self.finished_pros.append(process)
-                    monitor.proc_finished(process)
-                else:
-                    self.failed_pros.append(process)
-                    monitor.proc_failed(process)
+            process.subprocess.poll()
+            if None == process.subprocess.returncode:
+                continue
 
-        # see if there is new processes to start
-        self.start_processes()
-        if not len(self.running_pros):
-            for cb in self.callbacks_on_all_finished:
-                cb()
+            self.running_pros.remove(process)
+            process.finalize()
+            if process.successful():
+                self.finished_pros.append(process)
+                monitor.proc_finished(process)
+            else:
+                self.failed_pros.append(process)
+                monitor.proc_failed(process)
+
+    def finalize(self):
+        for process in self.finished_pros:
+            analysis.fs_aliases += list(
+                alias for alias in diskio.generate_fs_aliases(
+                    process.service_filename,
+                    process.sample
+                )
+            )
 
     def abort_all_processes(self):
         self.waiting_pros = []
         for process in self.running_pros:
             process.terminate()
 
-    def run(self):
-        pass
+
 
 
 
