@@ -3,6 +3,7 @@ import itertools
 import multiprocessing
 
 import diskio
+import toolinterface
 
 
 def _add_results(results_iter):
@@ -71,3 +72,5 @@ class FwliteWorker(object):
         pass
 
 
+class FwliteProxy(toolinterface.Tool):
+    pass

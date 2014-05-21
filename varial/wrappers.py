@@ -1,7 +1,7 @@
-
 from ROOT import TH1, THStack, TCanvas, TObject
 
-class _dict_base(object):
+
+class WrapperBase(object):
     """
     Overwrites __str__ to print classname and __dict__
     """
@@ -43,8 +43,7 @@ class _dict_base(object):
                 ) + ",\n}"
 
 
-#TODO: filename with full path, function for path / name, Wrapper inherits Alias
-class Alias(_dict_base):
+class Alias(WrapperBase):
     """
     Alias of a histogram on disk.
 
@@ -78,7 +77,7 @@ class FileServiceAlias(Alias):
         self.is_data        = is_data
 
 
-class Wrapper(_dict_base):
+class Wrapper(WrapperBase):
     """
     Wrapper base class.
 

@@ -1,58 +1,25 @@
-
 import os
 import shutil
-import settings
-import postprocessing
-import rendering
+
 import diskio
 import generators as gen
+import rendering
+import settings
+import toolinterface
 
-class HistoPoolClearer(postprocessing.Tool):
-    """Empties HistoPool"""
-    can_reuse = False
-    has_output_dir = False
-
-    def run(self):
-        del settings.histo_pool[:]
+from cmsrunprocess import CmsRunProxy
+from fwliteworker import FwliteProxy
 
 
-class UnfinishedSampleRemover(postprocessing.Tool):
-    """Removes unfinished samples from settings.samples"""
-    can_reuse = False
-    has_output_dir = False
-
-    class UnfinishedSampleStop(Exception): pass
-
-    def __init__(self, stop_on_unfinished = False):
-        super(UnfinishedSampleRemover, self).__init__()
-        self.stop_on_unfinished = stop_on_unfinished
-
-    def run(self):
-        finished_procs = list(
-            p.name
-            for p in settings.cmsRun_procs
-            if p.successful()
-        )
-        for sample in settings.samples.iterkeys():
-            if not sample in finished_procs:
-                if self.stop_on_unfinished:
-                    raise self.UnfinishedSampleStop()
-                else:
-                    self.message(
-                        "WARNING: Process '"
-                        + sample
-                        + "' unfinished. Removing sample from list."
-                    )
-                    del settings.samples[sample]
-
-
-#TODO: Make a new Plotter Interface with Composition: the functions should be non-class methods
-class FSStackPlotter(postprocessing.Tool):
+# TODO: Make a new Plotter Interface with Composition:
+# TODO: the functions should be non-class methods
+class FSStackPlotter(toolinterface.Tool):
     """A 'stack with data overlay' plotter. To be subclassed."""
 
-    class NoFilterDictError(Exception): pass
+    class NoFilterDictError(Exception):
+        pass
 
-    def __init__(self, name = None):
+    def __init__(self, name=None):
         super(FSStackPlotter, self).__init__(name)
         if not hasattr(self, "filter_dict"):
             self.filter_dict = None
@@ -138,16 +105,16 @@ class FSStackPlotter(postprocessing.Tool):
         self.run_sequence()
 
 
-class SimpleWebCreator(postprocessing.Tool):
+class SimpleWebCreator(toolinterface.Tool):
     """
     Browses through settings.DIR_PLOTS and generates webpages recursively for
     all directories.
     """
     has_output_dir = False
 
-    def __init__(self, name = None, working_dir = ""):
+    def __init__(self, name=None, working_dir=""):
         super(SimpleWebCreator, self).__init__(name)
-        self.working_dir = working_dir
+        self.working_dir = working_dir or settings.varial_working_dir
         self.target_dir = settings.web_target_dir
         self.web_lines = []
         self.subfolders = []
@@ -158,8 +125,6 @@ class SimpleWebCreator(postprocessing.Tool):
 
     def configure(self):
         """A bit of initialization."""
-        if not self.working_dir:
-            self.working_dir = settings.DIR_PLOTS
 
         # get image format
         for pf in [".png", ".jpg", ".jpeg"]:
@@ -167,9 +132,10 @@ class SimpleWebCreator(postprocessing.Tool):
                 self.image_postfix = pf
                 break
         if not self.image_postfix:
-            self.message("WARNING No image formats for web available!")
-            self.message("WARNING settings.rootfile_postfixes:"
+            self.message("ERROR No image formats for web available!")
+            self.message("ERROR settings.rootfile_postfixes:"
                          + str(settings.rootfile_postfixes))
+            self.message("ERROR html production aborted")
             return
 
         # collect folders and images
@@ -209,9 +175,10 @@ class SimpleWebCreator(postprocessing.Tool):
             '}',
             '//--></script>',
             '</head>',
-            '<body>'
+            '<body>',
             '<h2>'
-            'DISCLAIMER: latest-super-preliminary-nightly-build-work-in-progress-analysis-snapshot'
+            'DISCLAIMER: latest-super-preliminary-nightly'
+            '-build-work-in-progress-analysis-snapshot'
             '</h2>'
         ]
 
@@ -276,22 +243,23 @@ class SimpleWebCreator(postprocessing.Tool):
             #TODO get history from full wrapper!!
             history_lines = ""
             with open(os.path.join(self.working_dir,img + ".info")) as f:
-                while f.next() != "\n": continue #skip ahead to history
+                while f.next() != "\n":     # skip ahead to history
+                    continue
                 for line in f:
                     history_lines += line
             h_id = "history_" + img
             self.web_lines += (
                 '<div>',
                 '<p>',
-                '<b>' + img + ':</b>',     # image headline
+                '<b>' + img + ':</b>',      # image headline
                 '<a href="javascript:ToggleDiv(\'' + h_id
                 + '\')">(toggle history)</a>',
                 '</p>',
-                '<div id="' + h_id           # history div
+                '<div id="' + h_id          # history div
                 + '" style="display:none;"><pre>',
                 history_lines,
                 '</pre></div>',
-                '<img src="'                 # the image itself
+                '<img src="'                # the image itself
                 + img + self.image_postfix
                 + '" />',
                 '</div>',
@@ -303,7 +271,7 @@ class SimpleWebCreator(postprocessing.Tool):
 
     def write_page(self):
         """Write to disk."""
-        for i,l in enumerate(self.web_lines):
+        for i, l in enumerate(self.web_lines):
             self.web_lines[i] += "\n"
         with open(os.path.join(self.working_dir, "index.html"), "w") as f:
             f.writelines(self.web_lines)
@@ -312,12 +280,15 @@ class SimpleWebCreator(postprocessing.Tool):
         """Copies .htaccess to cwd. If on top, copies everything to target."""
         if not self.target_dir:
             return
-        if not self.working_dir == settings.DIR_PLOTS:
-            shutil.copy2(os.path.join(self.target_dir, ".htaccess"), self.working_dir)
+        htaccess = os.path.join(self.target_dir, '.htaccess')
+        if os.path.exists(htaccess):
+            shutil.copy2(htaccess, self.working_dir)
         else:
             self.message("INFO Copying page to " + self.target_dir)
-            shutil.copy2(os.path.join(self.working_dir, "index.html"), self.target_dir)
-            ign_pat = shutil.ignore_patterns("*.root", "*.pdf", "*.eps", "*.info")
+            shutil.copy2(os.path.join(self.working_dir, "index.html"),
+                         self.target_dir)
+            ign_pat = shutil.ignore_patterns(
+                "*.root", "*.pdf", "*.eps", "*.info")
             for f in self.subfolders:
                 shutil.rmtree(os.path.join(self.target_dir, f), True)
                 shutil.copytree(
@@ -329,7 +300,8 @@ class SimpleWebCreator(postprocessing.Tool):
     def run(self):
         """Run the single steps."""
         self.configure()
-        if not self.image_postfix: return # WARNING message above.
+        if not self.image_postfix:
+            return
         if self.image_names or self.subfolders or self.plain_info:
             self.message("INFO Building page in " + self.working_dir)
         else:

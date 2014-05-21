@@ -3,6 +3,8 @@
 ################################################################### utility ###
 import collections
 import itertools
+
+import analysis
 import operator
 import diskio
 
@@ -10,7 +12,7 @@ import diskio
 def _iterableize(obj_or_iterable):
     """provides iterable for [obj OR iterable(obj)]"""
     if (isinstance(obj_or_iterable, collections.Iterable)
-    and not type(obj_or_iterable) == str):
+            and not type(obj_or_iterable) == str):
         for o in obj_or_iterable:
             yield o
     else:
@@ -23,7 +25,7 @@ def _filt_items(wrp, key, value_list):
         try:
             yield bool(val.search(getattr(wrp,key," ")))
         except AttributeError:
-            yield getattr(wrp,key," ") == val
+            yield getattr(wrp, key, " ") == val
 
 
 def _filt_req(wrp, filter_dict):
@@ -54,7 +56,7 @@ def consume_n_count(iterable):
     :returns:   integer
     """
     count = 0
-    for obj in iterable:
+    for _ in iterable:
         count += 1
     return count
 
@@ -82,7 +84,8 @@ def filter(wrps, key_value_dict=None):
 
     If the **key_value_dict** is empty, all wrappers pass the filter.
     """
-    if not key_value_dict: key_value_dict = {}
+    if not key_value_dict:
+        key_value_dict = {}
     assert type(key_value_dict) == dict
     return itertools.ifilter(
         lambda wrp: all(_filt_req(wrp, key_value_dict)),
@@ -92,7 +95,8 @@ def filter(wrps, key_value_dict=None):
 
 def rejector(wrps, key_value_dict=None):
     """Just as filter, only rejects items with the given properites."""
-    if not key_value_dict: key_value_dict = {}
+    if not key_value_dict:
+        key_value_dict = {}
     assert type(key_value_dict) == dict
     return itertools.ifilter(
         lambda wrp: not any(_filt_req(wrp, key_value_dict)),
@@ -102,7 +106,7 @@ def rejector(wrps, key_value_dict=None):
 
 def filter_active_samples(wrps):
     return itertools.ifilter(
-        lambda w: w.sample in settings.active_samples,
+        lambda w: w.sample in analysis.active_samples,
         wrps
     )
 
@@ -131,7 +135,8 @@ def callback(wrps, func=None, filter_dict=None):
         for wrp in wrps:
             yield wrp
     else:
-        if not filter_dict: filter_dict = {}
+        if not filter_dict:
+            filter_dict = {}
         for wrp in wrps:
             if all(_filt_req(wrp, filter_dict)):
                 func(wrp)
@@ -148,7 +153,8 @@ def sort(wrps, key_list=None):
                         ``['analyzer', 'name', 'is_data', 'sample']`` is used.
     :returns:           sorted list of wrappers.
     """
-    if not key_list: key_list = ['analyzer', 'name', 'is_data', 'sample']
+    if not key_list:
+        key_list = ['analyzer', 'name', 'is_data', 'sample']
     # python sorting is stable: Just sort by reversed key_list:
     for key in reversed(list(_iterableize(key_list))):
         wrps = sorted(wrps, key=operator.attrgetter(key))
@@ -199,24 +205,9 @@ def split_data_mc(wrps):
     :returns:           two wrapper iterators: ``(stream_data, stream_mc)``
     """
     wrp_a, wrp_b = itertools.tee(wrps)
-    data         = itertools.ifilter(lambda w: w.is_data, wrp_a)
-    mcee         = itertools.ifilter(lambda w: not w.is_data, wrp_b)
+    data = itertools.ifilter(lambda w: w.is_data, wrp_a)
+    mcee = itertools.ifilter(lambda w: not w.is_data, wrp_b)
     return data, mcee
-
-
-def debug_print(wrps, prefix="DEBUG "):
-    """
-    Prints all passing items.
-
-    **Implementation:** ::
-
-        for wrp in wrps:
-            print prefix, wrp.all_info()
-            yield wrp
-    """
-    for wrp in wrps:
-        print prefix, wrp.all_info()
-        yield wrp
 
 
 ################################################################ operations ###
@@ -274,23 +265,26 @@ gen_integral            = generate_op(op.integral)
 gen_int_l               = generate_op(op.int_l)
 gen_int_r               = generate_op(op.int_r)
 
+
 def gen_norm_to_data_lumi(wrps):
     return gen_prod(
         itertools.izip(
             gen_norm_to_lumi(wrps),
-            itertools.repeat(settings.data_lumi_sum_wrp())
+            itertools.repeat(analysis.data_lumi_sum_wrp())
         )
     )
 
 
 ############################################################### load / save ###
-import os, glob
+import os
+import glob
+
 import settings
 
 
 def fs_content():
     """
-    Searches ``settings.DIR_FILESERVICE`` for samples and yields aliases.
+    Searches for samples and yields aliases.
 
     :yields:   FileServiceAlias
     """
@@ -298,7 +292,6 @@ def fs_content():
         yield alias
 
 
-#TODO get able to load dir content!!!!
 def dir_content(dir_path="./"):
     """
     Proxy of diskio.generate_aliases(directory)
@@ -306,47 +299,6 @@ def dir_content(dir_path="./"):
     :yields:   Alias
     """
     return diskio.generate_aliases(dir_path)
-
-
-def pool_content():
-    """
-    Yields all pool content.
-
-    :yields:    Wrappers
-    """
-    return (w for w in settings.histo_pool)
-
-
-def pool_store_items(wrps, call_back=None):
-    """
-    Saves items in pool and yields them again.
-
-    :param wrps:    Wrapper iterable
-    :yields:        Wrapper
-    """
-    for wrp in wrps:
-        for w in _iterableize(wrp):
-            if call_back:
-                call_back(w)
-            settings.histo_pool.append(w)
-        yield wrp
-
-
-def pool_consume_n_count(wrps):
-    """
-    Consumes wrappers into pool.
-
-    **Implementation:** ::
-
-        return consume_n_count(pool_store_items(wrps))
-    """
-    return consume_n_count(pool_store_items(wrps))
-
-
-def load_wrappers(dir_path="./"):
-    """Scans directory for .info files and loads them."""
-    for f in glob.iglob(os.path.join(dir_path, "*.info")):
-        yield diskio.read(f)
 
 
 def load(aliases):
@@ -360,7 +312,7 @@ def load(aliases):
         yield diskio.load_histogram(alias)
 
 
-def save(wrps, filename_func, suffices = None):
+def save(wrps, filename_func, suffices=None):
     """
     Saves passing wrps to disk, plus .info file with the wrapper infos.
 
@@ -377,7 +329,8 @@ def save(wrps, filename_func, suffices = None):
             [.root, .png]           # DEFAULT: settings.rootfile_postfixes
         )
     """
-    if not suffices: suffices = settings.rootfile_postfixes
+    if not suffices:
+        suffices = settings.rootfile_postfixes
     for wrp in wrps:
         filename = filename_func(wrp)
         prim_obj = wrp.primary_object()
@@ -385,15 +338,6 @@ def save(wrps, filename_func, suffices = None):
             prim_obj.SaveAs(filename + suffix)
         diskio.write(wrp, filename)
         yield wrp
-
-
-def get_from_post_proc_dict(key):
-    """
-    Yields from settings.post_proc_dict. Sets key as "post_proc_key" on items.
-    """
-    for w in settings.post_proc_dict.get(key, list()):
-        w.post_proc_key = key
-        yield w
 
 
 ################################################################## plotting ###
@@ -415,7 +359,7 @@ def apply_histo_fillcolor(wrps, colors=None):
                 color = colors[n%len(colors)]
                 n += 1
             else:
-                color = settings.get_color(wrp.sample)
+                color = analysis.get_color(wrp.sample)
             if color:
                 wrp.histo.SetFillColor(color)
         yield wrp
@@ -436,7 +380,7 @@ def apply_histo_linecolor(wrps, colors=None):
                 color = colors[n%len(colors)]
                 n += 1
             else:
-                color = settings.get_color(wrp.sample)
+                color = analysis.get_color(wrp.sample)
             if color:
                 wrp.histo.SetLineColor(color)
         yield wrp
@@ -452,7 +396,7 @@ def apply_histo_linewidth(wrps, linewidth=2):
     """
     for wrp in wrps:
         if hasattr(wrp, "histo"):
-            wrp.histo.SetLineWidth(2)
+            wrp.histo.SetLineWidth(linewidth)
         yield wrp
 
 
@@ -567,7 +511,7 @@ def mc_stack(wrps, merge_mc_key_func=None):
     :yields:                    StackWrapper
     """
     if not merge_mc_key_func:
-        merge_mc_key_func = lambda w: settings.get_stack_position(w.sample)
+        merge_mc_key_func = lambda w: analysis.get_stack_position(w.sample)
     for grp in wrps:
 
         # merge mc samples (merge also normalizes to lumi = 1.)
@@ -608,7 +552,7 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=False):
     :yields:                    (StackWrapper, HistoWrapper)
     """
     if not merge_mc_key_func:
-        merge_mc_key_func = lambda w: settings.get_stack_position(w.sample)
+        merge_mc_key_func = lambda w: analysis.get_stack_position(w.sample)
 
     for grp in wrps:
 
@@ -623,7 +567,7 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=False):
             print "WARNING generators.mc_stack_n_data_sum(..): "\
                   "No data histos present! I will yield only mc."
         if use_all_data_lumi:
-            data_lumi = settings.data_lumi_sum_wrp()
+            data_lumi = analysis.data_lumi_sum_wrp()
         else:
             data_lumi = op.lumi(data_sum)
 
@@ -634,7 +578,8 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=False):
         mc_colord = apply_histo_fillcolor(mc_merged)
 
         # stack mc
-        mc_norm = gen_prod(itertools.izip(mc_colord, itertools.repeat(data_lumi)))
+        mc_norm = gen_prod(itertools.izip(mc_colord,
+                                          itertools.repeat(data_lumi)))
         mc_stck = None
         try:
             mc_stck = op.stack(mc_norm)
@@ -664,12 +609,12 @@ def fs_mc_stack_n_data_sum(filter_dict=None, merge_mc_key_func=None):
     :yields:                    (StackWrapper, HistoWrapper)
     """
     loaded = fs_filter_active_sort_load(filter_dict)
-    grouped = group(loaded) # default: group by analyzer_histo (the fs histo 'ID')
+    grouped = group(loaded)     # default: group by analyzer_histo
+                                # (the fs histo 'ID')
     return mc_stack_n_data_sum(grouped, merge_mc_key_func, True)
 
 
-def canvas(grps, 
-           decorators=list()):
+def canvas(grps, decorators=None):
     """
     Packaging of canvas builder, decorating, callback and canvas building.
 
@@ -683,6 +628,8 @@ def canvas(grps,
             if hasattr(grp.renderers[0], "analyzer"):
                 grp.name = grp.renderers[0].analyzer+"_"+grp.name
             yield grp
+    if not decorators:
+        decorators = []
     grps = make_canvas_builder(grps)            # a builder for every group
     grps = put_ana_histo_name(grps)             # only applies to fs histos
     grps = decorate(grps, decorators)           # apply decorators

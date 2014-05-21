@@ -1,17 +1,15 @@
-# operations.py
-
 """
-Module operations
+Operations on wrappers
 """
-#TODO: Guideline write an operation: arguments and return values for good history
 
 import array
+import __builtin__
 import ctypes
 import collections
+from ROOT import THStack
+
 import history
 import wrappers
-import __builtin__
-from ROOT import THStack
 
 
 class OperationError(Exception): pass

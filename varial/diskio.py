@@ -6,7 +6,6 @@ from itertools import takewhile
 from ROOT import TFile, TDirectory, TH1, TObject
 
 import analysis
-import settings
 import wrappers
 import monitor
 
@@ -158,10 +157,10 @@ def fileservice_aliases():
     for filename in fs_filenames:
         fs_file = get_open_root_file(filename)
         sample_name = os.path.basename(filename)[:-5]
-        if sample_name not in settings.all_samples:
+        if sample_name not in analysis.all_samples:
             continue
-        is_data = settings.all_samples[sample_name].is_data
-        legend = settings.all_samples[sample_name].legend
+        is_data = analysis.all_samples[sample_name].is_data
+        legend = analysis.all_samples[sample_name].legend
         for analyzer_key in fs_file.GetListOfKeys():
             analyzer = analyzer_key.ReadObj()
             analyzer_name = analyzer_key.GetName()
@@ -240,7 +239,7 @@ def _load_fileservice_histo(alias):
     histo.Sumw2()
     histo.SetTitle(alias.legend)
     wrp = wrappers.HistoWrapper(histo, **alias.all_info())
-    wrp.lumi = settings.all_samples[alias.sample].lumi
+    wrp.lumi = analysis.all_samples[alias.sample].lumi
     return wrp
 
 

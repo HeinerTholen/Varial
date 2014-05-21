@@ -5,28 +5,26 @@ This module contains project wide settings.
 
 ################################################################### general ###
 import time
-
 tweak = "tweak.py"
 logfilename = time.strftime(
     "cmstoolsac3b_%Y%m%dT%H%M%S.log", 
     time.localtime()
 )
 varial_working_dir = "./"
-all_samples = {}
 
 
 ############################################## cmsRun and fwlite processing ###
 import multiprocessing
-
 max_num_processes = multiprocessing.cpu_count()
 not_ask_execute = False
-suppress_cmsRun_exec = False
+suppress_eventloop_exec = False
 try_reuse_results = False
 default_enable_sample = True
 cfg_main_import_path = ""
 cfg_use_file_service = True
 cfg_output_module_name = "out"
 cfg_common_builtins = {}
+recieved_sigint = False
 
 
 ########################################################### style constants ###

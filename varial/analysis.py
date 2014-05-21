@@ -1,19 +1,21 @@
 """
 This module containes all analysis specific information and various helpers.
 """
+import os
 
 
 ################################################################### samples ###
 import settings
 import wrappers
 active_samples = []  # list of samplenames without systematic samples
+all_samples = {}
 
 
 def mc_samples():
     """Returns a dict of all MC samples."""
     return dict(
         (k, v)
-        for k, v in settings.all_samples.iteritems()
+        for k, v in all_samples.iteritems()
         if k in active_samples and not v.is_data
     )
 
@@ -22,7 +24,7 @@ def data_samples():
     """Returns a dict of all real data samples."""
     return dict(
         (k, v)
-        for k, v in settings.all_samples.iteritems()
+        for k, v in all_samples.iteritems()
         if k in active_samples and v.is_data
     )
 
@@ -46,20 +48,21 @@ def get_pretty_name(key):
     return settings.pretty_names.get(key, key)
 
 
-def get_color(sample_or_legend_name):
+def get_color(sample_or_legend_name, default=0):
     """Gives a ROOT color value back for sample or legend name."""
     name = sample_or_legend_name
     s = settings
     if name in s.colors:
         return s.colors[name]
-    elif name in s.all_samples:
-        return s.colors.get(s.all_samples[name].legend)
+    elif name in all_samples:
+        return s.colors.get(all_samples[name].legend)
+    return default
 
 
 def get_stack_position(sample):
     """Returns the stacking position (integer)"""
     s = settings
-    legend = s.all_samples[sample].legend
+    legend = all_samples[sample].legend
     if legend in s.stacking_order:
         return str(s.stacking_order.index(legend) * 0.001)  # needs be string
     else:                                                   #
@@ -67,7 +70,6 @@ def get_stack_position(sample):
 
 
 ################################################ result / folder management ###
-import os
 cwd = settings.varial_working_dir
 _tool_stack = []
 _results_base = None
@@ -130,5 +132,5 @@ def lookup(key, default=None):
 
 
 # TODO add some sort of support for fileservice
-
+# TODO and fix it in diskio
 
