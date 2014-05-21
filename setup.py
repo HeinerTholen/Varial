@@ -3,7 +3,7 @@ from distutils.core import setup
 
 setup(
     name="Varial",
-    version="0.1dev",
+    version="0.2dev",
     author="Heiner Tholen",
     author_email="heiner.tholen@cern.ch",
     packages=["varial", "varial_example"],
