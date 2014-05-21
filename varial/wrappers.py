@@ -45,15 +45,15 @@ class WrapperBase(object):
 
 class Alias(WrapperBase):
     """
-    Alias of a histogram on disk.
+    Alias of a non-loaded histogram on disk.
 
     :param  filename:       path to root file
     :param  in_file_path:   path to ROOT-object within the root file.
     :type   in_file_path:   list of strings
     """
-    def __init__(self, filename, in_file_path):
+    def __init__(self, file_path, in_file_path):
         self.klass          = self.__class__.__name__
-        self.filename       = filename
+        self.file_path      = file_path
         self.in_file_path   = in_file_path
         self.name           = in_file_path[-1]
 
@@ -68,7 +68,7 @@ class FileServiceAlias(Alias):
     :param  is_data:        data or not?
     :type   is_data:        bool
     """
-    def __init__(self, name, analyzer, sample, legend, is_data = False):
+    def __init__(self, name, analyzer, sample, legend, is_data=False):
         super(FileServiceAlias, self).__init__(sample, [analyzer, name])
         self.name           = name
         self.analyzer       = analyzer
