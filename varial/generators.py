@@ -276,9 +276,6 @@ def gen_norm_to_data_lumi(wrps):
 
 
 ############################################################### load / save ###
-import os
-import glob
-
 import settings
 
 
