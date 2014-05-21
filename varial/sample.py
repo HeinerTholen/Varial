@@ -11,30 +11,12 @@ class Sample(wrappers.WrapperBase):
     """
     Collect information about a sample.
     """
-    class MissingDefinition(Exception): pass
+    class MissingDefinition(Exception):
+        pass
 
     def __init__(self, **kws):
+        self.__dict__.update(settings.default_sample_members)
         self.__dict__.update(kws)
-        if not hasattr(self, "is_data"):
-            self.is_data = False
-        if not hasattr(self, "x_sec"):
-            self.x_sec = 0.
-        if not hasattr(self, "n_events"):
-            self.n_events = 0
-        if not hasattr(self, "lumi"):
-            self.lumi = 0.
-        if not hasattr(self, "legend"):
-            self.legend = ""
-        if not hasattr(self, "input_files"):
-            self.input_files = []
-        if not hasattr(self, "output_file"):
-            self.output_file = ""
-        if not hasattr(self, "cfg_builtin"):
-            self.cfg_builtin = {}
-        if not hasattr(self, "cfg_add_lines"):
-            self.cfg_add_lines = []
-        if not hasattr(self, "cmsRun_args"):
-            self.cmsRun_args = []
         # check/correct input
         if not getattr(self, "name", 0):
             self.name = self.__class__.__name__

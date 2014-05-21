@@ -25,6 +25,19 @@ cfg_use_file_service = True
 cfg_output_module_name = "out"
 cfg_common_builtins = {}
 recieved_sigint = False
+default_sample_members = {
+    "is_data": False,
+    "x_sec": 0.,
+    "n_events": 0,
+    "lumi": 0.,
+    "legend": "",
+    "input_files": [],
+    "output_file": "",
+    "file_service": "",
+    "cfg_builtin": {},
+    "cfg_add_lines": [],
+    "cmsRun_args": [],
+}
 
 
 ########################################################### style constants ###
