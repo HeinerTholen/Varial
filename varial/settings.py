@@ -82,16 +82,8 @@ class StyleClass(TStyle):
     """
     def __init__(self):
         super(StyleClass, self).__init__("CRRootStyle", "CRRootStyle")
-        self.root_style_settings()
-        self.cd()
-        gROOT.SetStyle("CRRootStyle")
-        gROOT.ForceStyle()
-        TGaxis.SetMaxDigits(3)
 
-    def root_style_settings(self):
-        """
-        All custom style settings are specified here and applied to self.
-        """
+        ################################ custom root style commands ###
         self.SetFrameBorderMode(0)
         self.SetCanvasBorderMode(0)
         self.SetPadBorderMode(0)
@@ -149,5 +141,10 @@ class StyleClass(TStyle):
         self.colors = [1, 2, 3, 4, 6, 7, 8, 9, 11]
         self.markers = [20, 21, 22, 23, 24, 25, 26, 27, 28]
         self.styles = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+        ############################ end custom root style commands ###
 
-root_style = StyleClass()  #! reference to the TStyle class instance.
+        self.cd()
+        gROOT.SetStyle("CRRootStyle")
+        gROOT.ForceStyle()
+        TGaxis.SetMaxDigits(3)
+root_style = StyleClass()  
