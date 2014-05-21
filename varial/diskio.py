@@ -5,9 +5,9 @@ from ast import literal_eval
 from itertools import takewhile
 from ROOT import TFile, TDirectory, TH1, TObject
 
-import analysis
-import wrappers
 import monitor
+import sample
+import wrappers
 
 
 
@@ -16,9 +16,8 @@ class NoObjectError(Exception): pass
 class NoHistogramError(Exception): pass
 
 
-############################################################# root file refs ###
+############################################################ root file refs ###
 _open_root_files = {}
-_aliases = []
 
 
 def get_open_root_file(filename):
@@ -42,29 +41,9 @@ def close_open_root_files():
     for name, file_handle in _open_root_files.iteritems():
         file_handle.Close()
     _open_root_files.clear()
-    del _aliases[:]
 
 
-############################################################### file service ###
-_file_service = {}
-
-
-def fileservice(filename="fileservice", autosave=True):
-    """Return FileService Wrapper for automatic storage."""
-    if autosave:
-        if not filename in _file_service:
-            _file_service[filename] = wrappers.Wrapper(name=filename)
-        return _file_service[filename]
-    else:
-        return wrappers.Wrapper(name=filename)
-
-
-def write_fileservice():
-    for wrp in _file_service.itervalues():
-        write(wrp)
-
-
-############################################################### read / write ###
+##################################################### read / write wrappers ###
 def write(wrp, filename=None):
     """Writes wrapper to disk, including root objects."""
     if not filename:
@@ -74,7 +53,7 @@ def write(wrp, filename=None):
     # write root objects (if any)
     if any(isinstance(o, TObject) for o in wrp.__dict__.itervalues()):
         wrp.root_filename = os.path.basename(filename+".root")
-        f = TFile.Open(filename+".root", "RECREATE")   #TODO check for validity
+        f = TFile.Open(filename+".root", "RECREATE")  # TODO check for validity
         f.cd()
         _write_wrapper_objs(wrp, f)
         f.Close()
@@ -148,40 +127,26 @@ def _clean_wrapper(wrp):
             delattr(wrp, attr)
 
 
-def fileservice_aliases():
+########################################################## i/o with aliases ###
+def generate_fs_aliases(root_file_path, sample_inst):
     """Produces list of all fileservice histograms for registered samples."""
-    if len(_aliases):
-        return _aliases[:]
-    fs_filenames = glob.glob(_get_fileservice_filename("*"))
-    aliases = []
-    for filename in fs_filenames:
-        fs_file = get_open_root_file(filename)
-        sample_name = os.path.basename(filename)[:-5]
-        if sample_name not in analysis.all_samples:
-            continue
-        is_data = analysis.all_samples[sample_name].is_data
-        legend = analysis.all_samples[sample_name].legend
-        for analyzer_key in fs_file.GetListOfKeys():
-            analyzer = analyzer_key.ReadObj()
-            analyzer_name = analyzer_key.GetName()
-            for histo_key in analyzer.GetListOfKeys():
-                histo_name = histo_key.GetName()
-                aliases.append(
-                    wrappers.FileServiceAlias(
-                        histo_name,
-                        analyzer_name,
-                        sample_name,
-                        legend,
-                        is_data
-                    )
-                )
-    _aliases[:] = aliases  # TODO this should be dict path->aliases
-    return aliases
+    fs_file = get_open_root_file(root_file_path)
+    assert isinstance(sample_inst, sample.Sample)  # TODO: exception
+    for analyzer_key in fs_file.GetListOfKeys():
+        analyzer = analyzer_key.ReadObj()
+        analyzer_name = analyzer_key.GetName()
+        for histo_key in analyzer.GetListOfKeys():
+            histo_name = histo_key.GetName()
+            yield wrappers.FileServiceAlias(
+                histo_name,
+                analyzer_name,
+                sample_inst
+            )
 
 
-def generate_aliases(directory="./"):
+def generate_aliases(glob_path="./*.root"):
     """Looks only for *.root files and produces aliases."""
-    for filename in glob.iglob(os.path.join(directory, "*.root")):
+    for filename in glob.iglob(glob_path):
         root_file = get_open_root_file(filename)
         for alias in _recursive_make_alias(
             root_file,
@@ -213,46 +178,25 @@ def load_histogram(alias):
     """
     Returns a wrapper with a fileservice histogram.
     """
-    if isinstance(alias, wrappers.FileServiceAlias):
-        histo = _load_fileservice_histo(alias)
-        histo.history = (
-            "FileService(" +
-            alias.sample + ", " +
-            alias.analyzer + ", " +
-            alias.name + ")"
-        )
-    else:
-        histo = _load_non_fileservice_histo(alias)
-        histo.history = repr(alias)
-    return histo
-
-
-def _load_fileservice_histo(alias):
     histo = _get_obj_from_file(
-        _get_fileservice_filename(alias.sample),
+        alias.file_path,
         alias.in_file_path
     )
     if not isinstance(histo, TH1):
         raise NoHistogramError(
-            "Loaded object is not of type TH1: ", str(object)
+            "Loaded object is not of type TH1: %s" % str(histo)
         )
     histo.Sumw2()
-    histo.SetTitle(alias.legend)
     wrp = wrappers.HistoWrapper(histo, **alias.all_info())
-    wrp.lumi = analysis.all_samples[alias.sample].lumi
-    return wrp
-
-
-def _load_non_fileservice_histo(alias):
-    histo = _get_obj_from_file(
-        alias.filename,
-        alias.in_file_path
-    )
-    if not isinstance(histo, TH1):
-        raise NoHistogramError(
-            "Loaded object is not of type TH1: ", str(object)
+    if isinstance(alias, wrappers.FileServiceAlias):
+        histo.SetTitle(alias.legend)
+        wrp.history = (
+            "FileService(%s, %s, %s)" % (
+                alias.sample, alias.analyzer, alias.name)
         )
-    return wrappers.HistoWrapper(histo, **alias.all_info())
+    else:
+        wrp.history = repr(alias)
+    return wrp
 
 
 def _get_obj_from_file(filename, in_file_path):
@@ -262,20 +206,12 @@ def _get_obj_from_file(filename, in_file_path):
         obj_key = obj.GetKey(name)
         if not obj_key:
             raise NoObjectError(
-                "I cannot find '"
-                + name
-                + "' in root file '"
-                + filename
-                + "'!"
-            )
+                "I cannot find '%s' in root file '%s'!" % (name, filename))
         obj = obj_key.ReadObj()
     return obj
 
 
-def _get_fileservice_filename(sample):
-    return analysis.cwd + sample + ".root"   # FIXME
-
-
-#################################################### write and close on exit ###
-atexit.register(write_fileservice)
+################################################### write and close on exit ###
+import analysis
+atexit.register(analysis.write_fileservice)
 atexit.register(close_open_root_files)

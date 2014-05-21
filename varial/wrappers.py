@@ -68,13 +68,15 @@ class FileServiceAlias(Alias):
     :param  is_data:        data or not?
     :type   is_data:        bool
     """
-    def __init__(self, name, analyzer, sample, legend, is_data=False):
-        super(FileServiceAlias, self).__init__(sample, [analyzer, name])
+    def __init__(self, name, analyzer, sample):
+        super(FileServiceAlias, self).__init__(
+            sample.file_service, [analyzer, name])
         self.name           = name
         self.analyzer       = analyzer
-        self.sample         = sample
-        self.legend         = legend
-        self.is_data        = is_data
+        self.sample         = sample.name
+        self.legend         = sample.legend
+        self.lumi           = sample.lumi
+        self.is_data        = sample.is_data
 
 
 class Wrapper(WrapperBase):
