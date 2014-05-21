@@ -131,6 +131,22 @@ def lookup(key, default=None):
         return _results_base.lookup(keys) or default
 
 
-# TODO add some sort of support for fileservice
-# TODO and fix it in diskio
+############################################################### fileservice ###
+import diskio
+fs_aliases = []
+fs_wrappers = {}
 
+
+def fileservice(filename="fileservice", autosave=True):
+    """Return FileService Wrapper for automatic storage."""
+    if autosave:
+        if not filename in fs_wrappers:
+            fs_wrappers[filename] = wrappers.Wrapper(name=filename)
+        return fs_wrappers[filename]
+    else:
+        return wrappers.Wrapper(name=filename)
+
+
+def write_fileservice():
+    for wrp in fs_wrappers.itervalues():
+        diskio.write(wrp)
