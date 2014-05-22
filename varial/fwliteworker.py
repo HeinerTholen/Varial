@@ -2,8 +2,7 @@ import ROOT
 import itertools
 import multiprocessing
 
-import diskio
-import toolinterface
+import wrappers
 
 
 def _add_results(results_iter):
@@ -46,7 +45,7 @@ def work(workers, event_handles):
 
 
 def work_no_mp(workers, event_handles):
-    """This is usefull for debugging, as multiprocess cuts the stacktrace."""
+    """This is usefull for debugging, as multiprocessing cuts the stacktrace."""
     results_iter = itertools.imap(
         _run_workers,
         itertools.izip(
@@ -58,9 +57,10 @@ def work_no_mp(workers, event_handles):
 
 
 class FwliteWorker(object):
+    """This class is to be subclassed."""
     def __init__(self, name):
         self.name = name
-        self.result = diskio.fileservice(name, False)
+        self.result = wrappers.Wrapper(name)
 
     def node_setup(self, event_handle):
         pass
@@ -70,7 +70,3 @@ class FwliteWorker(object):
 
     def node_finalize(self):
         pass
-
-
-class FwliteProxy(toolinterface.Tool):
-    pass

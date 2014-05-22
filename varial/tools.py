@@ -8,7 +8,7 @@ import settings
 import toolinterface
 
 from cmsrunprocess import CmsRunProxy
-from fwliteworker import FwliteProxy
+from fwliteproxy import FwliteProxy
 
 
 # TODO: Make a new Plotter Interface with Composition:
