@@ -44,7 +44,10 @@ class CmsRunProcess(object):
     def __repr__(self):
         return str(self)
 
-    def prepare_run_conf(self):
+    def prepare_run_conf(self,
+                         use_file_service,
+                         output_module_name,
+                         common_builtins):
         """
         Takes all infos about the cmsRun to be started and builds a
         configuration file with python code, which is passed to cmsRun on
@@ -67,7 +70,7 @@ class CmsRunProcess(object):
             "legend"    : smpl.legend,
             "sample"    : smpl.name
         }
-        builtin_dict.update(settings.cfg_common_builtins)
+        builtin_dict.update(common_builtins)
         builtin_dict.update(smpl.cfg_builtin)
 
         # builtin, imports
@@ -103,14 +106,14 @@ class CmsRunProcess(object):
                 filename += self.name + ".root"
             conf_lines.append(
                 "process."
-                + settings.cfg_output_module_name
+                + output_module_name
                 + ".fileName = '"
                 + filename.strip()
                 + "'"
             )
 
         # fileService statement
-        if settings.cfg_use_file_service:
+        if use_file_service:
             conf_lines.append(
                 "process.TFileService.fileName = '"
                 + self.service_filename
@@ -144,7 +147,7 @@ class CmsRunProcess(object):
                 info_file
             )
 
-    def check_reuse_possible(self):
+    def check_reuse_possible(self, check_for_file_service):
         """
         Checks if log, conf and file service files are present and if the
         process was finished successfully before. If yes returns True,
@@ -156,7 +159,7 @@ class CmsRunProcess(object):
             return False
         if not os.path.exists(self.conf_filename):
             return False
-        if (settings.cfg_use_file_service and
+        if (check_for_file_service and
                 not os.path.exists(self.service_filename)):
             return False
         if not os.path.exists(self.jobinfo_filename):
@@ -183,7 +186,6 @@ class CmsRunProcess(object):
         Start cmsRun with conf-file.
         """
         self.time_start = time.ctime()
-        self.prepare_run_conf()
 
         # delete jobinfo file
         if os.path.exists(self.jobinfo_filename):
@@ -204,16 +206,22 @@ class CmsRunProcess(object):
 class CmsRunProxy(toolinterface.Tool):
     """Tool to embed cmsRun execution into varial toolchains."""
 
-    def __init__(self, name=None):
+    def __init__(self,
+                 name=None,
+                 cfg_filename=settings.cmsRun_main_import_path,
+                 use_file_service=settings.cmsRun_use_file_service,
+                 output_module_name=settings.cmsRun_output_module_name,
+                 common_builtins=settings.cmsRun_common_builtins):
         super(CmsRunProxy, self).__init__(name)
         self.waiting_pros = []
         self.running_pros = []
         self.finished_pros = []
         self.failed_pros = []
-        self.cfg_filename = settings.cfg_main_import_path
+        self.cfg_filename = cfg_filename
+        self.use_file_service = use_file_service
+        self.output_module_name = output_module_name
+        self.common_builtins = common_builtins
         self.try_reuse = settings.try_reuse_results
-        monitor.connect_controller(self)
-        settings.controller = self
 
     def wanna_reuse(self, all_reused_before_me):
         self.setup_processes()
@@ -243,7 +251,7 @@ class CmsRunProxy(toolinterface.Tool):
 
         for name, smpl in analysis.all_samples.iteritems():
             process = CmsRunProcess(smpl, self.try_reuse, self.cfg_filename)
-            if process.check_reuse_possible():
+            if process.check_reuse_possible(self.use_file_service):
                 self.finished_pros.append(process)
             else:
                 self.waiting_pros.append(process)
@@ -254,6 +262,11 @@ class CmsRunProxy(toolinterface.Tool):
         if (len(self.running_pros) >= settings.max_num_processes
                 and self.waiting_pros):
             process = self.waiting_pros.pop(0)
+            process.prepare_run_conf(
+                self.use_file_service,
+                self.output_module_name,
+                self.common_builtins
+            )
             process.start()
             monitor.proc_started(process)
             self.running_pros.append(process)
@@ -286,36 +299,3 @@ class CmsRunProxy(toolinterface.Tool):
         self.waiting_pros = []
         for process in self.running_pros:
             process.terminate()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

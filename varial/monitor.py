@@ -85,10 +85,6 @@ def proc_failed(process):
         _info.error_logs_opened += 1
 
 
-def all_finished():
-    write_out("INFO All processes finished, "+time.ctime())
-
-
 def started(obj, message_obj):
     message(obj, message_obj)
     _info.indent += 2
@@ -105,10 +101,6 @@ def message(sender, string):
 def finished(obj, message_obj):
     _info.indent -= 2
     message(obj, message_obj)
-
-
-def connect_controller(controller):
-    controller.callbacks_on_all_finished.append(all_finished)
 
 
 def connect_object_with_messenger(obj):

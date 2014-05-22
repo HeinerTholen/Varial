@@ -20,10 +20,10 @@ not_ask_execute = False
 suppress_eventloop_exec = False
 try_reuse_results = False
 default_enable_sample = True
-cfg_main_import_path = ""
-cfg_use_file_service = True
-cfg_output_module_name = "out"
-cfg_common_builtins = {}
+cmsRun_main_import_path = ""
+cmsRun_use_file_service = True
+cmsRun_output_module_name = "out"
+cmsRun_common_builtins = {}
 recieved_sigint = False
 default_sample_members = {
     "is_data": False,
