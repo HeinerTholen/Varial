@@ -299,3 +299,6 @@ class CmsRunProxy(toolinterface.Tool):
         self.waiting_pros = []
         for process in self.running_pros:
             process.terminate()
+
+
+# TODO think about multiprocessing, in a dedicated light process
