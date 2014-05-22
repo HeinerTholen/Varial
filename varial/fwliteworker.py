@@ -1,9 +1,9 @@
 import ROOT
 import itertools
-import json
 import multiprocessing
 import os
 
+import diskio
 import wrappers
 
 
@@ -38,15 +38,13 @@ def work(workers, event_handles=None, use_mp=True):
 
     proxy = None
     if not event_handles:
-        if not os.path.exists('proxy.json'):
+        if not os.path.exists('fwlite_proxy.info'):
             raise RuntimeError('You must either provide the event_handles '
                                'argument or the proxy.json in my cwd!')
-        with open('proxy.json') as f_proxy:
-            global proxy
-            proxy = json.load(f_proxy)
+        proxy = diskio.read('fwlite_proxy')
         from DataFormats.FWLite import Events
-        event_handles = (Events(f) for f in proxy['event_files'])
-        use_mp = proxy.get('use_mp', use_mp)
+        event_handles = (Events(f) for f in proxy.event_files)
+        use_mp = proxy.__dict__.get('use_mp', use_mp)
 
     if use_mp:
         imap_func = multiprocessing.Pool().imap_unordered
@@ -62,12 +60,10 @@ def work(workers, event_handles=None, use_mp=True):
     )
     res = _add_results(results_iter)
     if proxy:
-        import diskio
         for r in res.values():
             diskio.write(r)
-        proxy['results'] = list(w.name for w in res)
-        with open('proxy.json') as f_proxy:
-            json.dump(proxy, f_proxy)
+        proxy.results = list(w.name for w in res)
+        diskio.write(proxy)
     return res
 
 
