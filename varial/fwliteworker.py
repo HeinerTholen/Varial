@@ -1,6 +1,8 @@
 import ROOT
 import itertools
+import json
 import multiprocessing
+import os
 
 import wrappers
 
@@ -32,28 +34,41 @@ def _run_workers(args):
     return results
 
 
-def work(workers, event_handles):
-    pool = multiprocessing.Pool()
-    results_iter = pool.imap_unordered(
+def work(workers, event_handles=None, use_mp=True):
+
+    proxy = None
+    if not event_handles:
+        if not os.path.exists('proxy.json'):
+            raise RuntimeError('You must either provide the event_handles '
+                               'argument or the proxy.json in my cwd!')
+        with open('proxy.json') as f_proxy:
+            global proxy
+            proxy = json.load(f_proxy)
+        from DataFormats.FWLite import Events
+        event_handles = (Events(f) for f in proxy['event_files'])
+        use_mp = proxy.get('use_mp', use_mp)
+
+    if use_mp:
+        imap_func = multiprocessing.Pool().imap_unordered
+    else:
+        imap_func = itertools.imap
+
+    results_iter = imap_func(
         _run_workers,
         itertools.izip(
             event_handles,
             itertools.repeat(workers),
         )
     )
-    return _add_results(results_iter)
-
-
-def work_no_mp(workers, event_handles):
-    """This is usefull for debugging, as multiprocessing cuts the stacktrace."""
-    results_iter = itertools.imap(
-        _run_workers,
-        itertools.izip(
-            event_handles,
-            itertools.repeat(workers),
-        )
-    )
-    return _add_results(results_iter)
+    res = _add_results(results_iter)
+    if proxy:
+        import diskio
+        for r in res.values():
+            diskio.write(r)
+        proxy['results'] = list(w.name for w in res)
+        with open('proxy.json') as f_proxy:
+            json.dump(proxy, f_proxy)
+    return res
 
 
 class FwliteWorker(object):

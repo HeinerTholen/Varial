@@ -9,3 +9,6 @@ class FwliteProxy(toolinterface.Tool):
 
     def run(self):
         pass
+
+    #with open('proxy.json') as f_proxy:
+    #proxy['event_files']
