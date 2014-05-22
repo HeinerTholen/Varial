@@ -35,8 +35,8 @@ _info = MonitorInfo()
 
 def write_out(*args):
     for arg in args:
-        print >> _info.outstream, arg,
-    print >> _info.outstream
+        _info.outstream.write(arg)
+    _info.outstream.write('\n')
 
 
 def proc_enqueued(process):
@@ -50,7 +50,7 @@ def proc_started(process):
     if settings.suppress_eventloop_exec or process.reused_old_data:
         return
     write_out(
-        "INFO process started  "+time.ctime()+":   cmsRun ",
+        "INFO process started  %s:   cmsRun " % time.ctime(),
         process.conf_filename, "PID: ",
         process.subprocess.pid
     )
@@ -61,26 +61,26 @@ def proc_finished(process):
         return
     if settings.recieved_sigint:
         write_out(
-            "INFO process aborted "+time.ctime()+":   cmsRun ",
+            "INFO process aborted %s:   cmsRun " % time.ctime(),
             process.conf_filename
         )
     else:
         write_out(
-            "INFO process finished "+time.ctime()+":   cmsRun ",
+            "INFO process finished %s:   cmsRun " % time.ctime(),
             process.conf_filename
         )
 
 
 def proc_failed(process):
     write_out(
-        "WARNING process FAILED "+time.ctime()+"  :   cmsRun ",
+        "WARNING process FAILED %s  :   cmsRun " % time.ctime(),
         process.conf_filename
     )
     if not _info.error_logs_opened:
         write_out("_______________________________________begin_cmsRun_logfile")
         with open(process.log_filename, "r") as logfile:
             write_out(logfile.read())
-        write_out("______________end of log for " + process.conf_filename)
+        write_out("______________end of log for %s" % process.conf_filename)
         write_out("_________________________________________end_cmsRun_logfile")
         _info.error_logs_opened += 1
 
@@ -95,7 +95,7 @@ def message(sender, string):
         sender = sender.name
     elif not type(sender) == str:
         sender = str(type(sender))
-    write_out(_info.indent*"  " + str(string) + " (" + sender + ")")
+    write_out(_info.indent*"  " + '%s (%s)' % (str(string), sender))
 
 
 def finished(obj, message_obj):
