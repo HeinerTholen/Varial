@@ -233,11 +233,11 @@ class CmsRunProxy(toolinterface.Tool):
         self.try_reuse = settings.try_reuse_results
 
     def wanna_reuse(self, all_reused_before_me):
-        self.setup_processes()
+        self._setup_processes()
         return not bool(self.waiting_pros)
 
     def reuse(self):
-        self.finalize()
+        self._finalize()
 
     def run(self):
         if settings.suppress_eventloop_exec:
@@ -252,17 +252,18 @@ class CmsRunProxy(toolinterface.Tool):
                 ) == "yes"):
             return
 
-        self.handle_processes()
+        self._handle_processes()
         sig_term_sent = False
         while self.running_pros:
             if settings.recieved_sigint and not sig_term_sent:
                 self.abort_all_processes()
                 sig_term_sent = True
             time.sleep(0.2)
-            self.handle_processes()
-        self.finalize()
+            self._handle_processes()
+        if not settings.recieved_sigint:
+            self._finalize()
 
-    def setup_processes(self):
+    def _setup_processes(self):
         for d in ('logs', 'confs', 'fs', 'report'):
             path = join(self.result_dir, d)
             if not os.path.exists(path):
@@ -276,7 +277,7 @@ class CmsRunProxy(toolinterface.Tool):
                 self.waiting_pros.append(process)
                 monitor.proc_enqueued(process)
 
-    def handle_processes(self):
+    def _handle_processes(self):
         # start processing
         if (len(self.running_pros) < settings.max_num_processes
                 and self.waiting_pros):
@@ -305,7 +306,7 @@ class CmsRunProxy(toolinterface.Tool):
                 self.failed_pros.append(process)
                 monitor.proc_failed(process)
 
-    def finalize(self):
+    def _finalize(self):
         for process in self.finished_pros:
             analysis.fs_aliases += list(
                 alias for alias in diskio.generate_fs_aliases(

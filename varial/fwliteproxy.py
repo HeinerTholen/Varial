@@ -67,7 +67,8 @@ class FwliteProxy(toolinterface.Tool):
                 sig_term_sent = True
             time.sleep(0.2)
             proc.poll()
-        self._finalize()
+        if not settings.recieved_sigint:
+            self._finalize()
 
     def _finalize(self):
         for res in self._proxy.results:
