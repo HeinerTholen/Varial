@@ -30,6 +30,7 @@ class SigintHandler(object):
             sys.__stdout__.flush()
             self.hits += 1
             settings.recieved_sigint = True
+sig_handler = SigintHandler()
 
 
 class StdOutTee(object):
@@ -59,27 +60,10 @@ def _process_settings_kws(kws):
             setattr(settings, k, v)
 
 
-class Timer(object):
-    keep_alive = True
-
-    def timer_func(self):
-        while self.keep_alive:
-            time.sleep(1)
-
-    def kill(self):
-        self.keep_alive = False
-
-timer       = Timer()
-sig_handler = SigintHandler()
-exec_thread = threading.Thread(target=timer.timer_func)
-exec_start  = exec_thread.start
-exec_quit   = timer.kill
-
-
 def tear_down(*args):
+    print "Tear down."
     sig_handler.handle(signal.SIGINT, None)
     time.sleep(1)
-    exec_quit()
 
 
 # iPython mode
@@ -90,13 +74,7 @@ def ipython_warn():
 
 if ipython_mode:
     ipython_warn()
-
-    def ipython_exit(*args):
-        print "Shutting down..."
-        if timer.keep_alive:
-            print "Waiting for subprocesses to shutdown..."
-            tear_down()
-    atexit.register(ipython_exit)
+    atexit.register(tear_down)
 
 else:
     signal.signal(signal.SIGINT, sig_handler.handle)
@@ -141,7 +119,8 @@ def main(**main_kwargs):
     toolchain = tools.ToolChain(None, [toolchain])  # needed for proper execution
 
     # GO!
-    if False:  # ipython_mode:
+    if ipython_mode:
+        # TODO: test ipython mode!!
         exec_thread = threading.Thread(target=toolchain.run)
         return exec_thread.start()
     else:
