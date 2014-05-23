@@ -1,6 +1,6 @@
-===============
-CmsToolsAC3B
-===============
+======
+Varial
+======
 
 .. include:: docs/index.rst
 
