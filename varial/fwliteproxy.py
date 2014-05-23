@@ -45,7 +45,7 @@ class FwliteProxy(toolinterface.Tool):
         diskio.write(self._proxy)
         proc = subprocess.Popen(
             ['python', self.py_exe],
-            stdout=monitor._info.outstream,
+            stdout=monitor.MonitorInfo.outstream,
             stderr=subprocess.STDOUT
         )
         sig_term_sent = False
