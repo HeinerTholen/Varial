@@ -5,15 +5,15 @@ import diskio
 import generators as gen
 import rendering
 import settings
-import toolinterface
 
+from toolinterface import Tool, ToolChain
 from cmsrunprocess import CmsRunProxy
 from fwliteproxy import FwliteProxy
 
 
 # TODO: Make a new Plotter Interface with Composition:
 # TODO: the functions should be non-class methods
-class FSStackPlotter(toolinterface.Tool):
+class FSStackPlotter(Tool):
     """A 'stack with data overlay' plotter. To be subclassed."""
 
     class NoFilterDictError(Exception):
@@ -53,7 +53,6 @@ class FSStackPlotter(toolinterface.Tool):
             wrps = self.hook_loaded_histos(wrps)
         wrps = gen.group(wrps)
         wrps = gen.mc_stack_n_data_sum(wrps, None, True)
-        wrps = gen.pool_store_items(wrps)
         self.stream_stack = wrps
 
     def set_up_make_canvas(self):
@@ -105,7 +104,7 @@ class FSStackPlotter(toolinterface.Tool):
         self.run_sequence()
 
 
-class SimpleWebCreator(toolinterface.Tool):
+class SimpleWebCreator(Tool):
     """
     Browses through settings.DIR_PLOTS and generates webpages recursively for
     all directories.
