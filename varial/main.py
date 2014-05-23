@@ -1,13 +1,12 @@
 
 import signal
 import sys
-import os
-import settings
-import sample
-import controller as controller_module
-import postprocessing
 import threading
 import time
+
+import analysis
+import settings
+import tools
 
 ipython_mode = False
 try:
@@ -18,8 +17,7 @@ except NameError:
 
 
 class SigintHandler(object):
-    def __init__(self, controller_obj):
-        self.controller = controller_obj
+    def __init__(self):
         self.hits = 0
 
     def handle(self, signal_int, frame):
@@ -32,7 +30,6 @@ class SigintHandler(object):
             sys.__stdout__.flush()
             self.hits += 1
             settings.recieved_sigint = True
-            self.controller.abort_all_processes()
 
 
 class StdOutTee(object):
@@ -55,24 +52,11 @@ class StdOutTee(object):
         self.logfile.close()
 
 
-if settings.logfilename:
-    import monitor
-    monitor.MonitorInfo.outstream = StdOutTee(settings.logfilename)
-
-
 def _process_settings_kws(kws):
     # replace setting, if its name already exists.
     for k, v in kws.iteritems():
         if hasattr(settings, k):
             setattr(settings, k, v)
-
-
-def _instanciate_samples():
-    if not type(settings.samples) is dict:
-        settings.samples = sample.load_samples(settings.samples)
-    for k, v in settings.samples.items():
-        if not isinstance(v, sample.Sample):
-            settings.samples[k] = v()
 
 
 class Timer(object):
@@ -86,8 +70,7 @@ class Timer(object):
         self.keep_alive = False
 
 timer       = Timer()
-controller  = controller_module.Controller()
-sig_handler = SigintHandler(controller)
+sig_handler = SigintHandler()
 exec_thread = threading.Thread(target=timer.timer_func)
 exec_start  = exec_thread.start
 exec_quit   = timer.kill
@@ -100,13 +83,13 @@ def tear_down(*args):
 
 
 # iPython mode
-def ipython_usage():
+def ipython_warn():
     print "WARNING =================================================="
     print "WARNING Detected iPython, going to interactive mode...    "
     print "WARNING =================================================="
 
 if ipython_mode:
-    ipython_usage()
+    ipython_warn()
 
     ipython_exit_func = __IPYTHON__.exit
 
@@ -115,7 +98,7 @@ if ipython_mode:
         if timer.keep_alive:
             print "Waiting for processes to shutdown..."
             tear_down()
-        ipython_exit_func()
+        ipython_exit_func(*args)
     __IPYTHON__.exit = ipython_exit
 
 else:
@@ -124,92 +107,47 @@ else:
 
 ###################################################################### main ###
 main_args = {}
+toolchain = None
 
-
-def main(**settings_kws):
+def main(**main_kwargs):
     """
     Processing and post processing.
 
-    :param  settings_kws:           settings parameters given as keyword
+    :param main_kwargs:             settings parameters given as keyword
                                     arguments are added to settings, e.g.
                                     ``samples={"mc":MCSample, ...}`` .
+    :param samples:                 list of sample.Sample instances
+    :param toolchain:               root toolchain (see tools.py)
     """
     # prepare...
-    main_args.update(settings_kws)
-    _process_settings_kws(settings_kws)
-    _instanciate_samples()
+    main_args.update(main_kwargs)
+    _process_settings_kws(main_kwargs)
+    if settings.logfilename:
+        import monitor
+        monitor.MonitorInfo.outstream = StdOutTee(settings.logfilename)
 
-    # create folders (for process confs, etc.)
-    settings.create_folders()
+    # setup samples
+    if 'samples' in main_kwargs:
+        analysis.all_samples = dict((s.name, s) for s in main_kwargs['samples'])
 
-    # controller
-    controller.setup_processes()
-    executed_procs = list(
-        p for p in controller.waiting_pros if not p.will_reuse_data
-    )
-
-    # post processor
-    pst = postprocessing.ToolChain()
-    pst._reuse = settings.enable_postproc_reuse and not bool(executed_procs)
-
-    settings.postprocessor = pst
-    controller.callbacks_on_all_finished.append(pst.run)
-    pst.add_tools(settings.post_proc_tools)
-
-    # create folders (for plottools)
-    settings.create_folders()
-
-    # connect for quiting
-    # (all other finishing connections before this one)
-    controller.callbacks_on_all_finished.append(exec_quit)
+    # setup toolchain
+    global toolchain
+    toolchain = main_kwargs.get('toolchain')
+    if not toolchain:
+        if settings.cmsRun_main_import_path:
+            toolchain = tools.CmsRunProxy('cmsrun_output')
+        elif settings.fwlite_executable:
+            toolchain = tools.FwliteProxy('fwlite_output')
+    if not toolchain:
+        print "FATAL No toolchain or eventloops scripts defined."
+        return
+    toolchain = tools.ToolChain(toolchain)  # needed for proper execution
 
     # GO!
-    if executed_procs:                          # Got jobs to execute?
-        if (settings.not_ask_execute
-            or settings.suppress_eventloop_exec
-            or raw_input(
-                "Really run these processes:\n   "
-                + ",\n   ".join(map(str, executed_procs))
-                + "\n?? (type 'yes') "
-            ) == "yes"):
-            if ipython_mode:
-                ipython_usage()
-            monitor.message(
-                "main",
-                "INFO: Using "
-                + str(settings.max_num_processes)
-                + " cpu cores at max."
-            )
-            controller.start_processes()
-            return exec_start()
-        else:
-            print "INFO: Answer was not yes. Starting post-processing..."
-            pst.run()
-    elif settings.post_proc_tools:              # No jobs, but post-proc..
-        pst.run()
-    else:                                       # Nothing to do.
-        print "I've got nothing to do!"
+    if ipython_mode:
+        exec_thread = threading.Thread(target=toolchain.run)
+        return exec_thread.start()
+    else:
+        toolchain.run()
 
-
-def standalone(post_proc_tool_classes, **settings_kws):
-    """
-    Runs post processing alone.
-
-    :param post_proc_tool_classes:  list of ``PostProcTool`` subclasses.
-    :param  settings_kws:           settings parameters given as keyword
-                                    arguments are added to settings, e.g.
-                                    ``samples={"mc":MCSample, ...}`` .
-    """
-    _process_settings_kws(settings_kws)
-    _instanciate_samples()
-    settings.create_folders()
-
-    pst = postprocessing.ToolChain(False)
-    for tool in post_proc_tool_classes:
-        pst.add_tool(tool())
-    settings.create_folders()
-    pst.run()
-
-
-#TODO: reimplement buildFollowUp
 
