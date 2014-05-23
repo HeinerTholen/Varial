@@ -1,4 +1,4 @@
-
+import atexit
 import signal
 import sys
 import threading
@@ -91,15 +91,12 @@ def ipython_warn():
 if ipython_mode:
     ipython_warn()
 
-    ipython_exit_func = __IPYTHON__.exit
-
     def ipython_exit(*args):
         print "Shutting down..."
         if timer.keep_alive:
-            print "Waiting for processes to shutdown..."
+            print "Waiting for subprocesses to shutdown..."
             tear_down()
-        ipython_exit_func(*args)
-    __IPYTHON__.exit = ipython_exit
+    atexit.register(ipython_exit)
 
 else:
     signal.signal(signal.SIGINT, sig_handler.handle)
@@ -142,6 +139,7 @@ def main(**main_kwargs):
         print "FATAL No toolchain or eventloops scripts defined."
         return
     toolchain = tools.ToolChain(toolchain)  # needed for proper execution
+
 
     # GO!
     if ipython_mode:
