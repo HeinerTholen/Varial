@@ -18,7 +18,6 @@ class FwliteProxy(toolinterface.Tool):
         self._proxy = None
 
     def wanna_reuse(self, all_reused_before_me):
-
         if not os.path.exists(os.path.join(
                 self.result_dir, 'fwlite_proxy.info')):
             return False
@@ -49,7 +48,11 @@ class FwliteProxy(toolinterface.Tool):
             stdout=monitor._info.outstream,
             stderr=subprocess.STDOUT
         )
+        sig_term_sent = False
         while None == proc.returncode:
+            if settings.recieved_sigint and not sig_term_sent:
+                proc.terminate()
+                sig_term_sent = True
             time.sleep(0.2)
             proc.poll()
         self._finalize()

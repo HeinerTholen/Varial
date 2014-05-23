@@ -236,9 +236,11 @@ class CmsRunProxy(toolinterface.Tool):
                 self, "INFO settings.suppress_eventloop_exec == True, pass...")
             return
         self.handle_processes()
+        sig_term_sent = False
         while self.running_pros:
-            if settings.recieved_sigint:
+            if settings.recieved_sigint and not sig_term_sent:
                 self.abort_all_processes()
+                sig_term_sent = True
             time.sleep(0.2)
             self.handle_processes()
         self.finalize()
