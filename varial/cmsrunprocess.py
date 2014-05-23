@@ -259,7 +259,7 @@ class CmsRunProxy(toolinterface.Tool):
 
     def handle_processes(self):
         # start processing
-        if (len(self.running_pros) >= settings.max_num_processes
+        if (len(self.running_pros) < settings.max_num_processes
                 and self.waiting_pros):
             process = self.waiting_pros.pop(0)
             process.prepare_run_conf(
