@@ -235,6 +235,14 @@ class CmsRunProxy(toolinterface.Tool):
             self.message(
                 self, "INFO settings.suppress_eventloop_exec == True, pass...")
             return
+        if not (settings.not_ask_execute or raw_input(
+                "Really run these cmsRun jobs:\n   "
+                + ",\n   ".join(map(str, self.waiting_pros))
+                + ('\nusing %i cores' % settings.max_num_processes)
+                + "\n?? (type 'yes') "
+                ) == "yes"):
+            return
+
         self.handle_processes()
         sig_term_sent = False
         while self.running_pros:

@@ -37,6 +37,18 @@ class FwliteProxy(toolinterface.Tool):
         self._finalize()
 
     def run(self):
+        if settings.suppress_eventloop_exec:
+            self.message(
+                self, "INFO settings.suppress_eventloop_exec == True, pass...")
+            return
+        if not (settings.not_ask_execute or raw_input(
+                "Really run fwlite jobs on these samples:\n   "
+                + ",\n   ".join(map(str, analysis.all_samples.keys()))
+                + ('\nusing %i cores' % settings.max_num_processes)
+                + "\n?? (type 'yes') "
+                ) == "yes"):
+            return
+
         self._proxy = analysis.fileservice('fwlite_proxy', False)
         self._proxy.event_files = dict(
             (s.name, s.input_files)
