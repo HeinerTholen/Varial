@@ -88,9 +88,9 @@ def read(filename):
     """Reads wrapper from disk, including root objects."""
     if filename[-5:] != ".info":
         filename += ".info"
-    f = open(filename, "r")
-    info = _read_wrapper_info(f)
-    f.close()
+    filename = os.path.join(analysis.cwd, filename)
+    with open(filename, "r") as f:
+        info = _read_wrapper_info(f)
     if "root_filename" in info:
         _read_wrapper_objs(info, os.path.dirname(filename))
     klass = getattr(wrappers, info.get("klass"))
