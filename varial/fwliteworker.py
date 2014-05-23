@@ -40,7 +40,7 @@ def work(workers, event_handles=None, use_mp=True):
     if not event_handles:
         if not os.path.exists('fwlite_proxy.info'):
             raise RuntimeError('You must either provide the event_handles '
-                               'argument or the proxy.json in my cwd!')
+                               'argument or fwlite_proxy.info in my cwd!')
         proxy = diskio.read('fwlite_proxy')
         from DataFormats.FWLite import Events
         event_handles = (Events(f) for f in proxy.event_files)
