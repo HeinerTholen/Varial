@@ -139,17 +139,6 @@ def main(**settings_kws):
     _process_settings_kws(settings_kws)
     _instanciate_samples()
 
-    # tweaks in working directory?
-    tweak_name = settings.tweak
-    if os.path.exists(tweak_name):
-        print ("WARNING I found "
-               + tweak_name
-               + " and I am going to dump it first and then import it!")
-        with open(tweak_name, 'r') as f:
-            print f.read()
-        import imp
-        settings.tweak = imp.load_source(tweak_name[:-3], tweak_name)
-
     # create folders (for process confs, etc.)
     settings.create_folders()
 

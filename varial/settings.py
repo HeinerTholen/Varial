@@ -5,7 +5,6 @@ This module contains project wide settings.
 
 ################################################################### general ###
 import time
-tweak = "tweak.py"
 logfilename = time.strftime(
     "cmstoolsac3b_%Y%m%dT%H%M%S.log", 
     time.localtime()
