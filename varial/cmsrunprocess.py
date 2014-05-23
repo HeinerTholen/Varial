@@ -23,6 +23,8 @@ class CmsRunProcess(object):
         super(CmsRunProcess, self).__init__()
 
         assert isinstance(sample_inst, sample.Sample)
+        if not cfg_filename:
+            raise RuntimeError('CmsRunProcess needs the cfg_filename argument!')
         name = sample_inst.name
         self.sample             = sample_inst
         self.name               = name
@@ -208,24 +210,31 @@ class CmsRunProxy(toolinterface.Tool):
 
     def __init__(self,
                  name=None,
-                 cfg_filename=settings.cmsRun_main_import_path,
-                 use_file_service=settings.cmsRun_use_file_service,
-                 output_module_name=settings.cmsRun_output_module_name,
-                 common_builtins=settings.cmsRun_common_builtins):
+                 cfg_filename="",
+                 use_file_service=None,
+                 output_module_name="",
+                 common_builtins=None):
         super(CmsRunProxy, self).__init__(name)
         self.waiting_pros = []
         self.running_pros = []
         self.finished_pros = []
         self.failed_pros = []
-        self.cfg_filename = cfg_filename
-        self.use_file_service = use_file_service
-        self.output_module_name = output_module_name
-        self.common_builtins = common_builtins
+        self.cfg_filename = cfg_filename or settings.cmsRun_main_import_path
+        self.output_module_name = (output_module_name
+                                   or settings.cmsRun_output_module_name)
+        if None == use_file_service:
+            self.use_file_service = settings.cmsRun_use_file_service
+        else:
+            self.use_file_service = use_file_service
+        if None == common_builtins:
+            self.common_builtins = settings.cmsRun_common_builtins
+        else:
+            self.common_builtins = common_builtins
         self.try_reuse = settings.try_reuse_results
 
     def wanna_reuse(self, all_reused_before_me):
         self.setup_processes()
-        return bool(self.waiting_pros)
+        return not bool(self.waiting_pros)
 
     def reuse(self):
         self.finalize()

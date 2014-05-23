@@ -34,8 +34,7 @@ _info = MonitorInfo()
 
 
 def write_out(*args):
-    for arg in args:
-        _info.outstream.write(arg)
+    _info.outstream.write(' '.join(str(a) for a in args))
     _info.outstream.write('\n')
 
 
@@ -47,18 +46,15 @@ def proc_enqueued(process):
 
 
 def proc_started(process):
-    if settings.suppress_eventloop_exec or process.reused_old_data:
-        return
     write_out(
         "INFO process started  %s:   cmsRun " % time.ctime(),
-        process.conf_filename, "PID: ",
+        process.conf_filename,
+        "PID: ",
         process.subprocess.pid
     )
 
 
 def proc_finished(process):
-    if settings.suppress_eventloop_exec or process.reused_old_data:
-        return
     if settings.recieved_sigint:
         write_out(
             "INFO process aborted %s:   cmsRun " % time.ctime(),

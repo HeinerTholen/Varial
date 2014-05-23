@@ -138,11 +138,10 @@ def main(**main_kwargs):
     if not toolchain:
         print "FATAL No toolchain or eventloops scripts defined."
         return
-    toolchain = tools.ToolChain(toolchain)  # needed for proper execution
-
+    toolchain = tools.ToolChain(None, [toolchain])  # needed for proper execution
 
     # GO!
-    if ipython_mode:
+    if False:  # ipython_mode:
         exec_thread = threading.Thread(target=toolchain.run)
         return exec_thread.start()
     else:
