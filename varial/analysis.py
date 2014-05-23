@@ -132,7 +132,6 @@ def lookup(key, default=None):
 
 
 ############################################################### fileservice ###
-import diskio
 fs_aliases = []
 fs_wrappers = {}
 
@@ -145,8 +144,3 @@ def fileservice(filename="fileservice", autosave=True):
         return fs_wrappers[filename]
     else:
         return wrappers.Wrapper(name=filename)
-
-
-def write_fileservice():
-    for wrp in fs_wrappers.itervalues():
-        diskio.write(wrp)

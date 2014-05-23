@@ -213,5 +213,11 @@ def _get_obj_from_file(filename, in_file_path):
 
 ################################################### write and close on exit ###
 import analysis
-atexit.register(analysis.write_fileservice)
+
+
+def write_fileservice():
+    for wrp in analysis.fs_wrappers.itervalues():
+        write(wrp)
+
+atexit.register(write_fileservice)
 atexit.register(close_open_root_files)
