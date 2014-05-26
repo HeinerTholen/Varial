@@ -127,6 +127,23 @@ def _clean_wrapper(wrp):
             delattr(wrp, attr)
 
 
+def get(filename, default=None):
+    """Reads wrapper from disk if availible, else returns default."""
+    if os.path.exists(os.path.join(analysis.cwd, '%s.info' % filename)):
+        return read(filename)
+    else:
+        return default
+
+
+def remove(filename):
+    """Deletes wrapper files if availible."""
+    path = os.path.join(analysis.cwd, filename)
+    if os.path.exists(path + '.info'):
+        os.remove(path + '.info')
+    if os.path.exists(path + '.root'):
+        os.remove(path + '.root')
+
+
 ########################################################## i/o with aliases ###
 def generate_fs_aliases(root_file_path, sample_inst):
     """Produces list of all fileservice histograms for registered samples."""

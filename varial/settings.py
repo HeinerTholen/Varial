@@ -20,6 +20,7 @@ suppress_eventloop_exec = False
 try_reuse_results = True
 default_enable_sample = True
 fwlite_executable = ""
+fwlite_use_mp = True
 cmsRun_main_import_path = ""
 cmsRun_use_file_service = True
 cmsRun_output_module_name = "out"
