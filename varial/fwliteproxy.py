@@ -67,10 +67,12 @@ class FwliteProxy(toolinterface.Tool):
                 sig_term_sent = True
             time.sleep(0.2)
             proc.poll()
-        if not settings.recieved_sigint:
-            self._finalize()
+
+        self._finalize()
 
     def _finalize(self):
+        if settings.recieved_sigint:
+            return
         for res in self._proxy.results:
             samplename = res.split('!')[0]
             analysis.fs_aliases += list(

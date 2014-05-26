@@ -260,8 +260,8 @@ class CmsRunProxy(toolinterface.Tool):
                 sig_term_sent = True
             time.sleep(0.2)
             self._handle_processes()
-        if not settings.recieved_sigint:
-            self._finalize()
+
+        self._finalize()
 
     def _setup_processes(self):
         for d in ('logs', 'confs', 'fs', 'report'):
@@ -307,6 +307,10 @@ class CmsRunProxy(toolinterface.Tool):
                 monitor.proc_failed(process)
 
     def _finalize(self):
+        if settings.recieved_sigint:
+            return
+        if not self.use_file_service:
+            return
         for process in self.finished_pros:
             analysis.fs_aliases += list(
                 alias for alias in diskio.generate_fs_aliases(
