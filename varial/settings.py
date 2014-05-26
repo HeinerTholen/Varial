@@ -33,9 +33,8 @@ default_sample_members = {
     "legend": "",
     "input_files": [],
     "output_file": "",
-    "file_service": "",
-    "cfg_builtin": {},
-    "cfg_add_lines": [],
+    "cmsRun_builtin": {},
+    "cmsRun_add_lines": [],
     "cmsRun_args": [],
 }
 

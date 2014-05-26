@@ -10,6 +10,23 @@ import inspect
 class Sample(wrappers.WrapperBase):
     """
     Collect information about a sample.
+
+    Either 'lumi' or 'x_sec' and 'n_events' must be given
+
+    :param name:        str
+    :param is_data:     bool (default: False)
+    :param lumi:        float
+    :param x_sec:       float
+    :param n_events:    int
+    :param legend:      str (used to group samples as well, default: name)
+    :param n_events:    int
+    :param input_files: list of str
+
+    Optional parameters for cmsRun configs:
+    :param output_file:     str (event content out)
+    :param cmsRun_builtin:  dict (variable to be attact to builtin of a config)
+    :param cmsRun_add_lines: list of str (appended to cmsRun config)
+    :param cmsRun_args:     list of str (command line arguments for cmsRun)
     """
     class MissingDefinition(Exception):
         pass
@@ -20,23 +37,17 @@ class Sample(wrappers.WrapperBase):
         # check/correct input
         if not getattr(self, "name", 0):
             self.name = self.__class__.__name__
-        tbd = "TO BE DECLARED: "
-        if isinstance(self.input_files, str):
-            self.input_files = [self.input_files]
-        if isinstance(self.cfg_add_lines, str):
-            self.cfg_add_lines = [self.cfg_add_lines]
-        if isinstance(self.cmsRun_args, str):
-            self.cmsRun_args = self.cmsRun_args.split()
+        assert isinstance(self.input_files, list)
+        assert isinstance(self.cmsRun_add_lines, list)
+        assert isinstance(self.cmsRun_args, list)
+        assert isinstance(self.cfg_builtin, dict)
         if self.x_sec and self.n_events:
             self.lumi = self.n_events / float(self.x_sec)
+        tbd = "TO BE DECLARED: "
         if not self.lumi:
             raise self.MissingDefinition(tbd + "lumi or (x_sec and n_events)")
         if not self.input_files:
             raise self.MissingDefinition(tbd + "input_files")
-        if type(self.input_files) == str:
-            self.input_files = [self.input_files]
-        if not type(self.cfg_builtin) == dict:
-            raise self.MissingDefinition("cfg_builtin must be of type dict")
         if not self.legend:
             self.legend = self.name
 

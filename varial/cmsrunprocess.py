@@ -73,7 +73,7 @@ class CmsRunProcess(object):
             "sample"    : smpl.name
         }
         builtin_dict.update(common_builtins)
-        builtin_dict.update(smpl.cfg_builtin)
+        builtin_dict.update(smpl.cmsRun_builtin)
 
         # builtin, imports
         conf_lines += [
@@ -123,7 +123,7 @@ class CmsRunProcess(object):
             conf_lines.append("")
 
         # custom code
-        conf_lines += smpl.cfg_add_lines
+        conf_lines += smpl.cmsRun_add_lines
 
         # write out file
         with open(self.conf_filename, "w") as conf_file:
