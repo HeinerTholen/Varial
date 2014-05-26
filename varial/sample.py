@@ -40,7 +40,7 @@ class Sample(wrappers.WrapperBase):
         assert isinstance(self.input_files, list)
         assert isinstance(self.cmsRun_add_lines, list)
         assert isinstance(self.cmsRun_args, list)
-        assert isinstance(self.cfg_builtin, dict)
+        assert isinstance(self.cmsRun_builtin, dict)
         if self.x_sec and self.n_events:
             self.lumi = self.n_events / float(self.x_sec)
         tbd = "TO BE DECLARED: "

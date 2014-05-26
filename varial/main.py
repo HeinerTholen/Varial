@@ -40,6 +40,9 @@ class StdOutTee(object):
     def __del__(self):
         self.logfile.close()
 
+    def __getattr__(self, item):
+        return getattr(sys.__stdout__, item)
+
     def write(self, string):
         sys.__stdout__.write(string)
         self.logfile.write(string)

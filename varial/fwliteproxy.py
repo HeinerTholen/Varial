@@ -4,7 +4,6 @@ import time
 
 import analysis
 import diskio
-import monitor
 import settings
 import toolinterface
 
@@ -12,9 +11,9 @@ import toolinterface
 class FwliteProxy(toolinterface.Tool):
     def __init__(self,
                  name=None,
-                 py_exe=settings.fwlite_executable):
+                 py_exe=None):
         super(FwliteProxy, self).__init__(name)
-        self.py_exe = py_exe
+        self.py_exe = py_exe or settings.fwlite_executable
         self._proxy = None
 
     def wanna_reuse(self, all_reused_before_me):
@@ -55,11 +54,7 @@ class FwliteProxy(toolinterface.Tool):
             for s in analysis.all_samples.itervalues()
         )
         diskio.write(self._proxy)
-        proc = subprocess.Popen(
-            ['python', self.py_exe],
-            stdout=monitor.MonitorInfo.outstream,
-            stderr=subprocess.STDOUT
-        )
+        proc = subprocess.Popen(['python', self.py_exe])
         sig_term_sent = False
         while None == proc.returncode:
             if settings.recieved_sigint and not sig_term_sent:
@@ -67,7 +62,9 @@ class FwliteProxy(toolinterface.Tool):
                 sig_term_sent = True
             time.sleep(0.2)
             proc.poll()
-
+        if proc.returncode:
+            raise RuntimeError(
+                'FwLite subprocess returned %d' % proc.returncode)
         self._finalize()
 
     def _finalize(self):
