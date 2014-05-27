@@ -82,7 +82,7 @@ class Tool(_ToolBase):
         return (
             super(Tool, self).wanna_reuse(all_reused_before_me)
             and os.path.exists(self.logfile)
-        )
+        )  # TODO make check with hash, stored in self.logfile
 
     def reuse(self):
         self.message("INFO Reusing!")
