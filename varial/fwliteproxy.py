@@ -1,6 +1,6 @@
-import os
 import subprocess
 import time
+from os.path import exists, join
 
 import analysis
 import diskio
@@ -24,14 +24,26 @@ class FwliteProxy(toolinterface.Tool):
 
     def wanna_reuse(self, all_reused_before_me):
         proxy = diskio.get('fwlite_proxy')
-        if not hasattr(proxy, 'results'):
+
+        # has been working at all?
+        if not proxy:
             return False
-        for name, smp in analysis.all_samples.iteritems():
-            if not (
-                name in proxy.samples
-                and proxy.samples[name] == smp.input_files
-            ):
-                return False
+
+        # check if result was deleted on disk
+        if not all(
+            exists(join(self.result_dir, '%s.info' % res))
+            for res in proxy.results
+        ):
+            return False
+
+        # check if all files are done
+        files_done = proxy.files_done
+        if not all(
+            f in files_done
+            for smp in analysis.all_samples.itervalues()
+            for f in smp.input_files
+        ):
+            return False
         self._proxy = proxy
         return True
 
@@ -52,16 +64,7 @@ class FwliteProxy(toolinterface.Tool):
             return
 
         # prepare proxy file
-        self._proxy = diskio.get(
-            'fwlite_proxy',
-            wrappers.Wrapper(name='fwlite_proxy', files_done=dict())
-        )
-        self._proxy.use_mp = self.use_mp
-        self._proxy.event_files = dict(
-            (s.name, s.input_files)
-            for s in analysis.all_samples.itervalues()
-        )
-        diskio.write(self._proxy)
+        self._make_proxy()
 
         # start subprocess
         proc = subprocess.Popen(
@@ -85,6 +88,35 @@ class FwliteProxy(toolinterface.Tool):
                 'FwLite subprocess returned %d' % proc.returncode)
         self._finalize()
 
+    def _make_proxy(self):
+        self._proxy = diskio.get(
+            'fwlite_proxy',
+            wrappers.Wrapper(name='fwlite_proxy', files_done={}, results={})
+        )
+        self._proxy.use_mp = self.use_mp
+        self._proxy.event_files = dict(
+            (s.name, s.input_files)
+            for s in analysis.all_samples.itervalues()
+        )
+
+        # if a result was deleted, remove all associated files from files_done
+        files_done = self._proxy.files_done
+        results = self._proxy.results
+        resetted_samples = {}
+        for res in results.keys():
+            if not exists(join(self.result_dir, '%s.info' % res)):
+                del results[res]
+                smpl = res.split('!')[0]
+                if smpl in resetted_samples:
+                    continue
+                resetted_samples[smpl] = True
+                files = analysis.all_samples[smpl].input_files
+                for f in files:
+                    if f in files_done:
+                        del files_done[f]
+
+        diskio.write(self._proxy)
+
     def _finalize(self):
         if settings.recieved_sigint:
             return
@@ -92,7 +124,7 @@ class FwliteProxy(toolinterface.Tool):
             samplename = res.split('!')[0]
             analysis.fs_aliases += list(
                 alias for alias in diskio.generate_fs_aliases(
-                    os.path.join(self.result_dir, '%s.root' % res),
+                    join(self.result_dir, '%s.root' % res),
                     samplename
                 )
             )
