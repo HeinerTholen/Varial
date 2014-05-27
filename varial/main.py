@@ -122,7 +122,7 @@ def main(**main_kwargs):
     toolchain = tools.ToolChain(None, [toolchain])  # needed for proper execution
 
     # GO!
-    if ipython_mode:
+    if False:  # ipython_mode:
         # TODO: test ipython mode!!
         exec_thread = threading.Thread(target=toolchain.run)
         return exec_thread.start()
