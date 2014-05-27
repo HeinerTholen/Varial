@@ -1,6 +1,6 @@
 import atexit
-import os
 import glob
+from os.path import abspath, basename, dirname, exists, join
 from ast import literal_eval
 from itertools import takewhile
 from ROOT import TFile, TDirectory, TH1, TObject
@@ -47,12 +47,12 @@ def close_open_root_files():
 def write(wrp, filename=None):
     """Writes wrapper to disk, including root objects."""
     if not filename:
-        filename = os.path.join(analysis.cwd, wrp.name)
+        filename = join(analysis.cwd, wrp.name)
     if filename[-5:] == ".info":
         filename = filename[:-5]
     # write root objects (if any)
     if any(isinstance(o, TObject) for o in wrp.__dict__.itervalues()):
-        wrp.root_filename = os.path.basename(filename+".root")
+        wrp.root_filename = basename(filename+".root")
         f = TFile.Open(filename+".root", "RECREATE")  # TODO check for validity
         f.cd()
         _write_wrapper_objs(wrp, f)
@@ -88,11 +88,11 @@ def read(filename):
     """Reads wrapper from disk, including root objects."""
     if filename[-5:] != ".info":
         filename += ".info"
-    filename = os.path.join(analysis.cwd, filename)
+    filename = join(analysis.cwd, filename)
     with open(filename, "r") as f:
         info = _read_wrapper_info(f)
     if "root_filename" in info:
-        _read_wrapper_objs(info, os.path.dirname(filename))
+        _read_wrapper_objs(info, dirname(filename))
     klass = getattr(wrappers, info.get("klass"))
     wrp = klass(**info)
     _clean_wrapper(wrp)
@@ -111,7 +111,7 @@ def _read_wrapper_info(file_handle):
 
 
 def _read_wrapper_objs(info, path):
-    root_file = os.path.join(path, info["root_filename"])
+    root_file = join(path, info["root_filename"])
     obj_paths = info["root_file_obj_names"]
     for key, value in obj_paths.iteritems():
         obj = _get_obj_from_file(root_file, [key, value])
@@ -129,7 +129,7 @@ def _clean_wrapper(wrp):
 
 def get(filename, default=None):
     """Reads wrapper from disk if availible, else returns default."""
-    if os.path.exists(os.path.join(analysis.cwd, '%s.info' % filename)):
+    if exists(join(analysis.cwd, '%s.info' % filename)):
         return read(filename)
     else:
         return default
@@ -137,10 +137,10 @@ def get(filename, default=None):
 
 def remove(filename):
     """Deletes wrapper files if availible."""
-    path = os.path.join(analysis.cwd, filename)
-    if os.path.exists(path + '.info'):
+    path = join(analysis.cwd, filename)
+    if exists(path + '.info'):
         os.remove(path + '.info')
-    if os.path.exists(path + '.root'):
+    if exists(path + '.root'):
         os.remove(path + '.root')
 
 
@@ -167,7 +167,7 @@ def generate_aliases(glob_path="./*.root"):
         root_file = get_open_root_file(filename)
         for alias in _recursive_make_alias(
             root_file,
-            os.path.abspath(filename),
+            abspath(filename),
             []
         ):
             yield alias
