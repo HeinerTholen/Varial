@@ -93,12 +93,11 @@ class _ResultProxy(object):
             parent.children[self.name] = self
 
     def lookup(self, keys):
-        k = keys.pop(0)
-        if k == self.name:
+        if not keys:
             return self.result
-        elif k == '..':
-            if self.parent:
-                return self.parent.lookup(keys)
+        k = keys.pop(0)
+        if k == '..' and self.parent:
+            return self.parent.lookup(keys)
         elif k in self.children:
             return self.children[k].lookup(keys)
 
@@ -117,15 +116,15 @@ def pop_tool():
     t = _tool_stack.pop()
     _mktooldir()
     global _current_result
-    _current_result.result = getattr(t, 'result')
+    _current_result.result = getattr(t, 'result', 0) or None
     _current_result = _current_result.parent
 
 
 def lookup(key, default=None):
-    if not _current_result:
-        return default
     keys = key.split('/')
     if keys[0] == '..':
+        if not _current_result:
+            return default
         return _current_result.lookup(keys) or default
     else:
         return _results_base.lookup(keys) or default
