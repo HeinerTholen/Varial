@@ -56,6 +56,7 @@ class FSStackPlotter(Tool):
         if not self.filter_dict:
             raise self.NoFilterDictError(
                 "filter_dict not set: subclass and overwrite configure()"
+                " or pass to constructor as filter_dict=..."
             )
         wrps = gen.fs_filter_active_sort_load(self.filter_dict)
         if self.hook_loaded_histos:
