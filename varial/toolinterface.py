@@ -87,7 +87,7 @@ class Tool(_ToolBase):
         )  # TODO make check with hash, stored in self.logfile
 
     def reuse(self):
-        self.message("INFO Reusing!")
+        self.message("INFO reusing...")
         res_file = os.path.join(self.result_dir, "result")
         if os.path.exists(res_file+".info"):
             self.message("INFO Fetching last round's data: ")
