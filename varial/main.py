@@ -108,6 +108,9 @@ def main(**main_kwargs):
     if 'samples' in main_kwargs:
         analysis.all_samples = dict((s.name, s) for s in main_kwargs['samples'])
 
+    if 'active_samples' in main_kwargs:
+        analysis.active_samples = main_kwargs['active_samples']
+
     # setup toolchain
     global toolchain
     toolchain = main_kwargs.get('toolchain')
