@@ -128,7 +128,7 @@ def main(**main_kwargs):
     try:
         toolchain.run()
     except RuntimeError as e:
-        if e.args[0] == 'End of load only mode at: ':
+        if e.args[0] == 'End of reload results mode at: ':
             monitor.message(
                 'varial.main',
                 'WARNING ' + str(e.args)

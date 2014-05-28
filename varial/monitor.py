@@ -104,3 +104,5 @@ def connect_object_with_messenger(obj):
     return obj.messenger
 
 
+def reset():
+    _info.indent = 0
