@@ -285,7 +285,7 @@ def fs_content():
 
     :yields:   FileServiceAlias
     """
-    for alias in diskio.fileservice_aliases():
+    for alias in analysis.fs_aliases:
         yield alias
 
 
