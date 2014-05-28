@@ -54,10 +54,8 @@ class FSStackPlotter(Tool):
 
     def set_up_stacking(self):
         if not self.filter_dict:
-            raise self.NoFilterDictError(
-                "filter_dict not set: subclass and overwrite configure()"
-                " or pass to constructor as filter_dict=..."
-            )
+            self.message("WARNING No filter_dict set! "
+                         "Working with _all_ histograms.")
         wrps = gen.fs_filter_active_sort_load(self.filter_dict)
         if self.hook_loaded_histos:
             wrps = self.hook_loaded_histos(wrps)
