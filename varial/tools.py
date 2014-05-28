@@ -5,6 +5,7 @@ import diskio
 import generators as gen
 import rendering
 import settings
+import wrappers
 
 from toolinterface import Tool, ToolChain
 from cmsrunprocess import CmsRunProxy
@@ -39,6 +40,7 @@ class FSStackPlotter(Tool):
             'hook_post_canvas_build': None,
             'save_log_scale': False,
             'save_lin_log_scale': False,
+            'keep_stacks_as_result': False,
             'canvas_decorators': [
                 rendering.BottomPlotRatioSplitErr,
                 rendering.Legend
@@ -61,7 +63,11 @@ class FSStackPlotter(Tool):
             wrps = self.hook_loaded_histos(wrps)
         wrps = gen.group(wrps)
         wrps = gen.mc_stack_n_data_sum(wrps, None, True)
-        self.stream_stack = wrps
+        if self. keep_stacks_as_result:
+            self.result = list(wrps)
+            self.stream_stack = self.result
+        else:
+            self.stream_stack = wrps
 
     def set_up_make_canvas(self):
         def put_ana_histo_name(grps):
@@ -98,11 +104,11 @@ class FSStackPlotter(Tool):
 
     def run_sequence(self):
         count = gen.consume_n_count(self.stream_canvas)
-        if count:
-            level = "INFO "
-        else:
-            level = "WARNING "
-        self.message(level+self.name+" produced "+str(count)+" canvases.")
+        level = "INFO " if count else "WARNING "
+        message = level+self.name+" produced "+str(count)+" canvases."
+        self.message(message)
+        if not self.result:
+            self.result = wrappers.Wrapper(message=message)
 
     def run(self):
         self.configure()
