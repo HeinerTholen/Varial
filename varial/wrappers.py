@@ -68,9 +68,11 @@ class FileServiceAlias(Alias):
     :param  is_data:        data or not?
     :type   is_data:        bool
     """
-    def __init__(self, name, analyzer, sample):
+    def __init__(self, name, analyzer, filename, sample):
         super(FileServiceAlias, self).__init__(
-            sample.file_service, [analyzer, name])
+            filename,
+            [analyzer, name]
+        )
         self.name           = name
         self.analyzer       = analyzer
         self.sample         = sample.name

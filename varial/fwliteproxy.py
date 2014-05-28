@@ -126,6 +126,6 @@ class FwliteProxy(toolinterface.Tool):
             analysis.fs_aliases += list(
                 alias for alias in diskio.generate_fs_aliases(
                     join(self.result_dir, '%s.root' % res),
-                    samplename
+                    analysis.all_samples[samplename]
                 )
             )

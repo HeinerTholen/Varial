@@ -157,6 +157,7 @@ def generate_fs_aliases(root_file_path, sample_inst):
             yield wrappers.FileServiceAlias(
                 histo_name,
                 analyzer_name,
+                root_file_path,
                 sample_inst
             )
 
