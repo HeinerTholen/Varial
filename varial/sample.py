@@ -37,10 +37,11 @@ class Sample(wrappers.WrapperBase):
         # check/correct input
         if not getattr(self, "name", 0):
             self.name = self.__class__.__name__
-        assert isinstance(self.input_files, list)
         assert isinstance(self.cmsRun_add_lines, list)
         assert isinstance(self.cmsRun_args, list)
         assert isinstance(self.cmsRun_builtin, dict)
+        assert (isinstance(self.input_files, list)
+                or isinstance(self.input_files, tuple))
         if self.x_sec and self.n_events:
             self.lumi = self.n_events / float(self.x_sec)
         tbd = "TO BE DECLARED: "
