@@ -1,10 +1,12 @@
 import os
 import time
 import inspect
+
 import analysis
-import wrappers
 import diskio
 import monitor
+import settings
+import wrappers
 from util import ResettableType, deepish_copy
 
 
@@ -159,8 +161,13 @@ class ToolChain(_ToolBase):
                 if tool.wanna_reuse(self._reuse):
                     tool.reuse()
                     continue
+                elif settings.only_reload_results:
+                    continue
                 elif tool.can_reuse:
                     self._reuse = False
+
+                if settings.only_reload_results:
+                    raise RuntimeError('End of load only mode at: ', t)
 
                 t._reuse = self._reuse
                 t.starting()

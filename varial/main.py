@@ -6,6 +6,7 @@ import time
 
 import analysis
 import settings
+import monitor
 import tools
 
 ipython_mode = False
@@ -101,7 +102,6 @@ def main(**main_kwargs):
     main_args.update(main_kwargs)
     _process_settings_kws(main_kwargs)
     if settings.logfilename:
-        import monitor
         monitor.MonitorInfo.outstream = StdOutTee(settings.logfilename)
 
     # setup samples
@@ -117,16 +117,23 @@ def main(**main_kwargs):
         elif settings.fwlite_executable:
             toolchain = tools.FwliteProxy('fwlite_output')
     if not toolchain:
-        print "FATAL No toolchain or eventloops scripts defined."
+        monitor.message(
+            'varial.main',
+            "FATAL No toolchain or eventloops scripts defined."
+        )
         return
     toolchain = tools.ToolChain(None, [toolchain])  # needed for proper execution
 
     # GO!
-    if False:  # ipython_mode:
-        # TODO: test ipython mode!!
-        exec_thread = threading.Thread(target=toolchain.run)
-        return exec_thread.start()
-    else:
+    try:
         toolchain.run()
+    except RuntimeError as e:
+        if e.args[0] == 'End of load only mode at: ':
+            monitor.message(
+                'varial.main',
+                'WARNING ' + str(e.args)
+            )
+        else:
+            raise e
 
 

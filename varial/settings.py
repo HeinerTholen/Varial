@@ -11,6 +11,7 @@ logfilename = time.strftime(
 )
 varial_working_dir = "./"
 recieved_sigint = False
+only_reload_results = False
 
 ############################################## cmsRun and fwlite processing ###
 import multiprocessing
