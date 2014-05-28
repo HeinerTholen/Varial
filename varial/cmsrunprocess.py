@@ -11,6 +11,7 @@ import monitor
 import settings
 import sample
 import toolinterface
+import wrappers
 
 
 class CmsRunProcess(object):
@@ -262,6 +263,8 @@ class CmsRunProxy(toolinterface.Tool):
             time.sleep(0.2)
             self._handle_processes()
 
+        self.result = wrappers.Wrapper(
+            finished_procs=list(p.name for p in self.finished_pros))
         self._finalize()
 
     def _setup_processes(self):

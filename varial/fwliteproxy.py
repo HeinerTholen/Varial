@@ -87,6 +87,7 @@ class FwliteProxy(toolinterface.Tool):
             self.message('FATAL subprocess has non zero returncode')
             raise RuntimeError(
                 'FwLite subprocess returned %d' % proc.returncode)
+        self.result = self._proxy
         self._finalize()
 
     def _make_proxy(self):
