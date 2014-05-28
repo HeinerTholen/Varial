@@ -32,7 +32,7 @@ class Sample(wrappers.WrapperBase):
         pass
 
     def __init__(self, **kws):
-        self.__dict__.update(settings.default_sample_members)
+        self.__dict__.update(settings.default_sample_attributes)
         self.__dict__.update(kws)
         # check/correct input
         if not getattr(self, "name", 0):

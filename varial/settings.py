@@ -10,7 +10,7 @@ logfilename = time.strftime(
     time.localtime()
 )
 varial_working_dir = "./"
-
+recieved_sigint = False
 
 ############################################## cmsRun and fwlite processing ###
 import multiprocessing
@@ -25,8 +25,7 @@ cmsRun_main_import_path = ""
 cmsRun_use_file_service = True
 cmsRun_output_module_name = "out"
 cmsRun_common_builtins = {}
-recieved_sigint = False
-default_sample_members = {
+default_sample_attributes = {
     "is_data": False,
     "x_sec": 0.,
     "n_events": 0,
