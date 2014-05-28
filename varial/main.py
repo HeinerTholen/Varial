@@ -125,7 +125,8 @@ def main(**main_kwargs):
             "FATAL No toolchain or eventloops scripts defined."
         )
         return
-    toolchain = tools.ToolChain(None, [toolchain])  # needed for proper execution
+    toolchain = tools.ToolChain(None, [toolchain])  # needed for exec
+    toolchain._reuse = settings.try_reuse_results
 
     # GO!
     try:
