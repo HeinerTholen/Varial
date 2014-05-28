@@ -45,9 +45,14 @@ def close_open_root_files():
 
 
 ##################################################### read / write wrappers ###
+use_analysis_cwd = True
+
+
 def write(wrp, filename=None):
     """Writes wrapper to disk, including root objects."""
     if not filename:
+        filename = wrp.name
+    if use_analysis_cwd:
         filename = join(analysis.cwd, wrp.name)
     if filename[-5:] == ".info":
         filename = filename[:-5]
@@ -89,7 +94,8 @@ def read(filename):
     """Reads wrapper from disk, including root objects."""
     if filename[-5:] != ".info":
         filename += ".info"
-    filename = join(analysis.cwd, filename)
+    if use_analysis_cwd:
+        filename = join(analysis.cwd, filename)
     with open(filename, "r") as f:
         info = _read_wrapper_info(f)
     if "root_filename" in info:
@@ -130,19 +136,11 @@ def _clean_wrapper(wrp):
 
 def get(filename, default=None):
     """Reads wrapper from disk if availible, else returns default."""
-    if exists(join(analysis.cwd, '%s.info' % filename)):
+    fname = join(analysis.cwd, filename) if use_analysis_cwd else filename
+    if exists('%s.info' % fname):
         return read(filename)
     else:
         return default
-
-
-def remove(filename):
-    """Deletes wrapper files if availible."""
-    path = join(analysis.cwd, filename)
-    if exists(path + '.info'):
-        os.remove(path + '.info')
-    if exists(path + '.root'):
-        os.remove(path + '.root')
 
 
 ########################################################## i/o with aliases ###
