@@ -88,11 +88,8 @@ class Tool(_ToolBase):
 
     def reuse(self):
         self.message("INFO reusing...")
-        res_file = os.path.join(self.result_dir, "result")
-        if os.path.exists(res_file+".info"):
-            self.message("INFO Fetching last round's data: ")
-            res = diskio.read(res_file)
-            #self.message(str(res))
+        res = diskio.get('result.info')
+        if res:
             if hasattr(res, "RESULT_WRAPPERS"):
                 self.result = list(diskio.read(f) for f in res.RESULT_WRAPPERS)
             else:
@@ -105,23 +102,22 @@ class Tool(_ToolBase):
             os.remove(self.logfile)
 
     def finished(self):
-        res_file = self.result_dir + "result"
         if isinstance(self.result, wrappers.Wrapper):
             self.result.name = self.name
-            diskio.write(self.result, res_file)
+            diskio.write(self.result, 'result')
         elif isinstance(self.result, list) or isinstance(self.result, tuple):
             filenames = []
             for i, wrp in enumerate(self.result):
                 num_str = "_%03d" % i
                 wrp.name = self.name + num_str
-                filenames.append(res_file + num_str)
-                diskio.write(wrp, res_file + num_str)
+                filenames.append('result' + num_str)
+                diskio.write(wrp, 'result' + num_str)
             diskio.write(
                 wrappers.Wrapper(
                     name=self.name,
                     RESULT_WRAPPERS=filenames
                 ),
-                res_file
+                'result'
             )
         self.time_fin = time.ctime() + "\n"
         with open(self.logfile, "w") as f:

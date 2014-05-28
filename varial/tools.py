@@ -5,7 +5,6 @@ import diskio
 import generators as gen
 import rendering
 import settings
-import wrappers
 
 from toolinterface import Tool, ToolChain
 from cmsrunprocess import CmsRunProxy
@@ -107,8 +106,6 @@ class FSStackPlotter(Tool):
         level = "INFO " if count else "WARNING "
         message = level+self.name+" produced "+str(count)+" canvases."
         self.message(message)
-        if not self.result:
-            self.result = wrappers.Wrapper(message=message)
 
     def run(self):
         self.configure()
@@ -123,7 +120,6 @@ class SimpleWebCreator(Tool):
     Browses through settings.DIR_PLOTS and generates webpages recursively for
     all directories.
     """
-    has_output_dir = False
 
     def __init__(self, name=None, working_dir=""):
         super(SimpleWebCreator, self).__init__(name)
@@ -312,6 +308,7 @@ class SimpleWebCreator(Tool):
 
     def run(self):
         """Run the single steps."""
+        diskio.use_analysis_cwd = False
         self.configure()
         if not self.image_postfix:
             return
@@ -329,4 +326,4 @@ class SimpleWebCreator(Tool):
         self.finalize_page()
         self.write_page()
         self.copy_page_to_destination()
-
+        diskio.use_analysis_cwd = True
