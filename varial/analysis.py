@@ -78,7 +78,9 @@ _current_result = None
 
 def _mktooldir():
     global cwd
-    cwd = settings.varial_working_dir + "/".join(t.name for t in _tool_stack)
+    cwd = (settings.varial_working_dir
+           + "/".join(t.name for t in _tool_stack)
+           + "/")
     if not os.path.exists(cwd):
         os.mkdir(cwd)
 
