@@ -48,6 +48,7 @@ class FwliteProxy(toolinterface.Tool):
         return True
 
     def reuse(self):
+        super(FwliteProxy, self).reuse()
         self._finalize()
 
     def run(self):

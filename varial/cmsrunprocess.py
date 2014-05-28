@@ -237,6 +237,7 @@ class CmsRunProxy(toolinterface.Tool):
         return not bool(self.waiting_pros)
 
     def reuse(self):
+        super(CmsRunProxy, self).reuse()
         self._finalize()
 
     def run(self):
