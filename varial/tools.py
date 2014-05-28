@@ -14,30 +14,39 @@ from fwliteproxy import FwliteProxy
 # TODO: Make a new Plotter Interface with Composition:
 # TODO: the functions should be non-class methods
 class FSStackPlotter(Tool):
-    """A 'stack with data overlay' plotter. To be subclassed."""
+    """
+    A 'stack with data overlay' plotter. Can be subclassed.
+
+    Default attributes, that can be overwritten by init keywords:
+    'filter_dict': dict
+    'canvas_decorators': list
+    'hook_loaded_histos': generator
+    'hook_pre_canvas_build': generator
+    'hook_post_canvas_build': generator,
+    'save_log_scale': bool
+    'save_lin_log_scale': bool
+    """
 
     class NoFilterDictError(Exception):
         pass
 
-    def __init__(self, name=None):
+    def __init__(self, name=None, **kws):
         super(FSStackPlotter, self).__init__(name)
-        if not hasattr(self, "filter_dict"):
-            self.filter_dict = None
-        if not hasattr(self, "canvas_decorators"):
-            self.canvas_decorators = [
+        defaults = {
+            'filter_dict': None,
+            'hook_loaded_histos': None,
+            'hook_pre_canvas_build': None,
+            'hook_post_canvas_build': None,
+            'save_log_scale': False,
+            'save_lin_log_scale': False,
+            'canvas_decorators': [
                 rendering.BottomPlotRatioSplitErr,
                 rendering.Legend
             ]
-        if not hasattr(self, "hook_loaded_histos"):
-            self.hook_loaded_histos = None
-        if not hasattr(self, "hook_pre_canvas_build"):
-            self.hook_pre_canvas_build = None
-        if not hasattr(self, "hook_post_canvas_build"):
-            self.hook_post_canvas_build = None
-        if not hasattr(self, "save_log_scale"):
-            self.save_log_scale = False
-        if not hasattr(self, "save_lin_log_scale"):
-            self.save_lin_log_scale = False
+        }
+        defaults.update(self.__dict__)  # do not overwrite user stuff
+        defaults.update(kws)            # add keywords
+        self.__dict__.update(defaults)  # put it back
         self.save_name_lambda = lambda wrp: self.result_dir + wrp.name
 
     def configure(self):
