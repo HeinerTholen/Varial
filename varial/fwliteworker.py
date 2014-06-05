@@ -111,9 +111,8 @@ def work(workers, event_handles=None, use_mp=True):
             raise RuntimeError('You must either provide the event_handles '
                                'argument or fwlite_proxy.info in my cwd!')
         if os.path.exists('.cache'):
-            os.system('rm .cache/*')
-        else:
-            os.mkdir('.cache')
+            os.system('rm -rf .cache')
+        os.mkdir('.cache')
         use_mp = _proxy.use_mp
 
         from DataFormats.FWLite import Events
