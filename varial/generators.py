@@ -563,10 +563,10 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=False):
         except op.TooFewWrpsError:
             print "WARNING generators.mc_stack_n_data_sum(..): "\
                   "No data histos present! I will yield only mc."
-        if use_all_data_lumi:
-            data_lumi = analysis.data_lumi_sum_wrp()
-        else:
+        if data_sum and not use_all_data_lumi:
             data_lumi = op.lumi(data_sum)
+        else:
+            data_lumi = analysis.data_lumi_sum_wrp()
 
         # merge mc samples (merge also normalizes to lumi = 1.)
         mc_sorted = sorted(mc, key=merge_mc_key_func)

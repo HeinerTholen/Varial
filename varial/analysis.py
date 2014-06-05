@@ -35,7 +35,7 @@ def data_lumi_sum():
         v.lumi
         for k, v in data_samples().iteritems()
         if k in active_samples
-    ))
+    )) or settings.default_data_lumi
 
 
 def data_lumi_sum_wrp():
