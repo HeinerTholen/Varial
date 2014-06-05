@@ -1,3 +1,4 @@
+import itertools
 import os
 import shutil
 
@@ -63,8 +64,8 @@ class FSStackPlotter(Tool):
         wrps = gen.group(wrps)
         wrps = gen.mc_stack_n_data_sum(wrps, None, True)
         if self. keep_stacks_as_result:
-            self.result = list(wrps)
-            self.stream_stack = self.result
+            self.stream_stack = list(wrps)
+            self.result = list(itertools.chain.from_iterable(self.stream_stack))
         else:
             self.stream_stack = wrps
 
