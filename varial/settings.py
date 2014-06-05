@@ -4,14 +4,20 @@ This module contains project wide settings.
 
 
 ################################################################### general ###
+import os
 import time
-logfilename = time.strftime(
-    ".varial_%Y%m%dT%H%M%S.log",
-    time.localtime()
-)
-varial_working_dir = "./"
 recieved_sigint = False
 only_reload_results = False
+varial_working_dir = "./"
+
+
+def logfilename():
+    return time.strftime(
+        os.path.join(varial_working_dir,
+                     ".varial_logs/varial_%Y%m%dT%H%M%S.log"),
+        time.localtime()
+    )
+
 
 ############################################## cmsRun and fwlite processing ###
 import multiprocessing

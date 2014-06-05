@@ -2,6 +2,7 @@ import atexit
 import signal
 import sys
 import threading
+import os
 import time
 
 import analysis
@@ -101,8 +102,11 @@ def main(**main_kwargs):
     # prepare...
     main_args.update(main_kwargs)
     _process_settings_kws(main_kwargs)
-    if settings.logfilename:
-        monitor.MonitorInfo.outstream = StdOutTee(settings.logfilename)
+    logfile = settings.logfilename()
+    logpath = os.path.split(logfile)[0]
+    if not os.path.exists(logpath):
+        os.mkdir(logpath)
+    monitor.MonitorInfo.outstream = StdOutTee(logfile)
 
     # setup samples
     if 'samples' in main_kwargs:
