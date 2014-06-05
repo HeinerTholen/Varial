@@ -53,7 +53,7 @@ def write(wrp, filename=None):
     if not filename:
         filename = wrp.name
     if use_analysis_cwd:
-        filename = join(analysis.cwd, wrp.name)
+        filename = join(analysis.cwd, filename)
     if filename[-5:] == ".info":
         filename = filename[:-5]
     # write root objects (if any)
