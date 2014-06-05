@@ -103,7 +103,7 @@ def _add_results(event_handle_wrps):
     return res_sums
 
 
-def work(workers, event_handles=None, use_mp=True):
+def work(workers, event_handles=None):
     global _proxy
     if not event_handles:
         _proxy = diskio.get('fwlite_proxy')
@@ -113,7 +113,6 @@ def work(workers, event_handles=None, use_mp=True):
         if os.path.exists('.cache'):
             os.system('rm -rf .cache')
         os.mkdir('.cache')
-        use_mp = _proxy.use_mp
 
         from DataFormats.FWLite import Events
         def event_handles():
@@ -134,8 +133,10 @@ def work(workers, event_handles=None, use_mp=True):
             filenames=h_evt._filenames
         ) for h_evt in event_handles)
 
-    if use_mp:
-        imap_func = multiprocessing.Pool().imap_unordered
+    if _proxy.max_num_processes > 1:
+        imap_func = multiprocessing.Pool(
+            _proxy.max_num_processes
+        ).imap_unordered
     else:
         imap_func = itertools.imap
 

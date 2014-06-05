@@ -12,16 +12,11 @@ import wrappers
 class FwliteProxy(toolinterface.Tool):
     def __init__(self,
                  name=None,
-                 py_exe=None,
-                 use_mp=None):
+                 py_exe=None):
         super(FwliteProxy, self).__init__(name)
         self.py_exe = py_exe or settings.fwlite_executable
         if not self.py_exe:
             raise RuntimeError('No script path given')
-        if None == use_mp:
-            self.use_mp = settings.fwlite_use_mp
-        else:
-            self.use_mp = use_mp
         self._proxy = None
 
     def wanna_reuse(self, all_reused_before_me):
@@ -101,7 +96,7 @@ class FwliteProxy(toolinterface.Tool):
             'fwlite_proxy',
             wrappers.Wrapper(name='fwlite_proxy', files_done={}, results={})
         )
-        self._proxy.use_mp = self.use_mp
+        self._proxy.max_num_processes = settings.max_num_processes
         self._proxy.event_files = dict(
             (s.name, s.input_files)
             for s in analysis.all_samples.itervalues()
