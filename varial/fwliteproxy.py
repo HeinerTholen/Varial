@@ -16,6 +16,8 @@ class FwliteProxy(toolinterface.Tool):
                  use_mp=None):
         super(FwliteProxy, self).__init__(name)
         self.py_exe = py_exe or settings.fwlite_executable
+        if not self.py_exe:
+            raise RuntimeError('No script path given')
         if None == use_mp:
             self.use_mp = settings.fwlite_use_mp
         else:
@@ -29,11 +31,12 @@ class FwliteProxy(toolinterface.Tool):
         if not proxy:
             return False
 
-        # check if result was deleted on disk
+        # check if all results are available
         if not all(
             exists(join(self.result_dir, '%s.info' % res))
             for res in proxy.results
         ):
+            self.message('INFO Not all results are found, running again.')
             return False
 
         # check if all files are done
@@ -43,6 +46,7 @@ class FwliteProxy(toolinterface.Tool):
             for smp in analysis.all_samples.itervalues()
             for f in smp.input_files
         ):
+            self.message('INFO Not all files are done, running again.')
             return False
         self._proxy = proxy
         return True
@@ -56,18 +60,20 @@ class FwliteProxy(toolinterface.Tool):
             self.message(
                 self, "INFO settings.suppress_eventloop_exec == True, pass...")
             return
+
+        # prepare proxy file / ask for execution
+        self._make_proxy()
         if not (settings.not_ask_execute or raw_input(
                 "Really run fwlite jobs on these samples:\n   "
-                + ",\n   ".join(map(str, analysis.all_samples.keys()))
+                + ",\n   ".join(map(str, self._proxy.due_samples))
                 + ('\nusing %i cores' % settings.max_num_processes)
                 + "\n?? (type 'yes') "
                 ) == "yes"):
             return
-
-        # prepare proxy file
-        self._make_proxy()
+        diskio.write(self._proxy)
 
         # start subprocess
+        self.message("INFO Starting script: '%s'" % self.py_exe)
         proc = subprocess.Popen(
             ['python', self.py_exe],
             cwd=self.result_dir
@@ -117,7 +123,13 @@ class FwliteProxy(toolinterface.Tool):
                     if f in files_done:
                         del files_done[f]
 
-        diskio.write(self._proxy)
+        due_samples = analysis.all_samples.keys()
+        self._proxy.due_samples = due_samples
+        for res in results.keys():
+            smpl = res.split('!')[0]
+            if smpl in due_samples:
+                due_samples.remove(smpl)
+
 
     def _finalize(self):
         if settings.recieved_sigint:

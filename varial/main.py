@@ -114,7 +114,7 @@ def main(**main_kwargs):
 
     if 'active_samples' in main_kwargs:
         analysis.active_samples = main_kwargs['active_samples']
-    else:
+    elif not analysis.active_samples:
         analysis.active_samples = analysis.all_samples.keys()
 
     # setup toolchain
