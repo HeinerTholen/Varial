@@ -11,7 +11,6 @@ import sample
 import wrappers
 
 
-
 class NoDictInFileError(Exception): pass
 class NoObjectError(Exception): pass
 class NoHistogramError(Exception): pass
