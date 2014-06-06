@@ -1,4 +1,4 @@
-from ROOT import TH1, THStack, TCanvas, TObject
+from ROOT import TH1, TH1D, THStack, TCanvas, TObject
 
 
 class WrapperBase(object):
@@ -147,6 +147,9 @@ class FloatWrapper(Wrapper):
         super(FloatWrapper, self).__init__(**kws)
         self.float = float
 
+    def primary_object(self):
+        return self.float
+
 
 class HistoWrapper(Wrapper):
     """
@@ -255,6 +258,15 @@ class CanvasWrapper(Wrapper):
         self.canvas.Modified()
         self.canvas.Update()
         return self.canvas
+
+
+class FileServiceWrapper(Wrapper):
+    """
+    Wrapper class for many histograms in one file.
+    """
+    def make(self, *args):
+        """args need to be args for TH1D constructor."""
+        setattr(self, args[0], TH1D(*args))
 
 
 if __name__ == "__main__":

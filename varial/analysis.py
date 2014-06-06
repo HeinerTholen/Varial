@@ -141,7 +141,7 @@ def fileservice(filename="fileservice", autosave=True):
     """Return FileService Wrapper for automatic storage."""
     if autosave:
         if not filename in fs_wrappers:
-            fs_wrappers[filename] = wrappers.Wrapper(name=filename)
+            fs_wrappers[filename] = wrappers.FileServiceWrapper(name=filename)
         return fs_wrappers[filename]
     else:
-        return wrappers.Wrapper(name=filename)
+        return wrappers.FileServiceWrapper(name=filename)

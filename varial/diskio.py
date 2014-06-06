@@ -83,14 +83,24 @@ def _write_wrapper_info(wrp, file_handle):
 def _write_wrapper_objs(wrp, file_handle):
     """Writes root objects on wrapper to disk."""
     wrp.root_file_obj_names = {}
-    for key, value in wrp.__dict__.iteritems():
-        if not isinstance(value, TObject):
-            continue
-        dirfile = file_handle.mkdir(key, key)
+    if isinstance(wrp, wrappers.FileServiceWrapper):
+        dirfile = file_handle.mkdir(wrp.name, wrp.name)
         dirfile.cd()
-        value.Write()
+        for key, value in wrp.__dict__.iteritems():
+            if not isinstance(value, TObject):
+                continue
+            value.Write()
+            wrp.root_file_obj_names[key] = value.GetName()
         dirfile.Close()
-        wrp.root_file_obj_names[key] = value.GetName()
+    else:
+        for key, value in wrp.__dict__.iteritems():
+            if not isinstance(value, TObject):
+                continue
+            dirfile = file_handle.mkdir(key, key)
+            dirfile.cd()
+            value.Write()
+            dirfile.Close()
+            wrp.root_file_obj_names[key] = value.GetName()
 
 
 def read(filename):
@@ -123,8 +133,12 @@ def _read_wrapper_info(file_handle):
 def _read_wrapper_objs(info, path):
     root_file = join(path, info["root_filename"])
     obj_paths = info["root_file_obj_names"]
+    is_fs_wrp = info['klass'] == 'FileServiceWrapper'
     for key, value in obj_paths.iteritems():
-        obj = _get_obj_from_file(root_file, [key, value])
+        if is_fs_wrp:
+            obj = _get_obj_from_file(root_file, [info['name'], value])
+        else:
+            obj = _get_obj_from_file(root_file, [key, value])
         if hasattr(obj, "SetDirectory"):
             obj.SetDirectory(0)
         info[key] = obj
