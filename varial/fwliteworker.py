@@ -71,7 +71,9 @@ def _run_workers(event_handle_wrp):
             raise e
         if hasattr(event_handle_wrp, 'sample'):
             w.result.sample = event_handle_wrp.sample
-            w.result.name = '%s!%s' % (event_handle_wrp.sample, w.result.name)
+            w.result.id = '%s!%s' % (event_handle_wrp.sample, w.result.name)
+        else:
+            w.result.id = w.result.name
     del event_handle_wrp.event_handle
     event_handle_wrp.results = list(w.result for w in workers)
     return event_handle_wrp
@@ -85,18 +87,18 @@ def _add_results(event_handle_wrps):
     res_sums = {}
     for evt_hndl_wrp in event_handle_wrps:
         for new_res in evt_hndl_wrp.results:
-            if new_res.name in res_sums:
-                res_sum = res_sums[new_res.name]
+            if new_res.id in res_sums:
+                res_sum = res_sums[new_res.id]
                 for k, v in new_res.__dict__.iteritems():
                     if isinstance(v, ROOT.TH1):
                         getattr(res_sum, k).Add(v)
             else:
-                res_sums[new_res.name] = diskio.get(new_res.name, new_res)
+                res_sums[new_res.id] = diskio.get(new_res.id, new_res)
         if _proxy:
             _proxy.results.update((r, True) for r in res_sums)
             _proxy.files_done[evt_hndl_wrp.filenames[0]] = True
             for res_sum in res_sums.values():
-                diskio.write(res_sum, '.cache/' + res_sum.name)
+                diskio.write(res_sum, '.cache/' + res_sum.id)
             diskio.write(_proxy, '.cache/' + _proxy.name)
             os.system('mv .cache/* .')
 
