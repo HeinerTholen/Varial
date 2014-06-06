@@ -48,7 +48,7 @@ def close_open_root_files():
 use_analysis_cwd = True
 
 
-def write(wrp, filename=None):
+def write(wrp, filename=None, suffices=()):
     """Writes wrapper to disk, including root objects."""
     if not filename:
         filename = wrp.name
@@ -56,6 +56,9 @@ def write(wrp, filename=None):
         filename = join(analysis.cwd, filename)
     if filename[-5:] == ".info":
         filename = filename[:-5]
+    # save with suffices
+    for suffix in suffices:
+        wrp.primary_object().SaveAs(filename + suffix)
     # write root objects (if any)
     if any(isinstance(o, TObject) for o in wrp.__dict__.itervalues()):
         wrp.root_filename = basename(filename+".root")

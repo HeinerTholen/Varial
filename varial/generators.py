@@ -330,10 +330,7 @@ def save(wrps, filename_func, suffices=None):
         suffices = settings.rootfile_postfixes
     for wrp in wrps:
         filename = filename_func(wrp)
-        prim_obj = wrp.primary_object()
-        for suffix in suffices:
-            prim_obj.SaveAs(filename + suffix)
-        diskio.write(wrp, filename)
+        diskio.write(wrp, filename, suffices)
         yield wrp
 
 

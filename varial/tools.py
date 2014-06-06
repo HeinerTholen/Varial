@@ -49,7 +49,7 @@ class FSStackPlotter(Tool):
         defaults.update(self.__dict__)  # do not overwrite user stuff
         defaults.update(kws)            # add keywords
         self.__dict__.update(defaults)  # set attributes in place
-        self.save_name_lambda = lambda wrp: self.result_dir + wrp.name
+        self.save_name_lambda = lambda wrp: wrp.name
 
     def configure(self):
         pass
