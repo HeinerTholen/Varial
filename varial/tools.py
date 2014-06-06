@@ -122,7 +122,7 @@ class SimpleWebCreator(Tool):
     all directories.
     """
 
-    def __init__(self, name=None, working_dir=""):
+    def __init__(self, name=None, working_dir="", is_base=True):
         super(SimpleWebCreator, self).__init__(name)
         self.working_dir = working_dir or settings.varial_working_dir
         self.target_dir = settings.web_target_dir
@@ -132,6 +132,7 @@ class SimpleWebCreator(Tool):
         self.plain_info = []
         self.plain_tex = []
         self.image_postfix = None
+        self.is_base = is_base
 
     def configure(self):
         """A bit of initialization."""
@@ -165,8 +166,7 @@ class SimpleWebCreator(Tool):
         """Walk of subfolders and start instances. Remove empty dirs."""
         for sf in self.subfolders[:]:
             path = os.path.join(self.working_dir, sf)
-            inst = self.__class__()
-            inst.working_dir = path
+            inst = self.__class__(self.name, path, False)
             inst.run()
             if not os.path.exists(os.path.join(path, "index.html")):
                 self.subfolders.remove(sf)
@@ -326,5 +326,6 @@ class SimpleWebCreator(Tool):
         self.make_image_divs()
         self.finalize_page()
         self.write_page()
-        self.copy_page_to_destination()
+        if self.is_base:
+            self.copy_page_to_destination()
         diskio.use_analysis_cwd = True
