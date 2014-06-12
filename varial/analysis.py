@@ -57,6 +57,7 @@ def get_color(sample_or_legend_name, default=0):
     elif name in all_samples:
         return s.colors.get(all_samples[name].legend)
     return default
+    # TODO makeup some color if name not present
 
 
 def get_stack_position(sample):
