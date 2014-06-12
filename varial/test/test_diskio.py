@@ -2,17 +2,25 @@ import os
 from ROOT import TH1F
 from test_histotoolsbase import TestHistoToolsBase
 from varial.wrappers import FileServiceAlias
-import varial.diskio as diskio
+from varial import diskio
+from varial import analysis
 
 class TestDiskio(TestHistoToolsBase):
 
     def setUp(self):
         super(TestDiskio, self).setUp()
-        if not os.path.exists("test"):
-            os.mkdir("test")
+        if not os.path.exists("test_data"):
+            os.mkdir("test_data")
 
     def test_fileservice_aliases(self):
-        aliases = diskio.fileservice_aliases()
+        for name, smp in analysis.all_samples.items():
+            analysis.fs_aliases += list(
+                alias for alias in diskio.generate_fs_aliases(
+                    'fileservice/%s.root' % name,
+                    smp
+                )
+            )
+        aliases = analysis.fs_aliases[:]
 
         # Is number of loaded elements correct?
         self.assertEqual(len(aliases), 150)
@@ -34,7 +42,10 @@ class TestDiskio(TestHistoToolsBase):
         self.assertTrue("sihihEB" in histos)
 
     def test_load_histogram(self):
-        test_alias = FileServiceAlias("cutflow", "analyzeSelection", "ttgamma", "ttgamma")
+        test_alias = FileServiceAlias(
+            "cutflow", "analyzeSelection", "fileservice/ttgamma.root",
+            analysis.all_samples["ttgamma"]
+        )
         wrp = diskio.load_histogram(test_alias)
         self.assertEqual(wrp.name, test_alias.name)
         self.assertEqual(wrp.analyzer, test_alias.analyzer)
@@ -43,7 +54,7 @@ class TestDiskio(TestHistoToolsBase):
         self.assertAlmostEqual(wrp.histo.Integral(), 280555.0)
 
     def test_write(self):
-        fname = "test/wrp_save.info"
+        fname = "test_data/wrp_save.info"
         diskio.write(self.test_wrp, fname)
 
         # file should exist
@@ -57,7 +68,7 @@ class TestDiskio(TestHistoToolsBase):
             self.assertEqual(n_lines, 21)
 
     def test_read(self):
-        fname = "test/wrp_load.info"
+        fname = "test_data/wrp_load.info"
         diskio.write(self.test_wrp, fname)
         loaded = diskio.read(fname)
         self.test_wrp.history = str(self.test_wrp.history)

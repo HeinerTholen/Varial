@@ -1,5 +1,8 @@
-
 import unittest
+import ROOT
+ROOT.gROOT.SetBatch()
+ROOT.TH1.AddDirectory(False)
+
 from test_diskio import suite as dip_suite
 from test_generators import suite as gen_suite
 from test_ops import suite as ops_suite

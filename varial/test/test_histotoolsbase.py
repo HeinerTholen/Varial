@@ -2,9 +2,11 @@ import unittest
 import os
 import shutil
 from ROOT import TH1I, gROOT, kRed, kBlue
-import varial.settings as settings
-import varial.diskio as diskio
-import varial.sample as sample
+
+from varial import analysis
+from varial import settings
+from varial import diskio
+from varial import sample
 from varial.history import History
 from varial.wrappers import HistoWrapper
 
@@ -20,26 +22,26 @@ class TestHistoToolsBase(unittest.TestCase):
             self.fail("Fileservice testfiles not present!")
 
         # create samples
-        settings.samples["tt"] = sample.Sample(
+        analysis.all_samples["tt"] = sample.Sample(
             name = "tt",
             is_data = True,
             lumi = 3.,
             legend = "pseudo data",
             input_files = ["none"],
         )
-        settings.samples["ttgamma"] = sample.Sample(
+        analysis.all_samples["ttgamma"] = sample.Sample(
             name = "ttgamma",
             lumi = 4.,
             legend = "tt gamma",
             input_files = ["none"],
         )
-        settings.samples["zjets"] = sample.Sample(
+        analysis.all_samples["zjets"] = sample.Sample(
             name = "zjets",
             lumi = 0.1,
             legend = "z jets",
             input_files = ["none"],
         )
-        settings.colors = {
+        analysis.colors = {
             "tt gamma": kRed,
             "z jets": kBlue
         }
@@ -47,7 +49,7 @@ class TestHistoToolsBase(unittest.TestCase):
             "tt gamma",
             "z jets"
         ]
-        settings.active_samples = settings.samples.keys()
+        analysis.active_samples = analysis.all_samples.keys()
 
         #create a test wrapper
         h1 = TH1I("h1", "H1", 2, .5, 4.5)
@@ -55,7 +57,7 @@ class TestHistoToolsBase(unittest.TestCase):
         h1.Fill(3,2)
         hist = History("test_op") # create some fake history
         hist.add_args([History("fake_input_A"), History("fake_input_B")])
-        hist.add_kws({"john":"cleese"})
+        hist.add_kws({"john": "cleese"})
         self.test_wrp = HistoWrapper(
             h1,
             name="Nam3",
@@ -66,8 +68,8 @@ class TestHistoToolsBase(unittest.TestCase):
     def tearDown(self):
         super(TestHistoToolsBase, self).tearDown()
 
-        if os.path.exists("test"):
-            shutil.rmtree("test")
+        if os.path.exists("test_data"):
+            os.system('rm -r test_data')
 
         del self.test_wrp
 
