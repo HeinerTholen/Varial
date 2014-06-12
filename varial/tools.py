@@ -124,7 +124,7 @@ class SimpleWebCreator(Tool):
 
     def __init__(self, name=None, working_dir="", is_base=True):
         super(SimpleWebCreator, self).__init__(name)
-        self.working_dir = working_dir or settings.varial_working_dir
+        self.working_dir = working_dir
         self.target_dir = settings.web_target_dir
         self.web_lines = []
         self.subfolders = []
@@ -150,6 +150,8 @@ class SimpleWebCreator(Tool):
             return
 
         # collect folders and images
+        if not self.working_dir:
+            self.working_dir = os.path.join(*self.result_dir.split('/')[:-2])
         for wd, dirs, files in os.walk(self.working_dir):
             self.subfolders += dirs
             for f in files:
