@@ -10,7 +10,7 @@ recieved_sigint = False
 only_reload_results = False
 varial_working_dir = "./"
 default_data_lumi = 1.
-
+wrp_sorting_keys = ['analyzer', 'name', 'is_data', 'sample']
 
 def logfilename():
     return time.strftime(

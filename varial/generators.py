@@ -19,22 +19,6 @@ def _iterableize(obj_or_iterable):
         yield obj_or_iterable
 
 
-def _filt_items(wrp, key, value_list):
-    """yields True/False for every value in value_list"""
-    for val in value_list:
-        try:
-            yield bool(val.search(getattr(wrp,key," ")))
-        except AttributeError:
-            yield getattr(wrp, key, " ") == val
-
-
-def _filt_req(wrp, filter_dict):
-    """Yields True/False for each item in filter_dict"""
-    for key, value in filter_dict.iteritems():
-        value = _iterableize(value)
-        yield any(_filt_items(wrp, key, value))
-
-
 def debug_printer(iterable, print_obj=True):
     """
     Print objects and their type on flying by. Object printing can be turned off.
@@ -61,49 +45,6 @@ def consume_n_count(iterable):
     return count
 
 
-def filter(wrps, key_value_dict=None):
-    """
-    Only wrappers with specified attributes can pass this generator.
-
-    :param  wrps:           Wrapper iterable
-    :param  key_value_dict: dictionary of attributes, see varial_example
-    :yields:                Wrapper
-
-    **Example:** (Every key in the given dictonairy is tested, where the key
-    is the tested attribute of the wrapper. A single value, a list of values or
-    a regular expression can be evaluated)::
-
-        filter(
-            wrappers,
-            {
-                "is_data"   : False,                # single value
-                "analyzer"  : ["AnaEt", "AnaDR"]    # candidate list
-                "name"      : re.compile("histo")   # regular expression
-            }
-        )
-
-    If the **key_value_dict** is empty, all wrappers pass the filter.
-    """
-    if not key_value_dict:
-        key_value_dict = {}
-    assert type(key_value_dict) == dict
-    return itertools.ifilter(
-        lambda wrp: all(_filt_req(wrp, key_value_dict)),
-        wrps
-    )
-
-
-def rejector(wrps, key_value_dict=None):
-    """Just as filter, only rejects items with the given properites."""
-    if not key_value_dict:
-        key_value_dict = {}
-    assert type(key_value_dict) == dict
-    return itertools.ifilter(
-        lambda wrp: not any(_filt_req(wrp, key_value_dict)),
-        wrps
-    )
-
-
 def filter_active_samples(wrps):
     return itertools.ifilter(
         lambda w: w.sample in analysis.active_samples,
@@ -111,14 +52,14 @@ def filter_active_samples(wrps):
     )
 
 
-def callback(wrps, func=None, filter_dict=None):
+def callback(wrps, func=None, filter_keyfunc=None):
     """
     Do a special treatment for selected wrps! All wrps are yielded.
 
-    :param wrps:        Wrapper iterable
-    :param filter_dict: same as key_value_dict in ``filter(..)`` above
-    :param func:        callable
-    :yields:            Wrapper
+    :param wrps:            Wrapper iterable
+    :param filter_keyfunc:  callable with one argument
+    :param func:            callable
+    :yields:                Wrapper
 
     **Example:** If you wanted to color all passing MC histograms blue::
 
@@ -127,18 +68,20 @@ def callback(wrps, func=None, filter_dict=None):
 
         callback(
             wrappers,
-            make_blue
-            {"is_data": False}
+            make_blue,
+            lambda w: not w.is_data
         )
     """
     if not func:
         for wrp in wrps:
             yield wrp
-    else:
-        if not filter_dict:
-            filter_dict = {}
+    elif not filter_keyfunc:
         for wrp in wrps:
-            if all(_filt_req(wrp, filter_dict)):
+            func(wrp)
+            yield wrp
+    else:
+        for wrp in wrps:
+            if filter_keyfunc:
                 func(wrp)
             yield wrp
 
@@ -154,7 +97,7 @@ def sort(wrps, key_list=None):
     :returns:           sorted list of wrappers.
     """
     if not key_list:
-        key_list = ['analyzer', 'name', 'is_data', 'sample']
+        key_list = settings.wrp_sorting_keys
     # python sorting is stable: Just sort by reversed key_list:
     for key in reversed(list(_iterableize(key_list))):
         wrps = sorted(wrps, key=operator.attrgetter(key))
@@ -185,7 +128,7 @@ def group(wrps, key_func=None):
 
 def interleave(*grouped_wrps):
     """
-    Like itertools.izip, but chains inner packaging. Useful before making canvasses.
+    Like itertools.izip, but chains inner packaging. Useful before canvasses.
 
     ((a,b),(c,d)), ((1,2),(3,4)) => ((a,b,1,2), (c,d,3,4))
 
@@ -463,7 +406,7 @@ def switch_log_scale(cnvs, y_axis=True, x_axis=False):
 
 
 ################################################### application & packaging ###
-def fs_filter_sort_load(filter_dict=None, sort_keys=None):
+def fs_filter_sort_load(filter_keyfunc=None, sort_keys=None):
     """
     Packaging of filtering, sorting and loading.
 
@@ -479,18 +422,18 @@ def fs_filter_sort_load(filter_dict=None, sort_keys=None):
         return load(wrps)
     """
     wrps = fs_content()
-    wrps = filter(wrps, filter_dict)
+    wrps = itertools.ifilter(filter_keyfunc, wrps)
     wrps = sort(wrps, sort_keys)
     return load(wrps)
 
 
-def fs_filter_active_sort_load(filter_dict=None, sort_keys=None):
+def fs_filter_active_sort_load(filter_keyfunc=None, sort_keys=None):
     """
     Just as fs_filter_sort_load, but also filter for active samples.
     """
     wrps = fs_content()
     wrps = filter_active_samples(wrps)
-    wrps = filter(wrps, filter_dict)
+    wrps = itertools.ifilter(filter_keyfunc, wrps)
     wrps = sort(wrps, sort_keys)
     return load(wrps)
 
@@ -519,7 +462,7 @@ def mc_stack(wrps, merge_mc_key_func=None):
         yield stack
 
 
-def fs_mc_stack(filter_dict=None, merge_mc_key_func=None):
+def fs_mc_stack(filter_keyfunc=None, merge_mc_key_func=None):
     """
     Delivers only MC stacks, no data, from fileservice.
 
@@ -528,7 +471,7 @@ def fs_mc_stack(filter_dict=None, merge_mc_key_func=None):
                                 tries to sort after stack position
     :yields:                    StackWrapper
     """
-    loaded = fs_filter_active_sort_load(filter_dict)
+    loaded = fs_filter_active_sort_load(filter_keyfunc)
     grouped = group(loaded)
     return mc_stack(grouped, merge_mc_key_func)
 
@@ -590,7 +533,7 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=False):
             raise op.TooFewWrpsError("Neither data nor mc histos present!")
 
 
-def fs_mc_stack_n_data_sum(filter_dict=None, merge_mc_key_func=None):
+def fs_mc_stack_n_data_sum(filter_keyfunc=None, merge_mc_key_func=None):
     """
     The full job to stacked histos and data, directly from fileservice.
 
@@ -602,7 +545,7 @@ def fs_mc_stack_n_data_sum(filter_dict=None, merge_mc_key_func=None):
                                 tries to sort after stack position
     :yields:                    (StackWrapper, HistoWrapper)
     """
-    loaded = fs_filter_active_sort_load(filter_dict)
+    loaded = fs_filter_active_sort_load(filter_keyfunc)
     grouped = group(loaded)     # default: group by analyzer_histo
                                 # (the fs histo 'ID')
     return mc_stack_n_data_sum(grouped, merge_mc_key_func, True)
@@ -617,8 +560,8 @@ def canvas(grps, decorators=None):
     :param decorators:      see function decorate(...) above
     :yields:                CanvasWrapper
     """
-    def put_ana_histo_name(grps):
-        for grp in grps:
+    def put_ana_histo_name(groups):
+        for grp in groups:
             if hasattr(grp.renderers[0], "analyzer"):
                 grp.name = grp.renderers[0].analyzer+"_"+grp.name
             yield grp
