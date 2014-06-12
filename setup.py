@@ -9,6 +9,7 @@ setup(
     packages=["varial", "varial_example"],
     requires=['pylibconfig2'],
     license="LICENSE.txt",
-    description="Tools to assist and manage an analysis with the CMS experiment.",
-    long_description=open('README.rst').read()
+    description="Assist and manage an analysis with the CMS experiment.",
+    long_description=open('README.rst').read(),
+    test_suite="varial.test.test_main.suite"
 )

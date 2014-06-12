@@ -4,7 +4,6 @@ from test_diskio import suite as dip_suite
 from test_generators import suite as gen_suite
 from test_ops import suite as ops_suite
 from test_rendering import suite as rnd_suite
-#from test_postproctools import suite as pst_suite
 
 import doctest
 import varial.generators as gen
@@ -13,7 +12,7 @@ import varial.history as hst
 import varial.operations as ops
 import varial.rendering as rnd
 import varial.wrappers as wrp
-import varial.decorator as dec
+import varial.util as uti
 
 suite = unittest.TestSuite((
     doctest.DocTestSuite(wrp),
@@ -22,7 +21,7 @@ suite = unittest.TestSuite((
     doctest.DocTestSuite(dsp),
     doctest.DocTestSuite(rnd),
     doctest.DocTestSuite(gen),
-    doctest.DocTestSuite(dec),
+    doctest.DocTestSuite(uti),
     ops_suite,
     dip_suite,
     gen_suite,
@@ -32,9 +31,7 @@ suite = unittest.TestSuite((
 
 import sys
 if __name__ == '__main__':
-    res = unittest.TextTestRunner(
-        verbosity = 2
-    ).run(suite)
+    res = unittest.TextTestRunner(verbosity=2).run(suite)
     if res.failures:
         sys.exit(-1)
 

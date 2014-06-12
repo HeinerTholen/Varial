@@ -88,7 +88,19 @@ def _update_init_state(inst):
 
 
 class ResettableType(type):
-    """Wraps __init__ to store object _after_ init."""
+    """
+    Wraps __init__ to store object _after_ init.
+
+    >>> class Foo(object):
+    ...     __metaclass__ = ResettableType
+    ...     def __init__(self):
+    ...         self.bar = 'A'
+    >>> foo = Foo()
+    >>> foo.bar = 'B'
+    >>> foo.reset()
+    >>> foo.bar
+    'A'
+    """
     def __new__(mcs, *more):
         mcs = super(ResettableType, mcs).__new__(mcs, *more)
         mcs.__init__ = _wrap_init(mcs.__init__)
