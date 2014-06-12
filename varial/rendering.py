@@ -484,6 +484,9 @@ class BottomPlotRatio(BottomPlot):
     def define_bottom_hist(self):
         rnds = self.renderers
         wrp = op.div(iter(rnds))
+        for i in xrange(1, wrp.histo.GetNbins() + 1):
+            cont = wrp.histo.GetBinContent(i)
+            wrp.histo.SetBinContent(i, cont - 1.)
         wrp.histo.SetYTitle(self.dec_par["y_title"])
         self.bottom_hist = wrp.histo
 
@@ -502,9 +505,10 @@ class BottomPlotRatioSplitErr(BottomPlot):
             da_val  = da_histo.GetBinContent(i)
             da_err  = da_histo.GetBinError(i)
             div_val = div_hist.GetBinContent(i)
-            mc_histo.SetBinContent(i, 1.)
+            mc_histo.SetBinContent(i, 0.)
             if mc_val > 1e-37:
                 mc_histo.SetBinError(i, mc_err / mc_val)
+                div_hist.SetBinContent(i, div_val - 1.)
             else:
                 mc_histo.SetBinError(i, 0.)
             if da_val > 1e-37:

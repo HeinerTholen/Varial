@@ -66,10 +66,10 @@ defaults_Legend = {
     "reverse": True
 }
 defaults_BottomPlot = {
-    "y_title": "Data/MC",
+    "y_title": "#frac{Data-MC}{MC}",
     "draw_opt": "E1",
-    "x_min": 0.,
-    "x_max": 3.,
+    "x_min": -1.,
+    "x_max": 1.,
 }
 
 rootfile_postfixes = [".root"]
