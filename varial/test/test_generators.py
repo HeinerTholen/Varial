@@ -1,12 +1,14 @@
 import os
-import varial.generators as gen
 from ROOT import TH1F, TFile
+import varial.generators as gen
+from varial import settings
+from varial import analysis
+from itertools import ifilter
+
 from test_histotoolsbase import TestHistoToolsBase
 from varial.wrappers import \
     StackWrapper, \
     HistoWrapper
-from varial import settings
-from varial import analysis
 
 
 class TestGenerators(TestHistoToolsBase):
@@ -27,17 +29,18 @@ class TestGenerators(TestHistoToolsBase):
 
     def test_gen_load(self):
         aliases = gen.fs_content()
-        zjets_cutflow = gen.filter(
-            aliases, {"name": "cutflow", "sample": "zjets"})
+        zjets_cutflow = ifilter(
+            lambda w: w.name == 'cutflow' and w.sample == 'zjets',
+            aliases
+        )
         wrp = gen.load(zjets_cutflow).next()
         self.assertTrue(isinstance(wrp.histo, TH1F))
         self.assertAlmostEqual(wrp.histo.Integral(), 2889.0)
 
     def test_gen_save(self):
-        wrps = gen.fs_filter_sort_load({
-            "name": "cutflow",
-            "sample": ["zjets", "ttgamma"]
-        })
+        wrps = gen.fs_filter_sort_load(
+            lambda w: w.name == "cutflow" and w.sample in ["zjets", "ttgamma"]
+        )
         gen.consume_n_count(
             gen.save(
                 wrps,
@@ -54,17 +57,14 @@ class TestGenerators(TestHistoToolsBase):
         self.assertTrue(self.tfile.GetKey("histo"))
 
     def test_gen_filter(self):
-        import re
         aliases  = list(gen.fs_content())
-        data     = gen.filter(aliases, {"is_data": True})
-        tmplt    = gen.filter(aliases, {"analyzer": "fakeTemplate"})
-        crtlplt  = gen.filter(aliases, {"analyzer": re.compile("CrtlFilt*")})
-        crtlplt2 = gen.filter(aliases, {"analyzer": [re.compile("CrtlFilt*")]})
-        ttgam_cf = gen.filter(aliases,
-            {
-                "name": "cutflow",
-                "sample": ["ttgamma", "tt"]
-            }
+        data     = ifilter(lambda w: w.is_data, aliases)
+        tmplt    = ifilter(lambda w: w.analyzer == "fakeTemplate", aliases)
+        crtlplt  = ifilter(lambda w: w.analyzer[:8] == "CrtlFilt", aliases)
+        crtlplt2 = ifilter(lambda w: w.analyzer[:8] == "CrtlFilt", aliases)
+        ttgam_cf = ifilter(
+            lambda w: w.name == 'cutflow' and w.sample in ["ttgamma", "tt"],
+            aliases
         )
         self.assertEqual(gen.consume_n_count(data), 52)
         self.assertEqual(gen.consume_n_count(tmplt), 9)
@@ -72,7 +72,7 @@ class TestGenerators(TestHistoToolsBase):
         self.assertEqual(gen.consume_n_count(crtlplt2), 39)
         self.assertEqual(gen.consume_n_count(ttgam_cf), 2)
 
-    def test_gen_special_treat(self):
+    def test_gen_callback(self):
         sample = ["tt", "zjets"]
         name = "cutflow"
         class TreatCls(object):
@@ -87,14 +87,14 @@ class TestGenerators(TestHistoToolsBase):
         treated = gen.callback(
             gen.fs_content(),
             treat_func,
-            {"sample": sample, "name": name}
+            lambda w: w.sample in sample and w.name == name
         )
         self.assertEqual(gen.consume_n_count(treated), 150)
         self.assertEqual(treat_func.n_times_called, 2)
 
     def test_gen_sort(self):
         aliases      = list(gen.fs_content())
-        tmplt        = gen.filter(aliases, {"analyzer": "fakeTemplate"})
+        tmplt        = ifilter(lambda w: w.analyzer == "fakeTemplate", aliases)
         sorted       = list(gen.sort(tmplt))
         s_name       = map(lambda x: x.name, sorted)
         s_sample     = map(lambda x: x.sample, sorted)
@@ -105,7 +105,7 @@ class TestGenerators(TestHistoToolsBase):
 
     def test_gen_group(self):
         from_fs  = gen.fs_content()
-        filtered = gen.filter(from_fs, {"name": "histo"})
+        filtered = ifilter(lambda w: w.name == "histo", from_fs)
         sorted   = gen.sort(filtered)
         grouped  = gen.group(sorted)
         group_list = []
@@ -120,10 +120,8 @@ class TestGenerators(TestHistoToolsBase):
             self.assertEqual(g[0].analyzer, g[2].analyzer)
 
     def test_gen_fs_filter_sort_load(self):
-        wrps = list(gen.fs_filter_sort_load({
-            "name": "cutflow",
-            "sample": ["ttgamma", "tt"]
-        }))
+        wrps = list(gen.fs_filter_sort_load(
+            lambda w: w.name == "cutflow" and w.sample in ["ttgamma", "tt"]))
         s_is_data = map(lambda x: x.is_data, wrps)
 
         # just check for sorting and overall length
@@ -132,9 +130,7 @@ class TestGenerators(TestHistoToolsBase):
         self.assertEqual(wrps[1].lumi, 3.0)
 
     def test_gen_fs_mc_stack_n_data_sum(self):
-        res = gen.fs_mc_stack_n_data_sum(
-            {"name": "histo"}
-        )
+        res = gen.fs_mc_stack_n_data_sum(lambda w: w.name == "histo")
         mc, data = res.next()
 
         # correct instances

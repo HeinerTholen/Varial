@@ -81,7 +81,7 @@ def callback(wrps, func=None, filter_keyfunc=None):
             yield wrp
     else:
         for wrp in wrps:
-            if filter_keyfunc:
+            if filter_keyfunc(wrp):
                 func(wrp)
             yield wrp
 
