@@ -29,7 +29,6 @@ suite = unittest.TestSuite((
     dip_suite,
     gen_suite,
     rnd_suite,
-#    pst_suite,
 ))
 
 import sys

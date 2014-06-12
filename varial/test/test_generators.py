@@ -5,7 +5,8 @@ from test_histotoolsbase import TestHistoToolsBase
 from varial.wrappers import \
     StackWrapper, \
     HistoWrapper
-import varial.settings as settings
+from varial import settings
+from varial import analysis
 
 
 class TestGenerators(TestHistoToolsBase):
@@ -141,8 +142,8 @@ class TestGenerators(TestHistoToolsBase):
         self.assertTrue(isinstance(data, HistoWrapper))
 
         # ... of equal lumi (from data)
-        self.assertEqual(mc.lumi, settings.data_samples()["tt"].lumi)
-        self.assertEqual(data.lumi, settings.data_samples()["tt"].lumi)
+        self.assertEqual(mc.lumi, analysis.data_samples()["tt"].lumi)
+        self.assertEqual(data.lumi, analysis.data_samples()["tt"].lumi)
 
         # check stacking order by history
         h = str(mc.history)
@@ -152,19 +153,16 @@ class TestGenerators(TestHistoToolsBase):
         h = str(mc.history)
         self.assertTrue(h.index("zjets") < h.index("ttgamma"))
 
-#    # THIS TEST SEEMS TO FIND A ROOT BUG:
-#    def test_gen_canvas(self):
-#        stk, dat = gen.fs_mc_stack_n_data_sum().next()
-#        canvas = gen.canvas([(stk, dat)])
-#        cnv = next(canvas)
-#
-#        # check for stack and data to be in canvas primitives
-#        prim = cnv.canvas.GetListOfPrimitives()
-#        self.assertIn(stk.stack, prim)
-#        self.assertIn(stk.histo, prim)
-#        self.assertIn(dat.histo, prim)
-#        del stk
-#        del dat
+    def test_gen_canvas(self):
+        stk, dat = gen.fs_mc_stack_n_data_sum().next()
+        canvas = gen.canvas([(stk, dat)])
+        cnv = next(canvas)
+
+        # check for stack and data to be in canvas primitives
+        prim = list(cnv.canvas.GetListOfPrimitives())
+        self.assertTrue(stk.stack in prim)
+        self.assertTrue(stk.histo in prim)
+        self.assertTrue(dat.histo in prim)
 
 
 import unittest
