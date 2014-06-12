@@ -25,19 +25,19 @@ class TestHistoToolsBase(unittest.TestCase):
             is_data = True,
             lumi = 3.,
             legend = "pseudo data",
-            input_files = "none",
+            input_files = ["none"],
         )
         settings.samples["ttgamma"] = sample.Sample(
             name = "ttgamma",
             lumi = 4.,
             legend = "tt gamma",
-            input_files = "none",
+            input_files = ["none"],
         )
         settings.samples["zjets"] = sample.Sample(
             name = "zjets",
             lumi = 0.1,
             legend = "z jets",
-            input_files = "none",
+            input_files = ["none"],
         )
         settings.colors = {
             "tt gamma": kRed,
