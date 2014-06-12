@@ -26,7 +26,7 @@ class FwliteProxy(toolinterface.Tool):
         if not proxy:
             return False
 
-        # check if all results are available
+        # check if all previous results are available
         if not all(
             exists(join(self.result_dir, '%s.info' % res))
             for res in proxy.results
@@ -34,10 +34,15 @@ class FwliteProxy(toolinterface.Tool):
             self.message('INFO Not all results are found, running again.')
             return False
 
-        # check if all files are done
+        # check if all samples are available
         files_done = proxy.files_done
+        if not all(name in files_done for name in analysis.all_samples):
+            self.message('INFO Not all samples are done, running again.')
+            return False
+
+        # check if all files are done
         if not all(
-            f in files_done
+            f in files_done[smp.name]
             for smp in analysis.all_samples.itervalues()
             for f in smp.input_files
         ):
@@ -106,18 +111,12 @@ class FwliteProxy(toolinterface.Tool):
         # if a result was deleted, remove all associated files from files_done
         files_done = self._proxy.files_done
         results = self._proxy.results
-        resetted_samples = {}
         for res in results.keys():
             if not exists(join(self.result_dir, '%s.info' % res)):
                 del results[res]
                 smpl = res.split('!')[0]
-                if smpl in resetted_samples:
-                    continue
-                resetted_samples[smpl] = True
-                files = analysis.all_samples[smpl].input_files
-                for f in files:
-                    if f in files_done:
-                        del files_done[f]
+                if smpl in files_done:
+                    del files_done[smpl]
 
         due_samples = analysis.all_samples.keys()
         self._proxy.due_samples = due_samples

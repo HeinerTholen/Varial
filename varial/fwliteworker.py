@@ -96,7 +96,13 @@ def _add_results(event_handle_wrps):
                 res_sums[new_res.id] = diskio.get(new_res.id, new_res)
         if _proxy:
             _proxy.results.update((r, True) for r in res_sums)
-            _proxy.files_done[evt_hndl_wrp.filenames[0]] = True
+            if evt_hndl_wrp.sample in _proxy.files_done:
+                f_done_dict = _proxy.files_done[evt_hndl_wrp.sample]
+                f_done_dict[evt_hndl_wrp.filenames[0]] = True
+            else:
+                _proxy.files_done[evt_hndl_wrp.sample] = {
+                    evt_hndl_wrp.filenames[0]: True
+                }
             for res_sum in res_sums.values():
                 diskio.write(res_sum, '.cache/' + res_sum.id)
             diskio.write(_proxy, '.cache/' + _proxy.name)
@@ -120,8 +126,9 @@ def work(workers, event_handles=None):
         def event_handles():
             for sample, files in _proxy.event_files.iteritems():
                 for f in files:
-                    if f in _proxy.files_done:
-                        continue
+                    if sample in _proxy.files_done:
+                        if f in _proxy.files_done[sample]:
+                            continue
                     h_evt = Events(f)
                     yield wrappers.Wrapper(
                         event_handle=h_evt,
