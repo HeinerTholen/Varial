@@ -51,13 +51,15 @@ def get_pretty_name(key):
 def get_color(sample_or_legend_name, default=0):
     """Gives a ROOT color value back for sample or legend name."""
     name = sample_or_legend_name
-    s = settings
-    if name in s.colors:
-        return s.colors[name]
-    elif name in all_samples:
-        return s.colors.get(all_samples[name].legend)
-    return default
-    # TODO makeup some color if name not present
+    if name in all_samples:
+        name = all_samples[name].legend
+    if name in settings.colors:
+        return settings.colors[name]
+    if default:
+        return default
+    new_color = settings.default_colors[len(settings.colors)]
+    settings.colors[name] = new_color
+    return new_color
 
 
 def get_stack_position(sample):
