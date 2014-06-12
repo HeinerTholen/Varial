@@ -123,7 +123,11 @@ class FwliteProxy(toolinterface.Tool):
         for res in results.keys():
             smpl = res.split('!')[0]
             if smpl in due_samples:
-                due_samples.remove(smpl)
+                if all(
+                    f in files_done[smpl]
+                    for f in analysis.all_samples[smpl].input_files
+                ):
+                    due_samples.remove(smpl)
 
     def _finalize(self):
         if settings.recieved_sigint:
