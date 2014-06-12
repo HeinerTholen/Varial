@@ -126,12 +126,13 @@ class FwliteProxy(toolinterface.Tool):
             if smpl in due_samples:
                 due_samples.remove(smpl)
 
-
     def _finalize(self):
         if settings.recieved_sigint:
             return
         for res in self._proxy.results:
             samplename = res.split('!')[0]
+            if samplename not in analysis.all_samples:
+                continue
             analysis.fs_aliases += list(
                 alias for alias in diskio.generate_fs_aliases(
                     join(self.result_dir, '%s.root' % res),
