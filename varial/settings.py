@@ -10,7 +10,7 @@ recieved_sigint = False
 only_reload_results = False
 varial_working_dir = "./"
 default_data_lumi = 1.
-default_colors = [632, 902, 618, 878, 596, 870, 434, 840, 417, 828, 400, 800]
+default_colors = [632, 878, 596, 870, 434, 840, 902, 417, 828, 618, 400, 800]
 wrp_sorting_keys = ['analyzer', 'name', 'is_data', 'sample']
 
 def logfilename():
