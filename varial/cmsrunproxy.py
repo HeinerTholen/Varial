@@ -93,11 +93,12 @@ class CmsRunProcess(object):
                 files_in_dir = glob.glob(in_file[5:])
                 if not files_in_dir:
                     self.message(
-                        self,
-                        "WARNING: no input files found for "+in_file[5:]
+                        "WARNING: no input files globbed for "+in_file[5:]
                     )
-                for fid in files_in_dir:
-                    conf_lines.append("    'file:" + fid + "',")
+                    conf_lines.append("    '" + in_file.strip() + "',")
+                else:
+                    for fid in files_in_dir:
+                        conf_lines.append("    'file:" + fid + "',")
             else:
                 conf_lines.append("    '" + in_file.strip() + "',")
         conf_lines.append("]")
