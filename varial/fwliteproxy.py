@@ -23,7 +23,7 @@ class FwliteProxy(toolinterface.Tool):
     def wanna_reuse(self, all_reused_before_me):
         proxy = diskio.get('fwlite_proxy')
 
-        if settings.force_reuse_fwlite:
+        if settings.force_reuse_fwlite or settings.only_reload_results:
             self._proxy = proxy
             return True
 

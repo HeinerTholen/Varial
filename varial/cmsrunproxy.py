@@ -236,6 +236,10 @@ class CmsRunProxy(toolinterface.Tool):
 
     def wanna_reuse(self, all_reused_before_me):
         self._setup_processes()
+
+        if settings.only_reload_results:
+            return True
+
         return not bool(self.waiting_pros)
 
     def reuse(self):
