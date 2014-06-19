@@ -53,7 +53,7 @@ class _ToolBase(object):
 
     @staticmethod
     def lookup(key, default=None):
-        analysis.lookup(key, default)
+        return analysis.lookup(key, default)
 
 
 class Tool(_ToolBase):
