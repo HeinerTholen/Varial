@@ -34,7 +34,7 @@ class FSStackPlotter(Tool):
     def __init__(self, name=None, **kws):
         super(FSStackPlotter, self).__init__(name)
         defaults = {
-            'filter_dict': None,
+            'filter_keyfunc': None,
             'hook_loaded_histos': None,
             'hook_pre_canvas_build': None,
             'hook_post_canvas_build': None,
@@ -55,10 +55,10 @@ class FSStackPlotter(Tool):
         pass
 
     def set_up_stacking(self):
-        if not self.filter_dict:
+        if not self.filter_keyfunc:
             self.message("WARNING No filter_dict set! "
                          "Working with _all_ histograms.")
-        wrps = gen.fs_filter_active_sort_load(self.filter_dict)
+        wrps = gen.fs_filter_active_sort_load(self.filter_keyfunc)
         if self.hook_loaded_histos:
             wrps = self.hook_loaded_histos(wrps)
         wrps = gen.group(wrps)
