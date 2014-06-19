@@ -32,7 +32,18 @@ class Sample(wrappers.WrapperBase):
         pass
 
     def __init__(self, **kws):
-        self.__dict__.update(settings.default_sample_attributes)
+        self.__dict__.update({
+            "is_data": False,
+            "x_sec": 0.,
+            "n_events": 0,
+            "lumi": 0.,
+            "legend": "",
+            "input_files": [],
+            "output_file": "",
+            "cmsRun_builtin": {},
+            "cmsRun_add_lines": [],
+            "cmsRun_args": [],
+        })
         self.__dict__.update(kws)
         # check/correct input
         if not getattr(self, "name", 0):

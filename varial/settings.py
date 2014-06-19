@@ -34,18 +34,6 @@ cmsRun_main_import_path = ""
 cmsRun_use_file_service = True
 cmsRun_output_module_name = "out"
 cmsRun_common_builtins = {}
-default_sample_attributes = {
-    "is_data": False,
-    "x_sec": 0.,
-    "n_events": 0,
-    "lumi": 0.,
-    "legend": "",
-    "input_files": [],
-    "output_file": "",
-    "cmsRun_builtin": {},
-    "cmsRun_add_lines": [],
-    "cmsRun_args": [],
-}
 
 
 ########################################################### style constants ###
