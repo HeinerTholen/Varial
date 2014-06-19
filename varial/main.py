@@ -35,29 +35,6 @@ class SigintHandler(object):
 sig_handler = SigintHandler()
 
 
-class StdOutTee(object):
-    def __init__(self, logfilename):
-        self.logfile = open(logfilename, "w")
-
-    def __del__(self):
-        self.logfile.close()
-
-    def __getattr__(self, item):
-        return getattr(sys.__stdout__, item)
-
-    def write(self, string):
-        sys.__stdout__.write(string)
-        self.logfile.write(string)
-
-    def flush(self):
-        sys.__stdout__.flush()
-        self.logfile.flush()
-
-    def close(self):
-        sys.__stdout__.close()
-        self.logfile.close()
-
-
 def _process_settings_kws(kws):
     # replace setting, if its name already exists.
     for k, v in kws.iteritems():
@@ -89,6 +66,7 @@ else:
 main_args = {}
 toolchain = None
 
+
 def main(**main_kwargs):
     """
     Processing and post processing.
@@ -106,7 +84,7 @@ def main(**main_kwargs):
     logpath = os.path.split(logfile)[0]
     if not os.path.exists(logpath):
         os.mkdir(logpath)
-    monitor.MonitorInfo.outstream = StdOutTee(logfile)
+    monitor.MonitorInfo.outstream = monitor.StdOutTee(logfile)
 
     # setup samples
     if 'samples' in main_kwargs:

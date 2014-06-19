@@ -33,6 +33,29 @@ class MonitorInfo(object):
 _info = MonitorInfo()
 
 
+class StdOutTee(object):
+    def __init__(self, logfilename):
+        self.logfile = open(logfilename, "w")
+
+    def __del__(self):
+        self.logfile.close()
+
+    def __getattr__(self, item):
+        return getattr(sys.__stdout__, item)
+
+    def write(self, string):
+        sys.__stdout__.write(string)
+        self.logfile.write(string)
+
+    def flush(self):
+        sys.__stdout__.flush()
+        self.logfile.flush()
+
+    def close(self):
+        sys.__stdout__.close()
+        self.logfile.close()
+
+
 def write_out(*args):
     _info.outstream.write(' '.join(str(a) for a in args))
     _info.outstream.write('\n')

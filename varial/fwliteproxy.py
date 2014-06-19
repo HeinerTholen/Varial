@@ -4,6 +4,7 @@ from os.path import exists, join
 
 import analysis
 import diskio
+import monitor
 import settings
 import toolinterface
 import wrappers
@@ -76,7 +77,9 @@ class FwliteProxy(toolinterface.Tool):
         self.message("INFO Starting script: '%s'" % self.py_exe)
         proc = subprocess.Popen(
             ['python', self.py_exe],
-            cwd=self.result_dir
+            stdout=monitor.MonitorInfo.outstream,
+            stderr=subprocess.STDOUT,
+            cwd=self.result_dir,
         )
 
         # block while finished
