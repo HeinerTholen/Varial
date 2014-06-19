@@ -74,6 +74,8 @@ class FSPlotter(Tool):
     def set_up_content(self):
         if self.input_result_path:
             wrps = self.lookup(self.input_result_path)
+            if self.filter_keyfunc:
+                wrps = itertools.ifilter(self.filter_keyfunc, wrps)
         else:
             if not self.filter_keyfunc:
                 self.message("WARNING No filter_keyfunc set! "
