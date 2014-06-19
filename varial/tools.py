@@ -12,35 +12,52 @@ from cmsrunproxy import CmsRunProxy
 from fwliteproxy import FwliteProxy
 
 
-# TODO: Make a new Plotter Interface with Composition:
-# TODO: the functions should be non-class methods
-class FSStackPlotter(Tool):
-    """
-    A 'stack with data overlay' plotter. Can be subclassed.
+class FSHistoLoader(Tool):
+    def __init__(self, name=None, filter_keyfunc=None):
+        super(FSHistoLoader, self).__init__(name)
+        self.filter_keyfunc = filter_keyfunc
 
+    def run(self):
+        self.result = list(gen.fs_filter_active_sort_load(self.filter_keyfunc))
+
+
+class FSPlotter(Tool):
+    """
+    A plotter. Makes stacks and overlays data by default.
+
+    Overriding set_up_content and setting self.stream_content lets
     Default attributes, that can be overwritten by init keywords:
-    'filter_dict': dict
-    'canvas_decorators': list
-    'hook_loaded_histos': generator
-    'hook_pre_canvas_build': generator
-    'hook_post_canvas_build': generator,
-    'save_log_scale': bool
-    'save_lin_log_scale': bool
+
+    >>> defaults = {
+    ...    'input_result_path': None,
+    ...    'filter_keyfunc': None,
+    ...    'hook_loaded_histos': None,
+    ...    'hook_pre_canvas_build': None,
+    ...    'hook_post_canvas_build': None,
+    ...    'save_log_scale': False,
+    ...    'save_lin_log_scale': False,
+    ...    'keep_content_as_result': False,
+    ...    'canvas_decorators': [
+    ...        rendering.BottomPlotRatioSplitErr,
+    ...        rendering.Legend
+    ...    ]
+    ...}
     """
 
     class NoFilterDictError(Exception):
         pass
 
     def __init__(self, name=None, **kws):
-        super(FSStackPlotter, self).__init__(name)
+        super(FSPlotter, self).__init__(name)
         defaults = {
+            'input_result_path': None,
             'filter_keyfunc': None,
             'hook_loaded_histos': None,
             'hook_pre_canvas_build': None,
             'hook_post_canvas_build': None,
             'save_log_scale': False,
             'save_lin_log_scale': False,
-            'keep_stacks_as_result': False,
+            'keep_content_as_result': False,
             'canvas_decorators': [
                 rendering.BottomPlotRatioSplitErr,
                 rendering.Legend
@@ -54,20 +71,25 @@ class FSStackPlotter(Tool):
     def configure(self):
         pass
 
-    def set_up_stacking(self):
-        if not self.filter_keyfunc:
-            self.message("WARNING No filter_dict set! "
-                         "Working with _all_ histograms.")
-        wrps = gen.fs_filter_active_sort_load(self.filter_keyfunc)
+    def set_up_content(self):
+        if self.input_result_path:
+            wrps = self.lookup(self.input_result_path)
+        else:
+            if not self.filter_keyfunc:
+                self.message("WARNING No filter_keyfunc set! "
+                             "Working with _all_ histograms.")
+            wrps = gen.fs_filter_active_sort_load(self.filter_keyfunc)
         if self.hook_loaded_histos:
             wrps = self.hook_loaded_histos(wrps)
         wrps = gen.group(wrps)
         wrps = gen.mc_stack_n_data_sum(wrps, None, True)
-        if self.keep_stacks_as_result:
-            self.stream_stack = list(wrps)
-            self.result = list(itertools.chain.from_iterable(self.stream_stack))
-        else:
-            self.stream_stack = wrps
+        self.stream_content = wrps
+
+    def store_content_as_result(self):
+        if self.keep_content_as_result:
+            self.stream_content = list(self.stream_content)
+            self.result = list(
+                itertools.chain.from_iterable(self.stream_content))
 
     def set_up_make_canvas(self):
         def put_ana_histo_name(grps):
@@ -78,7 +100,7 @@ class FSStackPlotter(Tool):
             for b in bldr:
                 b.run_procedure()
                 yield b
-        bldr = gen.make_canvas_builder(self.stream_stack)
+        bldr = gen.make_canvas_builder(self.stream_content)
         bldr = put_ana_histo_name(bldr)
         bldr = gen.decorate(bldr, self.canvas_decorators)
         if self.hook_pre_canvas_build:
@@ -110,7 +132,8 @@ class FSStackPlotter(Tool):
 
     def run(self):
         self.configure()
-        self.set_up_stacking()
+        self.set_up_content()
+        self.store_content_as_result()
         self.set_up_make_canvas()
         self.set_up_save_canvas()
         self.run_sequence()
