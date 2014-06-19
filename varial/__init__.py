@@ -3,5 +3,5 @@ import diskio
 import generators
 import operations
 import rendering
-import analysis
+import settings
 import wrappers
