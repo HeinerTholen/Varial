@@ -109,7 +109,6 @@ class Tool(_ToolBase):
             filenames = []
             for i, wrp in enumerate(self.result):
                 num_str = "_%03d" % i
-                wrp.name = self.name + num_str
                 filenames.append('result' + num_str)
                 diskio.write(wrp, 'result' + num_str)
             diskio.write(
