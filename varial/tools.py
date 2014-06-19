@@ -8,7 +8,7 @@ import rendering
 import settings
 
 from toolinterface import Tool, ToolChain
-from cmsrunprocess import CmsRunProxy
+from cmsrunproxy import CmsRunProxy
 from fwliteproxy import FwliteProxy
 
 
