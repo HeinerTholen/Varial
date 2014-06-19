@@ -84,11 +84,11 @@ class Tool(_ToolBase):
         return (
             super(Tool, self).wanna_reuse(all_reused_before_me)
             and os.path.exists(self.logfile)
-        )  # TODO make check with hash, stored in self.logfile
+        )  # TODO make check with hash over result, stored in self.logfile
 
     def reuse(self):
         self.message("INFO reusing...")
-        res = diskio.get('result.info')
+        res = diskio.get('result')
         if res:
             if hasattr(res, "RESULT_WRAPPERS"):
                 self.result = list(diskio.read(f) for f in res.RESULT_WRAPPERS)
