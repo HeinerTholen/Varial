@@ -146,8 +146,13 @@ class ToolChain(_ToolBase):
             self.add_tool(tool)
 
     def add_tool(self, tool):
-        assert isinstance(tool, _ToolBase)  # TODO: make exception
-        assert tool.name not in self.tool_names
+        if not isinstance(tool, _ToolBase):
+            raise RuntimeError(
+                '%s is not a subclass of Tool or ToolChain' % str(tool))
+        if tool.name in self.tool_names:
+            raise RuntimeError(
+                'A tool named "%s" is already in this chain (%s).' % (
+                    tool.name, self.name))
         self.tool_names[tool.name] = None
         self.tool_chain.append(tool)
 
