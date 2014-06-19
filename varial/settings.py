@@ -27,6 +27,7 @@ max_num_processes = multiprocessing.cpu_count()
 not_ask_execute = False
 suppress_eventloop_exec = False
 try_reuse_results = True
+force_reuse_fwlite = False
 default_enable_sample = True
 fwlite_executable = ""
 cmsRun_main_import_path = ""
