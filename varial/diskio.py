@@ -153,6 +153,8 @@ def _clean_wrapper(wrp):
 def get(filename, default=None):
     """Reads wrapper from disk if availible, else returns default."""
     fname = join(analysis.cwd, filename) if use_analysis_cwd else filename
+    if fname[-5:] == ".info":
+        fname = fname[:-5]
     if exists('%s.info' % fname):
         return read(filename)
     else:
