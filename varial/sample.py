@@ -1,10 +1,12 @@
+import inspect
+import itertools
+import collections
 import os.path
 import glob
+
+import monitor
 import settings
-import collections
-import itertools
 import wrappers
-import inspect
 
 
 class Sample(wrappers.WrapperBase):
@@ -28,8 +30,6 @@ class Sample(wrappers.WrapperBase):
     :param cmsRun_add_lines: list of str (appended to cmsRun config)
     :param cmsRun_args:     list of str (command line arguments for cmsRun)
     """
-    class MissingDefinition(Exception):
-        pass
 
     def __init__(self, **kws):
         self.__dict__.update({
@@ -55,11 +55,16 @@ class Sample(wrappers.WrapperBase):
                 or isinstance(self.input_files, tuple))
         if self.x_sec and self.n_events:
             self.lumi = self.n_events / float(self.x_sec)
-        tbd = "TO BE DECLARED: "
         if not self.lumi:
-            raise self.MissingDefinition(tbd + "lumi or (x_sec and n_events)")
+            monitor.message(
+                self.name,
+                "WARNING lumi or (x_sec and n_events) seems to be undefined."
+            )
         if not self.input_files:
-            raise self.MissingDefinition(tbd + "input_files")
+            monitor.message(
+                self.name,
+                "WARNING input_files seems to be undefined."
+            )
         if not self.legend:
             self.legend = self.name
 
