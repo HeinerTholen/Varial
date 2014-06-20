@@ -24,8 +24,9 @@ class SigintHandler(object):
 
     def handle(self, signal_int, frame):
         if signal_int is signal.SIGINT:
-            if not ipython_mode:
-                print "WARNING: aborting all processes. " \
+            if not ipython_mode and not self.hits:
+                print "WARNING: SIGINT caught. " \
+                      "Aborting processes if any. " \
                       "Crtl-C again to kill immediately!"
                 if self.hits:
                     exit(-1)
