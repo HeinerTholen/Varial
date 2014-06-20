@@ -1,7 +1,7 @@
+import ast
 import atexit
 import signal
 import sys
-import threading
 import os
 import time
 
@@ -78,6 +78,10 @@ def main(**main_kwargs):
     :param toolchain:               root toolchain (see tools.py)
     """
     # prepare...
+    for arg in sys.argv:
+        if 1 == arg.count('='):
+            k, v = arg.split('=')
+            main_kwargs[k] = ast.literal_eval(v)
     main_args.update(main_kwargs)
     _process_settings_kws(main_kwargs)
     logfile = settings.logfilename()
