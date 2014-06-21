@@ -14,7 +14,7 @@ class FwliteWorker(object):
     """This class is to be subclassed."""
     def __init__(self, name):
         self.name = name
-        self.result = wrappers.Wrapper(name=name)
+        self.result = wrappers.FileServiceWrapper(name=name)
 
     def node_setup(self, event_handle_wrp):
         pass
@@ -74,7 +74,7 @@ def _run_workers(event_handle_wrp):
             do_the_eventloop()
 
     # finalize workers
-    for w in workers:
+    for w in workers[:]:
         try:
             w.node_finalize(event_handle_wrp)
         except Exception as e:
