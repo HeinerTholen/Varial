@@ -84,6 +84,9 @@ def _run_workers(event_handle_wrp):
                 print event_handle_wrp
                 print '\n'
             raise e
+        if w.result.is_empty():
+            workers.remove(w)
+            continue
         if hasattr(event_handle_wrp, 'sample'):
             w.result.sample = event_handle_wrp.sample
             w.result.id = '%s!%s' % (event_handle_wrp.sample, w.result.name)

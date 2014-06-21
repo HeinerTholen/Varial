@@ -268,6 +268,11 @@ class FileServiceWrapper(Wrapper):
         """args need to be args for TH1D constructor."""
         setattr(self, args[0], TH1D(*args))
 
+    def is_empty(self):
+        return not any(
+            isinstance(obj, TH1)
+            for obj in self.__dict__.itervalues()
+        )
 
 if __name__ == "__main__":
     import doctest
