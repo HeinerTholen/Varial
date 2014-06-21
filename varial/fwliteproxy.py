@@ -110,6 +110,7 @@ class FwliteProxy(toolinterface.Tool):
             wrappers.Wrapper(name='fwlite_proxy', files_done={}, results={})
         )
         self._proxy.max_num_processes = settings.max_num_processes
+        self._proxy.do_profiling = settings.fwlite_profiling
         self._proxy.event_files = dict(
             (s.name, s.input_files)
             for s in analysis.all_samples.itervalues()

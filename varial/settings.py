@@ -30,6 +30,7 @@ try_reuse_results = True
 force_reuse_fwlite = False
 default_enable_sample = True
 fwlite_executable = ""
+fwlite_profiling = False
 cmsRun_main_import_path = ""
 cmsRun_use_file_service = True
 cmsRun_output_module_name = "out"

@@ -45,7 +45,7 @@ def _run_workers(event_handle_wrp):
                 v.SetDirectory(0)
 
     # run the eventloop
-    if event_handle_wrp.event_handle.size():
+    def do_the_eventloop():
         for event in event_handle_wrp.event_handle:
             for w in workers:
                 try:
@@ -57,6 +57,21 @@ def _run_workers(event_handle_wrp):
                         print event_handle_wrp
                         print '\n'
                     raise e
+    if event_handle_wrp.event_handle.size():
+        global _proxy
+        if _proxy and _proxy.do_profiling:
+            import cProfile
+            cProfile.runctx(
+                'do_the_eventloop()',
+                globals(),
+                locals(),
+                "cProfile_%s_%s_.txt" % (
+                    event_handle_wrp.sample,
+                    "".join(event_handle_wrp.filenames[0].split('/'))
+                )
+            )
+        else:
+            do_the_eventloop()
 
     # finalize workers
     for w in workers:
@@ -134,12 +149,12 @@ def work(workers, event_handles=None):
                         event_handle=h_evt,
                         sample=sample,
                         filenames=h_evt._filenames,
-                        workers=workers
+                        workers=workers,
                     )
     else:
         event_handles = (wrappers.Wrapper(
             event_handle=h_evt,
-            filenames=h_evt._filenames
+            filenames=h_evt._filenames,
         ) for h_evt in event_handles)
 
     if _proxy.max_num_processes > 1:
