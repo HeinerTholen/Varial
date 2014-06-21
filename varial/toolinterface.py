@@ -70,6 +70,7 @@ class Tool(_ToolBase):
         self.time_fin = None
 
     def __enter__(self):
+        self.reset()
         res = super(Tool, self).__enter__()
         self.result_dir = analysis.cwd
         self.logfile = os.path.join(self.result_dir, '%s.log' % self.name)
