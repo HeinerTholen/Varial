@@ -24,12 +24,13 @@ class SigintHandler(object):
 
     def handle(self, signal_int, frame):
         if signal_int is signal.SIGINT:
-            if not ipython_mode and not self.hits:
-                print "WARNING: SIGINT caught. " \
-                      "Aborting processes if any. " \
-                      "Crtl-C again to kill immediately!"
+            if not ipython_mode:
                 if self.hits:
                     exit(-1)
+                else:
+                    print "WARNING: SIGINT caught. " \
+                          "Aborting processes if any. " \
+                          "Crtl-C again to kill immediately!"
             sys.__stdout__.flush()
             self.hits += 1
             settings.recieved_sigint = True
