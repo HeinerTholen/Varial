@@ -1,6 +1,8 @@
 import atexit
 import glob
 import os
+import resource
+import time
 from os.path import abspath, basename, dirname, exists, join
 from ast import literal_eval
 from itertools import takewhile
@@ -11,12 +13,18 @@ import sample
 import wrappers
 
 
+# TODO: IOError problem with to many open file descriptors:
+# TODO: http://mihalop.blogspot.gr/2014/05/python-subprocess-and-file-descriptors.html
+_n_file_limit = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
+resource.setrlimit(resource.RLIMIT_NOFILE, (_n_file_limit, _n_file_limit))
+
+
 class NoDictInFileError(Exception): pass
 class NoObjectError(Exception): pass
 class NoHistogramError(Exception): pass
 
 
-############################################################ root file refs ###
+################################################################# file refs ###
 _open_root_files = {}
 
 
