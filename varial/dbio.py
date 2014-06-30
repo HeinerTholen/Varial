@@ -14,6 +14,7 @@ def _init(db_name=None):
         _close()
     name = db_name or settings.varial_working_dir + settings.db_name
     _db_conn = sqlite3.connect(name)
+    _db_conn.isolation_level = None
     c = _db_conn.cursor()
     c.execute('CREATE TABLE IF NOT EXISTS analysis (path VARCHAR UNIQUE, data)')
 
@@ -32,28 +33,26 @@ def _close():
 def write(wrp, name=None):
     if not _db_conn:
         _init()
-    with _db_conn:
-        path = analysis.cwd + (name or wrp.name)
-        c = _db_conn.cursor()
-        c.execute('DELETE FROM analysis WHERE path=?', (path,))
-        c.execute(
-            'INSERT INTO analysis VALUES (?,?)',
-            (path, cPickle.dumps(wrp))
-        )
+    path = analysis.cwd + (name or wrp.name)
+    c = _db_conn.cursor()
+    c.execute('DELETE FROM analysis WHERE path=?', (path,))
+    c.execute(
+        'INSERT INTO analysis VALUES (?,?)',
+        (path, cPickle.dumps(wrp))
+    )
 
 
 def read(name):
     if not _db_conn:
         _init()
-    with _db_conn:
-        path = analysis.cwd + name
-        c = _db_conn.cursor()
-        c.execute('SELECT data FROM analysis WHERE path=?', (path,))
-        data = c.fetchone()
-        if data:
-            return cPickle.loads(str(data[0]))
-        else:
-            raise RuntimeError('Data not found in db: %s' % path)
+    path = analysis.cwd + name
+    c = _db_conn.cursor()
+    c.execute('SELECT data FROM analysis WHERE path=?', (path,))
+    data = c.fetchone()
+    if data:
+        return cPickle.loads(str(data[0]))
+    else:
+        raise RuntimeError('Data not found in db: %s' % path)
 
 
 def get(name):
