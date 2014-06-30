@@ -14,6 +14,7 @@ from fwliteproxy import FwliteProxy
 
 class FSHistoLoader(Tool):
     io = dbio
+
     def __init__(self, name=None, filter_keyfunc=None):
         super(FSHistoLoader, self).__init__(name)
         self.filter_keyfunc = filter_keyfunc
@@ -73,8 +74,9 @@ class FSPlotter(Tool):
         pass
 
     def set_up_content(self):
-        if self.input_result_path:
-            wrps = self.lookup(self.input_result_path)
+        loader_path = self.input_result_path or '../FSHistoLoader'
+        wrps = self.lookup(loader_path)
+        if wrps:
             if self.filter_keyfunc:
                 wrps = itertools.ifilter(self.filter_keyfunc, wrps)
         else:
