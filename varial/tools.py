@@ -45,26 +45,26 @@ class FSPlotter(Tool):
     ...    ]
     ...}
     """
-
+    defaults_attrs = {
+        'input_result_path': None,
+        'filter_keyfunc': None,
+        'hook_loaded_histos': None,
+        'hook_pre_canvas_build': None,
+        'hook_post_canvas_build': None,
+        'save_log_scale': False,
+        'save_lin_log_scale': False,
+        'keep_content_as_result': False,
+        'canvas_decorators': [
+            rendering.BottomPlotRatioSplitErr,
+            rendering.Legend
+        ]
+    }
     class NoFilterDictError(Exception):
         pass
 
     def __init__(self, name=None, **kws):
         super(FSPlotter, self).__init__(name)
-        defaults = {
-            'input_result_path': None,
-            'filter_keyfunc': None,
-            'hook_loaded_histos': None,
-            'hook_pre_canvas_build': None,
-            'hook_post_canvas_build': None,
-            'save_log_scale': False,
-            'save_lin_log_scale': False,
-            'keep_content_as_result': False,
-            'canvas_decorators': [
-                rendering.BottomPlotRatioSplitErr,
-                rendering.Legend
-            ]
-        }
+        defaults = dict(self.defaults_attrs)
         defaults.update(self.__dict__)  # do not overwrite user stuff
         defaults.update(kws)            # add keywords
         self.__dict__.update(defaults)  # set attributes in place
