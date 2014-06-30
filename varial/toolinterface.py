@@ -120,7 +120,7 @@ class Tool(_ToolBase):
                 'result'
             )
         self.time_fin = time.ctime() + "\n"
-        with open(self.logfile, "w") as f:    # TODO: mv log stuff into result.info
+        with open(self.logfile, "w") as f:    # TODO: mv log into result.info
             f.write(self.time_start)
             f.write(self.time_fin)
         super(Tool, self).finished()

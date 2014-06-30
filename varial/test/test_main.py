@@ -4,6 +4,7 @@ ROOT.gROOT.SetBatch()
 ROOT.TH1.AddDirectory(False)
 
 from test_diskio import suite as dip_suite
+from test_dbio import suite as dbi_suite
 from test_generators import suite as gen_suite
 from test_ops import suite as ops_suite
 from test_rendering import suite as rnd_suite
@@ -27,6 +28,7 @@ suite = unittest.TestSuite((
     doctest.DocTestSuite(uti),
     ops_suite,
     dip_suite,
+    dbi_suite,
     gen_suite,
     rnd_suite,
 ))
