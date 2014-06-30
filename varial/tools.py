@@ -2,7 +2,7 @@ import itertools
 import os
 import shutil
 
-import diskio
+import dbio
 import generators as gen
 import rendering
 import settings
@@ -13,6 +13,7 @@ from fwliteproxy import FwliteProxy
 
 
 class FSHistoLoader(Tool):
+    io = dbio
     def __init__(self, name=None, filter_keyfunc=None):
         super(FSHistoLoader, self).__init__(name)
         self.filter_keyfunc = filter_keyfunc
@@ -241,7 +242,7 @@ class SimpleWebCreator(Tool):
     def make_info_file_divs(self):
         self.web_lines += ('<h2>Info files:</h2>',)
         for nfo in self.plain_info:
-            wrp = diskio.read(
+            wrp = self.io.read(
                 os.path.join(self.working_dir, nfo)
             )
             self.web_lines += (
@@ -336,7 +337,7 @@ class SimpleWebCreator(Tool):
 
     def run(self):
         """Run the single steps."""
-        diskio.use_analysis_cwd = False
+        self.io.use_analysis_cwd = False
         self.configure()
         if not self.image_postfix:
             return
@@ -355,4 +356,4 @@ class SimpleWebCreator(Tool):
         self.write_page()
         if self.is_base:
             self.copy_page_to_destination()
-        diskio.use_analysis_cwd = True
+        self.io.use_analysis_cwd = True

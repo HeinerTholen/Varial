@@ -15,6 +15,7 @@ class _ToolBase(object):
     Base class for post processing.
     """
     can_reuse = False
+    io = diskio
 
     def __init__(self, tool_name=None):
         super(_ToolBase, self).__init__()
@@ -89,10 +90,10 @@ class Tool(_ToolBase):
 
     def reuse(self):
         self.message("INFO reusing...")
-        res = diskio.get('result')
+        res = self.io.get('result')
         if res:
             if hasattr(res, "RESULT_WRAPPERS"):
-                self.result = list(diskio.read(f) for f in res.RESULT_WRAPPERS)
+                self.result = list(self.io.read(f) for f in res.RESULT_WRAPPERS)
             else:
                 self.result = res
 
@@ -102,17 +103,17 @@ class Tool(_ToolBase):
         if os.path.exists(self.logfile):
             os.remove(self.logfile)
 
-    def finished(self):                      # TODO: make dbio
+    def finished(self):
         if isinstance(self.result, wrappers.Wrapper):
             self.result.name = self.name
-            diskio.write(self.result, 'result')
+            self.io.write(self.result, 'result')
         elif isinstance(self.result, list) or isinstance(self.result, tuple):
             filenames = []
             for i, wrp in enumerate(self.result):
                 num_str = "_%03d" % i
                 filenames.append('result' + num_str)
-                diskio.write(wrp, 'result' + num_str)
-            diskio.write(
+                self.io.write(wrp, 'result' + num_str)
+            self.io.write(
                 wrappers.Wrapper(
                     name=self.name,
                     RESULT_WRAPPERS=filenames
