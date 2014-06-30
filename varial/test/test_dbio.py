@@ -20,17 +20,22 @@ class TestDbio(TestHistoToolsBase):
     def test_write(self):
         dbio.write(self.test_wrp)
 
-        # file should exist
+        # check existance
         c = dbio._db_conn.cursor()
-        c.execute('SELECT data FROM analysis WHERE path=?', (self.test_wrp.name,))
-        self.assertTrue(
-            bool(c.fetchone())
-        )
+        c.execute('SELECT * FROM analysis')
+        self.assertTrue(bool(c.fetchone()))
+
+        c.execute('SELECT data FROM analysis')
+        self.assertTrue(bool(c.fetchone()))
+
+        c.execute('SELECT data FROM analysis WHERE path=?',
+                  (analysis.cwd + self.test_wrp.name,))
+        self.assertTrue(bool(c.fetchone()))
 
     def test_read(self):
+        self.test_wrp.history = str(self.test_wrp.history)
         dbio.write(self.test_wrp)
         loaded = dbio.read(self.test_wrp.name)
-        self.test_wrp.history = str(self.test_wrp.history)
 
         # check names
         self.assertEqual(
@@ -41,6 +46,9 @@ class TestDbio(TestHistoToolsBase):
         # check histograms (same integral, different instance)
         self.assertEqual(self.test_wrp.histo.Integral(),loaded.histo.Integral())
         self.assertNotEqual(str(self.test_wrp.histo), str(loaded.histo))
+
+        # check error
+        self.assertRaises(RuntimeError, dbio.read, "non_existent")
 
 
 import unittest

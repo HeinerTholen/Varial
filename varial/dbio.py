@@ -33,7 +33,7 @@ def write(wrp):
     with _db_conn:
         path = analysis.cwd + wrp.name
         c = _db_conn.cursor()
-        c.execute('DELETE FROM analysis WHERE path=?', path)
+        c.execute('DELETE FROM analysis WHERE path=?', (path,))
         c.execute(
             'INSERT INTO analysis VALUES (?,?)',
             (path, cPickle.dumps(wrp))
@@ -44,13 +44,21 @@ def read(name):
     if not _db_conn:
         _init()
     with _db_conn:
+        path = analysis.cwd + name
         c = _db_conn.cursor()
-        c.execute('SELECT data FROM analysis WHERE path=?', (name,))
-        return cPickle.loads(c.fetchone()[0])
+        c.execute('SELECT data FROM analysis WHERE path=?', (path,))
+        data = c.fetchone()
+        if data:
+            return cPickle.loads(str(data[0]))
+        else:
+            raise RuntimeError('Data not found in db: %s' % path)
 
 
 def get(name):
-    return read(name)
+    try:
+        return read(name)
+    except RuntimeError:
+        return None
 
 
 ########################################################## i/o with aliases ###
