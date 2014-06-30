@@ -102,7 +102,7 @@ class Tool(_ToolBase):
         if os.path.exists(self.logfile):
             os.remove(self.logfile)
 
-    def finished(self):
+    def finished(self):                      # TODO: make dbio
         if isinstance(self.result, wrappers.Wrapper):
             self.result.name = self.name
             diskio.write(self.result, 'result')
@@ -120,7 +120,7 @@ class Tool(_ToolBase):
                 'result'
             )
         self.time_fin = time.ctime() + "\n"
-        with open(self.logfile, "w") as f:
+        with open(self.logfile, "w") as f:    # TODO: mv log stuff into result.info
             f.write(self.time_start)
             f.write(self.time_fin)
         super(Tool, self).finished()
