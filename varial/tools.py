@@ -54,6 +54,7 @@ class FSPlotter(Tool):
         'save_log_scale': False,
         'save_lin_log_scale': False,
         'keep_content_as_result': False,
+        'save_name_lambda': lambda wrp: wrp.name,
         'canvas_decorators': [
             rendering.BottomPlotRatioSplitErr,
             rendering.Legend
@@ -68,7 +69,6 @@ class FSPlotter(Tool):
         defaults.update(self.__dict__)  # do not overwrite user stuff
         defaults.update(kws)            # add keywords
         self.__dict__.update(defaults)  # set attributes in place
-        self.save_name_lambda = lambda wrp: wrp.name
 
     def configure(self):
         pass
