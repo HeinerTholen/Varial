@@ -69,7 +69,8 @@ stacking_order = []
 
 
 ################################################################ root style ###
-from ROOT import gROOT, TStyle, TGaxis
+from array import array
+from ROOT import gROOT, gStyle, TColor, TStyle, TGaxis
 
 
 class StyleClass(TStyle):
@@ -78,7 +79,7 @@ class StyleClass(TStyle):
     Places self as new ROOT style.
     """
     def __init__(self):
-        super(StyleClass, self).__init__("CRRootStyle", "CRRootStyle")
+        super(StyleClass, self).__init__("CmsRootStyle", "CmsRootStyle")
 
         ################################ custom root style commands ###
         self.SetFrameBorderMode(0)
@@ -141,7 +142,32 @@ class StyleClass(TStyle):
         ############################ end custom root style commands ###
 
         self.cd()
-        gROOT.SetStyle("CRRootStyle")
+        self.set_palette()
+        gROOT.SetStyle("CmsRootStyle")
         gROOT.ForceStyle()
         TGaxis.SetMaxDigits(3)
+
+    @staticmethod
+    def set_palette(name='', ncontours=999):
+        if name == "gray" or name == "grayscale":
+            stops = [0.00, 0.34, 0.61, 0.84, 1.00]
+            red   = [1.00, 0.84, 0.61, 0.34, 0.00]
+            green = [1.00, 0.84, 0.61, 0.34, 0.00]
+            blue  = [1.00, 0.84, 0.61, 0.34, 0.00]
+        else:
+            # default palette, looks cool
+            stops = [0.00, 0.34, 0.61, 0.84, 1.00]
+            red   = [0.00, 0.00, 0.87, 1.00, 0.51]
+            green = [0.00, 0.81, 1.00, 0.20, 0.00]
+            blue  = [0.51, 1.00, 0.12, 0.00, 0.00]
+
+        s = array('d', stops)
+        r = array('d', red)
+        g = array('d', green)
+        b = array('d', blue)
+
+        npoints = len(s)
+        TColor.CreateGradientColorTable(npoints, s, r, g, b, ncontours)
+        gStyle.SetNumberContours(ncontours)
+
 root_style = StyleClass()  
