@@ -361,9 +361,10 @@ def decorate(wrps, decorators=None):
     **Example:** ::
 
         result = decorate([CanvasBuilder, ...], [Legend, TextBox])
-        # result = [Legend(TextBox(CanvasBuilder)), ...]
+        # result = [TextBox(Legend(CanvasBuilder)), ...]
     """
-    if not decorators: decorators = {}
+    if not decorators:
+        decorators = []
     for wrp in wrps:
         for dec in decorators:
             wrp = dec(wrp)
@@ -406,6 +407,9 @@ def switch_log_scale(cnvs, y_axis=True, x_axis=False):
 
 
 ################################################### application & packaging ###
+from ROOT import TH2D
+
+
 def fs_filter_sort_load(filter_keyfunc=None, sort_keys=None):
     """
     Packaging of filtering, sorting and loading.
@@ -513,13 +517,17 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=False):
         mc_groupd = group(mc_sorted, merge_mc_key_func)
         mc_merged = (op.merge(g) for g in mc_groupd)
         mc_colord = apply_histo_fillcolor(mc_merged)
+        is_2d = mc_sorted and isinstance(mc_sorted[0], TH2D)
 
         # stack mc
         mc_norm = gen_prod(itertools.izip(mc_colord,
                                           itertools.repeat(data_lumi)))
         mc_stck = None
         try:
-            mc_stck = op.stack(mc_norm)
+            if is_2d:
+                mc_stck = op.sum(mc_norm)
+            else:
+                mc_stck = op.stack(mc_norm)
         except op.TooFewWrpsError:
             print "WARNING generators.mc_stack_n_data_sum(..): " \
                   "No mc histos present! I will yield only data"

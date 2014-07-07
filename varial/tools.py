@@ -110,13 +110,20 @@ class FSPlotter(Tool):
             for grp in grps:
                 grp.name = grp.renderers[0].analyzer+"_"+grp.name
                 yield grp
+
         def run_build_procedure(bldr):
             for b in bldr:
                 b.run_procedure()
                 yield b
+        def decorate(bldr):
+            for b in bldr:
+                if not isinstance(b.histo, ROOT.TH2D):
+                    for dec in self.canvas_decorators:
+                        b = dec(b)
+                yield b
         bldr = gen.make_canvas_builder(self.stream_content)
         bldr = put_ana_histo_name(bldr)
-        bldr = gen.decorate(bldr, self.canvas_decorators)
+        bldr = decorate(bldr)
         if self.hook_pre_canvas_build:
             bldr = self.hook_pre_canvas_build(bldr)
         bldr = run_build_procedure(bldr)
