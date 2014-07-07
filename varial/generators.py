@@ -361,9 +361,10 @@ def decorate(wrps, decorators=None):
     **Example:** ::
 
         result = decorate([CanvasBuilder, ...], [Legend, TextBox])
-        # result = [Legend(TextBox(CanvasBuilder)), ...]
+        # result = [TextBox(Legend(CanvasBuilder)), ...]
     """
-    if not decorators: decorators = {}
+    if not decorators:
+        decorators = []
     for wrp in wrps:
         for dec in decorators:
             wrp = dec(wrp)
