@@ -1,5 +1,6 @@
 ################################################################# renderers ###
 import collections
+import ROOT
 import wrappers
 
 
@@ -10,17 +11,23 @@ class Renderer(object):
     def __init__(self, wrp):
         self.__dict__.update(wrp.__dict__)
 
-    def x_min(self): pass
+    def x_min(self):
+        pass
 
-    def x_max(self): pass
+    def x_max(self):
+        pass
 
-    def y_min(self): pass
+    def y_min(self):
+        pass
 
-    def y_max(self): pass
+    def y_max(self):
+        pass
 
-    def y_min_gr_zero(self): return self.y_min()
+    def y_min_gr_zero(self):
+        return self.y_min()
 
-    def draw(self, option=""): pass
+    def draw(self, option=""):
+        pass
 
 
 class HistoRenderer(Renderer, wrappers.HistoWrapper):
@@ -33,6 +40,8 @@ class HistoRenderer(Renderer, wrappers.HistoWrapper):
             self.draw_option = wrp.draw_option
         elif self.is_data:
             self.draw_option = "E1X0"
+        elif isinstance(self.histo, ROOT.TH2D):
+            self.draw_option = "COLZ"
         else:
             self.draw_option = "hist"
 
@@ -43,7 +52,7 @@ class HistoRenderer(Renderer, wrappers.HistoWrapper):
         return self.histo.GetXaxis().GetXmax()
 
     def y_min(self):
-        return self.histo.GetMinimum() + 1e-23 # > 0 cuts away half numbers
+        return self.histo.GetMinimum() + 1e-23  # > 0 cuts away half numbers
 
     def y_max(self):
         return self.histo.GetMaximum()
