@@ -63,11 +63,14 @@ class HistoRenderer(Renderer, wrappers.HistoWrapper):
         nbins = histo.GetNbinsX()
         min_val = histo.GetMinimum()  # min on y axis
         if min_val < 1e-23 < histo.GetMaximum():  # should be greater than zero
-            min_val = min(
-                histo.GetBinContent(i)
-                for i in xrange(nbins + 1)
-                if histo.GetBinContent(i) > 1e-23
-            )
+            try:
+                min_val = min(
+                    histo.GetBinContent(i)
+                    for i in xrange(nbins + 1)
+                    if histo.GetBinContent(i) > 1e-23
+                )
+            except ValueError:
+                min_val = 1e-23
         return min_val
 
     def draw(self, option=""):
