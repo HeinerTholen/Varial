@@ -1,6 +1,7 @@
 import itertools
 import os
 import shutil
+import ROOT
 
 import dbio
 import generators as gen
@@ -86,7 +87,15 @@ class FSPlotter(Tool):
             wrps = gen.fs_filter_active_sort_load(self.filter_keyfunc)
         if self.hook_loaded_histos:
             wrps = self.hook_loaded_histos(wrps)
-        wrps = gen.group(wrps)
+        ungroupiter = iter(xrange(9999))
+        wrps = gen.group(
+            wrps,
+            lambda w: w.analyzer+"_"+w.name+(
+                "%03d" % next(ungroupiter)
+                if isinstance(w.histo, ROOT.TH2D)
+                else ""
+            )
+        )
         wrps = gen.mc_stack_n_data_sum(wrps, None, True)
         self.stream_content = wrps
 
