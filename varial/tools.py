@@ -115,9 +115,10 @@ class FSPlotter(Tool):
             for b in bldr:
                 b.run_procedure()
                 yield b
+
         def decorate(bldr):
             for b in bldr:
-                if not isinstance(b.histo, ROOT.TH2D):
+                if not isinstance(b.renderers[0].histo, ROOT.TH2D):
                     for dec in self.canvas_decorators:
                         b = dec(b)
                 yield b

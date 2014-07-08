@@ -517,7 +517,7 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=False):
         mc_groupd = group(mc_sorted, merge_mc_key_func)
         mc_merged = (op.merge(g) for g in mc_groupd)
         mc_colord = apply_histo_fillcolor(mc_merged)
-        is_2d = mc_sorted and isinstance(mc_sorted[0], TH2D)
+        is_2d = mc_sorted and isinstance(mc_sorted[0].histo, TH2D)
 
         # stack mc
         mc_norm = gen_prod(itertools.izip(mc_colord,
