@@ -1,8 +1,11 @@
 import cPickle
 import sqlite3
+from ROOT import TObject
+from ast import literal_eval
 
 import analysis
 import settings
+import wrappers
 
 
 _db_conn = None
@@ -16,7 +19,10 @@ def _init(db_name=None):
     _db_conn = sqlite3.connect(name)
     _db_conn.isolation_level = None
     c = _db_conn.cursor()
-    c.execute('CREATE TABLE IF NOT EXISTS analysis (path VARCHAR UNIQUE, data)')
+    c.execute('CREATE TABLE IF NOT EXISTS '
+              'dot_info (path VARCHAR UNIQUE, data)')
+    c.execute('CREATE TABLE IF NOT EXISTS '
+              'dot_root (path VARCHAR, key VARCHAR, data)')
 
 
 def _close():
@@ -35,10 +41,25 @@ def write(wrp, name=None):
         _init()
     path = analysis.cwd + (name or wrp.name)
     c = _db_conn.cursor()
-    c.execute('DELETE FROM analysis WHERE path=?', (path,))
+    c.execute('DELETE FROM dot_info WHERE path=?', (path,))
+    c.execute('DELETE FROM dot_root WHERE path=?', (path,))
+
+    # write root objs
+    if any(isinstance(o, TObject) for o in wrp.__dict__.itervalues()):
+        wrp.root_file_obj_names = {}
+        for key, value in wrp.__dict__.iteritems():
+            if not isinstance(value, TObject):
+                continue
+            c.execute(
+                'INSERT INTO dot_root VALUES (?,?,?)',
+                (path, key, cPickle.dumps(value))
+            )
+            wrp.root_file_obj_names[key] = value.GetName()
+
+    # write wrp
     c.execute(
-        'INSERT INTO analysis VALUES (?,?)',
-        (path, cPickle.dumps(wrp))
+        'INSERT INTO dot_info VALUES (?,?)',
+        (path, wrp.pretty_writeable_lines())
     )
 
 
@@ -47,12 +68,26 @@ def read(name):
         _init()
     path = analysis.cwd + name
     c = _db_conn.cursor()
-    c.execute('SELECT data FROM analysis WHERE path=?', (path,))
-    data = c.fetchone()
-    if data:
-        return cPickle.loads(str(data[0]))
-    else:
+    c.execute('SELECT data FROM dot_info WHERE path=?', (path,))
+    info = c.fetchone()
+    if not info:
         raise RuntimeError('Data not found in db: %s' % path)
+    info = literal_eval(info)
+    if "root_file_obj_names" in info:
+        for key, value in info["root_file_obj_names"].iteritems():
+            c.execute(
+                'SELECT data FROM dot_info WHERE path=? AND key=?',
+                (path, key)
+            )
+            obj = c.fetchone()
+            if not obj:
+                raise RuntimeError('Data not found in db: %s, %s' % (path, key))
+            obj = cPickle.loads(str(obj[0]))
+            info[key] = obj
+        del info["root_file_obj_names"]
+    klass = getattr(wrappers, info.get("klass"))
+    wrp = klass(**info)
+    return wrp
 
 
 def get(name):
