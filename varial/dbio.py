@@ -13,7 +13,7 @@ def _init(db_name=None):
     if _db_conn:
         _close()
     name = db_name or settings.varial_working_dir + settings.db_name
-    _db_conn = sqlite3.connect(name)
+    _db_conn = sqlite3.connect(name, isolation_level='Exclusive')
     _db_conn.isolation_level = None
     c = _db_conn.cursor()
     c.execute('CREATE TABLE IF NOT EXISTS analysis (path VARCHAR UNIQUE, data)')
@@ -35,11 +35,14 @@ def write(wrp, name=None):
         _init()
     path = analysis.cwd + (name or wrp.name)
     c = _db_conn.cursor()
+    c.execute('PRAGMA synchronous = 0')
+    c.execute('PRAGMA journal_mode = OFF')
     c.execute('DELETE FROM analysis WHERE path=?', (path,))
     c.execute(
         'INSERT INTO analysis VALUES (?,?)',
         (path, cPickle.dumps(wrp))
     )
+    _db_conn.commit()
 
 
 def read(name):
