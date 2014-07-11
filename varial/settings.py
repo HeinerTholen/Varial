@@ -98,7 +98,7 @@ class StyleClass(TStyle):
         self.SetPaperSize(20, 26)
         #self.SetPadTopMargin(0.08)
         #self.SetPadBottomMargin(0.14)
-        self.SetPadRightMargin(0.04)
+        self.SetPadRightMargin(0.16)
         self.SetPadLeftMargin(0.16)
         #self.SetCanvasDefH(800)
         #self.SetCanvasDefW(800)
