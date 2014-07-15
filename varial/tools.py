@@ -379,6 +379,17 @@ class SimpleWebCreator(Tool):
         self.io.use_analysis_cwd = True
 
 
+# TODO: move copying from WebCreator to own tool:
+# class CopyTool(Tool):
+#     def __init__(self, from_path, to_path):
+#         super(CopyTool, self).__init__(None)
+#         self.from_path = from_path
+#         self.to_path = to_path
+#
+#     def run(self):
+#         pass
+
+
 class ZipTool(Tool):
     def __init__(self, abs_path):
         super(ZipTool, self).__init__(None)
@@ -389,4 +400,5 @@ class ZipTool(Tool):
         os.system(
             'zip -r %s %s' % (p, p)
         )
+
 
