@@ -80,6 +80,7 @@ class FSPlotter(Tool):
         if wrps:
             if self.filter_keyfunc:
                 wrps = itertools.ifilter(self.filter_keyfunc, wrps)
+            wrps = gen.sort(wrps)
         else:
             if not self.filter_keyfunc:
                 self.message("WARNING No filter_keyfunc set! "
