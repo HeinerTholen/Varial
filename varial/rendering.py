@@ -294,12 +294,13 @@ import util
 import operations as op
 from ROOT import TLegend, TPad, TPaveText
 
+
 class TextBoxDecorator(util.Decorator):
     """Draw Textboxes individually by renderer name"""
-    def __init__(self, inner, dd = True, **kws):
+    def __init__(self, inner, dd=True, **kws):
         super(TextBoxDecorator, self).__init__(inner, dd, **kws)
         self.dec_par.update(kws)
-        assert(self.dec_par.has_key("textbox_dict"))
+        assert('textbox_dict' in self.dec_par)
 
     def do_final_cosmetics(self):
         self.decoratee.do_final_cosmetics()
