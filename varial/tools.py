@@ -61,6 +61,7 @@ class FSPlotter(Tool):
             rendering.Legend
         ]
     }
+
     class NoFilterDictError(Exception):
         pass
 
@@ -70,17 +71,23 @@ class FSPlotter(Tool):
         defaults.update(self.__dict__)  # do not overwrite user stuff
         defaults.update(kws)            # add keywords
         self.__dict__.update(defaults)  # set attributes in place
+        self.stream_content = None
+        self.stream_canvas = None
 
     def configure(self):
         pass
 
-    def set_up_content(self):
-        loader_path = self.input_result_path or '../FSHistoLoader'
-        wrps = self.lookup(loader_path)
+    def load_content(self):
+        if self.input_result_path:
+            wrps = self.lookup(self.input_result_path)
+            if not wrps:
+                raise RuntimeError(
+                    'ERROR Input not found: "%s"' % self.input_result_path)
+        else:
+            wrps = self.lookup('../FSHistoLoader')
         if wrps:
             if self.filter_keyfunc:
                 wrps = itertools.ifilter(self.filter_keyfunc, wrps)
-            wrps = gen.sort(wrps)
         else:
             if not self.filter_keyfunc:
                 self.message("WARNING No filter_keyfunc set! "
@@ -88,6 +95,12 @@ class FSPlotter(Tool):
             wrps = gen.fs_filter_active_sort_load(self.filter_keyfunc)
         if self.hook_loaded_histos:
             wrps = self.hook_loaded_histos(wrps)
+        self.stream_content = wrps
+
+    def set_up_content(self):
+        wrps = self.stream_content
+
+        # put TH2D's in one group each
         ungroupiter = iter(xrange(9999))
         wrps = gen.group(
             wrps,
@@ -97,6 +110,7 @@ class FSPlotter(Tool):
                 else ""
             )
         )
+
         wrps = gen.mc_stack_n_data_sum(wrps, None, True)
         self.stream_content = wrps
 
@@ -155,6 +169,7 @@ class FSPlotter(Tool):
 
     def run(self):
         self.configure()
+        self.load_content()
         self.set_up_content()
         self.store_content_as_result()
         self.set_up_make_canvas()
