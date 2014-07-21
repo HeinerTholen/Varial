@@ -105,11 +105,6 @@ def main(**main_kwargs):
     global toolchain
     toolchain = main_kwargs.get('toolchain')
     if not toolchain:
-        if settings.cmsRun_main_import_path:
-            toolchain = tools.CmsRunProxy('cmsrun_output')
-        elif settings.fwlite_executable:
-            toolchain = tools.FwliteProxy('fwlite_output')
-    if not toolchain:
         monitor.message(
             'varial.main',
             "FATAL No toolchain or eventloops scripts defined."

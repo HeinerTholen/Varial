@@ -12,12 +12,10 @@ import wrappers
 
 class FwliteProxy(toolinterface.Tool):
     def __init__(self,
-                 name=None,
-                 py_exe=None):
+                 fwlite_exe,
+                 name=None):
         super(FwliteProxy, self).__init__(name)
-        self.py_exe = py_exe or settings.fwlite_executable
-        if not self.py_exe:
-            raise RuntimeError('No script path given')
+        self.fwlite_exe = fwlite_exe
         self._proxy = None
 
     def wanna_reuse(self, all_reused_before_me):
@@ -78,9 +76,9 @@ class FwliteProxy(toolinterface.Tool):
         diskio.write(self._proxy)
 
         # start subprocess
-        self.message("INFO Starting script: '%s'" % self.py_exe)
+        self.message("INFO Starting script: '%s'" % self.fwlite_exe)
         proc = subprocess.Popen(
-            ['python', self.py_exe],
+            ['python', self.fwlite_exe],
             stdout=monitor.MonitorInfo.outstream,
             stderr=subprocess.STDOUT,
             cwd=self.result_dir,

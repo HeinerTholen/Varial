@@ -211,27 +211,20 @@ class CmsRunProxy(toolinterface.Tool):
     """Tool to embed cmsRun execution into varial toolchains."""
 
     def __init__(self,
-                 name=None,
-                 cfg_filename="",
-                 use_file_service=None,
-                 output_module_name="",
-                 common_builtins=None):
+                 cfg_filename,
+                 use_file_service=True,
+                 output_module_name="out",
+                 common_builtins=None,
+                 name=None):
         super(CmsRunProxy, self).__init__(name)
         self.waiting_pros = []
         self.running_pros = []
         self.finished_pros = []
         self.failed_pros = []
-        self.cfg_filename = cfg_filename or settings.cmsRun_main_import_path
-        self.output_module_name = (output_module_name
-                                   or settings.cmsRun_output_module_name)
-        if None == use_file_service:
-            self.use_file_service = settings.cmsRun_use_file_service
-        else:
-            self.use_file_service = use_file_service
-        if None == common_builtins:
-            self.common_builtins = settings.cmsRun_common_builtins
-        else:
-            self.common_builtins = common_builtins
+        self.cfg_filename = cfg_filename
+        self.use_file_service = use_file_service
+        self.output_module_name = output_module_name
+        self.common_builtins = common_builtins or {}
         self.try_reuse = settings.try_reuse_results
 
     def wanna_reuse(self, all_reused_before_me):
