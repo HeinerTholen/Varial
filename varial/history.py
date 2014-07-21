@@ -16,22 +16,33 @@ class History(object):
     >>> print str(h)
     some_op(
         w1,
-        w2
+        w2,
     )
     >>> h.add_kws({"a_keyword": "a_value"})
     >>> print str(h)
     some_op(
         w1,
         w2,
-        a_keyword='a_value',
+        a_keyword=a_value,
     )
     >>> h
-    some_op(w1,w2,a_keyword='a_value',)
+    some_op(w1,w2,a_keyword=a_value,)
     >>> h.add_args([History("another_op")])
     >>> print str(h)
     some_op(
         another_op(),
-        a_keyword='a_value',
+        a_keyword=a_value,
+    )
+    >>> # new history test
+    >>> h = History("other_op")
+    >>> h.add_args([["w1", "w2"], 'bar'])
+    >>> print str(h)
+    other_op(
+        [
+            w1,
+            w2,
+        ],
+        bar,
     )
     """
     def __init__(self, operation):
@@ -42,15 +53,17 @@ class History(object):
     def __str__(self):
         string = ""
         if self.args:
-            for arg in self.args:
-                if len(string):
-                    string += ",\n"
-                string += "    "
-                string += str(arg).replace("\n", "\n    ")
+            def arg_str(a):
+                if isinstance(a, list):
+                    return '[\n        ' + ",\n        ".join(a) + ',\n    ]'
+                else:
+                    return str(a)
+
+            string += "\n".join("    %s," % arg_str(a) for a in self.args)
         if self.kws:
-            string += ",\n"
+            string += "\n"
             string += "\n".join(
-                "    %s='%s'," % (k, v) for k, v in self.kws.iteritems())
+                "    %s=%s," % (k, str(v)) for k, v in self.kws.iteritems())
         if string:
             return self.op + "(\n" + string + "\n)"
         else:
