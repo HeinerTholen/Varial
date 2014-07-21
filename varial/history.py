@@ -23,15 +23,15 @@ class History(object):
     some_op(
         w1,
         w2,
-        {'a_keyword': 'a_value'}
+        a_keyword='a_value',
     )
     >>> h
-    some_op(w1,w2,{'a_keyword':'a_value'})
+    some_op(w1,w2,a_keyword='a_value',)
     >>> h.add_args([History("another_op")])
     >>> print str(h)
     some_op(
         another_op(),
-        {'a_keyword': 'a_value'}
+        a_keyword='a_value',
     )
     """
     def __init__(self, operation):
@@ -48,8 +48,9 @@ class History(object):
                 string += "    "
                 string += str(arg).replace("\n", "\n    ")
         if self.kws:
-            string += ",\n    "
-            string += str(self.kws)
+            string += ",\n"
+            string += "\n".join(
+                "    %s='%s'," % (k, v) for k, v in self.kws.iteritems())
         if string:
             return self.op + "(\n" + string + "\n)"
         else:
