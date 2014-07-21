@@ -371,7 +371,7 @@ class SimpleWebCreator(Tool):
 class CopyTool(Tool):
     """Copy contents of a directory. Preserves .htaccess files."""
     def __init__(self, dest, src='',
-                 ignore=("*.root", "*.pdf", "*.eps", "*.info"),
+                 ignore=("*.root", "*.pdf", "*.eps", "*.log", "*.info"),
                  name=None):
         super(CopyTool, self).__init__(name)
         self.dest = dest
@@ -389,14 +389,19 @@ class CopyTool(Tool):
                 shutil.copy2(htaccess, path)
 
         # clean dest dir and copy
-        shutil.rmtree(glob.glob(dest + '/*'), True)
+        for f in glob.glob(dest + '/*'):
+            shutil.rmtree(f, True)
         ign_pat = shutil.ignore_patterns(*self.ignore)
         for f in glob.glob(src + '/*'):
-            shutil.copytree(
-                os.path.join(src, f),
-                os.path.join(dest, f),
-                ignore=ign_pat
-            )
+            if os.path.isdir(f):
+                f = os.path.basename(f)
+                shutil.copytree(
+                    os.path.join(src, f),
+                    os.path.join(dest, f),
+                    ignore=ign_pat,
+                )
+            else:
+                shutil.copy2(f, dest)
 
 
 class ZipTool(Tool):
