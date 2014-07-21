@@ -53,11 +53,13 @@ class History(object):
     def __str__(self):
         string = ""
         if self.args:
-            def arg_str(a):
-                if isinstance(a, list):
-                    return '[\n        ' + ",\n        ".join(a) + ',\n    ]'
+            def arg_str(arg):
+                if isinstance(arg, list):
+                    return '[\n        ' \
+                           + ",\n        ".join(str(a) for a in arg) \
+                           + ',\n    ]'
                 else:
-                    return str(a)
+                    return str(arg)
 
             string += "\n".join("    %s," % arg_str(a) for a in self.args)
         if self.kws:
@@ -80,33 +82,50 @@ class History(object):
         self.kws = kws
 
 
-def gen_catch_history(wrps, list_of_histories):
-    """
-    'Pass through' generator.
-    """
+def _gen_catch_history(wrps, list_of_histories):
     for wrp in wrps:
         if hasattr(wrp, "history"):
             list_of_histories.append(wrp.history)
         yield wrp
 
 
-# TODO: change history to represent really all args
 def track_history(func):
     """
     Python decorator for Wrapper operations.
+
+    >>> @track_history
+    ... def noop(wrps, arg, kw):
+    ...     wrps = list(wrps)
+    ...     return wrps[0]
+    >>>
+    >>> w1 = wrappers.Wrapper(history='w1')
+    >>> w2 = wrappers.Wrapper(history='w2')
+    >>> w3 = noop([w1,w2], 'an_arg', kw='a_kw')
+    >>> print w3.history
+    noop(
+        [
+            w1,
+            w2,
+        ],
+        an_arg,
+        kw=a_kw,
+    )
     """
     @functools.wraps(func)
     def decorator(*args, **kws):
         history = History(func.__name__)
         if len(args):
-            candidate = args[0]
-            if isinstance(candidate, wrappers.Wrapper):
-                history.add_args([candidate.history])
-            elif isinstance(candidate, collections.Iterable):
-                args = list(args)
-                list_of_histories = []
-                args[0] = gen_catch_history(candidate, list_of_histories)
-                history.add_args(list_of_histories)
+            func_args = list(args)
+            hist_args = list(args)
+            for i, arg in enumerate(args):
+                if isinstance(arg, wrappers.Wrapper):
+                    hist_args[i] = arg.history
+                elif isinstance(arg, collections.Iterable) and not i:
+                    list_of_histories = []
+                    func_args[i] = _gen_catch_history(arg, list_of_histories)
+                    hist_args[i] = list_of_histories
+            history.add_args(hist_args)
+            args = func_args
         if len(kws):
             history.add_kws(kws)
         ret = func(*args, **kws)
