@@ -87,7 +87,7 @@ def track_history(func):
             candidate = args[0]
             if isinstance(candidate, wrappers.Wrapper):
                 history.add_args([candidate.history])
-            if isinstance(candidate, collections.Iterable):
+            elif isinstance(candidate, collections.Iterable):
                 args = list(args)
                 list_of_histories = []
                 args[0] = gen_catch_history(candidate, list_of_histories)

@@ -683,9 +683,19 @@ def chi2(wrps, x_min=0, x_max=0):
         )
     if not x_max:
         x_max = int(first.histo.GetNbinsX() - 1)
+
+    def get_weight_for_bin(i):
+        val = (first.histo.GetBinContent(i+1)
+               - second.histo.GetBinContent(i+1))**2
+        err1 = first.histo.GetBinError(i+1)
+        err2 = second.histo.GetBinError(i+1)
+        if err1 and err2:
+            return val / (err1**2 + err2**2)
+        else:
+            return 0.
+
     chi2_val = __builtin__.sum(
-        (first.histo.GetBinContent(i+1) - second.histo.GetBinContent(i+1))**2
-        / (first.histo.GetBinError(i+1)**2 + second.histo.GetBinError(i+1)**2)
+        get_weight_for_bin(i)
         for i in xrange(x_min, x_max)
     )
     info = second.all_info()
