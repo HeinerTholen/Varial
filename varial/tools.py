@@ -180,14 +180,12 @@ class FSPlotter(Tool):
 
 class SimpleWebCreator(Tool):
     """
-    Browses through settings.DIR_PLOTS and generates webpages recursively for
-    all directories.
+    Generates webpages for all directories.
     """
 
     def __init__(self, name=None, working_dir="", is_base=True):
         super(SimpleWebCreator, self).__init__(name)
         self.working_dir = working_dir
-        self.target_dir = settings.web_target_dir
         self.web_lines = []
         self.subfolders = []
         self.image_names = []
@@ -197,8 +195,6 @@ class SimpleWebCreator(Tool):
         self.is_base = is_base
 
     def configure(self):
-        """A bit of initialization."""
-
         # get image format
         for pf in [".png", ".jpg", ".jpeg"]:
             if pf in settings.rootfile_postfixes:

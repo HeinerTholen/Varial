@@ -14,6 +14,7 @@ default_data_lumi = 1.
 default_colors = [632, 878, 596, 870, 434, 840, 902, 417, 828, 618, 400, 800]
 wrp_sorting_keys = ['analyzer', 'name', 'is_data', 'sample']
 
+
 def logfilename():
     return time.strftime(
         os.path.join(varial_working_dir,
@@ -36,10 +37,6 @@ fwlite_profiling = False
 ########################################################### style constants ###
 canvas_size_x = 800
 canvas_size_y = 800
-
-web_target_dir = ""
-tex_target_dir = ""
-plot_target_dir = ""
 
 box_text_size = 0.037
 defaults_Legend = {
