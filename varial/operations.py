@@ -405,8 +405,26 @@ def copy(wrp):
 
 @history.track_history
 def rebin(wrp, bin_bounds, norm_by_bin_width=False):
-    """Applies to HistoWrapper. Returns Histowrapper."""
-    # TODO write test for op.rebin!!
+    """
+    Applies to HistoWrapper. Returns Histowrapper.
+
+    >>> from ROOT import TH1I
+    >>> h1 = TH1I("h1", "", 4, .5, 4.5)
+    >>> h1.Fill(1)
+    1
+    >>> h1.Fill(2)
+    2
+    >>> w1 = wrappers.HistoWrapper(h1, lumi=2.)
+    >>> w2=rebin(w1, [.5, 2.5, 4.5])
+    >>> w1.histo.GetNbinsX()
+    4
+    >>> w2.histo.GetNbinsX()
+    2
+    >>> w2.histo.GetBinContent(1)
+    2.0
+    >>> w2.histo.GetBinContent(2)
+    0.0
+    """
     if not isinstance(wrp, wrappers.HistoWrapper):
         raise WrongInputError(
             "rebin needs argument of type HistoWrapper. histo: "
