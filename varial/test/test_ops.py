@@ -10,11 +10,11 @@ class TestOps(unittest.TestCase):
         super(TestOps, self).setUp()
         h1 = TH1I("h1", "", 2, .5, 4.5)
         h1.Fill(1, 4)
-        self.wrp1 = HistoWrapper(h1, lumi=2., history="wrp1")
+        self.wrp1 = HistoWrapper(h1, lumi=2., history=History("wrp1"))
         h2 = TH1I("h2", "", 2, .5, 4.5)
         h2.Fill(1, 3)
         h2.Fill(3, 6)
-        self.wrp2 = HistoWrapper(h2, lumi=3., history="wrp2")
+        self.wrp2 = HistoWrapper(h2, lumi=3., history=History("wrp2"))
 
     def tearDown(self):
         super(TestOps, self).tearDown()
@@ -34,7 +34,7 @@ class TestOps(unittest.TestCase):
     def test_history(self):
         self.wrp2.lumi = 2.
         res = stack([self.wrp1, self.wrp2])
-        history = "stack(\n    [\n        wrp1,\n        wrp2,\n    ],\n)"
+        history = "stack(\n    [\n        wrp1(),\n        wrp2(),\n    ],\n)"
         self.assertEqual(str(res.history), history)
         self.wrp1.history = History("one")
         res = stack([self.wrp1, self.wrp2])

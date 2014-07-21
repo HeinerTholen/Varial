@@ -27,20 +27,24 @@ class History(object):
     )
     >>> h
     some_op(w1,w2,a_keyword=a_value,)
-    >>> h.add_args([History("another_op")])
+    >>> h2 = History("another_op")
+    >>> h2.add_args(['foo'])
+    >>> h.add_args([h2])
     >>> print str(h)
     some_op(
-        another_op(),
+        another_op(
+            foo,
+        ),
         a_keyword=a_value,
     )
     >>> # new history test
     >>> h = History("other_op")
-    >>> h.add_args([["w1", "w2"], 'bar'])
+    >>> h.add_args([[History("w1"), History("w2")], 'bar'])
     >>> print str(h)
     other_op(
         [
-            w1,
-            w2,
+            w1(),
+            w2(),
         ],
         bar,
     )
@@ -54,10 +58,16 @@ class History(object):
         string = ""
         if self.args:
             def arg_str(arg):
-                if isinstance(arg, list):
-                    return '[\n        ' \
-                           + ",\n        ".join(str(a) for a in arg) \
-                           + ',\n    ]'
+                if (
+                    isinstance(arg, list)
+                    and arg
+                    and isinstance(arg[0], History)
+                ):
+                    return '[\n        ' + ",\n        ".join(
+                        str(a).replace('\n', '\n        ') for a in arg
+                    ) + ',\n    ]'
+                elif isinstance(arg, History):
+                    return str(arg).replace('\n', '\n    ')
                 else:
                     return str(arg)
 
@@ -98,14 +108,14 @@ def track_history(func):
     ...     wrps = list(wrps)
     ...     return wrps[0]
     >>>
-    >>> w1 = wrappers.Wrapper(history='w1')
-    >>> w2 = wrappers.Wrapper(history='w2')
+    >>> w1 = wrappers.Wrapper(history=History('w1'))
+    >>> w2 = wrappers.Wrapper(history=History('w2'))
     >>> w3 = noop([w1,w2], 'an_arg', kw='a_kw')
     >>> print w3.history
     noop(
         [
-            w1,
-            w2,
+            w1(),
+            w2(),
         ],
         an_arg,
         kw=a_kw,

@@ -5,6 +5,7 @@ from ast import literal_eval
 from itertools import takewhile
 from ROOT import TFile, TDirectory, TH1, TObject
 
+import history
 import monitor
 import sample
 import wrappers
@@ -235,10 +236,9 @@ def load_histogram(alias):
     wrp = wrappers.HistoWrapper(histo, **alias.all_info())
     if isinstance(alias, wrappers.FileServiceAlias):
         histo.SetTitle(alias.legend)
-        wrp.history = (
-            "FileService(%s, %s, %s)" % (
-                alias.sample, alias.analyzer, alias.name)
-        )
+        wrp.history = history.History(
+            'FileService(%s, %s, %s)' % (
+                alias.sample, alias.analyzer, alias.name))
     else:
         wrp.history = repr(alias)
     return wrp
