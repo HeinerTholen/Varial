@@ -109,7 +109,7 @@ import history
 from ROOT import TCanvas, TObject
 
 
-def _renderize(wrp):  # TODO maybe use reflection here??
+def _renderize(wrp):
     if isinstance(wrp, Renderer):
         return wrp
     if isinstance(wrp, wrappers.StackWrapper):
@@ -566,9 +566,4 @@ class TitleBox(util.Decorator):
         titlebox.SetFillColor(0)
         titlebox.Draw("SAME")
         self.titlebox = titlebox
-
-
-#TODO: Statbox from classes/CRUtilities
-#TODO: Stuff from tools/CRHistoStackerDecorators
-
 

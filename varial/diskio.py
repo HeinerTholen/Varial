@@ -69,7 +69,7 @@ def write(wrp, filename=None, suffices=()):
     # write root objects (if any)
     if any(isinstance(o, TObject) for o in wrp.__dict__.itervalues()):
         wrp.root_filename = basename(filename+".root")
-        f = TFile.Open(filename+".root", "RECREATE")  # TODO check for validity
+        f = TFile.Open(filename+".root", "RECREATE")
         f.cd()
         _write_wrapper_objs(wrp, f)
         f.Close()
@@ -172,8 +172,10 @@ def get(filename, default=None):
 ########################################################## i/o with aliases ###
 def generate_fs_aliases(root_file_path, sample_inst):
     """Produces list of all fileservice histograms for registered samples."""
+    if not isinstance(sample_inst, sample.Sample):
+        raise RuntimeError(
+            '2nd arg of generate_fs_aliases must be instance of sample.Sample')
     fs_file = get_open_root_file(root_file_path)
-    assert isinstance(sample_inst, sample.Sample)  # TODO: exception
     for analyzer_key in fs_file.GetListOfKeys():
         analyzer = analyzer_key.ReadObj()
         analyzer_name = analyzer_key.GetName()
