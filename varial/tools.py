@@ -1,3 +1,4 @@
+import glob
 import itertools
 import os
 import shutil
@@ -349,27 +350,6 @@ class SimpleWebCreator(Tool):
         with open(os.path.join(self.working_dir, "index.html"), "w") as f:
             f.writelines(self.web_lines)
 
-    def copy_page_to_destination(self):
-        """Copies .htaccess to cwd. If on top, copies everything to target."""
-        if not self.target_dir:
-            return
-        htaccess = os.path.join(self.target_dir, '.htaccess')
-        if os.path.exists(htaccess):
-            shutil.copy2(htaccess, self.working_dir)
-        else:
-            self.message("INFO Copying page to " + self.target_dir)
-            shutil.copy2(os.path.join(self.working_dir, "index.html"),
-                         self.target_dir)
-            ign_pat = shutil.ignore_patterns(
-                "*.root", "*.pdf", "*.eps", "*.info")
-            for f in self.subfolders:
-                shutil.rmtree(os.path.join(self.target_dir, f), True)
-                shutil.copytree(
-                    os.path.join(self.working_dir, f), 
-                    os.path.join(self.target_dir, f),
-                    ignore=ign_pat
-                )
-
     def run(self):
         """Run the single steps."""
         self.io.use_analysis_cwd = False
@@ -389,23 +369,42 @@ class SimpleWebCreator(Tool):
         self.make_image_divs()
         self.finalize_page()
         self.write_page()
-        if self.is_base:
-            self.copy_page_to_destination()
         self.io.use_analysis_cwd = True
 
 
-# TODO: move copying from WebCreator to own tool:
-# class CopyTool(Tool):
-#     def __init__(self, from_path, to_path):
-#         super(CopyTool, self).__init__(None)
-#         self.from_path = from_path
-#         self.to_path = to_path
-#
-#     def run(self):
-#         pass
+class CopyTool(Tool):
+    """Copy contents of a directory. Preserves .htaccess files."""
+    def __init__(self, dest, src='',
+                 ignore=("*.root", "*.pdf", "*.eps", "*.info"),
+                 name=None):
+        super(CopyTool, self).__init__(name)
+        self.dest = dest
+        self.src = src
+        self.ignore = ignore
+
+    def run(self):
+        src = os.path.abspath(self.src or os.path.join(self.result_dir, '..'))
+        dest = os.path.abspath(self.dest)
+
+        # check for htaccess and copy it to src dirs
+        htaccess = os.path.join(dest, '.htaccess')
+        if os.path.exists(htaccess):
+            for path, _, _ in os.walk(src):
+                shutil.copy2(htaccess, path)
+
+        # clean dest dir and copy
+        shutil.rmtree(glob.glob(dest + '/*'), True)
+        ign_pat = shutil.ignore_patterns(*self.ignore)
+        for f in glob.glob(src + '/*'):
+            shutil.copytree(
+                os.path.join(src, f),
+                os.path.join(dest, f),
+                ignore=ign_pat
+            )
 
 
 class ZipTool(Tool):
+    """Zip-compress a target."""
     def __init__(self, abs_path):
         super(ZipTool, self).__init__(None)
         self.abs_path = abs_path
