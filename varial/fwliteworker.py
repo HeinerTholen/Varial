@@ -27,7 +27,14 @@ class FwliteWorker(object):
 
 
 def _run_workers(event_handle_wrp):
+    from DataFormats.FWLite import Events
+    event_handle_wrp.event_handle = Events(event_handle_wrp.filenames)
     workers = event_handle_wrp.workers
+    if not event_handle_wrp.event_handle.size():
+        del event_handle_wrp.event_handle
+        print "Skipping (no events): ", event_handle_wrp.filenames
+        event_handle_wrp.results = []
+        return event_handle_wrp
 
     # setup workers
     for w in workers:
@@ -140,18 +147,15 @@ def work(workers, event_handles=None):
             os.system('rm -rf .cache')
         os.mkdir('.cache')
 
-        from DataFormats.FWLite import Events
         def event_handle_gen():
             for sample, files in _proxy.event_files.iteritems():
                 for f in files:
                     if sample in _proxy.files_done:
                         if f in _proxy.files_done[sample]:
                             continue
-                    h_evt = Events(f)
                     yield wrappers.Wrapper(
-                        event_handle=h_evt,
                         sample=sample,
-                        filenames=h_evt._filenames,
+                        filenames=[f],
                         workers=workers,
                     )
         event_handles = event_handle_gen()
