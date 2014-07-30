@@ -1,5 +1,7 @@
 import ROOT
 import itertools
+import subprocess
+import time
 import multiprocessing
 import sys
 import traceback
@@ -26,7 +28,7 @@ class FwliteWorker(object):
         pass
 
 
-def _run_workers(event_handle_wrp):
+def run_workers(event_handle_wrp):
     from DataFormats.FWLite import Events
     event_handle_wrp.event_handle = Events(event_handle_wrp.filenames)
     workers = event_handle_wrp.workers
@@ -34,6 +36,7 @@ def _run_workers(event_handle_wrp):
         del event_handle_wrp.event_handle
         print "Skipping (no events): ", event_handle_wrp.filenames
         event_handle_wrp.results = []
+        event_handle_wrp.workers = None
         return event_handle_wrp
 
     # setup workers
@@ -99,13 +102,76 @@ def _run_workers(event_handle_wrp):
                 w.result.id = '%s!%s' % (event_handle_wrp.sample, w.result.name)
             else:
                 w.result.id = w.result.name
-    del event_handle_wrp.event_handle
+
     event_handle_wrp.results = list(w.result for w in workers_with_result)
+    del event_handle_wrp.workers
+    del event_handle_wrp.event_handle
     return event_handle_wrp
 
 
 ############################################### executed in control process ###
 _proxy = None
+runner_py = """
+import BTagDeltaR.Analysis.worker_vertexDR as wrkr
+from varial import diskio
+event_handle = diskio.read('in')
+event_handle.workers = wrkr.workers
+out = wrkr.fwliteworker.run_workers(event_handle)
+res = out.results
+out.results = list(r.name for r in res)
+for r in res:
+    diskio.write(r)
+diskio.write(out, 'out')
+"""
+
+
+def my_imap(func, event_handles):
+    if os.path.exists('.py_confs'):
+        os.system('rm -rf .py_confs')
+    os.mkdir('.py_confs')
+
+    waiting = list(event_handles)
+    running = []
+
+    def add_proc():
+        hndl = waiting.pop(0)
+        path = '.py_confs/%s_%s/' % (
+            hndl.sample,
+            hndl.filenames[0].replace("/", "_")[:-5]
+        )
+        os.mkdir(path)
+        hndl.workers = None
+        diskio.write(hndl, path + 'in')
+        with open(path + 'runner.py', 'w') as f:
+            f.write(runner_py)
+        running.append(
+            (path, subprocess.Popen(
+                ['python', 'runner.py'],
+                cwd=os.getcwd()+'/'+path
+            ))
+        )
+
+    def finish_proc(path):
+        res = diskio.read(path + 'out')
+        res.results = list(diskio.read(path + r) for r in res.results)
+        #os.system('rm -rf %s' % path)
+        return res
+
+    while waiting or running:
+        time.sleep(0.2)
+
+        if waiting and len(running) < _proxy.max_num_processes:
+            add_proc()
+
+        for path, proc in running[:]:
+            proc.poll()
+            if None == proc.returncode:
+                continue
+            elif 0 == proc.returncode:
+                running.remove((path, proc))
+                yield finish_proc(path)
+            else:
+                raise 'FAILED PROC, RETURNCODE: ' + str(proc.returncode)
 
 
 def _add_results(event_handle_wrps):
@@ -166,11 +232,12 @@ def work(workers, event_handles=None):
         ) for h_evt in event_handles)
 
     if _proxy.max_num_processes > 1:
-        imap_func = multiprocessing.Pool(
+        results_iter = multiprocessing.Pool(
             _proxy.max_num_processes
-        ).imap_unordered
+        ).imap_unordered(run_workers, event_handles)
     else:
-        imap_func = itertools.imap
+        results_iter = itertools.imap(run_workers, event_handles)
 
-    results_iter = imap_func(_run_workers, event_handles)
+    results_iter = my_imap(None, event_handles)
+
     return _add_results(results_iter)
