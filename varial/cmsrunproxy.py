@@ -174,15 +174,23 @@ class CmsRunProcess(object):
                 return True
 
     def successful(self):
-        return (self.time_end
-                and self.subprocess.returncode == 0
-                and not settings.recieved_sigint)
+        return (
+            self.time_end
+            and self.subprocess.returncode == 0
+            and not settings.recieved_sigint
+        )
 
     def finalize(self):
         self.time_end = time.ctime()
+        if self.subprocess:
+            if self.subprocess.returncode == 0 and self.log_file:
+                self.log_file.flush()
+                self.log_file.seek(0)
+                if 'Exception ------' in self.log_file.readall():
+                    self.subprocess.returncode = -1
         if self.log_file:
             self.log_file.close()
-        if self.subprocess:
+            self.log_file = None
             self.write_job_info(self.subprocess.returncode)
 
     def start(self):
