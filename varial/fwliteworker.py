@@ -154,7 +154,9 @@ def my_imap(func, event_handles):
     def finish_proc(path):
         res = diskio.read(path + 'out')
         res.results = list(diskio.read(path + r) for r in res.results)
-        #os.system('rm -rf %s' % path)
+        diskio.close_open_root_files()
+        time.sleep(0.1)
+        os.system('rm -rf %s' % path)
         return res
 
     while waiting or running:
