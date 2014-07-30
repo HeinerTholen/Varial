@@ -172,20 +172,33 @@ class CanvasBuilder(object):
         self.kws = kws
 
         # only one stack, which should be one first place
-        rnds = _renderize_iter(wrps)
-        rnds = sorted(
-            rnds,
-            key=lambda r: not isinstance(r, StackRenderer)
+        wrps = sorted(
+            wrps,
+            key=lambda r: not isinstance(r, wrappers.StackWrapper)
         )
-        for i, rnd in enumerate(rnds):
-            if i and isinstance(rnd, StackRenderer):
-                raise self.TooManyStacksError(
-                    "CanvasWrapper takes at most one stack"
-                )
+        if len(wrps) > 1 and isinstance(wrps[1], wrappers.StackWrapper):
+            raise self.TooManyStacksError(
+                "CanvasWrapper takes at most one StackWrapper"
+            )
+
+        # for stacks and overlays
+        if len(wrps) > 1:
+            if (isinstance(wrps[0], wrappers.StackWrapper)
+                    and not hasattr(wrps[0], 'draw_option')):
+                wrps[0].draw_option = 'hist'
+            for w in wrps[1:]:
+                if not hasattr(w, 'draw_option'):
+                    if not w.is_data:  # circles for pseudo-data
+                        w.draw_option = 'E1X0'
+                        w.draw_option_legend = 'p'
+                        w.histo.SetMarkerStyle(4)
+
+        # instanciate Renderers
+        rnds = list(_renderize_iter(wrps))
         self.renderers = rnds
 
         # if no name is specified, just take first rnds
-        self.name  = kws.get("name", rnds[0].name)
+        self.name = kws.get("name", rnds[0].name)
         self.title = kws.get("title", rnds[0].title)
 
     def __del__(self):
@@ -332,7 +345,8 @@ class Legend(util.Decorator):
             if is_data:
                 draw_opt = self.dec_par["opt_data"]
             for rnd in rnds:
-                if isinstance(rnd, StackRenderer): continue
+                if isinstance(rnd, StackRenderer):
+                    continue
                 if rnd.primary_object() is obj:
                     if hasattr(rnd, "legend"):
                         label = rnd.legend
