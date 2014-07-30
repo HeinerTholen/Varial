@@ -11,6 +11,15 @@ active_samples = []  # list of samplenames without systematic samples
 all_samples = {}
 
 
+def samples():
+    """Returns a dict of all MC samples."""
+    return dict(
+        (k, v)
+        for k, v in all_samples.iteritems()
+        if k in active_samples
+    )
+
+
 def mc_samples():
     """Returns a dict of all MC samples."""
     return dict(

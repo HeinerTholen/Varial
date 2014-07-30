@@ -19,6 +19,7 @@ class FwliteProxy(toolinterface.Tool):
         self._proxy = None
 
     def wanna_reuse(self, all_reused_before_me):
+        samples = analysis.samples()
         proxy = diskio.get('fwlite_proxy')
 
         if settings.force_reuse_fwlite or settings.only_reload_results:
@@ -39,14 +40,14 @@ class FwliteProxy(toolinterface.Tool):
 
         # check if all samples are available
         files_done = proxy.files_done
-        if not all(name in files_done for name in analysis.all_samples):
+        if not all(name in files_done for name in samples):
             self.message('INFO Not all samples are done, running again.')
             return False
 
         # check if all files are done
         if not all(
             f in files_done[smp.name]
-            for smp in analysis.all_samples.itervalues()
+            for smp in samples.itervalues()
             for f in smp.input_files
         ):
             self.message('INFO Not all files are done, running again.')
@@ -103,6 +104,8 @@ class FwliteProxy(toolinterface.Tool):
         self._finalize()
 
     def _make_proxy(self):
+        samples = analysis.samples()
+
         self._proxy = diskio.get(
             'fwlite_proxy',
             wrappers.Wrapper(name='fwlite_proxy', files_done={}, results={})
@@ -111,7 +114,7 @@ class FwliteProxy(toolinterface.Tool):
         self._proxy.do_profiling = settings.fwlite_profiling
         self._proxy.event_files = dict(
             (s.name, s.input_files)
-            for s in analysis.all_samples.itervalues()
+            for s in samples.itervalues()
         )
 
         # if a result was deleted, remove all associated files from files_done
@@ -124,14 +127,14 @@ class FwliteProxy(toolinterface.Tool):
                 if smpl in files_done:
                     del files_done[smpl]
 
-        due_samples = analysis.all_samples.keys()
+        due_samples = samples.keys()
         self._proxy.due_samples = due_samples
         for res in results.keys():
             smpl = res.split('!')[0]
             if smpl in due_samples:
                 if all(
                     f in files_done[smpl]
-                    for f in analysis.all_samples[smpl].input_files
+                    for f in samples[smpl].input_files
                 ):
                     due_samples.remove(smpl)
 
