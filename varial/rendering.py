@@ -186,12 +186,12 @@ class CanvasBuilder(object):
             if (isinstance(wrps[0], wrappers.StackWrapper)
                     and not hasattr(wrps[0], 'draw_option')):
                 wrps[0].draw_option = 'hist'
-            for w in wrps[1:]:
-                if not hasattr(w, 'draw_option'):
-                    if not w.is_data:  # circles for pseudo-data
-                        w.draw_option = 'E1X0'
-                        w.draw_option_legend = 'p'
-                        w.histo.SetMarkerStyle(4)
+                for w in wrps[1:]:
+                    if not hasattr(w, 'draw_option'):
+                        if not w.is_data:  # circles for pseudo-data
+                            w.draw_option = 'E1X0'
+                            w.draw_option_legend = 'p'
+                            w.histo.SetMarkerStyle(4)
 
         # instanciate Renderers
         rnds = list(_renderize_iter(wrps))
