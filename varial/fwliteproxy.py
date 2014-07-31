@@ -17,6 +17,7 @@ class FwliteProxy(toolinterface.Tool):
         super(FwliteProxy, self).__init__(name)
         self.fwlite_exe = fwlite_exe
         self._proxy = None
+        self._not_ask_execute = False
 
     def wanna_reuse(self, all_reused_before_me):
         samples = analysis.samples()
@@ -28,6 +29,7 @@ class FwliteProxy(toolinterface.Tool):
 
         # has been working at all?
         if not proxy:
+            self._not_ask_execute = True
             return False
 
         # check if all previous results are available
@@ -67,7 +69,7 @@ class FwliteProxy(toolinterface.Tool):
 
         # prepare proxy file / ask for execution
         self._make_proxy()
-        if not (settings.not_ask_execute or raw_input(
+        if not (self._not_ask_execute or settings.not_ask_execute or raw_input(
                 "Really run fwlite jobs on these samples:\n   "
                 + ",\n   ".join(map(str, self._proxy.due_samples))
                 + ('\nusing %i cores' % settings.max_num_processes)
