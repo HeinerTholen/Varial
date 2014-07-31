@@ -155,12 +155,12 @@ def my_imap(func, event_handles):
         res = diskio.read(path + 'out')
         res.results = list(diskio.read(path + r) for r in res.results)
         diskio.close_open_root_files()
-        time.sleep(0.1)
+        time.sleep(0.01)
         os.system('rm -rf %s' % path)
         return res
 
     while waiting or running:
-        time.sleep(0.2)
+        time.sleep(0.02)
 
         if waiting and len(running) < _proxy.max_num_processes:
             add_proc()
@@ -226,7 +226,8 @@ def work(workers, event_handles=None):
                         filenames=[f],
                         workers=workers,
                     )
-        event_handles = event_handle_gen()
+
+        event_handles = list(event_handle_gen())
     else:
         event_handles = (wrappers.Wrapper(
             event_handle=h_evt,
