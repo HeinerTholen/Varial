@@ -36,8 +36,9 @@ class FSPlotter(Tool):
     ...    'input_result_path': None,
     ...    'filter_keyfunc': None,
     ...    'hook_loaded_histos': None,
-    ...    'hook_pre_canvas_build': None,
-    ...    'hook_post_canvas_build': None,
+    ...    'hook_setup_histos': None,
+    ...    'hook_canvas_pre_build': None,
+    ...    'hook_canvas_post_build': None,
     ...    'save_log_scale': False,
     ...    'save_lin_log_scale': False,
     ...    'keep_content_as_result': False,
@@ -51,8 +52,9 @@ class FSPlotter(Tool):
         'input_result_path': None,
         'filter_keyfunc': None,
         'hook_loaded_histos': None,
-        'hook_pre_canvas_build': None,
-        'hook_post_canvas_build': None,
+        'hook_setup_histos': None,
+        'hook_canvas_pre_build': None,
+        'hook_canvas_post_build': None,
         'save_log_scale': False,
         'save_lin_log_scale': False,
         'keep_content_as_result': False,
@@ -113,6 +115,8 @@ class FSPlotter(Tool):
         )
 
         wrps = gen.mc_stack_n_data_sum(wrps, None, True)
+        if self.hook_setup_histos:
+            wrps = self.hook_setup_histos(wrps)
         self.stream_content = wrps
 
     def store_content_as_result(self):
@@ -141,11 +145,11 @@ class FSPlotter(Tool):
         bldr = gen.make_canvas_builder(self.stream_content)
         bldr = put_ana_histo_name(bldr)
         bldr = decorate(bldr)
-        if self.hook_pre_canvas_build:
-            bldr = self.hook_pre_canvas_build(bldr)
+        if self.hook_canvas_pre_build:
+            bldr = self.hook_canvas_pre_build(bldr)
         bldr = run_build_procedure(bldr)
-        if self.hook_post_canvas_build:
-            bldr = self.hook_post_canvas_build(bldr)
+        if self.hook_canvas_post_build:
+            bldr = self.hook_canvas_post_build(bldr)
         self.stream_canvas = gen.build_canvas(bldr)
 
     def set_up_save_canvas(self):

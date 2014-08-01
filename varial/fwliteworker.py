@@ -27,7 +27,14 @@ class FwliteWorker(object):
 
 
 def _run_workers(event_handle_wrp):
+    from DataFormats.FWLite import Events
+    event_handle_wrp.event_handle = Events(event_handle_wrp.filenames)
     workers = event_handle_wrp.workers
+    if not event_handle_wrp.event_handle.size():
+        del event_handle_wrp.event_handle
+        print "Skipping (no events): ", event_handle_wrp.filenames
+        event_handle_wrp.results = []
+        return event_handle_wrp
 
     # setup workers
     for w in workers:
@@ -74,6 +81,7 @@ def _run_workers(event_handle_wrp):
             do_the_eventloop()
 
     # finalize workers
+    workers_with_result = []
     for w in workers[:]:
         try:
             w.node_finalize(event_handle_wrp)
@@ -84,16 +92,15 @@ def _run_workers(event_handle_wrp):
                 print event_handle_wrp
                 print '\n'
             raise e
-        if w.result.is_empty():
-            workers.remove(w)
-            continue
-        if hasattr(event_handle_wrp, 'sample'):
-            w.result.sample = event_handle_wrp.sample
-            w.result.id = '%s!%s' % (event_handle_wrp.sample, w.result.name)
-        else:
-            w.result.id = w.result.name
+        if not w.result.is_empty():
+            workers_with_result.append(w)
+            if hasattr(event_handle_wrp, 'sample'):
+                w.result.sample = event_handle_wrp.sample
+                w.result.id = '%s!%s' % (event_handle_wrp.sample, w.result.name)
+            else:
+                w.result.id = w.result.name
     del event_handle_wrp.event_handle
-    event_handle_wrp.results = list(w.result for w in workers)
+    event_handle_wrp.results = list(w.result for w in workers_with_result)
     return event_handle_wrp
 
 
@@ -140,20 +147,18 @@ def work(workers, event_handles=None):
             os.system('rm -rf .cache')
         os.mkdir('.cache')
 
-        from DataFormats.FWLite import Events
-        def event_handles():
+        def event_handle_gen():
             for sample, files in _proxy.event_files.iteritems():
                 for f in files:
                     if sample in _proxy.files_done:
                         if f in _proxy.files_done[sample]:
                             continue
-                    h_evt = Events(f)
                     yield wrappers.Wrapper(
-                        event_handle=h_evt,
                         sample=sample,
-                        filenames=h_evt._filenames,
+                        filenames=[f],
                         workers=workers,
                     )
+        event_handles = event_handle_gen()
     else:
         event_handles = (wrappers.Wrapper(
             event_handle=h_evt,
@@ -167,5 +172,5 @@ def work(workers, event_handles=None):
     else:
         imap_func = itertools.imap
 
-    results_iter = imap_func(_run_workers, event_handles())
+    results_iter = imap_func(_run_workers, event_handles)
     return _add_results(results_iter)

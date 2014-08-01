@@ -11,6 +11,15 @@ active_samples = []  # list of samplenames without systematic samples
 all_samples = {}
 
 
+def samples():
+    """Returns a dict of all MC samples."""
+    return dict(
+        (k, v)
+        for k, v in all_samples.iteritems()
+        if k in active_samples
+    )
+
+
 def mc_samples():
     """Returns a dict of all MC samples."""
     return dict(
@@ -65,11 +74,15 @@ def get_color(sample_or_legend_name, default=0):
 def get_stack_position(sample):
     """Returns the stacking position (integer)"""
     s = settings
-    legend = all_samples[sample].legend
-    if legend in s.stacking_order:
-        return str(s.stacking_order.index(legend) * 0.001)  # needs be string
-    else:                                                   #
-        return legend                                       # to be comparable
+    if sample in all_samples:
+        legend = all_samples[sample].legend
+        if legend in s.stacking_order:
+            # need string to be comparable
+            return str(s.stacking_order.index(legend) * 0.001)
+        else:
+            return legend
+    else:
+        return ''
 
 
 ################################################ result / folder management ###
