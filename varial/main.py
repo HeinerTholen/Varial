@@ -79,6 +79,11 @@ def main(**main_kwargs):
     :param samples:                 list of sample.Sample instances
     :param toolchain:               root toolchain (see tools.py)
     """
+    if '--settings' in sys.argv:
+        print "THIS IS dir(settings):"
+        print '\n'.join(dir(settings))
+        exit()
+
     # prepare...
     for arg in sys.argv:
         if 1 == arg.count('='):
