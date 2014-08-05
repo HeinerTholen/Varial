@@ -68,8 +68,8 @@ def run_workers(event_handle_wrp):
                         print '\n'
                     raise e
     if event_handle_wrp.event_handle.size():
-        global _proxy
         if _proxy and _proxy.do_profiling:
+            print 'Running with cProfile: ', event_handle_wrp.filenames
             import cProfile
             cProfile.runctx(
                 'do_the_eventloop()',
@@ -113,10 +113,11 @@ def run_workers(event_handle_wrp):
 _proxy = None
 runner_py = """
 import BTagDeltaR.Analysis.worker_vertexDR as wrkr
-from varial import diskio
+from varial import wrappers, diskio, fwliteworker
+fwliteworker._proxy = wrappers.Wrapper(do_profiling = %s)
 event_handle = diskio.read('in')
 event_handle.workers = wrkr.workers
-out = wrkr.fwliteworker.run_workers(event_handle)
+out = fwliteworker.run_workers(event_handle)
 res = out.results
 out.results = list(r.name for r in res)
 for r in res:
@@ -142,8 +143,10 @@ def my_imap(func, event_handles):
         os.mkdir(path)
         hndl.workers = None
         diskio.write(hndl, path + 'in')
+        rnnr_py = runner_py
+        rnnr_py %= 'True' if _proxy.do_profiling else 'False'
         with open(path + 'runner.py', 'w') as f:
-            f.write(runner_py)
+            f.write(rnnr_py)
         running.append(
             (path, subprocess.Popen(
                 ['python', 'runner.py'],
@@ -156,7 +159,8 @@ def my_imap(func, event_handles):
         res.results = list(diskio.read(path + r) for r in res.results)
         diskio.close_open_root_files()
         time.sleep(0.01)
-        os.system('rm -rf %s' % path)
+        if not _proxy.do_profiling:
+            os.system('rm -rf %s' % path)
         return res
 
     while waiting or running:
