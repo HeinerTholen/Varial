@@ -9,7 +9,11 @@ import generators as gen
 import rendering
 import settings
 
-from toolinterface import Tool, ToolChain
+from toolinterface import \
+    Tool, \
+    ToolChain, \
+    ToolChainIndie, \
+    ToolChainVanilla
 from cmsrunproxy import CmsRunProxy
 from fwliteproxy import FwliteProxy
 
