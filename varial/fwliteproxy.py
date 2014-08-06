@@ -88,11 +88,11 @@ class FwliteProxy(toolinterface.Tool):
         )
 
         # block while finished
-        sig_term_sent = False
+        sig_kill_sent = False
         while None == proc.returncode:
-            if settings.recieved_sigint and not sig_term_sent:
-                proc.terminate()
-                sig_term_sent = True
+            if settings.recieved_sigint and not sig_kill_sent:
+                proc.kill()
+                sig_kill_sent = True
             time.sleep(0.2)
             proc.poll()
 
