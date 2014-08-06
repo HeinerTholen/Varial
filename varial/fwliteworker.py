@@ -8,6 +8,7 @@ import traceback
 import os
 
 import diskio
+import settings
 import wrappers
 
 
@@ -245,6 +246,7 @@ def work(workers, event_handles=None):
     else:
         results_iter = itertools.imap(run_workers, event_handles)
 
+    settings.max_open_root_files = 20
     results_iter = my_imap(None, event_handles)
 
     return _add_results(results_iter)
