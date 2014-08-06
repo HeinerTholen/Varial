@@ -157,8 +157,11 @@ def my_imap(func, event_handles):
 
     def finish_proc(path):
         res = diskio.read(path + 'out')
-        res.results = list(diskio.read(path + r) for r in res.results)
-        diskio.close_open_root_files()
+        results = []
+        for r in res.results:
+            results.append(diskio.read(path + r))
+            diskio.close_root_file(path + r)
+        res.results = results
         time.sleep(0.01)
         if not _proxy.do_profiling:
             os.system('rm -rf %s' % path)
@@ -246,7 +249,6 @@ def work(workers, event_handles=None):
     else:
         results_iter = itertools.imap(run_workers, event_handles)
 
-    settings.max_open_root_files = 20
     results_iter = my_imap(None, event_handles)
 
     return _add_results(results_iter)

@@ -53,6 +53,14 @@ def close_open_root_files():
     _open_root_files.clear()
 
 
+def close_root_file(filename):
+    if not filename[-5:] == ".root":
+        filename += ".root"
+    if filename in _open_root_files:
+        _open_root_files[filename].Close()
+        del _open_root_files[filename]
+
+
 ##################################################### read / write wrappers ###
 use_analysis_cwd = True
 
