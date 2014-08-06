@@ -8,6 +8,7 @@ from ROOT import TFile, TDirectory, TH1, TObject
 import history
 import monitor
 import sample
+import settings
 import wrappers
 
 
@@ -33,7 +34,7 @@ def get_open_root_file(filename):
     if filename in _open_root_files:
         file_handle = _open_root_files[filename]
     else:
-        if len(_open_root_files) > 998:
+        if len(_open_root_files) > settings.max_open_root_files:
             monitor.message(
                 "diskio",
                 "WARNING to many open root files. Closing all. "
