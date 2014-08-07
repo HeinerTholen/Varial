@@ -373,7 +373,8 @@ class SimpleWebCreator(Tool):
         self.make_image_divs()
         self.finalize_page()
         self.write_page()
-        self.io.use_analysis_cwd = True
+        if self.is_base:
+            self.io.use_analysis_cwd = True
 
 
 class CopyTool(Tool):
