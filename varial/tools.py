@@ -29,6 +29,23 @@ class FSHistoLoader(Tool):
         self.result = list(gen.fs_filter_active_sort_load(self.filter_keyfunc))
 
 
+_group_th2d_iter = iter(xrange(9999))
+def plot_grouper(wrps):
+    # enumerate th2d wrappers, so they get their own groups
+    return gen.group(wrps, key_func=lambda w: w.analyzer+"_"+w.name+(
+        "%03d" % next(_group_th2d_iter)
+        if isinstance(w.histo, ROOT.TH2D)
+        else ""
+    ))
+
+
+def overlay_colorizer(wrps, colors=None):
+    wrps = gen.apply_histo_linecolor(wrps, colors)
+    for w in wrps:
+        w.histo.SetFillStyle(0)
+        yield w
+
+
 class FSPlotter(Tool):
     """
     A plotter. Makes stacks and overlays data by default.
@@ -40,7 +57,8 @@ class FSPlotter(Tool):
     ...    'input_result_path': None,
     ...    'filter_keyfunc': None,
     ...    'hook_loaded_histos': None,
-    ...    'hook_setup_histos': None,
+    ...    'plot_grouper': plot_grouper,
+    ...    'plot_setup': lambda w: gen.mc_stack_n_data_sum(w, None, True),
     ...    'hook_canvas_pre_build': None,
     ...    'hook_canvas_post_build': None,
     ...    'save_log_scale': False,
@@ -56,7 +74,8 @@ class FSPlotter(Tool):
         'input_result_path': None,
         'filter_keyfunc': None,
         'hook_loaded_histos': None,
-        'hook_setup_histos': None,
+        'plot_grouper': plot_grouper,
+        'plot_setup': lambda w: gen.mc_stack_n_data_sum(w, None, True),
         'hook_canvas_pre_build': None,
         'hook_canvas_post_build': None,
         'save_log_scale': False,
@@ -106,21 +125,10 @@ class FSPlotter(Tool):
 
     def set_up_content(self):
         wrps = self.stream_content
-
-        # put TH2D's in one group each
-        ungroupiter = iter(xrange(9999))
-        wrps = gen.group(
-            wrps,
-            lambda w: w.analyzer+"_"+w.name+(
-                "%03d" % next(ungroupiter)
-                if isinstance(w.histo, ROOT.TH2D)
-                else ""
-            )
-        )
-
-        wrps = gen.mc_stack_n_data_sum(wrps, None, True)
-        if self.hook_setup_histos:
-            wrps = self.hook_setup_histos(wrps)
+        if self.plot_grouper:
+            wrps = self.plot_grouper(wrps)
+        if self.plot_setup:
+            wrps = self.plot_setup(wrps)
         self.stream_content = wrps
 
     def store_content_as_result(self):
