@@ -128,6 +128,50 @@ def sum(wrps):
 
 
 @history.track_history
+def diff(wrps):
+    """
+    Applies only to HistoWrappers. Returns HistoWrapper. Takes lumi from first.
+
+    >>> from ROOT import TH1I
+    >>> h1 = TH1I("h1", "", 2, .5, 4.5)
+    >>> h1.Fill(1, 2)
+    1
+    >>> w1 = wrappers.HistoWrapper(h1, lumi=2.)
+    >>> h2 = TH1I("h2", "", 2, .5, 4.5)
+    >>> h2.Fill(1)
+    1
+    >>> w2 = wrappers.HistoWrapper(h2, lumi=3.)
+    >>> w3 = diff([w1, w2])
+    >>> w3.histo.Integral()
+    1.0
+    >>> w3.lumi
+    2.0
+    """
+    wrps = iterableize(wrps)
+    histo = None
+    lumi = 0.
+    info = None
+    for wrp in wrps:
+        if not isinstance(wrp, wrappers.HistoWrapper):
+            raise WrongInputError(
+                "sum accepts only HistoWrappers. wrp: "
+                + str(wrp)
+            )
+        if histo:
+            histo.Add(wrp.histo, -1.)
+        else:
+            histo = wrp.histo.Clone()
+            info = wrp.all_info()
+            lumi = wrp.lumi
+    if not info:
+        raise TooFewWrpsError(
+            "At least one Wrapper must be provided."
+        )
+    info["lumi"] = lumi
+    return wrappers.HistoWrapper(histo, **info)
+
+
+@history.track_history
 def merge(wrps):
     """
     Applies only to HistoWrapper. Returns HistoWrapper. Normalizes histos to lumi.
