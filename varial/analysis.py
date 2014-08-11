@@ -112,7 +112,7 @@ class ResultProxy(object):
 
     def lookup(self, keys):
         if not keys:
-            return self.result
+            return self
         k = keys.pop(0)
         if k == '..' and self.parent:
             return self.parent.lookup(keys)
@@ -138,14 +138,32 @@ def pop_tool():
     current_result = current_result.parent
 
 
-def lookup(key, default=None):
+def _lookup(key):
     keys = key.split('/')
     if keys[0] == '..':
-        if not current_result:
-            return default
-        return current_result.lookup(keys) or default
+        return current_result.lookup(keys)
     else:
-        return results_base.lookup(keys) or default
+        return results_base.lookup(keys)
+
+
+def lookup(key, default=None):
+    res = _lookup(key)
+    if res and res.result:
+        return res.result
+    else:
+        return default
+
+
+def lookup_parent_name(key):
+    res = _lookup(key)
+    if res and res.parent:
+        return res.parent.name
+
+
+def lookup_children_names(key):
+    res = _lookup(key)
+    if res:
+        return res.children.keys()
 
 
 ############################################################### fileservice ###
