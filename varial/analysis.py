@@ -88,8 +88,8 @@ def get_stack_position(sample):
 ################################################ result / folder management ###
 cwd = settings.varial_working_dir
 _tool_stack = []
-_results_base = None
-_current_result = None
+results_base = None
+current_result = None
 
 
 def _mktooldir():
@@ -101,7 +101,7 @@ def _mktooldir():
         os.mkdir(cwd)
 
 
-class _ResultProxy(object):
+class ResultProxy(object):
     def __init__(self, tool, parent):
         self.name = tool.name
         self.parent = parent
@@ -123,29 +123,29 @@ class _ResultProxy(object):
 def push_tool(tool):
     _tool_stack.append(tool)
     _mktooldir()
-    global _current_result
-    global _results_base
-    _current_result = _ResultProxy(tool, _current_result)
-    if not _results_base:
-        _results_base = _current_result
+    global current_result
+    global results_base
+    current_result = ResultProxy(tool, current_result)
+    if not results_base:
+        results_base = current_result
 
 
 def pop_tool():
     t = _tool_stack.pop()
     _mktooldir()
-    global _current_result
-    _current_result.result = getattr(t, 'result', 0) or None
-    _current_result = _current_result.parent
+    global current_result
+    current_result.result = getattr(t, 'result', 0) or None
+    current_result = current_result.parent
 
 
 def lookup(key, default=None):
     keys = key.split('/')
     if keys[0] == '..':
-        if not _current_result:
+        if not current_result:
             return default
-        return _current_result.lookup(keys) or default
+        return current_result.lookup(keys) or default
     else:
-        return _results_base.lookup(keys) or default
+        return results_base.lookup(keys) or default
 
 
 ############################################################### fileservice ###
