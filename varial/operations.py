@@ -410,7 +410,7 @@ def norm_to_integral(wrp, use_bin_width=False):
         )
     histo = wrp.histo.Clone()
     option = "width" if use_bin_width else ""
-    integr = wrp.histo.Integral(option)
+    integr = wrp.histo.Integral(option) or 1.
     histo.Scale(1. / integr)
     info = wrp.all_info()
     info["lumi"] /= integr
