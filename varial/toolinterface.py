@@ -64,7 +64,7 @@ class Tool(_ToolBase):
 
     def __init__(self, name=None):
         super(Tool, self).__init__(name)
-        self.result_dir = None
+        self.cwd = None
         self.result = None
         self.logfile = None
         self.time_start = None
@@ -73,12 +73,12 @@ class Tool(_ToolBase):
     def __enter__(self):
         self.reset()
         res = super(Tool, self).__enter__()
-        self.result_dir = analysis.cwd
-        self.logfile = os.path.join(self.result_dir, '%s.log' % self.name)
+        self.cwd = analysis.cwd
+        self.logfile = os.path.join(self.cwd, '%s.log' % self.name)
         return res
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.result_dir = None
+        self.cwd = None
         self.logfile = None
         super(Tool, self).__exit__(exc_type, exc_val, exc_tb)
 

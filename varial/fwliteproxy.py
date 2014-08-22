@@ -32,7 +32,7 @@ class FwliteProxy(toolinterface.Tool):
 
         # check if all previous results are available
         if not all(
-            exists(join(self.result_dir, '%s.info' % res))
+            exists(join(self.cwd, '%s.info' % res))
             for res in proxy.results
         ):
             self.message('INFO Not all results are found, running again.')
@@ -82,7 +82,7 @@ class FwliteProxy(toolinterface.Tool):
             ['python', self.fwlite_exe],
             stdout=monitor.MonitorInfo.outstream,
             stderr=subprocess.STDOUT,
-            cwd=self.result_dir,
+            cwd=self.cwd,
         )
 
         # block while finished
@@ -121,7 +121,7 @@ class FwliteProxy(toolinterface.Tool):
         files_done = self._proxy.files_done
         results = self._proxy.results
         for res in results.keys():
-            if not exists(join(self.result_dir, '%s.info' % res)):
+            if not exists(join(self.cwd, '%s.info' % res)):
                 del results[res]
                 smpl = res.split('!')[0]
                 if smpl in files_done:
@@ -147,7 +147,7 @@ class FwliteProxy(toolinterface.Tool):
                 continue
             analysis.fs_aliases += list(
                 alias for alias in diskio.generate_fs_aliases(
-                    join(self.result_dir, '%s.root' % res),
+                    join(self.cwd, '%s.root' % res),
                     analysis.all_samples[samplename]
                 )
             )
