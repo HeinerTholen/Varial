@@ -22,7 +22,7 @@ class FwliteProxy(toolinterface.Tool):
         samples = analysis.samples()
         proxy = diskio.get('fwlite_proxy')
 
-        if settings.force_reuse_fwlite or settings.only_reload_results:
+        if settings.fwlite_force_reuse or settings.only_reload_results:
             self._proxy = proxy
             return True
 
