@@ -102,9 +102,10 @@ def _mktooldir():
 
 
 class ResultProxy(object):
-    def __init__(self, tool, parent):
+    def __init__(self, tool, parent, path):
         self.name = tool.name
         self.parent = parent
+        self.path = path
         self.children = {}
         self.result = None
         if parent:
@@ -125,7 +126,7 @@ def push_tool(tool):
     _mktooldir()
     global current_result
     global results_base
-    current_result = ResultProxy(tool, current_result)
+    current_result = ResultProxy(tool, current_result, cwd)
     if not results_base:
         results_base = current_result
 
@@ -152,6 +153,11 @@ def lookup(key, default=None):
         return res.result
     else:
         return default
+
+
+def lookup_path(key):
+    res = _lookup(key)
+    return res.path if res else ""
 
 
 def lookup_parent_name(key):

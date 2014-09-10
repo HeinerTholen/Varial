@@ -225,7 +225,7 @@ class SimpleWebCreator(Tool):
 
         # collect folders and images
         if not self.working_dir:
-            self.working_dir = os.path.join(*self.result_dir.split('/')[:-2])
+            self.working_dir = os.path.join(*self.cwd.split('/')[:-2])
         for wd, dirs, files in os.walk(self.working_dir):
             self.subfolders += dirs
             for f in files:
@@ -396,7 +396,7 @@ class CopyTool(Tool):
         self.ignore = ignore
 
     def run(self):
-        src = os.path.abspath(self.src or os.path.join(self.result_dir, '..'))
+        src = os.path.abspath(self.src or os.path.join(self.cwd, '..'))
         dest = os.path.abspath(self.dest)
 
         # check for htaccess and copy it to src dirs

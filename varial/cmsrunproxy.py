@@ -275,7 +275,7 @@ class CmsRunProxy(toolinterface.Tool):
 
     def _setup_processes(self):
         for d in ('logs', 'confs', 'fs', 'report'):
-            path = join(self.result_dir, d)
+            path = join(self.cwd, d)
             if not os.path.exists(path):
                 os.mkdir(path)
 

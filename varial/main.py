@@ -80,8 +80,12 @@ def main(**main_kwargs):
     :param toolchain:               root toolchain (see tools.py)
     """
     if '--settings' in sys.argv:
-        print "THIS IS dir(settings):"
-        print '\n'.join(dir(settings))
+        import inspect
+        print "Memberes of the settings module:"
+        for member in dir(settings):
+            if member[0] == '_' or inspect.ismodule(member):
+                continue
+            print "  ", member, "=", getattr(settings, member)
         exit()
 
     # prepare...
