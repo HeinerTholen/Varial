@@ -12,8 +12,12 @@ def _init(db_name=None):
     global _db_conn
     if _db_conn:
         _close()
-    name = db_name or settings.varial_working_dir + settings.db_name
-    _db_conn = sqlite3.connect(name, isolation_level='Exclusive')
+    if not db_name:
+        if analysis.results_base:
+            db_name = analysis.results_base.path + settings.db_name
+        else:
+            db_name = settings.varial_working_dir + settings.db_name
+    _db_conn = sqlite3.connect(db_name, isolation_level='Exclusive')
     _db_conn.isolation_level = None
     c = _db_conn.cursor()
     c.execute('CREATE TABLE IF NOT EXISTS analysis (path VARCHAR UNIQUE, data)')
