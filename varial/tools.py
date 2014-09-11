@@ -19,14 +19,18 @@ from fwliteproxy import FwliteProxy
 
 
 class FSHistoLoader(Tool):
-    io = dbio
-
-    def __init__(self, name=None, filter_keyfunc=None):
+    def __init__(self, name=None, filter_keyfunc=None,
+                 hook_loaded_histos=None, io=dbio):
         super(FSHistoLoader, self).__init__(name)
         self.filter_keyfunc = filter_keyfunc
+        self.hook_loaded_histos = hook_loaded_histos
+        self.io = io
 
     def run(self):
-        self.result = list(gen.fs_filter_active_sort_load(self.filter_keyfunc))
+        wrps = gen.fs_filter_active_sort_load(self.filter_keyfunc)
+        if self.hook_loaded_histos:
+            wrps = self.hook_loaded_histos(wrps)
+        self.result = list(wrps)
 
 
 _group_th2d_iter = iter(xrange(9999))
