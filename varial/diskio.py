@@ -229,14 +229,18 @@ def _recursive_make_alias(root_dir, filename, in_file_path):
         in_file_path.pop(-1)
 
 
+def load_bare_object(alias):
+    return _get_obj_from_file(
+        alias.file_path,
+        alias.in_file_path
+    )
+
+
 def load_histogram(alias):
     """
     Returns a wrapper with a fileservice histogram.
     """
-    histo = _get_obj_from_file(
-        alias.file_path,
-        alias.in_file_path
-    )
+    histo = load_bare_object(alias)
     if not isinstance(histo, TH1):
         raise NoHistogramError(
             "Loaded object is not of type TH1: %s" % str(histo)
