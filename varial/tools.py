@@ -4,10 +4,12 @@ import os
 import shutil
 import ROOT
 
+import analysis
 import dbio
 import generators as gen
 import rendering
 import settings
+import wrappers
 
 from toolinterface import \
     Tool, \
@@ -438,3 +440,45 @@ class ZipTool(Tool):
         )
 
 
+class SampleNormalizer(Tool):
+    """Normalize MC cross sections."""
+    can_reuse = False
+
+    def __init__(self, filter_lambda, x_range_tuple, name=None):
+        super(SampleNormalizer, self).__init__(name)
+        self.filter_lambda = filter_lambda
+        self.x_range = x_range_tuple
+
+    def get_histos_n_factor(self):
+        mcee, data = next(gen.fs_mc_stack_n_data_sum(
+            self.filter_lambda
+        ))
+        dh, mh = data.histo, mcee.histo
+        bins = tuple(dh.FindBin(x) for x in self.x_range)
+        factor = dh.Integral(*bins) / mh.Integral(*bins)
+        canv = next(gen.canvas(
+            ((mcee, data),),
+            FSPlotter.defaults_attrs['canvas_decorators']
+        ))
+        return factor, canv
+
+    def run(self):
+        # before
+        factor, canv = self.get_histos_n_factor()
+        next(gen.save_canvas_lin_log([canv], lambda _: 'before'))
+
+        # alter samples
+        for s in analysis.mc_samples().itervalues():
+            s.lumi /= factor
+            s.x_sec /= factor
+        for a in analysis.fs_aliases:
+            a.lumi /= factor
+
+        # after
+        _, canv = self.get_histos_n_factor()
+        next(gen.save_canvas_lin_log([canv], lambda _: 'after'))
+
+        self.result = wrappers.FloatWrapper(
+            factor,
+            name='Lumi factor'
+        )
