@@ -184,10 +184,11 @@ class CmsRunProcess(object):
         self.time_end = time.ctime()
         if self.subprocess:
             if self.subprocess.returncode == 0 and self.log_file:
-                self.log_file.flush()
-                self.log_file.seek(0)
-                if 'Exception ------' in self.log_file.readall():
-                    self.subprocess.returncode = -1
+                self.log_file.close()
+                self.log_file = None
+                with open(self.log_filename, "r") as f:
+                    if 'Exception ------' in "".join(f.readlines()):
+                        self.subprocess.returncode = -1
         if self.log_file:
             self.log_file.close()
             self.log_file = None
