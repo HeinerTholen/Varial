@@ -180,6 +180,7 @@ def my_imap(func, event_handles):
             elif 0 == proc.returncode:
                 running.remove((path, proc))
                 yield finish_proc(path)
+                break
             else:
                 raise 'FAILED PROC, RETURNCODE: ' + str(proc.returncode)
 
