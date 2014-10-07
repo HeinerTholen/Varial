@@ -4,7 +4,6 @@ import subprocess
 import time
 import multiprocessing
 import sys
-import tempfile
 import traceback
 import os
 
@@ -129,13 +128,16 @@ diskio.write(out, 'out')
 
 
 def my_imap(func, event_handles):
+    if os.path.exists('.py_confs'):
+        os.system('rm -rf .py_confs')
+    os.mkdir('.py_confs')
+
     waiting = list(event_handles)
     running = []
 
     def add_proc():
         hndl = waiting.pop(0)
-        path = '%s/fwlite_%s_%s/' % (
-            tempfile.gettempdir(),
+        path = '.py_confs/%s_%s/' % (
             hndl.sample,
             hndl.filenames[0].replace("/", "_")[:-5]
         )
@@ -149,7 +151,7 @@ def my_imap(func, event_handles):
         running.append(
             (path, subprocess.Popen(
                 ['python', 'runner.py'],
-                cwd=path
+                cwd=os.getcwd()+'/'+path
             ))
         )
 
