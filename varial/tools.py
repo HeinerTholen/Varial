@@ -6,8 +6,10 @@ import ROOT
 
 import analysis
 import dbio
+import diskio
 import generators as gen
 import rendering
+import sample
 import settings
 import wrappers
 
@@ -231,7 +233,10 @@ class SimpleWebCreator(Tool):
 
         # collect folders and images
         if not self.working_dir:
-            self.working_dir = os.path.join(*self.cwd.split('/')[:-2])
+            if self.cwd:
+                self.working_dir = os.path.join(*self.cwd.split('/')[:-2])
+            else:
+                self.working_dir = analysis.cwd
         for wd, dirs, files in os.walk(self.working_dir):
             self.subfolders += dirs
             for f in files:
@@ -482,3 +487,36 @@ class SampleNormalizer(Tool):
             factor,
             name='Lumi factor'
         )
+
+
+class RootFilePlotter(ToolChain):
+    """Plots all histograms in a rootfile."""
+
+    def __init__(self, path=None, name=None):
+        super(RootFilePlotter, self).__init__(name)
+        ROOT.gROOT.SetBatch()
+        if not path:
+            path = analysis.cwd + '*.root'
+        elif path[-5:] != '.root':
+            path += '.root'
+        rootfiles = glob.glob(path)
+        if not rootfiles:
+            self.message('WARNING No rootfile found.')
+        else:
+            smpl = sample.Sample(
+                name='Histogram',
+                lumi=1.,
+                input_files=rootfiles
+            )
+            analysis.active_samples = [smpl.name]
+            analysis.all_samples = {smpl.name: smpl}
+            analysis.fs_aliases = list(itertools.chain.from_iterable(
+                diskio.generate_fs_aliases(f, smpl) for f in rootfiles
+            ))
+            plotters = list(FSPlotter(
+                filter_keyfunc=lambda w: w.file_path.split('/')[-1] == f,
+                name='Plotter_'+f[:-5]
+            ) for f in rootfiles)
+            self.add_tool(ToolChain(self.name, plotters))
+
+

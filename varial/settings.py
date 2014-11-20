@@ -56,7 +56,7 @@ defaults_BottomPlot = {
     "x_max": 1.,
 }
 
-rootfile_postfixes = [".root"]
+rootfile_postfixes = ['.root', '.png']
 colors = {}  # legend entries => fill colors
 pretty_names = {}
 stacking_order = []
