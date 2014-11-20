@@ -253,7 +253,11 @@ def load_histogram(alias):
             'FileService(%s, %s, %s)' % (
                 alias.sample, alias.analyzer, alias.name))
     else:
-        wrp.history = repr(alias)
+        info = alias.all_writeable_info()
+        del info['klass']
+        wrp.history = history.History(
+            'RootFile(%s)' % info
+        )
     return wrp
 
 
