@@ -47,7 +47,8 @@ def consume_n_count(iterable):
 
 def filter_active_samples(wrps):
     return itertools.ifilter(
-        lambda w: w.sample in analysis.active_samples,
+        lambda w: not analysis.active_samples
+                  or w.sample in analysis.active_samples,
         wrps
     )
 
