@@ -132,10 +132,10 @@ class SampleNormalizer(Tool):
         )
 
 
-def mk_plotter_chain(plotter_class=RootFilePlotter):
-    name = plotter_class.__name__
+def mk_plotter_chain(plotter_factory=None, name="RootFilePlots"):
     plotters = list(
-        plotter_class(f, name=f[:-5].split('/')[-1])
+        RootFilePlotter(f, name=f[:-5].split('/')[-1],
+                        plotter_factory=plotter_factory)
         for f in glob.iglob('*.root')
     )
     return ToolChain(name, [ToolChain(name, plotters)])

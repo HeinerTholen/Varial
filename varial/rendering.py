@@ -9,19 +9,23 @@ class Renderer(object):
     Baseclass for rendered wrappers.
     """
     def __init__(self, wrp):
+        self.val_x_min = 0.
+        self.val_x_max = 0.
+        self.val_y_min = 0.
+        self.val_y_max = 0.
         self.__dict__.update(wrp.__dict__)
 
     def x_min(self):
-        pass
+        return self.val_x_min
 
     def x_max(self):
-        pass
+        return self.val_x_max
 
     def y_min(self):
-        pass
+        return self.val_y_min
 
     def y_max(self):
-        pass
+        return self.val_y_max
 
     def y_min_gr_zero(self):
         return self.y_min()
@@ -46,16 +50,16 @@ class HistoRenderer(Renderer, wrappers.HistoWrapper):
             self.draw_option = "hist"
 
     def x_min(self):
-        return self.histo.GetXaxis().GetXmin()
+        return self.val_x_min or self.histo.GetXaxis().GetXmin()
 
     def x_max(self):
-        return self.histo.GetXaxis().GetXmax()
+        return self.val_x_max or self.histo.GetXaxis().GetXmax()
 
     def y_min(self):
-        return self.histo.GetMinimum() + 1e-23  # > 0 cuts away half numbers
+        return self.val_y_min or self.histo.GetMinimum() + 1e-23  # > 0 cuts away half numbers
 
     def y_max(self):
-        return self.histo.GetMaximum()
+        return self.val_y_max or self.histo.GetMaximum()
 
     def y_min_gr_zero(self, histo=None):
         if not histo:
@@ -112,23 +116,22 @@ class GraphRenderer(Renderer, wrappers.GraphWrapper):
         super(GraphRenderer, self).__init__(wrp)
         if hasattr(wrp, "draw_option"):
             self.draw_option = wrp.draw_option
+        else:
+            self.draw_option = 'P'
 
     def x_min(self):
-        return self.graph.GetXaxis().GetXmin()
+        return self.val_x_min or self.graph.GetXaxis().GetXmin()
 
     def x_max(self):
-        return self.graph.GetXaxis().GetXmax()
+        return self.val_x_max or self.graph.GetXaxis().GetXmax()
 
     def y_min(self):
-        return self.graph.GetMinimum() + 1e-23  # > 0 cuts away half numbers
+        return self.val_y_min or self.graph.GetYaxis().GetXmin() + 1e-23  # > 0 cuts away half numbers
 
     def y_max(self):
-        return self.graph.GetMaximum()
+        return self.val_y_max or self.graph.GetYaxis().GetXmax()
 
-    def y_min_gr_zero(self, graph=None):
-        return self.y_min()
-
-    def draw(self, option=""):
+    def draw(self, option=''):
         if 'same' in option:
             option.replace('same', '')
         else:

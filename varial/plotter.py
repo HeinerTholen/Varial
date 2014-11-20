@@ -129,7 +129,8 @@ class FSPlotter(toolinterface.Tool):
 
         def decorate(bldr):
             for b in bldr:
-                if not isinstance(b.renderers[0].histo, ROOT.TH2D):
+                if not (hasattr(b.renderers[0], 'histo') and
+                        isinstance(b.renderers[0].histo, ROOT.TH2D)):
                     for dec in self.canvas_decorators:
                         b = dec(b)
                 yield b
@@ -176,11 +177,15 @@ class FSPlotter(toolinterface.Tool):
 class RootFilePlotter(toolinterface.ToolChain):
     """Plots all histograms in a rootfile."""
 
-    def __init__(self, rootfile, name=None):
+    def __init__(self, rootfile, plotter_factory=None, name=None):
         super(RootFilePlotter, self).__init__(name)
         ROOT.gROOT.SetBatch()
+        if not plotter_factory:
+            plotter_factory = FSPlotter
+
         self.rootfile = rootfile
         self.aliases = list(diskio.generate_aliases(self.rootfile))
+
         subfolders = set('/'.join(a.in_file_path[:-1]) for a in self.aliases)
         for path in subfolders:
             tc = self
@@ -189,7 +194,7 @@ class RootFilePlotter(toolinterface.ToolChain):
                 if not folder in tc.tool_names:
                     tc.add_tool(toolinterface.ToolChain(folder))
                 tc = tc.tool_names[folder]
-            tc.add_tool(FSPlotter(
+            tc.add_tool(plotter_factory(
                 filter_keyfunc=lambda w: w.in_file_path[:-1] == tokens,
                 name=tokens[-1]
             ))
