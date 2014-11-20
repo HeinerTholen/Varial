@@ -1,8 +1,10 @@
 import os
 
 import analysis
+import diskio
 import settings
 import toolinterface
+import wrappers
 
 
 class WebCreator(toolinterface.Tool):
@@ -141,25 +143,31 @@ class WebCreator(toolinterface.Tool):
         self.web_lines += ('<h2>Images:</h2>',)
         for img in self.image_names:
             #TODO get history from full wrapper!!
-            history_lines = ""
             with open(os.path.join(self.working_dir,img + ".info")) as f:
-                while f.next() != "\n":     # skip ahead to history
-                    continue
-                for line in f:
-                    history_lines += line
+                wrp = wrappers.Wrapper(**diskio._read_wrapper_info(f))
+                del wrp.history
+                info_lines = wrp.pretty_writeable_lines()
+                history_lines = "".join(f)
+            i_id = "info_" + img
             h_id = "history_" + img
             self.web_lines += (
                 '<div>',
                 '<p>',
-                '<b>' + img + ':</b>',      # image headline
-                '<a href="javascript:ToggleDiv(\'' + h_id
+                '<b>' + img + ':</b>',                      # image headline
+                '<a href="javascript:ToggleDiv(\'' + h_id   # toggle history
                 + '\')">(toggle history)</a>',
+                '<a href="javascript:ToggleDiv(\'' + i_id   # toggle info
+                + '\')">(toggle info)</a>',
                 '</p>',
-                '<div id="' + h_id          # history div
+                '<div id="' + h_id                          # history div
                 + '" style="display:none;"><pre>',
                 history_lines,
                 '</pre></div>',
-                '<img src="'                # the image itself
+                '<div id="' + i_id                          # info div
+                + '" style="display:none;"><pre>',
+                info_lines,
+                '</pre></div>',
+                '<img src="'                                # the image itself
                 + img + self.image_postfix
                 + '" />',
                 '</div>',
