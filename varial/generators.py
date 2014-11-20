@@ -505,7 +505,7 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=False):
         try:
             data_sum = op.sum(data)
         except op.TooFewWrpsError:
-            print "WARNING generators.mc_stack_n_data_sum(..): "\
+            print "INFO generators.mc_stack_n_data_sum(..): "\
                   "No data histos present! I will yield only mc."
         if data_sum and not use_all_data_lumi:
             data_lumi = op.lumi(data_sum)
@@ -529,7 +529,7 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=False):
             else:
                 mc_stck = op.stack(mc_norm)
         except op.TooFewWrpsError:
-            print "WARNING generators.mc_stack_n_data_sum(..): " \
+            print "INFO generators.mc_stack_n_data_sum(..): " \
                   "No mc histos present! I will yield only data"
         if mc_stck and data_sum:
             yield mc_stck, data_sum
