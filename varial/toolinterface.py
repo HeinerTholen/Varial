@@ -130,9 +130,9 @@ class Tool(_ToolBase):
 class ToolChain(_ToolBase):
     """Executes PostProcTools."""
 
-    def __init__(self, name=None, tools=None):
+    def __init__(self, name=None, tools=None, default_reuse=False):
         super(ToolChain, self).__init__(name)
-        self._reuse = False
+        self._reuse = default_reuse
         self.tool_chain = []
         self.tool_names = {}
         if tools:
@@ -154,7 +154,7 @@ class ToolChain(_ToolBase):
             raise RuntimeError(
                 'A tool named "%s" is already in this chain (%s).' % (
                     tool.name, self.name))
-        self.tool_names[tool.name] = None
+        self.tool_names[tool.name] = tool
         self.tool_chain.append(tool)
 
     def run(self):

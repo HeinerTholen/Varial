@@ -20,7 +20,7 @@ from toolinterface import \
     ToolChainVanilla
 from cmsrunproxy import CmsRunProxy
 from fwliteproxy import FwliteProxy
-from plotter import FSPlotter
+from plotter import FSPlotter, RootFilePlotter
 from webcreator import WebCreator
 
 
@@ -132,36 +132,16 @@ class SampleNormalizer(Tool):
         )
 
 
-class RootFilePlotter(ToolChain):
-    """Plots all histograms in a rootfile."""
-    #TODO remove fileservice dependence and reconstruct directory structure
+def mk_plotter_chain(plotter_class=RootFilePlotter):
+    name = plotter_class.__name__
+    plotters = list(
+        plotter_class(f, name=f[:-5].split('/')[-1])
+        for f in glob.iglob('*.root')
+    )
+    return ToolChain(name, [ToolChain(name, plotters)])
 
-    def __init__(self, path=None, name=None):
-        super(RootFilePlotter, self).__init__(name)
-        ROOT.gROOT.SetBatch()
-        if not path:
-            path = analysis.cwd + '*.root'
-        elif path[-5:] != '.root':
-            path += '.root'
-        rootfiles = glob.glob(path)
-        if not rootfiles:
-            self.message('WARNING No rootfile found.')
-        else:
-            smpl = sample.Sample(
-                name='Histogram',
-                lumi=1.,
-                input_files=rootfiles
-            )
-            analysis.active_samples = [smpl.name]
-            analysis.all_samples = {smpl.name: smpl}
-            analysis.fs_aliases = list(itertools.chain.from_iterable(
-                diskio.generate_fs_aliases(f, smpl) for f in rootfiles
-            ))
-            plotters = list(FSPlotter(
-                filter_keyfunc=lambda w:
-                    w.file_path.split('/')[-1] == f.split('/')[-1],
-                name='Plotter_'+f[:-5].split('/')[-1]
-            ) for f in rootfiles)
-            self.add_tool(ToolChain(self.name, plotters))
+
+
+
 
 

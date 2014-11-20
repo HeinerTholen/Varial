@@ -100,8 +100,12 @@ def sort(wrps, key_list=None):
     if not key_list:
         key_list = settings.wrp_sorting_keys
     # python sorting is stable: Just sort by reversed key_list:
+    wrps = list(wrps)
     for key in reversed(list(_iterableize(key_list))):
-        wrps = sorted(wrps, key=operator.attrgetter(key))
+        try:
+            wrps = sorted(wrps, key=operator.attrgetter(key))
+        except AttributeError:
+            print 'INFO Sorting by "%s" failed.' % key
     return wrps
 
 

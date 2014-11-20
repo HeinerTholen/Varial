@@ -1,6 +1,8 @@
 import itertools
 import ROOT
 
+import analysis
+import diskio
 import generators as gen
 import rendering
 import toolinterface
@@ -169,3 +171,31 @@ class FSPlotter(toolinterface.Tool):
         self.set_up_make_canvas()
         self.set_up_save_canvas()
         self.run_sequence()
+
+
+class RootFilePlotter(toolinterface.ToolChain):
+    """Plots all histograms in a rootfile."""
+
+    def __init__(self, rootfile, name=None):
+        super(RootFilePlotter, self).__init__(name)
+        ROOT.gROOT.SetBatch()
+        self.rootfile = rootfile
+        self.aliases = list(diskio.generate_aliases(self.rootfile))
+        subfolders = set('/'.join(a.in_file_path[:-1]) for a in self.aliases)
+        for path in subfolders:
+            tc = self
+            tokens = path.split('/')
+            for folder in tokens[:-1]:
+                if not folder in tc.tool_names:
+                    tc.add_tool(toolinterface.ToolChain(folder))
+                tc = tc.tool_names[folder]
+            tc.add_tool(FSPlotter(
+                filter_keyfunc=lambda w: w.in_file_path[:-1] == tokens,
+                name=tokens[-1]
+            ))
+
+    def run(self):
+        old_aliases = analysis.fs_aliases
+        analysis.fs_aliases = self.aliases
+        super(RootFilePlotter, self).run()
+        analysis.fs_aliases = old_aliases
