@@ -7,7 +7,7 @@ setup(
     author="Heiner Tholen",
     author_email="heiner.tholen@cern.ch",
     packages=["varial", "varial_example"],
-    requires=['pylibconfig2'],
+    requires=[],
     license="LICENSE.txt",
     description="Assist and manage an analysis with the CMS experiment.",
     long_description=open('README.rst').read(),
