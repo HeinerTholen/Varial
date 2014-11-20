@@ -6,7 +6,7 @@ import array
 import __builtin__
 import ctypes
 import collections
-from ROOT import THStack
+from ROOT import THStack, TGraphAsymmErrors
 
 import history
 import wrappers
@@ -768,6 +768,69 @@ def chi2(wrps, x_min=0, x_max=0):
     )
 
 
+@history.track_history
+def eff(wrps, option=''):
+    """
+    Applies to HistoWrappers only. Returns GraphWrapper. Takes lumi from first.
+
+    >>> from ROOT import TH1I
+    >>> h1 = TH1I("h1", "", 2, .5, 2.5)
+    >>> h1.Fill(1)
+    1
+    >>> h1.Fill(1)
+    1
+    >>> w1 = wrappers.HistoWrapper(h1, lumi=2)
+    >>> h2 = TH1I("h2", "", 2, .5, 2.5)
+    >>> h2.Sumw2()
+    >>> h2.Fill(1)
+    1
+    >>> h2.Fill(1)
+    1
+    >>> h2.Fill(1)
+    1
+    >>> h2.Fill(2)
+    2
+    >>> w2 = wrappers.HistoWrapper(h2, lumi=3)
+    >>> w3 = eff([w1, w2])
+    >>> w3.graph.GetN()
+    2
+    >>> hi = w3.graph.GetErrorYhigh(0)
+    >>> lo = w3.graph.GetErrorYlow(0)
+    >>> abs(hi - 0.277375360987) < 1e-10
+    True
+    >>> abs(lo - 0.414534706284) < 1e-10
+    True
+    """
+    wrps = iterableize(wrps)
+    wrps = iter(wrps)
+    try:
+        nominator = next(wrps)
+        denominator = next(wrps)
+    except StopIteration:
+        raise TooFewWrpsError("div needs exactly two Wrappers.")
+    try:
+        wrps.next()
+        raise TooManyWrpsError("div needs exactly two Wrappers.")
+    except StopIteration:
+        pass
+    if not isinstance(nominator, wrappers.HistoWrapper):
+        raise WrongInputError(
+            "div needs nominator to be of type HistoWrapper. nominator: "
+            + str(nominator)
+        )
+    if not (isinstance(denominator, wrappers.HistoWrapper)):
+        raise WrongInputError(
+            "div needs denominator to be of type HistoWrapper. denominator: "
+            + str(denominator)
+        )
+
+    graph = TGraphAsymmErrors(nominator.histo, denominator.histo, option)
+    info = nominator.all_info()
+    return wrappers.GraphWrapper(graph, **info)
+
+
 if __name__ == "__main__":
+    import ROOT
+    ROOT.TH1.AddDirectory(False)
     import doctest
     doctest.testmod()

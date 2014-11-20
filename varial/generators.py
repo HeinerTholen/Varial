@@ -208,6 +208,7 @@ gen_trim                = generate_op(op.trim)
 gen_integral            = generate_op(op.integral)
 gen_int_l               = generate_op(op.int_l)
 gen_int_r               = generate_op(op.int_r)
+gen_eff                 = generate_op(op.eff)
 
 
 def gen_norm_to_data_lumi(wrps):
