@@ -134,6 +134,7 @@ class SampleNormalizer(Tool):
 
 class RootFilePlotter(ToolChain):
     """Plots all histograms in a rootfile."""
+    #TODO remove fileservice dependence and reconstruct directory structure
 
     def __init__(self, path=None, name=None):
         super(RootFilePlotter, self).__init__(name)
@@ -157,8 +158,9 @@ class RootFilePlotter(ToolChain):
                 diskio.generate_fs_aliases(f, smpl) for f in rootfiles
             ))
             plotters = list(FSPlotter(
-                filter_keyfunc=lambda w: w.file_path.split('/')[-1] == f,
-                name='Plotter_'+f[:-5]
+                filter_keyfunc=lambda w:
+                    w.file_path.split('/')[-1] == f.split('/')[-1],
+                name='Plotter_'+f[:-5].split('/')[-1]
             ) for f in rootfiles)
             self.add_tool(ToolChain(self.name, plotters))
 
