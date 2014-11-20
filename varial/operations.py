@@ -807,20 +807,20 @@ def eff(wrps, option=''):
         nominator = next(wrps)
         denominator = next(wrps)
     except StopIteration:
-        raise TooFewWrpsError("div needs exactly two Wrappers.")
+        raise TooFewWrpsError("eff needs exactly two Wrappers.")
     try:
         wrps.next()
-        raise TooManyWrpsError("div needs exactly two Wrappers.")
+        raise TooManyWrpsError("eff needs exactly two Wrappers.")
     except StopIteration:
         pass
     if not isinstance(nominator, wrappers.HistoWrapper):
         raise WrongInputError(
-            "div needs nominator to be of type HistoWrapper. nominator: "
+            "eff needs nominator to be of type HistoWrapper. nominator: "
             + str(nominator)
         )
     if not (isinstance(denominator, wrappers.HistoWrapper)):
         raise WrongInputError(
-            "div needs denominator to be of type HistoWrapper. denominator: "
+            "eff needs denominator to be of type HistoWrapper. denominator: "
             + str(denominator)
         )
 
