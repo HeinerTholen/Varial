@@ -103,6 +103,39 @@ class StackRenderer(HistoRenderer, wrappers.StackWrapper):
         self.stack.GetYaxis().SetTitle(self.histo.GetYaxis().GetTitle())
         self.histo.Draw(self.draw_option_sum)
 
+
+class GraphRenderer(Renderer, wrappers.GraphWrapper):
+    """
+    Extend GraphWrapper for drawing.
+    """
+    def __init__(self, wrp):
+        super(GraphRenderer, self).__init__(wrp)
+        if hasattr(wrp, "draw_option"):
+            self.draw_option = wrp.draw_option
+
+    def x_min(self):
+        return self.graph.GetXaxis().GetXmin()
+
+    def x_max(self):
+        return self.graph.GetXaxis().GetXmax()
+
+    def y_min(self):
+        return self.graph.GetMinimum() + 1e-23  # > 0 cuts away half numbers
+
+    def y_max(self):
+        return self.graph.GetMaximum()
+
+    def y_min_gr_zero(self, graph=None):
+        return self.y_min()
+
+    def draw(self, option=""):
+        if 'same' in option:
+            option.replace('same', '')
+        else:
+            option += 'A'
+        self.graph.Draw(self.draw_option + option)
+
+
 ############################################################ canvas-builder ###
 import settings
 import history
@@ -112,6 +145,8 @@ from ROOT import TCanvas, TObject
 def _renderize(wrp):
     if isinstance(wrp, Renderer):
         return wrp
+    if isinstance(wrp, wrappers.GraphWrapper):
+        return GraphRenderer(wrp)
     if isinstance(wrp, wrappers.StackWrapper):
         return StackRenderer(wrp)
     if isinstance(wrp, wrappers.HistoWrapper):

@@ -1,4 +1,4 @@
-from ROOT import TH1, TH1D, THStack, TCanvas, TObject
+from ROOT import TH1, TH1D, THStack, TGraph, TCanvas, TObject
 
 
 class WrapperBase(object):
@@ -229,6 +229,46 @@ class StackWrapper(HistoWrapper):
 
     def primary_object(self):
         return self.stack
+
+
+class GraphWrapper(Wrapper):
+    """
+    Wrapper class for a ROOT TGraph instance.
+
+    **Keywords:**
+    ``lumi``,
+    ``is_data``
+    and also see superclass.
+
+    :raises: TypeError
+    """
+    def __init__(self, graph, **kws):
+        self._check_object_type(graph, TGraph)
+        super(GraphWrapper, self).__init__(**kws)
+        self.graph          = graph
+        self.name           = graph.GetName()
+        self.title          = graph.GetTitle()
+        self.is_data        = kws.get("is_data", False)
+        self.lumi           = kws.get("lumi", 1.)
+        self.sample         = kws.get("sample", "")
+        self.legend         = kws.get("legend", "")
+        self.analyzer       = kws.get("analyzer", "")
+        self.filename       = kws.get("filename", "")
+        self.in_file_path   = kws.get("in_file_path", "")
+        if not self.filename:
+            self.filename       = self.sample + ".root"
+            self.in_file_path   = [self.analyzer, self.name]
+
+    def all_info(self):
+        """
+        :returns: dict with all members, but not the histo.
+        """
+        info = super(GraphWrapper, self).all_info()
+        del info["graph"]
+        return info
+
+    def primary_object(self):
+        return self.graph
 
 
 class CanvasWrapper(Wrapper):
