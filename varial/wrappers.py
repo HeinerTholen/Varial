@@ -25,7 +25,7 @@ class WrapperBase(object):
         return dict(
             (k,v)
             for k,v in self.__dict__.iteritems()
-            if not isinstance(v, TObject)
+            if k[0] != '_' and not isinstance(v, TObject)
         )
 
     def pretty_info_lines(self):
@@ -175,10 +175,10 @@ class HistoWrapper(Wrapper):
         self.sample         = kws.get("sample", "")
         self.legend         = kws.get("legend", "")
         self.analyzer       = kws.get("analyzer", "")
-        self.filename       = kws.get("filename", "")
+        self.file_path      = kws.get("file_path", "")
         self.in_file_path   = kws.get("in_file_path", "")
-        if not self.filename:
-            self.filename       = self.sample + ".root"
+        if not self.file_path:
+            self.file_path      = self.sample + ".root"
             self.in_file_path   = [self.analyzer, self.name]
 
     def all_info(self):

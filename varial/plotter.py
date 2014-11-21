@@ -43,6 +43,7 @@ class FSPlotter(toolinterface.Tool):
     ...    'save_log_scale': False,
     ...    'save_lin_log_scale': False,
     ...    'keep_content_as_result': False,
+    ...    'save_name_lambda': lambda wrp: wrp.name,
     ...    'canvas_decorators': [
     ...        rendering.BottomPlotRatioSplitErr,
     ...        rendering.Legend
@@ -177,7 +178,7 @@ class FSPlotter(toolinterface.Tool):
 class RootFilePlotter(toolinterface.ToolChain):
     """Plots all histograms in a rootfile."""
 
-    def __init__(self, rootfile, plotter_factory=None, name=None):
+    def __init__(self, rootfile, plotter_factory=None, flat=False, name=None):
         super(RootFilePlotter, self).__init__(name)
         ROOT.gROOT.SetBatch()
         if not plotter_factory:
@@ -186,18 +187,27 @@ class RootFilePlotter(toolinterface.ToolChain):
         self.rootfile = rootfile
         self.aliases = list(diskio.generate_aliases(self.rootfile))
 
-        subfolders = set('/'.join(a.in_file_path[:-1]) for a in self.aliases)
-        for path in subfolders:
-            tc = self
-            tokens = path.split('/')
-            for folder in tokens[:-1]:
-                if not folder in tc.tool_names:
-                    tc.add_tool(toolinterface.ToolChain(folder))
-                tc = tc.tool_names[folder]
-            tc.add_tool(plotter_factory(
-                filter_keyfunc=lambda w: w.in_file_path[:-1] == tokens,
-                name=tokens[-1]
+        if flat:
+            self.add_tool(plotter_factory(
+                filter_keyfunc=lambda _: True,
+                save_name_lambda=lambda w: '_'.join(
+                                                w._renderers[0].in_file_path),
             ))
+        else:
+            subfolders = set(
+                '/'.join(a.in_file_path[:-1]) for a in self.aliases)
+            for path in subfolders:
+                tc = self
+                tokens = path.split('/')
+                for folder in tokens[:-1]:
+                    if not folder in tc.tool_names:
+                        tc.add_tool(toolinterface.ToolChain(folder))
+                    tc = tc.tool_names[folder]
+                tc.add_tool(plotter_factory(
+                    filter_keyfunc=lambda w: w.in_file_path[:-1] == tokens,
+                    save_name_lambda=saver,  # lambda w: w._renderers[0].name,
+                    name=tokens[-1]
+                ))
 
     def run(self):
         old_aliases = analysis.fs_aliases

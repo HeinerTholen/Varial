@@ -333,6 +333,7 @@ class CanvasBuilder(object):
             y_bounds    = self.y_bounds,
             y_min_gr_0  = self.y_min_gr_zero,
             history     = self._track_canvas_history(),
+            _renderers   = self.renderers,
             **self.kws
         )
         self._del_builder_refs()
