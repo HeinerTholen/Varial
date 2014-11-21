@@ -856,6 +856,7 @@ def eff(wrps, option=''):
         )
 
     graph = TGraphAsymmErrors(nominator.histo, denominator.histo, option)
+    graph.GetXaxis().SetTitle(nominator.histo.GetXaxis().GetTitle())
     info = nominator.all_info()
     return wrappers.GraphWrapper(graph, **info)
 
