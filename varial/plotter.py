@@ -19,7 +19,7 @@ def plot_grouper(wrps):
 
 
 def overlay_colorizer(wrps, colors=None):
-    wrps = gen.apply_histo_linecolor(wrps, colors)
+    wrps = gen.apply_linecolor(wrps, colors)
     for w in wrps:
         w.histo.SetFillStyle(0)
         yield w
@@ -192,6 +192,7 @@ class RootFilePlotter(toolinterface.ToolChain):
                 filter_keyfunc=lambda _: True,
                 save_name_lambda=lambda w: '_'.join(
                                                 w._renderers[0].in_file_path),
+                canvas_decorators=[rendering.Legend],
             ))
         else:
             subfolders = set(
@@ -205,8 +206,9 @@ class RootFilePlotter(toolinterface.ToolChain):
                     tc = tc.tool_names[folder]
                 tc.add_tool(plotter_factory(
                     filter_keyfunc=lambda w: w.in_file_path[:-1] == tokens,
-                    save_name_lambda=saver,  # lambda w: w._renderers[0].name,
-                    name=tokens[-1]
+                    save_name_lambda=lambda w: w._renderers[0].name,
+                    canvas_decorators=[rendering.Legend],
+                    name=tokens[-1],
                 ))
 
     def run(self):

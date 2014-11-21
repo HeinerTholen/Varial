@@ -287,7 +287,7 @@ def save(wrps, filename_func, suffices=None):
 import rendering as rnd
 
 
-def apply_histo_fillcolor(wrps, colors=None):
+def apply_fillcolor(wrps, colors=None):
     """
     Uses ``histo.SetFillColor``. Colors from settings, if not given.
 
@@ -297,18 +297,17 @@ def apply_histo_fillcolor(wrps, colors=None):
     """
     n = 0
     for wrp in wrps:
-        if hasattr(wrp, "histo"):
-            if colors:
-                color = colors[n%len(colors)]
-                n += 1
-            else:
-                color = analysis.get_color(wrp.sample)
-            if color:
-                wrp.histo.SetFillColor(color)
+        if colors:
+            color = colors[n%len(colors)]
+            n += 1
+        else:
+            color = analysis.get_color(wrp.sample)
+        if color:
+            wrp.primary_object().SetFillColor(color)
         yield wrp
 
 
-def apply_histo_linecolor(wrps, colors=None):
+def apply_linecolor(wrps, colors=None):
     """
     Uses ``histo.SetLineColor``. Colors from settings, if not given.
 
@@ -318,18 +317,17 @@ def apply_histo_linecolor(wrps, colors=None):
     """
     n = 0
     for wrp in wrps:
-        if hasattr(wrp, "histo"):
-            if colors:
-                color = colors[n%len(colors)]
-                n += 1
-            else:
-                color = analysis.get_color(wrp.sample)
-            if color:
-                wrp.histo.SetLineColor(color)
+        if colors:
+            color = colors[n%len(colors)]
+            n += 1
+        else:
+            color = analysis.get_color(wrp.sample)
+        if color:
+            wrp.primary_object().SetLineColor(color)
         yield wrp
 
 
-def apply_histo_linewidth(wrps, linewidth=2):
+def apply_linewidth(wrps, linewidth=2):
     """
     Uses ``histo.SetLineWidth``. Default is 2.
 
@@ -338,8 +336,7 @@ def apply_histo_linewidth(wrps, linewidth=2):
     :yields:            HistoWrapper
     """
     for wrp in wrps:
-        if hasattr(wrp, "histo"):
-            wrp.histo.SetLineWidth(linewidth)
+        wrp.primary_object().SetLineWidth(linewidth)
         yield wrp
 
 
@@ -465,7 +462,7 @@ def mc_stack(wrps, merge_mc_key_func=None):
         mc_sorted = sorted(grp, key=merge_mc_key_func)
         mc_groupd = group(mc_sorted, merge_mc_key_func)
         mc_merged = (op.merge(g) for g in mc_groupd)
-        mc_colord = apply_histo_fillcolor(mc_merged)
+        mc_colord = apply_fillcolor(mc_merged)
 
         # stack mc
         stack = op.stack(mc_colord)
@@ -522,7 +519,7 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=False):
         mc_sorted = sorted(mc, key=merge_mc_key_func)
         mc_groupd = group(mc_sorted, merge_mc_key_func)
         mc_merged = (op.merge(g) for g in mc_groupd)
-        mc_colord = apply_histo_fillcolor(mc_merged)
+        mc_colord = apply_fillcolor(mc_merged)
         is_2d = mc_sorted and isinstance(mc_sorted[0].histo, TH2D)
 
         # stack mc

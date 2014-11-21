@@ -23,7 +23,7 @@ s.stacking_order = [
 ]
 
 # Coloring of filled histograms.
-# See also histotools.generators.apply_histo_fillcolor(wrps)
+# See also histotools.generators.apply_fillcolor(wrps)
 import ROOT
 s.colors.update({
     "t#bar{t}#gamma #mu+Jets (Signal)"  : ROOT.kRed + 1,
