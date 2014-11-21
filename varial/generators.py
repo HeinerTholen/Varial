@@ -340,6 +340,26 @@ def apply_linewidth(wrps, linewidth=2):
         yield wrp
 
 
+def apply_markercolor(wrps, colors=None):
+    """
+    Uses ``histo.SetMarkerColor``. Colors from settings, if not given.
+
+    :param wrps:    HistoWrapper iterable
+    :param colors:  Integer list
+    :yields:        HistoWrapper
+    """
+    n = 0
+    for wrp in wrps:
+        if colors:
+            color = colors[n%len(colors)]
+            n += 1
+        else:
+            color = analysis.get_color(wrp.sample)
+        if color:
+            wrp.primary_object().SetMarkerColor(color)
+        yield wrp
+
+
 def make_canvas_builder(grps):
     """
     Yields instanciated CanvasBuilders.
