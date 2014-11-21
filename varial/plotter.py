@@ -35,6 +35,7 @@ class FSPlotter(toolinterface.Tool):
     >>> defaults = {
     ...    'input_result_path': None,
     ...    'filter_keyfunc': None,
+    ...    'load_func': gen.fs_filter_active_sort_load,
     ...    'hook_loaded_histos': None,
     ...    'plot_grouper': plot_grouper,
     ...    'plot_setup': lambda w: gen.mc_stack_n_data_sum(w, None, True),
@@ -53,6 +54,7 @@ class FSPlotter(toolinterface.Tool):
     defaults_attrs = {
         'input_result_path': None,
         'filter_keyfunc': None,
+        'load_func': gen.fs_filter_active_sort_load,
         'hook_loaded_histos': None,
         'plot_grouper': plot_grouper,
         'plot_setup': lambda w: gen.mc_stack_n_data_sum(w, None, True),
@@ -98,7 +100,7 @@ class FSPlotter(toolinterface.Tool):
             if not self.filter_keyfunc:
                 self.message("WARNING No filter_keyfunc set! "
                              "Working with _all_ histograms.")
-            wrps = gen.fs_filter_active_sort_load(self.filter_keyfunc)
+            wrps = self.load_func(self.filter_keyfunc)
         if self.hook_loaded_histos:
             wrps = self.hook_loaded_histos(wrps)
         self.stream_content = wrps
@@ -180,39 +182,60 @@ class RootFilePlotter(toolinterface.ToolChain):
 
     def __init__(self, rootfile, plotter_factory=None, flat=False, name=None):
         super(RootFilePlotter, self).__init__(name)
+
+        self.private_plotter = None
+        self.rootfile = rootfile  # only the base instance has this
+        if not rootfile:
+            return
+
         ROOT.gROOT.SetBatch()
         if not plotter_factory:
             plotter_factory = FSPlotter
+        self.aliases = sorted(diskio.generate_aliases(self.rootfile),
+                              key=lambda a: '/'.join(a.in_file_path))
 
-        self.rootfile = rootfile
-        self.aliases = list(diskio.generate_aliases(self.rootfile))
-
-        if flat:
-            self.add_tool(plotter_factory(
-                filter_keyfunc=lambda _: True,
+        if flat:                                    ### print all in one dir
+            self.private_plotter = plotter_factory(
+                filter_keyfunc='Dummy',
+                load_func=lambda _: gen.load(gen.fs_content()),
+                plot_grouper=lambda wrps: ((w,) for w in wrps),
+                plot_setup=lambda ws: gen.mc_stack_n_data_sum(
+                    ws, lambda w: '', True),
                 save_name_lambda=lambda w: '_'.join(
-                                                w._renderers[0].in_file_path),
-                canvas_decorators=[rendering.Legend],
-            ))
-        else:
-            subfolders = set(
-                '/'.join(a.in_file_path[:-1]) for a in self.aliases)
-            for path in subfolders:
-                tc = self
-                tokens = path.split('/')
-                for folder in tokens[:-1]:
-                    if not folder in tc.tool_names:
-                        tc.add_tool(toolinterface.ToolChain(folder))
-                    tc = tc.tool_names[folder]
-                tc.add_tool(plotter_factory(
-                    filter_keyfunc=lambda w: w.in_file_path[:-1] == tokens,
-                    save_name_lambda=lambda w: w._renderers[0].name,
-                    canvas_decorators=[rendering.Legend],
-                    name=tokens[-1],
-                ))
+                    w._renderers[0].in_file_path),
+                canvas_decorators=[],
+            )
+        else:                                       ### resemble root file dirs
+            for path in (a.in_file_path for a in self.aliases):
+                rfp = self
+
+                # make dirs if not in basedir
+                if len(path) > 1:
+                    for folder in path[:-1]:
+                        if not folder in rfp.tool_names:
+                            rfp.add_tool(RootFilePlotter(
+                                None, plotter_factory, name=folder))
+                        rfp = rfp.tool_names[folder]
+
+                # make plotter instance if not done already
+                if not rfp.private_plotter:
+                    rfp.private_plotter = plotter_factory(
+                        filter_keyfunc='Dummy',
+                        load_func=lambda _: gen.load(
+                            w
+                            for w in gen.fs_content()
+                            if w.in_file_path[:-1] == path[:-1]
+                        ),
+                        save_name_lambda=lambda w: w._renderers[0].name,
+                        canvas_decorators=[],
+                    )
 
     def run(self):
         old_aliases = analysis.fs_aliases
-        analysis.fs_aliases = self.aliases
+        if self.rootfile:
+            analysis.fs_aliases = self.aliases
         super(RootFilePlotter, self).run()
-        analysis.fs_aliases = old_aliases
+        if self.private_plotter:
+            self.private_plotter.run()
+        if self.rootfile:
+            analysis.fs_aliases = old_aliases
