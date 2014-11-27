@@ -219,14 +219,17 @@ class RootFilePlotter(toolinterface.ToolChain):
 
                 # make plotter instance if not done already
                 if not rfp.private_plotter:
-                    rfp.private_plotter = plotter_factory(
-                        filter_keyfunc='Dummy',
-                        load_func=lambda _: gen.load(
+                    def _mk_loader(p):
+                        """Hack to create separate namespace for p"""
+                        return lambda _: gen.load(
                             w
                             for w in gen.fs_content()
-                            if w.in_file_path[:-1] == path[:-1]
-                        ),
+                            if w.in_file_path[:-1] == p
+                        )
+                    rfp.private_plotter = plotter_factory(
+                        filter_keyfunc='Dummy',
                         save_name_lambda=lambda w: w._renderers[0].name,
+                        load_func=_mk_loader(path[:-1]),
                         canvas_decorators=[],
                     )
 
