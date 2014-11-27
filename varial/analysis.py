@@ -177,11 +177,16 @@ fs_aliases = []
 fs_wrappers = {}
 
 
-def fileservice(filename="fileservice", autosave=True):
+def fileservice(section_name, autosave=True):
     """Return FileService Wrapper for automatic storage."""
     if autosave:
-        if not filename in fs_wrappers:
-            fs_wrappers[filename] = wrappers.FileServiceWrapper(name=filename)
-        return fs_wrappers[filename]
+        if section_name in fs_wrappers:
+            raise RuntimeError(
+                'fileservice section already exists: %s' % section_name
+            )
+        fs_wrappers[section_name] = wrappers.FileServiceWrapper(
+            name=section_name
+        )
+        return fs_wrappers[section_name]
     else:
-        return wrappers.FileServiceWrapper(name=filename)
+        return wrappers.FileServiceWrapper(name=section_name)

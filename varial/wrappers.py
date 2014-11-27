@@ -304,6 +304,11 @@ class FileServiceWrapper(Wrapper):
     """
     Wrapper class for many histograms in one file.
     """
+
+    def __init__(self, name, **kws):
+        kws['name'] = name
+        super(FileServiceWrapper, self).__init__(**kws)
+
     def makeTH1D(self, *args):
         """args need to be args for TH1D constructor."""
         self.append(TH1D(*args))
