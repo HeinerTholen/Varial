@@ -36,8 +36,8 @@ fwlite_profiling = False
 
 
 ########################################################### style constants ###
-canvas_size_x = 800
-canvas_size_y = 800
+canvas_size_x = 500
+canvas_size_y = 500
 
 box_text_size = 0.037
 defaults_Legend = {
