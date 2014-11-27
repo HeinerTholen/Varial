@@ -33,6 +33,7 @@ try_reuse_results = True
 default_enable_sample = True
 fwlite_force_reuse = False
 fwlite_profiling = False
+fileservice_filename = 'fileservice'
 
 
 ########################################################### style constants ###

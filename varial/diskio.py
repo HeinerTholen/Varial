@@ -65,7 +65,7 @@ def close_root_file(filename):
 use_analysis_cwd = True
 
 
-def write(wrp, filename=None, suffices=()):
+def write(wrp, filename=None, suffices=(), mode='RECREATE'):
     """Writes wrapper to disk, including root objects."""
     if not filename:
         filename = wrp.name
@@ -79,7 +79,7 @@ def write(wrp, filename=None, suffices=()):
     # write root objects (if any)
     if any(isinstance(o, TObject) for o in wrp.__dict__.itervalues()):
         wrp.root_filename = basename(filename+".root")
-        f = TFile.Open(filename+".root", "RECREATE")
+        f = TFile.Open(filename+".root", mode)
         f.cd()
         _write_wrapper_objs(wrp, f)
         f.Close()
@@ -279,8 +279,13 @@ import analysis
 
 
 def write_fileservice():
-    for wrp in analysis.fs_wrappers.itervalues():
-        write(wrp)
+    if not analysis.fs_wrappers:
+        return
+
+    fs_wrappers = analysis.fs_wrappers.values()
+    write(fs_wrappers[0], filename=settings.fileservice_filename)
+    for wrp in fs_wrappers[1:]:
+        write(wrp, filename=settings.fileservice_filename, mode='UPDATE')
 
 atexit.register(write_fileservice)
 atexit.register(close_open_root_files)
