@@ -1,4 +1,4 @@
-from ROOT import TH1, TH1D, THStack, TGraph, TCanvas, TObject
+from ROOT import TH1, TH1D, TH2D, TH3D, THStack, TGraph, TCanvas, TObject
 
 
 class WrapperBase(object):
@@ -304,9 +304,32 @@ class FileServiceWrapper(Wrapper):
     """
     Wrapper class for many histograms in one file.
     """
-    def make(self, *args):
+    def makeTH1D(self, *args):
         """args need to be args for TH1D constructor."""
-        setattr(self, args[0], TH1D(*args))
+        self.append(TH1D(*args))
+
+    def makeTH2D(self, *args):
+        """args need to be args for TH2D constructor."""
+        self.append(TH2D(*args))
+
+    def makeTH3D(self, *args):
+        """args need to be args for TH3D constructor."""
+        self.append(TH3D(*args))
+
+    def makeTH1D_from_dict(self, name, title, dictionary):
+        """create a TH1D from the values in a dict."""
+        hist = TH1D(name, title, len(dictionary), 0, len(dictionary))
+        for k in sorted(dictionary.keys()):
+            assert(type(dictionary[k]) in (int, float))
+            hist.Fill(str(k), dictionary[k])
+        self.append(hist)
+
+    def append(self, named_root_obj):
+        name = named_root_obj.GetName()
+        if hasattr(self, name):
+            raise RuntimeError(
+                'FileServiceWrapper: object with name exists: %s' % name)
+        setattr(self, name, named_root_obj)
 
     def is_empty(self):
         return not any(
