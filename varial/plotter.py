@@ -191,8 +191,16 @@ class RootFilePlotter(toolinterface.ToolChain):
         ROOT.gROOT.SetBatch()
         if not plotter_factory:
             plotter_factory = FSPlotter
-        self.aliases = sorted(diskio.generate_aliases(self.rootfile),
-                              key=lambda a: '/'.join(a.in_file_path))
+        aliases = diskio.generate_aliases(self.rootfile)
+        aliases = itertools.ifilter(
+            lambda a: type(a.type) == str and a.type.startswith('TH'),
+            aliases
+        )
+        aliases = sorted(
+            aliases,
+            key=lambda a: '/'.join(a.in_file_path)
+        )
+        self.aliases = aliases
 
         if flat:                                    ### print all in one dir
             self.private_plotter = plotter_factory(

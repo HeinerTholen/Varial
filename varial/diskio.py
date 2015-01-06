@@ -190,12 +190,12 @@ def generate_fs_aliases(root_file_path, sample_inst):
         analyzer = analyzer_key.ReadObj()
         analyzer_name = analyzer_key.GetName()
         for histo_key in analyzer.GetListOfKeys():
-            histo_name = histo_key.GetName()
             yield wrappers.FileServiceAlias(
-                histo_name,
+                histo_key.GetName(),
                 analyzer_name,
                 root_file_path,
-                sample_inst
+                sample_inst,
+                histo_key.GetClassName()
             )
 
 
@@ -224,7 +224,8 @@ def _recursive_make_alias(root_dir, filename, in_file_path):
         else:
             yield wrappers.Alias(
                 filename,
-                in_file_path[:]
+                in_file_path[:],
+                key.GetClassName()
             )
         in_file_path.pop(-1)
 

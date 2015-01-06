@@ -51,11 +51,12 @@ class Alias(WrapperBase):
     :param  in_file_path:   path to ROOT-object within the root file.
     :type   in_file_path:   list of strings
     """
-    def __init__(self, file_path, in_file_path):
+    def __init__(self, file_path, in_file_path, typ):
         self.klass          = self.__class__.__name__
         self.file_path      = file_path
         self.in_file_path   = in_file_path
         self.name           = in_file_path[-1]
+        self.type           = typ
 
 
 class FileServiceAlias(Alias):
@@ -68,10 +69,11 @@ class FileServiceAlias(Alias):
     :param  is_data:        data or not?
     :type   is_data:        bool
     """
-    def __init__(self, name, analyzer, filename, sample):
+    def __init__(self, name, analyzer, filename, sample, typ):
         super(FileServiceAlias, self).__init__(
             filename,
-            [analyzer, name]
+            [analyzer, name],
+            typ
         )
         self.name           = name
         self.analyzer       = analyzer
