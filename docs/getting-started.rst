@@ -4,16 +4,21 @@
 Getting started
 ===============
 
-Prerequisites
--------------
+Prerequisites & Installation
+----------------------------
 
-The processing management starts to be reasonable, once more than one
-analysis sample is concerned, when all samples are processed with (mostly) the
-same cfg file.
+ROOT
+
+optional: CMSSW
 
 For the efficient use of the post-processing tools, knowledge about python
 generators and generator expressions is crucial. A nice overview with practical
 application is given at http://www.dabeaz.com/generators/index.html .
+
+git clone
+
+export PYTHONPATH=my_path_to_varial:PYTHONPATH
+
 
 Processing
 ==========

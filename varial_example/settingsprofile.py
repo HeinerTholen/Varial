@@ -1,9 +1,14 @@
 """
-Settings example for post processing. Taken from an existing analysis.
+Settings example from an analysis.
+
+**Please click on [source] on right!**
 """
 
+
 def dummy_func():
-    """This is just a dummy to include this source file."""
+    """
+    This is just a dummy to include this source file in the doc.
+    """
 
 from varial import settings as s
 
@@ -55,5 +60,3 @@ s.pretty_names.update({
     "PhotonFiltdrmuon"              : "#DeltaR(photon, #mu)",
     "PhotonFiltptrelDrjet"          : "p_{T,photon} / p_{T,jet}"
 })
-
-s.DIR_PLOTS        = "outputPlots/"

@@ -9,10 +9,12 @@ On this page you find some example packages, which all reside in the
 right for the individual modules.
 
 
-Basic setup and running
-=======================
+.. _make-a-tool-example:
 
-.. automodule:: varial_example.configexample
+Make a tool
+===========
+
+.. automodule:: varial_example.make_a_tool
    :members:
 
 
@@ -24,25 +26,24 @@ Sample Definition
 .. automodule:: varial_example.sampledefinition
    :members:
 
-Settings for processing
+
+.. _settingsprofile-example:
+
+Settings profile
+================
+
+.. automodule:: varial_example.settingsprofile
+   :members:
+
+
+.. _config-example:
+
+Basic setup and running
 =======================
 
-.. automodule:: varial_example.settingsprofile_proc
+.. automodule:: varial_example.config
    :members:
 
 
-Settings for post-processing
-============================
 
-.. automodule:: varial_example.settingsprofile_postproc
-   :members:
-
-
-.. _post-proc-example:
-
-Predefined post-processing tools
-================================
-
-.. automodule:: varial_example.postproctools
-   :members:
 
