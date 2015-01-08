@@ -8,9 +8,7 @@ below.
 
 ==================  ==========================================
 ``sample``          for sample definition
-``cmsrunprocess``   management of a single cmsRun process
-``controller``      parallel execution of the cmsRun processes
-``postprocessing``  post proc logic and base class
+``cmsrunproxy``     management of a single cmsRun process
 ``main``            puts it all together
 ==================  ==========================================
 
@@ -18,33 +16,19 @@ below.
 Sample
 ======
 
-.. automodule:: cmstoolsac3b.sample
+.. automodule:: varial.sample
    :members:
 
 
-CmsRunProcess
-=============
+CmsRunProxy
+===========
 
-.. automodule:: cmstoolsac3b.cmsrunprocess
-   :members:
-
-
-Controller
-==========
-
-.. automodule:: cmstoolsac3b.controller
-   :members:
-
-
-PostProcessing
-==============
-
-.. automodule:: cmstoolsac3b.postprocessing
+.. automodule:: varial.cmsrunproxy
    :members:
 
 
 Main
 ====
 
-.. automodule:: cmstoolsac3b.main
+.. automodule:: varial.main
    :members:

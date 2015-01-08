@@ -1,8 +1,8 @@
-===========================
-Operations on wrapper-types
-===========================
+======================
+Operations on wrappers
+======================
 
-In the ``histotools/operation.py`` you will find predefined operations. All of
+In ``varial.operation`` you will find predefined operations. All of
 them take one ore more wrappers and return a wrapper. Every wrapper has a
 ``history`` member in which all applied operations are stored.
 
@@ -12,6 +12,6 @@ module.
 Module members
 ==============
 
-.. automodule:: cmstoolsac3b.operations
+.. automodule:: varial.operations
    :members:
 

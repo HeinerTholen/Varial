@@ -17,7 +17,7 @@ as it only provides some common methods.
 Module members
 ==============
 
-.. automodule:: cmstoolsac3b.wrappers
+.. automodule:: varial.wrappers
    :members:
    :show-inheritance:
 

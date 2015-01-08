@@ -4,5 +4,5 @@
 History for wrapper-types
 =========================
 
-.. automodule:: cmstoolsac3b.history
+.. automodule:: varial.history
    :members:

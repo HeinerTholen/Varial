@@ -9,12 +9,12 @@ The beauty of this approach becomes apparent when chaining generators.
 Some chaining (or 'packaging') takes place at the bottom of this document,
 starting with the ``fs_filter_sort_load`` generator.
 
-Use the generators within the ``run()`` method of your Post-processing tools!
+Use the generators within the ``run()`` method of a tool.
 Also check out the Examples in :ref:`post-proc-example` to see the actual
 application.
 
 Module members
 ==============
 
-.. automodule:: cmstoolsac3b.generators
+.. automodule:: varial.generators
    :members:

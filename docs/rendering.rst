@@ -12,14 +12,14 @@ below.
 Renderers for wrapper types
 ===========================
 
-.. autoclass:: cmstoolsac3b.rendering.Renderer
+.. autoclass:: varial.rendering.Renderer
    :members:
 
-.. autoclass:: cmstoolsac3b.rendering.HistoRenderer
+.. autoclass:: varial.rendering.HistoRenderer
    :members:
    :show-inheritance:
 
-.. autoclass:: cmstoolsac3b.rendering.StackRenderer
+.. autoclass:: varial.rendering.StackRenderer
    :members:
    :show-inheritance:
 
@@ -27,7 +27,7 @@ Renderers for wrapper types
 Canvas Building
 ===============
 
-.. autoclass:: cmstoolsac3b.rendering.CanvasBuilder
+.. autoclass:: varial.rendering.CanvasBuilder
    :members:
 
 
@@ -44,7 +44,7 @@ Decorator)::
     cb = Textbox(cb, text="Some boxed Text")
     canvas_wrp = cb.build_canvas()
 
-.. autoclass:: cmstoolsac3b.rendering.Legend
+.. autoclass:: varial.rendering.Legend
    :members:
    :show-inheritance:
 

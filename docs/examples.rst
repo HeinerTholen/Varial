@@ -10,7 +10,7 @@ the individual modules.
 Basic setup and running
 =======================
 
-.. automodule:: cmstoolsac3b_example.configexample
+.. automodule:: varial_example.configexample
    :members:
 
 
@@ -19,20 +19,20 @@ Basic setup and running
 Sample Definition
 =================
 
-.. automodule:: cmstoolsac3b_example.sampledefinition
+.. automodule:: varial_example.sampledefinition
    :members:
 
 Settings for processing
 =======================
 
-.. automodule:: cmstoolsac3b_example.settingsprofile_proc
+.. automodule:: varial_example.settingsprofile_proc
    :members:
 
 
 Settings for post-processing
 ============================
 
-.. automodule:: cmstoolsac3b_example.settingsprofile_postproc
+.. automodule:: varial_example.settingsprofile_postproc
    :members:
 
 
@@ -41,6 +41,6 @@ Settings for post-processing
 Predefined post-processing tools
 ================================
 
-.. automodule:: cmstoolsac3b_example.postproctools
+.. automodule:: varial_example.postproctools
    :members:
 

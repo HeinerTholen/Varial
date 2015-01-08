@@ -6,7 +6,7 @@ Package utilities
 Settings
 ========
 
-.. automodule:: cmstoolsac3b.settings
+.. automodule:: varial.settings
    :members:
 
 
@@ -15,19 +15,19 @@ Settings
 Decorator
 =========
 
-.. automodule:: cmstoolsac3b.decorator
+.. automodule:: varial.decorator
    :members:
 
 
 Singleton
 =========
 
-.. automodule:: cmstoolsac3b.singleton
+.. automodule:: varial.singleton
    :members:
 
 
 Monitor
 =======
 
-.. automodule:: cmstoolsac3b.monitor
+.. automodule:: varial.monitor
    :members:
