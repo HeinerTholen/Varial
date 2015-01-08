@@ -1,12 +1,12 @@
-.. _examples:
+.. _examples-package:
 
 ================
 Examples Package
 ================
 
 On this page you find some example packages, which all reside in the
-``examples`` directory. **Please checkout the [source] links** on the right for
-the individual modules.
+``varial_examples`` directory. **Please checkout the [source] links** on the
+right for the individual modules.
 
 
 Basic setup and running
