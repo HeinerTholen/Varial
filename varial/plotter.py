@@ -178,7 +178,18 @@ class FSPlotter(toolinterface.Tool):
 
 
 class RootFilePlotter(toolinterface.ToolChain):
-    """Plots all histograms in a rootfile."""
+    """
+    Plots all histograms in a rootfile.
+
+    **NOTE: please use the** ``tools.mk_rootfile_plotter`` **function!**
+
+    :param rootfile:            str, name of the rootfile
+    :param plotter_factory:     factory function for RootFilePlotter
+                                default: ``None``
+    :param flat:                bool, flatten the rootfile structure
+                                default: ``False``
+    :param name:                str, tool name
+    """
 
     def __init__(self, rootfile, plotter_factory=None, flat=False, name=None):
         super(RootFilePlotter, self).__init__(name)

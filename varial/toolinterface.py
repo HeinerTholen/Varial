@@ -1,3 +1,7 @@
+"""
+Baseclasses for tools and toolchains.
+"""
+
 import os
 import time
 import inspect

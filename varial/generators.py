@@ -1,4 +1,16 @@
-# generators.py
+"""
+Python generators for pipelining ROOT-object wrappers.
+
+Python generators help to process ROOT-objects Many generators are predefined
+here. They generalize the operations and deliver utility functions.
+All generators and functions in this module should help to easy the work within
+the ``run()`` method of a tool, but they can also be used anywhere.
+Chaining (or 'packaging') of elementary generators is done in the last quarter
+of this module, starting with the ``fs_filter_sort_load`` generator.
+
+To learn more about python generators, please have a look at
+http://www.dabeaz.com/generators/index.html
+"""
 
 ################################################################### utility ###
 import collections

@@ -1,3 +1,16 @@
+"""
+Wrappers for root histograms, graphs and canvases.
+
+A HistoWrapper holds a 'histo' member, a FloatWrapper holds 'float' member
+variable and so on.. The StackWrapper has a histo variable as well, which hold
+the sum of its component histograms.
+
+Aliases describe histograms, that are not loaded yet. They are
+created from the directory structure of a rootfile. After possibly filtering
+and sorting these, the histogram objects can be loaded with the ``diskio``
+module.
+"""
+
 from ROOT import TH1, TH1D, TH2D, TH3D, THStack, TGraph, TCanvas, TObject
 
 
@@ -116,23 +129,6 @@ class Wrapper(WrapperBase):
 
     def primary_object(self):
         """Overwrite! Should returned wrapped object."""
-
-    def write_info_file(self, info_filename):
-        """Functionality moved to package diskio."""
-        raise Exception("Don't use this method! Use write() in module diskio.")
-
-    def write_root_file(self, root_filename):
-        """Functionality moved to package diskio."""
-        raise Exception("Don't use this method! Use write() in module diskio.")
-
-    @classmethod
-    def create_from_file(cls, info_filename, wrapped_obj = None):
-        """Functionality moved to package diskio."""
-        raise Exception("Don't use this method! Use read() in module diskio.")
-
-    def read_root_objs_from_file(self):
-        """Functionality moved to package diskio."""
-        raise Exception("Don't use this method! Use read() in module diskio.")
 
 
 class FloatWrapper(Wrapper):

@@ -1,3 +1,9 @@
+"""
+Implements storing of Wrappers into a sqlite database.
+
+Please checkout the :ref:`diskio-module` documentation for more information.
+"""
+
 import cPickle
 import sqlite3
 
@@ -35,6 +41,7 @@ def _close():
 
 ##################################################### read / write wrappers ###
 def write(wrp, name=None):
+    """Write a wrapper."""
     if not _db_conn:
         _init()
     path = analysis.cwd + (name or wrp.name)
@@ -50,6 +57,7 @@ def write(wrp, name=None):
 
 
 def read(name):
+    """Read a wrapper."""
     if not _db_conn:
         _init()
     path = analysis.cwd + name
@@ -62,11 +70,12 @@ def read(name):
         raise RuntimeError('Data not found in db: %s' % path)
 
 
-def get(name):
+def get(name, default=None):
+    """Reads wrapper if availible, else returns default."""
     try:
         return read(name)
     except RuntimeError:
-        return None
+        return default
 
 
 ########################################################## i/o with aliases ###

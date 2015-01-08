@@ -29,7 +29,7 @@ Varial has two main design features (both leaning on UNIX-principles, sort of):
 - **Directory-based execution of analysis steps**: As an analysis comprises
   many different parts, a framework is set inplace to design an analysis
   quickly. In order to perform a step, e.g. stacking histograms or performing a
-  fit, a subclass of Tool has to be created (varial.tools.Tool).
+  fit, a subclass of Tool (``varial.tools.Tool``) has to be created.
 
   Every tool has its own output directory, in which results are automatically
   stored. Tools can be put into toolchain, which are also represented by
@@ -40,7 +40,8 @@ Furthermore, there are many utility functions with reasonable default settings.
 These help to get to first results fast. Starting from first results,
 everything can be customized up to publication-ready plots.
 
-TODO intro.rst link
+See :ref:`getting-started` for installation and running first
+examples.
 
 
 Contents:
@@ -48,19 +49,10 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   intro.rst
+   getting-started.rst
    examples.rst
-   reference.rst
+   api-reference.rst
 
-
-Jump to module:
-
-.. toctree::
-   :maxdepth: 1
-
-   generators.rst
-   wrappers.rst
-   rendering.rst
 
 
 Indices and tables

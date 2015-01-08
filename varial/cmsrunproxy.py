@@ -1,3 +1,7 @@
+"""
+Host cmsRun processes in a toolchain.
+"""
+
 import glob
 import json
 import subprocess
@@ -17,7 +21,8 @@ import wrappers
 class CmsRunProcess(object):
     """
     This class hosts a cmsRun process.
-    cmsRun output is streamed into logfile.
+
+    cmsRun output is streamed into a logfile.
     """
 
     def __init__(self, sample_inst, try_reuse_data, cfg_filename):
@@ -51,11 +56,11 @@ class CmsRunProcess(object):
                          use_file_service,
                          output_module_name,
                          common_builtins):
-        """
-        Takes all infos about the cmsRun to be started and builds a
-        configuration file with python code, which is passed to cmsRun on
-        calling start().
-        """
+        #"""
+        #Takes all infos about the cmsRun to be started and builds a
+        #configuration file with python code, which is passed to cmsRun on
+        #calling start().
+        #"""
 
         # collect lines to write out at once.
         conf_lines = [
@@ -133,11 +138,6 @@ class CmsRunProcess(object):
                 conf_file.write(line + "\n")
 
     def write_job_info(self, exit_code):
-        """
-        Writes start- and endtime as well as exitcode to the process info file
-        in settings.DIR_JOBINFO.
-        If self.sigint is true, it does not write anything.
-        """
         if settings.recieved_sigint:
             return
 
@@ -152,11 +152,6 @@ class CmsRunProcess(object):
             )
 
     def check_reuse_possible(self, check_for_file_service):
-        """
-        Checks if log, conf and file service files are present and if the
-        process was finished successfully before. If yes returns True,
-        because the previous results can be used again.
-        """
         if not self.try_reuse_data:
             return False
         if not os.path.exists(self.log_filename):
@@ -195,9 +190,6 @@ class CmsRunProcess(object):
             self.write_job_info(self.subprocess.returncode)
 
     def start(self):
-        """
-        Start cmsRun with conf-file.
-        """
         self.time_start = time.ctime()
 
         # delete jobinfo file
@@ -217,8 +209,23 @@ class CmsRunProcess(object):
 
 
 class CmsRunProxy(toolinterface.Tool):
-    """Tool to embed cmsRun execution into varial toolchains."""
+    """
+    Tool to embed cmsRun execution into varial toolchains.
 
+    For every job, a seperate CMSSW config is writen, that imports the given
+    main config file.
+
+    :param cfg_filename:        str, path to cmsRun-config,
+                                e.g. `MySubSystem.MyPackage.config_cfg'`
+    :param use_file_service:    bool, fileservice in CMSSW config?
+                                default: ``True``
+    :param output_module_name:  str, name of output module in CMSSW config
+                                default: ``out``
+    :param common_builtings:    dict, write to ``__builtin__`` section of the
+                                config
+                                default: ``None``
+    :param name:                str, tool name
+    """
     def __init__(self,
                  cfg_filename,
                  use_file_service=True,

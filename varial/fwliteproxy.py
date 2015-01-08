@@ -1,3 +1,8 @@
+"""
+Host fwlite jobs in a toolchain. **EXPERIMENTAL!**
+"""
+
+
 import subprocess
 import time
 from os.path import exists, join
@@ -11,6 +16,9 @@ import wrappers
 
 
 class FwliteProxy(toolinterface.Tool):
+    """
+    This class hosts a series of fwlite processes.
+    """
     def __init__(self,
                  fwlite_exe,
                  name=None):

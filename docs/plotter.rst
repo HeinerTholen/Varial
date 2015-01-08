@@ -1,13 +1,13 @@
-.. _history-module:
+.. _plotter-module:
 
 ==============
-Module history
+Module plotter
 ==============
 
 
 Module documentation
 ====================
 
-.. automodule:: varial.history
+.. automodule:: varial.plotter
    :members:
 

@@ -1,3 +1,5 @@
+.. _getting-started:
+
 ===============
 Getting started
 ===============
@@ -92,3 +94,4 @@ as I try to make things modular and understandable. Feedback is very welcome!
 Again: Generators are important!
 Checkout http://www.dabeaz.com/generators/index.html and the python
 itertools package at http://docs.python.org/2/library/itertools.html .
+

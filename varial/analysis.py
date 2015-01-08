@@ -1,5 +1,19 @@
 """
-This module containes all analysis specific information and various helpers.
+All analysis specific information is kept here.
+
+This module has data members that can be accessed from the outside:
+
+=============== ===============================================================
+all_samples     dict(str => sample instance)
+active_samples  list of str.
+                These samples are *active*, which means that certain functions,
+                e.g. for stacking histograms, will only select histograms from
+                these samples. Thus, sets of systematic samples can be treated
+                consistently.
+cwd             str
+                current working directory (set by the tool that's currently
+                active)
+=============== ===============================================================
 """
 import os
 
@@ -7,7 +21,7 @@ import os
 ################################################################### samples ###
 import settings
 import wrappers
-active_samples = []  # list of samplenames without systematic samples
+active_samples = []  # list of samplenames
 all_samples = {}
 
 
@@ -53,12 +67,12 @@ def data_lumi_sum_wrp():
 
 
 def get_pretty_name(key):
-    """Simple dict call for names, e.g. axis labels."""
+    """Utility function for re-labeling stuff."""
     return settings.pretty_names.get(key, key)
 
 
 def get_color(sample_or_legend_name, default=0):
-    """Gives a ROOT color value back for sample or legend name."""
+    """Returns a ROOT color value for sample or legend name."""
     name = sample_or_legend_name
     if name in all_samples:
         name = all_samples[name].legend
@@ -72,7 +86,7 @@ def get_color(sample_or_legend_name, default=0):
 
 
 def get_stack_position(sample):
-    """Returns the stacking position (integer)"""
+    """Returns the stacking position (sortable str)"""
     s = settings
     if sample in all_samples:
         legend = all_samples[sample].legend
@@ -148,6 +162,15 @@ def _lookup(key):
 
 
 def lookup(key, default=None):
+    """
+    Lookup the result of tool.
+
+    :param key:     str, e.g. ``/MyToolChain/MyFirstTool`` (absolute path)
+                    or ``../MyFirstTool`` (relative path)
+    :returns:       Wrapper
+                    or list of Wrappers
+                    or None
+    """
     res = _lookup(key)
     if res and res.result:
         return res.result
@@ -156,17 +179,37 @@ def lookup(key, default=None):
 
 
 def lookup_path(key):
+    """
+    Lookup the absolute path of a tool.
+
+    :param key:     str, e.g. ``../MyFirstTool`` (relative path)
+    :returns:       str
+    """
     res = _lookup(key)
     return res.path if res else ""
 
 
 def lookup_parent_name(key):
+    """
+    Lookup the name of the parent of a tool.
+
+    :param key:     str, e.g. ``/MyToolChain/MyFirstTool`` (absolute path)
+                    or ``../MyFirstTool`` (relative path)
+    :returns:       str
+    """
     res = _lookup(key)
     if res and res.parent:
         return res.parent.name
 
 
 def lookup_children_names(key):
+    """
+    Lookup the names of the childrens of a tool.
+
+    :param key:     str, e.g. ``/MyToolChain/MyFirstTool`` (absolute path)
+                    or ``../MyFirstTool`` (relative path)
+    :returns:       list of str
+    """
     res = _lookup(key)
     if res:
         return res.children.keys()
@@ -178,7 +221,21 @@ fs_wrappers = {}
 
 
 def fileservice(section_name, autosave=True):
-    """Return FileService Wrapper for automatic storage."""
+    """
+    Return FileService Wrapper for automatic storage.
+
+    This function returns a wrapper to collect and automatically store
+    histograms. When called with ``autosave=True`` (default option), the
+    wrappers will be store when python exits and all wrappers will be stored
+    into one file, where the ``section_name`` argument is the directory in
+    which all histograms are stored in the rootfile.
+
+    :param section_name:    str, name of the directory in the fileservice
+                            output, where all histograms on the wrapper are
+                            stored.
+    :param autosave:        bool, default: ``True``
+    :returns:               FileServiceWrapper
+    """
     if autosave:
         if section_name in fs_wrappers:
             raise RuntimeError(

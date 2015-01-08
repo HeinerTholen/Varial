@@ -10,6 +10,12 @@ import wrappers
 class WebCreator(toolinterface.Tool):
     """
     Generates webpages for all directories.
+
+    WebCreator instanciates itself recursively for every directory.
+
+    :param name:            str, tool name
+    :param working_dir:     str, directory to start with.
+    :param is_base:         bool, **Do not touch! =)**
     """
 
     def __init__(self, name=None, working_dir="", is_base=True):
@@ -55,7 +61,6 @@ class WebCreator(toolinterface.Tool):
             break
 
     def go4subdirs(self):
-        """Walk of subfolders and start instances. Remove empty dirs."""
         for sf in self.subfolders[:]:
             path = os.path.join(self.working_dir, sf)
             inst = self.__class__(self.name, path, False)
@@ -178,14 +183,12 @@ class WebCreator(toolinterface.Tool):
         self.web_lines += ["", "</body>", "</html>", ""]
 
     def write_page(self):
-        """Write to disk."""
         for i, l in enumerate(self.web_lines):
             self.web_lines[i] += "\n"
         with open(os.path.join(self.working_dir, "index.html"), "w") as f:
             f.writelines(self.web_lines)
 
     def run(self):
-        """Run the single steps."""
         self.io.use_analysis_cwd = False
         self.configure()
         if not self.image_postfix:

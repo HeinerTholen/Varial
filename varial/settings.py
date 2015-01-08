@@ -1,5 +1,8 @@
 """
 This module contains project wide settings.
+
+Everything can be set from the outside. Checkout the source code for further
+reference.
 """
 
 
@@ -17,6 +20,7 @@ max_open_root_files = 998
 
 
 def logfilename():
+    """Generate a logfile name with timestamp."""
     return time.strftime(
         os.path.join(varial_working_dir,
                      ".varial_logs/varial_%Y%m%dT%H%M%S.log"),
@@ -69,10 +73,10 @@ from ROOT import gROOT, gStyle, TColor, TStyle, TGaxis
 
 
 class StyleClass(TStyle):
-    """
-    Sets all ROOT style variables.
-    Places self as new ROOT style.
-    """
+    #"""
+    #Sets all ROOT style variables.
+    #Places self as new ROOT style.
+    #"""
     def __init__(self):
         super(StyleClass, self).__init__("CmsRootStyle", "CmsRootStyle")
 

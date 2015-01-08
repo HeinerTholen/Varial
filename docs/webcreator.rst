@@ -1,13 +1,13 @@
-.. _generators-module:
+.. _webcreator-module:
 
 =================
-Module generators
+Module webcreator
 =================
 
 
 Module members
 ==============
 
-.. automodule:: varial.generators
+.. automodule:: varial.webcreator
    :members:
 

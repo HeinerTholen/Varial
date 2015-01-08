@@ -1,3 +1,7 @@
+"""
+Main. This module should be used for complete analysis setups.
+"""
+
 import ast
 import atexit
 import signal
@@ -71,7 +75,7 @@ toolchain = None
 
 def main(**main_kwargs):
     """
-    Processing and post processing.
+    Configure varial and run a toolchain.
 
     :param main_kwargs:             settings parameters given as keyword
                                     arguments are added to settings, e.g.

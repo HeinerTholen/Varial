@@ -1,3 +1,11 @@
+"""
+Read/Write wrappers to disk.
+
+On disk, a wrapper is represented by a .info file. If it contains root objects,
+there's a .root file with the same name in the same directory.
+"""
+
+
 import glob
 import resource
 from os.path import abspath, basename, dirname, exists, join
@@ -21,9 +29,9 @@ except ValueError:
     pass
 
 
-class NoDictInFileError(Exception): pass
-class NoObjectError(Exception): pass
-class NoHistogramError(Exception): pass
+class NoDictInFileError(RuntimeError): pass
+class NoObjectError(RuntimeError): pass
+class NoHistogramError(RuntimeError): pass
 
 
 ################################################################# file refs ###
@@ -90,7 +98,7 @@ def write(wrp, filename=None, suffices=(), mode='RECREATE'):
 
 
 def _write_wrapper_info(wrp, file_handle):
-    """Serializes Wrapper to python code dict."""
+    #"""Serializes Wrapper to python code dict."""
     history, wrp.history = wrp.history, str(wrp.history)
     file_handle.write(wrp.pretty_writeable_lines() + " \n\n")
     file_handle.write(wrp.history + "\n")
@@ -98,7 +106,7 @@ def _write_wrapper_info(wrp, file_handle):
 
 
 def _write_wrapper_objs(wrp, file_handle):
-    """Writes root objects on wrapper to disk."""
+    #"""Writes root objects on wrapper to disk."""
     wrp.root_file_obj_names = {}
     if isinstance(wrp, wrappers.FileServiceWrapper):
         dirfile = file_handle.mkdir(wrp.name, wrp.name)
@@ -137,7 +145,7 @@ def read(filename):
 
 
 def _read_wrapper_info(file_handle):
-    """Instaciates Wrapper from info file, without root objects."""
+    #"""Instaciates Wrapper from info file, without root objects."""
     lines = takewhile(lambda l: l!="\n", file_handle)
     lines = (l.strip() for l in lines)
     lines = "".join(lines)
@@ -174,7 +182,10 @@ def get(filename, default=None):
     if fname[-5:] == ".info":
         fname = fname[:-5]
     if exists('%s.info' % fname):
-        return read(filename)
+        try:
+            return read(filename)
+        except RuntimeError:
+            return default
     else:
         return default
 
@@ -238,9 +249,7 @@ def load_bare_object(alias):
 
 
 def load_histogram(alias):
-    """
-    Returns a wrapper with a fileservice histogram.
-    """
+    """Returns a wrapper with a fileservice histogram."""
     histo = load_bare_object(alias)
     if not isinstance(histo, TH1):
         raise NoHistogramError(

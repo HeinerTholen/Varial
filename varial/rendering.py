@@ -1,3 +1,23 @@
+"""
+From histogram data to graphical plots.
+
+The members of this package make plots from histograms or other wrapped
+ROOT-objects. The 'Renderers' extend the functionality of wrappers for drawing.
+The ROOT-canvas is build with the ``CanvasBuilder`` class.
+
+Decorators can be used for customization of a ``CanvasBuilder`` instance.
+They provide ways to add content to canvases, like a legend, boxes, lines,
+text, etc.. See :ref:`decorator-module` for details on the decorator
+implementation. Apply as below (e.g. with a 'Legend' or a 'TextBox'
+Decorator)::
+
+    cb = CanvasBuilder(wrappers)
+    cb = Legend(cb, x1=0.2, x2=0.5)             # wrap cb with Legend
+    cb = Textbox(cb, text="Some boxed Text")    # wrap Legend with Textbox
+    canvas_wrp = cb.build_canvas()
+"""
+
+
 ################################################################# renderers ###
 import collections
 import ROOT

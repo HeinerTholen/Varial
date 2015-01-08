@@ -1,13 +1,13 @@
-.. _history-module:
+.. _monitor-module:
 
 ==============
-Module history
+Module monitor
 ==============
 
 
 Module documentation
 ====================
 
-.. automodule:: varial.history
+.. automodule:: varial.monitor
    :members:
 

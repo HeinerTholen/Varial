@@ -8,9 +8,7 @@ import settings
 
 
 class Messenger(object):
-    """
-    Message stub. Used to connect to Monitor.
-    """
+    #"""Message stub. Used to connect to monitor module."""
     def __init__(self, connected_obj):
         super(Messenger, self).__init__()
         self.connected_obj = connected_obj
@@ -110,6 +108,12 @@ def started(obj, message_obj):
 
 
 def message(sender, string):
+    """
+    Send a logmessage.
+
+    :param sender:  str or Tool instance
+    :param string:  str, message string
+    """
     if hasattr(sender, "name"):
         sender = sender.name
     elif not type(sender) == str:

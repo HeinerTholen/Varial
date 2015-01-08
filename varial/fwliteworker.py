@@ -1,3 +1,7 @@
+"""
+Support framework for fwlite processing. **EXPERIMENTAL!**
+"""
+
 import ROOT
 import itertools
 import subprocess
@@ -14,18 +18,21 @@ import wrappers
 
 ############################################ executed in parallel processes ###
 class FwliteWorker(object):
-    """This class is to be subclassed."""
+    """Baseclass for fwlite jobs."""
     def __init__(self, name):
         self.name = name
         self.result = wrappers.FileServiceWrapper(name=name)
 
     def node_setup(self, event_handle_wrp):
+        """Setup"""
         pass
 
     def node_process_event(self, event):
+        """Process event"""
         pass
 
     def node_finalize(self, event_handle_wrp):
+        """Finalize"""
         pass
 
 
