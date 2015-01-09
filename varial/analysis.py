@@ -161,7 +161,7 @@ def _lookup(key):
         return results_base.lookup(keys)
 
 
-def lookup(key, default=None):
+def lookup_result(key, default=None):
     """
     Lookup the result of tool.
 

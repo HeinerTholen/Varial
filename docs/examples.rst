@@ -27,6 +27,15 @@ Make a tool
    :members:
 
 
+.. _make-a-toolchain-example:
+
+Make a toolchain
+================
+
+.. automodule:: varial_example.make_a_toolchain
+   :members:
+
+
 .. _sampledefinition-example:
 
 Sample definition
@@ -51,6 +60,15 @@ Basic setup and running
 =======================
 
 .. automodule:: varial_example.config
+   :members:
+
+
+.. _more_plotting-example:
+
+More plotting
+=============
+
+.. automodule:: varial_example.more_plotting
    :members:
 
 

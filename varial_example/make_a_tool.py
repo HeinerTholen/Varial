@@ -22,19 +22,19 @@ class MyHistoNormalizer(tools.Tool):
     :param path:            str, path to look for rootfiles,
                             default: ``'.'``
     """
-    def __init__(self, filter_keyfunc, path='*.root'):
+    def __init__(self, filter_keyfunc, pattern='*.root'):
         super(MyHistoNormalizer, self).__init__()
         self.filter_keyfunc = filter_keyfunc
-        self.path = path
+        self.pattern = pattern
 
     def run(self):
         """
         Load, normalize, store. All done with generators.
         """
         # use a chain of generator, starting with aliases
-        my_hists = gen.dir_content(dir_path=self.path)
+        my_hists = gen.dir_content(dir_path=self.pattern)
         # my_hists is a _generator_ of aliases!
-        # you could make a list with my_hists = list(my_hists)
+        # you could convert it to a list with my_hists = list(my_hists)
 
         # filter them
         my_hists = itertools.ifilter(self.filter_keyfunc, my_hists)
@@ -44,8 +44,12 @@ class MyHistoNormalizer(tools.Tool):
         my_hists = gen.load(my_hists)
         # my_hists is again a generator, this time of histograms
 
+        # instead of loading histograms from disk, you could use the result
+        # of a previous tool:
+        # my_hists = self.lookup_result('../AnotherTool')
+
         # perform the normalization
-        my_hists = gen.gen_norm_to_integral(my_hists)
+        my_hists = gen.gen_norm_to_integral(my_hists, use_bin_width=False)
         # my_hists is again a generator, but the output is normalized
 
         # pull everything through the pipe (and thus perform the operations)

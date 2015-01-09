@@ -10,7 +10,7 @@ import toolinterface
 
 
 _group_th2d_iter = iter(xrange(9999))
-def plot_grouper(wrps):
+def stack_grouper(wrps):
     # enumerate th2d wrappers, so they get their own groups
     return gen.group(wrps, key_func=lambda w: w.analyzer+"_"+w.name+(
         "%03d" % next(_group_th2d_iter)
@@ -26,7 +26,7 @@ def overlay_colorizer(wrps, colors=None):
         yield w
 
 
-class FSPlotter(toolinterface.Tool):
+class Plotter(toolinterface.Tool):
     """
     A plotter. Makes stacks and overlays data by default.
 
@@ -38,14 +38,16 @@ class FSPlotter(toolinterface.Tool):
     ...    'filter_keyfunc': None,
     ...    'load_func': gen.fs_filter_active_sort_load,
     ...    'hook_loaded_histos': None,
-    ...    'plot_grouper': plot_grouper,
-    ...    'plot_setup': lambda w: gen.mc_stack_n_data_sum(w, None, True),
+    ...    'stack_grouper': stack_grouper,
+    ...    'plot_grouper': lambda wrps: ((w,) for w in wrps),
+    ...    'stack_setup': lambda w: gen.mc_stack_n_data_sum(w, None, True),
+    ...    'plot_setup': lambda wrps: wrps,
     ...    'hook_canvas_pre_build': None,
     ...    'hook_canvas_post_build': None,
     ...    'save_log_scale': False,
     ...    'save_lin_log_scale': False,
     ...    'keep_content_as_result': False,
-    ...    'save_name_lambda': lambda wrp: wrp.name,
+    ...    'save_name_func': lambda wrp: wrp.name,
     ...    'canvas_decorators': [
     ...        rendering.BottomPlotRatioSplitErr,
     ...        rendering.Legend
@@ -57,14 +59,16 @@ class FSPlotter(toolinterface.Tool):
         'filter_keyfunc': None,
         'load_func': gen.fs_filter_active_sort_load,
         'hook_loaded_histos': None,
-        'plot_grouper': plot_grouper,
-        'plot_setup': lambda w: gen.mc_stack_n_data_sum(w, None, True),
+        'stack_grouper': stack_grouper,
+        'plot_grouper': lambda wrps: ((w,) for w in wrps),
+        'stack_setup': lambda w: gen.mc_stack_n_data_sum(w, None, True),
+        'plot_setup': lambda wrps: wrps,
         'hook_canvas_pre_build': None,
         'hook_canvas_post_build': None,
         'save_log_scale': False,
         'save_lin_log_scale': False,
         'keep_content_as_result': False,
-        'save_name_lambda': lambda wrp: wrp.name,
+        'save_name_fnuc': lambda wrp: wrp.name,
         'canvas_decorators': [
             rendering.BottomPlotRatioSplitErr,
             rendering.Legend
@@ -74,26 +78,29 @@ class FSPlotter(toolinterface.Tool):
     class NoFilterDictError(Exception):
         pass
 
-    def __init__(self, name=None, **kws):
-        super(FSPlotter, self).__init__(name)
+    def __init__(self, name=None, stack=False, **kws):
+        super(Plotter, self).__init__(name)
         defaults = dict(self.defaults_attrs)
         defaults.update(self.__dict__)  # do not overwrite user stuff
         defaults.update(kws)            # add keywords
         self.__dict__.update(defaults)  # set attributes in place
         self.stream_content = None
         self.stream_canvas = None
+        if stack:
+            self.plot_setup = self.stack_setup
+            self.plot_grouper = self.stack_grouper
 
     def configure(self):
         pass
 
     def load_content(self):
         if self.input_result_path:
-            wrps = self.lookup(self.input_result_path)
+            wrps = self.lookup_result(self.input_result_path)
             if not wrps:
                 raise RuntimeError(
                     'ERROR Input not found: "%s"' % self.input_result_path)
         else:
-            wrps = self.lookup('../FSHistoLoader')
+            wrps = self.lookup_result('../HistoLoader')
         if wrps:
             if self.filter_keyfunc:
                 wrps = itertools.ifilter(self.filter_keyfunc, wrps)
@@ -152,14 +159,14 @@ class FSPlotter(toolinterface.Tool):
         if self.save_lin_log_scale:
             self.stream_canvas = gen.save_canvas_lin_log(
                 self.stream_canvas,
-                self.save_name_lambda,
+                self.save_name_func,
             )
         else:
             if self.save_log_scale:
                 self.stream_canvas = gen.switch_log_scale(self.stream_canvas)
             self.stream_canvas = gen.save(
                 self.stream_canvas,
-                self.save_name_lambda,
+                self.save_name_func,
             )
 
     def run_sequence(self):
@@ -202,7 +209,7 @@ class RootFilePlotter(toolinterface.ToolChain):
 
         ROOT.gROOT.SetBatch()
         if not plotter_factory:
-            plotter_factory = FSPlotter
+            plotter_factory = Plotter
         aliases = diskio.generate_aliases(self.rootfile)
         aliases = itertools.ifilter(
             lambda a: type(a.type) == str and a.type.startswith('TH'),

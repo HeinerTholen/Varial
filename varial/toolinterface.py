@@ -57,8 +57,8 @@ class _ToolBase(object):
         self.message.finished()
 
     @staticmethod
-    def lookup(key, default=None):
-        return analysis.lookup(key, default)
+    def lookup_result(key, default=None):
+        return analysis.lookup_result(key, default)
 
 
 class Tool(_ToolBase):

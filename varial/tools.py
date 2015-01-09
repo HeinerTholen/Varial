@@ -13,6 +13,7 @@ FwliteProxy         :ref:`fwliteproxy-module`
 =================== ==========================
 """
 
+import itertools
 import glob
 import os
 import shutil
@@ -31,31 +32,44 @@ from toolinterface import \
     ToolChainVanilla
 from cmsrunproxy import CmsRunProxy
 from fwliteproxy import FwliteProxy
-from plotter import FSPlotter, RootFilePlotter
+from plotter import Plotter, RootFilePlotter
 from webcreator import WebCreator
 
 
-class FSHistoLoader(Tool):
+class HistoLoader(Tool):
     """
-    Loads histograms from fileservice.
+    Loads histograms from any rootfile or from fileservice.
 
     :param name:                str, tool name
-    :param filter_keyfunc:      lambda, keyfunction with one argument
+    :param pattern:             str, pattern for filesearch, e.g. '*.root',
+                                default: None (load from fileservice)
+    :param filter_keyfunc:      lambda, keyfunction with one argument,
                                 default: ``None`` (load all histograms)
-    :param hook_loaded_histos:  generator to be applied after loading
+    :param hook_loaded_histos:  generator to be applied after loading,
                                 default: ``None``
-    :param io:                  io module
+    :param io:                  io module,
                                 default: ``dbio``
     """
-    def __init__(self, name=None, filter_keyfunc=None,
-                 hook_loaded_histos=None, io=dbio):
-        super(FSHistoLoader, self).__init__(name)
+    def __init__(self,
+                 pattern=None,
+                 filter_keyfunc=None,
+                 hook_loaded_histos=None,
+                 io=dbio,
+                 name=None):
+        super(HistoLoader, self).__init__(name)
+        self.pattern = pattern
         self.filter_keyfunc = filter_keyfunc
         self.hook_loaded_histos = hook_loaded_histos
         self.io = io
 
     def run(self):
-        wrps = gen.fs_filter_active_sort_load(self.filter_keyfunc)
+        if self.pattern:
+            wrps = gen.dir_content(self.pattern)
+            wrps = itertools.ifilter(self.filter_keyfunc, wrps)
+            wrps = gen.sort(wrps)
+            wrps = gen.load(wrps)
+        else:
+            wrps = gen.fs_filter_active_sort_load(self.filter_keyfunc)
         if self.hook_loaded_histos:
             wrps = self.hook_loaded_histos(wrps)
         self.result = list(wrps)
@@ -156,7 +170,7 @@ class SampleNormalizer(Tool):
         factor = dh.Integral(*bins) / mh.Integral(*bins)
         canv = next(gen.canvas(
             ((mcee, data),),
-            FSPlotter.defaults_attrs['canvas_decorators']
+            Plotter.defaults_attrs['canvas_decorators']
         ))
         return factor, canv
 
