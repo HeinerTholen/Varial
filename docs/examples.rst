@@ -9,6 +9,15 @@ On this page you find some example packages, which all reside in the
 right for the individual modules.
 
 
+.. _plot-root-files-example:
+
+Plot root files
+===============
+
+.. automodule:: varial_example.plot_root_files
+   :members:
+
+
 .. _make-a-tool-example:
 
 Make a tool
@@ -18,9 +27,9 @@ Make a tool
    :members:
 
 
-.. _sample-definition-example:
+.. _sampledefinition-example:
 
-Sample Definition
+Sample definition
 =================
 
 .. automodule:: varial_example.sampledefinition

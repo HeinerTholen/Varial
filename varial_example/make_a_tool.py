@@ -3,8 +3,6 @@ Example on making your own tool.
 
 MyHistoNormalizer must be used in a toolchain, e.g.
 
-**Please click on [source] on right!**
-
 >>> from varial import tools
 >>> my_normalizer = MyHistoNormalizer(
 ...     lambda w: w.name == 'MyEtaSpektrumHistogram'

@@ -1,7 +1,5 @@
 """
 Settings example from an analysis.
-
-**Please click on [source] on right!**
 """
 
 

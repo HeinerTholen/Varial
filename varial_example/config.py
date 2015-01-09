@@ -4,8 +4,6 @@
 Basic analysis script. Does not actually work. But shows what can be done.
 
 Originally taken from https://github.com/HeinAtCERN/BTagDeltaR/blob/master/Analysis/python/varial_analysis.py
-
-**Please click on [source] on right!**
 """
 
 # import and configure root

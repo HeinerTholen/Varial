@@ -4,20 +4,44 @@
 Getting started
 ===============
 
-Prerequisites & Installation
-----------------------------
+Prerequisites
+=============
 
-ROOT
 
-optional: CMSSW
+For the efficient use of the histogram manipulation tools, knowledge about
+python generators and generator expressions is kind of crucial. A nice guide
+with practical application can be found at
+http://www.dabeaz.com/generators/index.html .
 
-For the efficient use of the post-processing tools, knowledge about python
-generators and generator expressions is crucial. A nice overview with practical
-application is given at http://www.dabeaz.com/generators/index.html .
+- Root is needed: http://root.cern.ch
+- CMSSW is optional
 
-git clone
 
-export PYTHONPATH=my_path_to_varial:PYTHONPATH
+Installation
+============
+
+Installation is simple::
+
+    git clone https://github.com/HeinAtCERN/Varial.git
+
+Add this to your ``.bashrc`` or ``.bash_profile``::
+
+    export PYTHONPATH=<your_path_to_varial>:PYTHONPATH
+
+
+Version-logging
+---------------
+
+**DISCLAIMER: The API is under permanent construction.** In order to ensure you
+can always get back to the Varial version you've build against, you should
+copy the ``pre-commit`` script in the Varial base directory to ``.git/hooks``
+in your own project. Make sure to add the correct path to Varial into the
+``pre-commit`` script. For every commit that you now do, the script will put a
+``VARIAL_VERSION`` file with the version hash of Varial into your project
+directory and commit it as well. You can later rollback Varial by changing into
+its directory and issuing::
+
+    git checkout <version hash here>
 
 
 Processing
@@ -57,7 +81,7 @@ Sample definition
 -----------------
 
 An exhaustive example of the definition of samples is given in the file
-``varial_examples/sampledefinition.py`` (link: :ref:`sample-definition-example`) along
+``varial_examples/sampledefinition.py`` (link: :ref:`sampledefinition-example`) along
 with a number of comments and explanations.
 
 Post-Processing

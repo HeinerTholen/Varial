@@ -2,8 +2,6 @@
 Sample definition from an analysis. Also colors and stacking order are set.
 
 Taken from https://github.com/HeinAtCERN/BTagDeltaR/blob/master/Analysis/python/ttdilep_samples.py
-
-**Please click on [source] on right!**
 """
 
 import ROOT
