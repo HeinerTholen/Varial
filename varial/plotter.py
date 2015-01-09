@@ -1,4 +1,5 @@
 import itertools
+import time
 import ROOT
 
 import analysis
@@ -253,6 +254,7 @@ class RootFilePlotter(toolinterface.ToolChain):
                     )
 
     def run(self):
+        time.sleep(1)
         old_aliases = analysis.fs_aliases
         if self.rootfile:
             analysis.fs_aliases = self.aliases

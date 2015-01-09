@@ -14,17 +14,13 @@ FwliteProxy         :ref:`fwliteproxy-module`
 """
 
 import glob
-import itertools
 import os
 import shutil
-import ROOT
 
 import analysis
 import dbio
 import diskio
 import generators as gen
-import rendering
-import sample
 import settings
 import wrappers
 
@@ -69,20 +65,24 @@ class CopyTool(Tool):
     """
     Copy contents of a directory. Preserves .htaccess files.
 
-    :param dest:    str, destination path
-    :param src:     str, source path
-                    default: ``''`` (copy everything in same directory)
-    :param ignore:  list,
-                    default: ("*.root", "*.pdf", "*.eps", "*.log", "*.info")
-    :param name:    str, tool name
+    :param dest:            str, destination path
+    :param src:             str, source path,
+                            default: ``''`` (copy everything in same directory)
+    :param ignore:          list,
+                            default:
+                            ("*.root", "*.pdf", "*.eps", "*.log", "*.info")
+    :param wipe_dest_dir:   bool, default: ``True``
+    :param name:            str, tool name
     """
     def __init__(self, dest, src='',
                  ignore=("*.root", "*.pdf", "*.eps", "*.log", "*.info"),
+                 wipe_dest_dir=True,
                  name=None):
         super(CopyTool, self).__init__(name)
         self.dest = dest
         self.src = src
         self.ignore = ignore
+        self.wipe_dest_dir = wipe_dest_dir
 
     def run(self):
         src = os.path.abspath(self.src or os.path.join(self.cwd, '..'))
@@ -95,8 +95,9 @@ class CopyTool(Tool):
                 shutil.copy2(htaccess, path)
 
         # clean dest dir and copy
-        for f in glob.glob(dest + '/*'):
-            shutil.rmtree(f, True)
+        if self.wipe_dest_dir:
+            for f in glob.glob(dest + '/*'):
+                shutil.rmtree(f, True)
         ign_pat = shutil.ignore_patterns(*self.ignore)
         for f in glob.glob(src + '/*'):
             if os.path.isdir(f):

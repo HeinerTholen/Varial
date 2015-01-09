@@ -62,6 +62,8 @@ A minimal configuration of the processing unit is given below::
 When executed, this code takes the sample definitions, sets up the cmsRun cfg
 files and runs them in the current working directory.
 
+TODO auto rerunning
+
 Settings
 --------
 

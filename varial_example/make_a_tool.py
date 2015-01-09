@@ -1,17 +1,11 @@
 """
-Example on making your own tool.
+Example on making a tool and using histogram generators.
 
-MyHistoNormalizer must be used in a toolchain, e.g.
-
->>> from varial import tools
->>> my_normalizer = MyHistoNormalizer(
-...     lambda w: w.name == 'MyEtaSpektrumHistogram'
-... )
->>> tc = tools.ToolChain(
-...     'MyToolChain',
-...     [my_normalizer]
-... )
->>> tc.run()
+The ``run`` method shows how to use histogram generators. For further reference
+have a look at the ``varial.generators`` module, where a lot of useful
+functions and generators are defined.
+MyHistoNormalizer must be used in a toolchain, as done in the
+``make_a_toolchain.py`` example.
 """
 
 import itertools
@@ -28,7 +22,7 @@ class MyHistoNormalizer(tools.Tool):
     :param path:            str, path to look for rootfiles,
                             default: ``'.'``
     """
-    def __init__(self, filter_keyfunc, path='.'):
+    def __init__(self, filter_keyfunc, path='*.root'):
         super(MyHistoNormalizer, self).__init__()
         self.filter_keyfunc = filter_keyfunc
         self.path = path
