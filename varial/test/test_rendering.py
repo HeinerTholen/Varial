@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 from ROOT import TCanvas
 from test_histotoolsbase import TestHistoToolsBase

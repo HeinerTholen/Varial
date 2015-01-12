@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import unittest
 from varial.operations import stack, NoLumiMatchError
 from varial.wrappers import HistoWrapper

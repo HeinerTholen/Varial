@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 from ROOT import TH1F
 from test_histotoolsbase import TestHistoToolsBase

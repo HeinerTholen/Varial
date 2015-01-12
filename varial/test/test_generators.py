@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 from ROOT import TH1F, TFile
 import varial.generators as gen
