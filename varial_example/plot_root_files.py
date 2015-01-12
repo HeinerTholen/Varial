@@ -24,10 +24,10 @@ pltr = varial.tools.mk_rootfile_plotter(
     pattern='*.root',   # file matching pattern
     flat=False          # recreate directory struction in rootfile
 )
-pltr.run()
 
-# run the WebCreator over it
-varial.tools.WebCreator().run()
+if __name__ == '__main__':
+    pltr.run()                          # run the plotter
+    varial.tools.WebCreator().run()     # run the WebCreator
 
 
 def dummy_func():
