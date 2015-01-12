@@ -7,7 +7,7 @@ The ROOT-canvas is build with the ``CanvasBuilder`` class.
 
 Decorators can be used for customization of a ``CanvasBuilder`` instance.
 They provide ways to add content to canvases, like a legend, boxes, lines,
-text, etc.. See :ref:`decorator-module` for details on the decorator
+text, etc.. See :ref:`util-module` for details on the decorator
 implementation. Apply as below (e.g. with a 'Legend' or a 'TextBox'
 Decorator)::
 
