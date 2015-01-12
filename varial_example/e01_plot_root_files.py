@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Plot all root files in the current directory and create a website.
+Simple script that dumps any rootfile in the same directory into a website.
 
 This script plots all rootfiles in the current working directory into a folder
 named *MyPlottedRootFiles*. It will reproduce the folder structure it finds in

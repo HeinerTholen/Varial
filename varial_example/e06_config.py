@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Basic analysis script. Execute me in the ``varial_examples`` directory.
+Basic analysis script. **Execute me in the** ``varial_examples`` **directory!**
 
 Originally taken from https://github.com/HeinAtCERN/BTagDeltaR/blob/master/Analysis/python/varial_analysis.py
 """

@@ -40,8 +40,7 @@ Furthermore, there are many utility functions with reasonable default settings.
 These help to get to first results fast. Starting from first results,
 everything can be customized up to publication-ready plots.
 
-See :ref:`getting-started` for installation and running first
-examples.
+See :ref:`getting-started` for installation and running examples.
 
 
 Contents:

@@ -5,8 +5,9 @@ Examples Package
 ================
 
 On this page you find some example packages, which all reside in the
-``varial_examples`` directory. **Please checkout the [source] links** on the
-right for the individual modules.
+``varial_examples`` directory.
+
+**Please use the [source] links** on the right.
 
 
 .. _plot-root-files-example:

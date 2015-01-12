@@ -31,10 +31,6 @@ Add this to your ``.bashrc`` or ``.bash_profile``::
 
     export PYTHONPATH=<your_path_to_varial>:PYTHONPATH
 
-
-Version-logging
----------------
-
 **DISCLAIMER: The API is under permanent construction.** In order to ensure you
 can always get back to the Varial version you've build against, you should
 copy the ``pre-commit`` script in the Varial base directory to ``.git/hooks``
@@ -47,41 +43,54 @@ its directory and issuing::
     git checkout <version hash here>
 
 
-TODO: Write the real 'getting started'
-======================================
+The real 'Getting Started'
+==========================
 
-Loose list of points:
-- introduce wrapping, operations and generators
-- What does a tool/toolchain do?
-- Automatic result handling
-- auto rerunning of Tools
-- make an analysis with and settings, samples
+Here's a simple list of points about central principles in Varial:
 
-Some intro to tools::
+- No histogram, graph or canvas flies around independently. They are
+  all wrapped in python objects that store meta information about them, e.g.
+  name, title, is_data, lumi, sample name, legend string, and more.
+  Here's the module with the Wrapper definitions: :ref:`wrapper-module`.
 
-    class MyTool(varial.postprocessing.PostProcTool):
-        def run(self):
-            # do some tool stuff here
+- Operations can be applied to wrapped histograms or iterables of them,
+  manipulating them or forming new ones, e.g. rebin, sum, stack, and others.
+  For better debuggability, operations are tracked in a history-object on each
+  wrapper. The history can be printed onscreen or be outputted as you like.
+  See :ref:`operations-module`.
+
+- Since operations can only handle individual histogram wrappers, the
+  generators module helps on streamlining the operations. Generators can be
+  connected like unix-pipes and allow for efficient code.
+  A lot of handy functions can be found in the :ref:`generators-module`.
+
+- But for building up an anaylsis, more is needed than handy functions: Tools
+  and toolchains provide a frame for every step in an analysis. Both create a
+  directory structure on the harddisk were all intermediate results are
+  stored. These intermediate results can be looked up by any following tool
+  with a simple function call.
+  By default, results of previous executions are reloaded if present on disk.
+  The examples :ref:`make-a-tool-example` and :ref:`make-a-toolchain-example`
+  show how to create and use tools and toolchains. All predefined tools are
+  collected in :ref:`tools-module`.
+
+- For completeness, :ref:`analysis-module`, :ref:`settings-module` and
+  :ref:`sample-module` provide options to configure Varial.
+
+- There are examples: :ref:`examples-package`.
 
 
-Sample definition
------------------
+Finally:
+========
 
-An exhaustive example of the definition of samples is given in the file
-``varial_examples/sampledefinition.py`` (link:
-:ref:`sampledefinition-example`) along with a number of comments and
-explanations.
+Feedback is very welcome, and so are pull-requests. The best place to ask a
+question or to discuss a bug is probably the issues section at github,
+https://github.com/HeinAtCERN/Varial/issues
+, or asking me directly.
 
-
-Take off
---------
-
-Checkout ``varial_examples/configexample.py`` and ``varial_examples/postproctools.py`` to see
-how the basic configuration works.
-This page provides you with some general knowledge about
-the ideas and concepts. It's always a good idea to look into the source code,
-as I try to make things modular and understandable. Feedback is very welcome!
-Again: Generators are important!
-Checkout http://www.dabeaz.com/generators/index.html and the python
-itertools package at  .
+Again: Generators super important,
+http://www.dabeaz.com/generators/index.html
+, as much as living and breathing in the consciousness of the Zen of Python,
+https://www.python.org/dev/peps/pep-0020/
+.
 
