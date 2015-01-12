@@ -15,11 +15,11 @@ ROOT.gROOT.ProcessLine('gErrorIgnoreLevel = kError;')
 import varial.main
 
 # these modules are also examples
-import sampledefinition         # sample definition
-import make_a_toolchain         # my normalization tool
+import e04_sampledefinition         # sample definition
+import e03_make_a_toolchain         # my normalization tool
 
 # list of all samples
-samples = sampledefinition.smp_emu_mc + sampledefinition.smp_emu_data
+samples = e04_sampledefinition.smp_emu_mc + e04_sampledefinition.smp_emu_data
 
 # all samples should be active, appart from plain TTbar
 active_samples = list(s.name for s in samples)
@@ -35,7 +35,7 @@ def main():
 
         # the toolchain is just an example and has nothing to do with the
         # samples and settings in the respective examples
-        toolchain=make_a_toolchain.tc,
+        toolchain=e03_make_a_toolchain.tc,
     )
 
 

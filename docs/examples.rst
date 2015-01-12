@@ -14,7 +14,7 @@ right for the individual modules.
 Plot root files
 ===============
 
-.. automodule:: varial_example.plot_root_files
+.. automodule:: varial_example.e01_plot_root_files
    :members:
 
 
@@ -23,7 +23,7 @@ Plot root files
 Make a tool
 ===========
 
-.. automodule:: varial_example.make_a_tool
+.. automodule:: varial_example.e02_make_a_tool
    :members:
 
 
@@ -32,7 +32,7 @@ Make a tool
 Make a toolchain
 ================
 
-.. automodule:: varial_example.make_a_toolchain
+.. automodule:: varial_example.e03_make_a_toolchain
    :members:
 
 
@@ -41,7 +41,7 @@ Make a toolchain
 Sample definition
 =================
 
-.. automodule:: varial_example.sampledefinition
+.. automodule:: varial_example.e04_sampledefinition
    :members:
 
 
@@ -50,7 +50,7 @@ Sample definition
 Settings profile
 ================
 
-.. automodule:: varial_example.settingsprofile
+.. automodule:: varial_example.e05_settingsprofile
    :members:
 
 
@@ -59,7 +59,7 @@ Settings profile
 Basic setup and running
 =======================
 
-.. automodule:: varial_example.config
+.. automodule:: varial_example.e06_config
    :members:
 
 
@@ -68,7 +68,7 @@ Basic setup and running
 More plotting
 =============
 
-.. automodule:: varial_example.more_plotting
+.. automodule:: varial_example.e07_more_plotting
    :members:
 
 

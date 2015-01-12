@@ -7,7 +7,7 @@ Originally taken from https://github.com/HeinAtCERN/BTagDeltaR/blob/master/Analy
 import os
 import varial.diskio
 import varial.tools
-import make_a_tool
+import e02_make_a_tool
 
 
 # You can make a fwlite job like this:
@@ -31,7 +31,7 @@ plot_plain = varial.tools.Plotter(
 )
 
 # use the histo normalizer example
-normalizer = make_a_tool.MyHistoNormalizer(
+normalizer = e02_make_a_tool.MyHistoNormalizer(
     pattern='../varial/test/fileservice/*.root',
     filter_keyfunc=lambda w: w.name == 'deltaErel'
 )
