@@ -41,7 +41,7 @@ class HistoLoader(Tool):
     Loads histograms from any rootfile or from fileservice.
 
     :param name:                str, tool name
-    :param pattern:             str, pattern for filesearch, e.g. '*.root',
+    :param pattern:             str, pattern for filesearch, e.g. ``*.root``,
                                 default: None (load from fileservice)
     :param filter_keyfunc:      lambda, keyfunction with one argument,
                                 default: ``None`` (load all histograms)
@@ -84,7 +84,7 @@ class CopyTool(Tool):
                             default: ``''`` (copy everything in same directory)
     :param ignore:          list,
                             default:
-                            ("*.root", "*.pdf", "*.eps", "*.log", "*.info")
+                            ``("*.root", "*.pdf", "*.eps", "*.log", "*.info")``
     :param wipe_dest_dir:   bool, default: ``True``
     :param name:            str, tool name
     """

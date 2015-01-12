@@ -211,7 +211,7 @@ def generate_fs_aliases(root_file_path, sample_inst):
 
 
 def generate_aliases(glob_path="./*.root"):
-    """Looks only for *.root files and produces aliases."""
+    """Looks for root files and produces aliases."""
     for filename in glob.iglob(glob_path):
         root_file = get_open_root_file(filename)
         for alias in _recursive_make_alias(

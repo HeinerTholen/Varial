@@ -149,7 +149,7 @@ def interleave(*grouped_wrps):
 
     ((a,b),(c,d)), ((1,2),(3,4)) => ((a,b,1,2), (c,d,3,4))
 
-    :param *grouped_wrps:   grouped iterators
+    :param grouped_wrps:    grouped iterators (multi-argument)
     :yields:                generator object
     """
     zipped = itertools.izip(grouped_wrps)
