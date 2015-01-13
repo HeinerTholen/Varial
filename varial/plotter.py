@@ -228,7 +228,7 @@ class RootFilePlotter(toolinterface.ToolChain):
                 plot_grouper=lambda wrps: ((w,) for w in wrps),
                 plot_setup=lambda ws: gen.mc_stack_n_data_sum(
                     ws, lambda w: '', True),
-                save_name_lambda=lambda w: '_'.join(
+                save_name_func=lambda w: '_'.join(
                     w._renderers[0].in_file_path),
                 canvas_decorators=[],
             )
@@ -255,7 +255,7 @@ class RootFilePlotter(toolinterface.ToolChain):
                         )
                     rfp.private_plotter = plotter_factory(
                         filter_keyfunc='Dummy',
-                        save_name_lambda=lambda w: w._renderers[0].name,
+                        save_name_func=lambda w: w._renderers[0].name,
                         load_func=_mk_loader(path[:-1]),
                         canvas_decorators=[],
                     )
