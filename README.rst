@@ -2,7 +2,7 @@
 Varial
 ======
 
-Toolkit for analysis with ROOT. No gui, only library.
+Toolkit for analysis with ROOT. No gui, just library.
 
 Documentation can be found at:
 http://desy.de/~tholenhe/varial_doc/html/index.html
