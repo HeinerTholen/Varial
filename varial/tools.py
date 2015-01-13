@@ -199,22 +199,36 @@ class SampleNormalizer(Tool):
 def mk_rootfile_plotter(name="RootFilePlots",
                         pattern='*.root',
                         flat=False,
-                        plotter_factory=None):
+                        plotter_factory=None,
+                        combine_files=False):
     """
     Make a plotter chain that plots all content of all rootfiles in cwd.
 
     :param name:                str, name of the folder in which the output is
                                 stored
+    :param pattern:             str, search pattern for rootfiles,
+                                default: ``*.root``
     :param flat:                bool, flatten the rootfile structure
                                 default: ``False``
     :param plotter_factory:     factory function for RootFilePlotter
                                 default: ``None``
+    :param combine_files:       bool, plot same histograms across rootfiles
+                                into the same canvas. Does not work together
+                                with ``flat`` option,
+                                default: ``False``
     """
-    plotters = list(
-        RootFilePlotter(f, plotter_factory, flat, name=f[:-5].split('/')[-1])
-        for f in glob.iglob(pattern)
-    )
-    return ToolChain(name, [ToolChain(name, plotters)])
+    if combine_files:
+        plotters = [RootFilePlotter(
+            pattern, plotter_factory, flat, name=name)]
+        tc = ToolChain(name, plotters)
+    else:
+        plotters = list(
+            RootFilePlotter(
+                f, plotter_factory, flat, name=f[:-5].split('/')[-1])
+            for f in glob.iglob(pattern)
+        )
+        tc = ToolChain(name, [ToolChain(name, plotters)])
+    return tc
 
 
 
