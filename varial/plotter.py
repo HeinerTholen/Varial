@@ -1,4 +1,6 @@
+import glob
 import itertools
+import os
 import time
 import ROOT
 
@@ -6,6 +8,7 @@ import analysis
 import diskio
 import generators as gen
 import rendering
+import settings
 import toolinterface
 
 
@@ -185,13 +188,25 @@ class Plotter(toolinterface.Tool):
         self.run_sequence()
 
 
+def _mk_legendnames(filenames):
+    # trims filesnames from front and back
+    lns = filenames[:]
+    while all(n[0] == lns[0][0] for n in lns):
+        for i in xrange(len(lns)):
+            lns[i] = lns[i][1:]
+    while all(n[-1] == lns[0][-1] for n in lns):
+        for i in xrange(len(lns)):
+            lns[i] = lns[i][:-1]
+    return lns
+
+
 class RootFilePlotter(toolinterface.ToolChain):
     """
     Plots all histograms in a rootfile.
 
     **NOTE: please use the** ``tools.mk_rootfile_plotter`` **function!**
 
-    :param rootfile:            str, name of the rootfile
+    :param rootfile:            str, search pattern for rootfiles
     :param plotter_factory:     factory function for RootFilePlotter
                                 default: ``None``
     :param flat:                bool, flatten the rootfile structure
@@ -206,7 +221,11 @@ class RootFilePlotter(toolinterface.ToolChain):
         self.rootfile = rootfile  # only the base instance has this
         if not rootfile:
             return
+        rootfiles = glob.glob(rootfile)
+        if not rootfiles:
+            return
 
+        # setup aliases
         ROOT.gROOT.SetBatch()
         if not plotter_factory:
             plotter_factory = Plotter
@@ -221,18 +240,38 @@ class RootFilePlotter(toolinterface.ToolChain):
         )
         self.aliases = aliases
 
-        if flat:                                    ### print all in one dir
+        # define some generators factories
+        def plot_grouper(wrps):
+            return gen.group(wrps,
+                             key_func=lambda w: "/".join(w.in_file_path))
+
+        legendnames = _mk_legendnames(rootfiles)
+        legendnames = dict(itertools.izip(rootfiles, legendnames))
+        self.message(
+            'INFO Here are the rootfiles and legend names that I will use: %s'
+            % str(legendnames)
+        )
+        colors = settings.default_colors[:len(rootfiles)]
+        def colorizer(wrps):
+            for w in gen.apply_linecolor(wrps, colors):
+                w.legend = legendnames[os.path.basename(w.file_path)]
+                yield w
+
+        # either print all in one dir...
+        if flat:
             self.private_plotter = plotter_factory(
                 filter_keyfunc='Dummy',
-                load_func=lambda _: gen.load(gen.fs_content()),
-                plot_grouper=lambda wrps: ((w,) for w in wrps),
+                load_func=lambda _: colorizer(gen.load(gen.fs_content())),
+                plot_grouper=plot_grouper,
                 plot_setup=lambda ws: gen.mc_stack_n_data_sum(
                     ws, lambda w: '', True),
                 save_name_func=lambda w: '_'.join(
                     w._renderers[0].in_file_path),
-                canvas_decorators=[],
+                canvas_decorators=[rendering.Legend],
             )
-        else:                                       ### resemble root file dirs
+
+        # ...or resemble root file dirs
+        else:
             for path in (a.in_file_path for a in self.aliases):
                 rfp = self
 
@@ -247,21 +286,28 @@ class RootFilePlotter(toolinterface.ToolChain):
                 # make plotter instance if not done already
                 if not rfp.private_plotter:
                     def _mk_loader(p):
-                        """Hack to create separate namespace for p"""
-                        return lambda _: gen.load(
-                            w
-                            for w in gen.fs_content()
-                            if w.in_file_path[:-1] == p
-                        )
+                        #"""This function creates a separate namespace for p"""
+                        def loader(_):
+                            wrps = gen.fs_content()
+                            wrps = itertools.ifilter(
+                                lambda w: w.in_file_path[:-1] == p,
+                                wrps
+                            )
+                            wrps = gen.load(wrps)
+                            wrps = colorizer(wrps)
+                            return wrps
+                        return loader
+
                     rfp.private_plotter = plotter_factory(
                         filter_keyfunc='Dummy',
+                        plot_grouper=plot_grouper,
                         save_name_func=lambda w: w._renderers[0].name,
                         load_func=_mk_loader(path[:-1]),
-                        canvas_decorators=[],
+                        canvas_decorators=[rendering.Legend],
                     )
 
     def run(self):
-        time.sleep(1)
+        time.sleep(1)  # wierd bug in root...
         old_aliases = analysis.fs_aliases
         if self.rootfile:
             analysis.fs_aliases = self.aliases

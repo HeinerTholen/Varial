@@ -15,7 +15,16 @@ On this page you find some example packages, which all reside in the
 Plot root files
 ===============
 
+All files separately
+--------------------
+
 .. automodule:: varial_example.e01_plot_root_files
+   :members:
+
+Combined plots from files with same structure
+---------------------------------------------
+
+.. automodule:: varial_example.e01_plot_root_files_combined
    :members:
 
 
