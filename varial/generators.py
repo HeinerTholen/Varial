@@ -301,7 +301,7 @@ import rendering as rnd
 
 def apply_fillcolor(wrps, colors=None):
     """
-    Uses ``histo.SetFillColor``. Colors from settings, if not given.
+    Uses ``histo.SetFillColor``. Colors from analysis module, if not given.
 
     :param wrps:    HistoWrapper iterable
     :param colors:  Integer list
@@ -321,7 +321,7 @@ def apply_fillcolor(wrps, colors=None):
 
 def apply_linecolor(wrps, colors=None):
     """
-    Uses ``histo.SetLineColor``. Colors from settings, if not given.
+    Uses ``histo.SetLineColor``. Colors from analysis module, if not given.
 
     :param wrps:    HistoWrapper iterable
     :param colors:  Integer list
@@ -354,7 +354,7 @@ def apply_linewidth(wrps, linewidth=2):
 
 def apply_markercolor(wrps, colors=None):
     """
-    Uses ``histo.SetMarkerColor``. Colors from settings, if not given.
+    Uses ``histo.SetMarkerColor``. Colors from analysis module, if not given.
 
     :param wrps:    HistoWrapper iterable
     :param colors:  Integer list
