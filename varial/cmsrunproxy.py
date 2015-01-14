@@ -93,6 +93,12 @@ class CmsRunProcess(object):
 
         # do input filename statements
         conf_lines.append("process.source.fileNames = [")
+        if not smpl.input_files:
+            self.message(
+                self.name,
+                "WARNING input_files seems to be undefined for sample %s."
+                % smpl.name
+            )
         for in_file in smpl.input_files:
             if in_file[:5] == "file:":
                 files_in_dir = glob.glob(in_file[5:])

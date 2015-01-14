@@ -116,6 +116,14 @@ class FwliteProxy(toolinterface.Tool):
     def _make_proxy(self):
         samples = analysis.samples()
 
+        for smpl in samples.itervalues():
+            if not smpl.input_files:
+                self.message(
+                    self.name,
+                    "WARNING input_files seems to be undefined for sample %s."
+                    % smpl.name
+                )
+
         self._proxy = diskio.get(
             'fwlite_proxy',
             wrappers.Wrapper(name='fwlite_proxy', files_done={}, results={})

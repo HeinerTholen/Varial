@@ -60,11 +60,6 @@ class Sample(wrappers.WrapperBase):
                 self.name,
                 "WARNING lumi or (x_sec and n_events) seems to be undefined."
             )
-        if not self.input_files:
-            monitor.message(
-                self.name,
-                "WARNING input_files seems to be undefined."
-            )
         if not self.legend:
             self.legend = self.name
 
