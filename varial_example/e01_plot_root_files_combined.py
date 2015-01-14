@@ -3,6 +3,7 @@
 """
 Just as e01_plot_root_files, but plots same hists into same canvases.
 
+Also normalizes histograms to integral.
 See the mk_rootfile_plotter call below.
 """
 
@@ -15,10 +16,16 @@ ROOT.gROOT.SetBatch()
 # import the tools module
 import varial.tools
 
+# plotter factory adds a hook for normalizing to hists
+def plotter_factory(**kws):
+    kws['hook_loaded_histos'] = varial.generators.gen_norm_to_integral
+    return varial.tools.Plotter(**kws)
+
 # get a plotter instance and run it (all arguments are optional)
 pltr = varial.tools.mk_rootfile_plotter(
-    name=outdir,        # output folder name
-    combine_files=True  # YES to combine_files!!!
+    name=outdir,                        # output folder name
+    plotter_factory=plotter_factory,    # use own factory
+    combine_files=True                  # YES to combine_files!!!
 )
 
 if __name__ == '__main__':

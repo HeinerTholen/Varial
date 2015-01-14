@@ -225,6 +225,8 @@ class RootFilePlotter(toolinterface.ToolChain):
         if not rootfiles:
             return
 
+        self.message('INFO Setting up RootFilePlotter')
+
         # setup aliases
         ROOT.gROOT.SetBatch()
         if not plotter_factory:
