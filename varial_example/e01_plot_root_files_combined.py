@@ -12,6 +12,7 @@ outdir = 'MyPlottedRootFilesCombined'
 # set root to batch mode (it opens an x-connection otherwise)
 import ROOT
 ROOT.gROOT.SetBatch()
+ROOT.gROOT.ProcessLine('gErrorIgnoreLevel = kError;')
 
 # import the tools module
 import varial.tools
