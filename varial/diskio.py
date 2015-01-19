@@ -71,6 +71,7 @@ def close_root_file(filename):
 
 ##################################################### read / write wrappers ###
 use_analysis_cwd = True
+_save_log = {}
 
 
 def write(wrp, filename=None, suffices=(), mode='RECREATE'):
@@ -81,6 +82,14 @@ def write(wrp, filename=None, suffices=(), mode='RECREATE'):
         filename = join(analysis.cwd, filename)
     if filename[-5:] == ".info":
         filename = filename[:-5]
+    # check for overwriting something
+    if filename in _save_log:
+        monitor.message(
+            'diskio.write',
+            'WARNING Overwriting file from this session: %s' % filename
+        )
+    else:
+        _save_log[filename] = True
     # save with suffices
     for suffix in suffices:
         wrp.primary_object().SaveAs(filename + suffix)
