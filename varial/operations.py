@@ -832,9 +832,9 @@ def eff(wrps, option='cl=0.683 b(1,1) mode'):
     2
     >>> hi = w3.graph.GetErrorYhigh(0)
     >>> lo = w3.graph.GetErrorYlow(0)
-    >>> abs(hi - 0.277375360987) < 1e-10
+    >>> abs(hi - 0.189572034007) < 1e-10
     True
-    >>> abs(lo - 0.414534706284) < 1e-10
+    >>> abs(lo - 0.236650832868) < 1e-10
     True
     """
     wrps = iterableize(wrps)

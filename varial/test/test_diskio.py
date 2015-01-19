@@ -46,7 +46,7 @@ class TestDiskio(TestHistoToolsBase):
     def test_load_histogram(self):
         test_alias = FileServiceAlias(
             "cutflow", "analyzeSelection", "fileservice/ttgamma.root",
-            analysis.all_samples["ttgamma"]
+            analysis.all_samples["ttgamma"], 'TH1F'
         )
         wrp = diskio.load_histogram(test_alias)
         self.assertEqual(wrp.name, test_alias.name)
@@ -64,10 +64,10 @@ class TestDiskio(TestHistoToolsBase):
             os.path.exists(fname)
         )
 
-        # file should have 7 lines (with history written out)
+        # file should have a couple of lines (with history written out)
         with open(fname) as fhandle:
             n_lines = len(list(fhandle))
-            self.assertEqual(n_lines, 21)
+            self.assertGreater(n_lines, 10)
 
     def test_read(self):
         fname = "test_data/wrp_load.info"

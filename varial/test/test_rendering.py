@@ -31,9 +31,9 @@ class TestRendering(TestHistoToolsBase):
         self.test_canvasBuilder_make()
         diskio.write(self.test_wrp, fname)
 
-        # file should have 23 lines (with history written out)
+        # file should have a couple of lines
         with open(fname) as fhandle:
-            self.assertEqual(len(list(fhandle)), 23)
+            self.assertGreater(len(list(fhandle)), 10)
 
 
 import unittest
