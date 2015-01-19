@@ -190,6 +190,8 @@ class Plotter(toolinterface.Tool):
 
 def _mk_legendnames(filenames):
     # trims filesnames from front and back
+    if len(filenames) < 2:
+        return filenames[:]
     lns = filenames[:]
     while all(n[0] == lns[0][0] for n in lns):
         for i in xrange(len(lns)):

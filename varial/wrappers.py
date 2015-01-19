@@ -113,6 +113,7 @@ class Wrapper(WrapperBase):
         self.name           = ""
         self.title          = self.name
         self.history        = ""
+        kws.pop('type', None)  # do not overwrite type
         self.__dict__.update(kws)
         self.klass          = self.__class__.__name__
 
@@ -126,6 +127,10 @@ class Wrapper(WrapperBase):
                 + str(obj)
                 + "."
             )
+        if isinstance(obj, TObject):
+            self.type = obj.ClassName()
+        else:
+            self.type = str(typ)
 
     def primary_object(self):
         """Overwrite! Should returned wrapped object."""

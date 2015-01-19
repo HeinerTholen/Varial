@@ -805,7 +805,7 @@ def chi2(wrps, x_min=0, x_max=0):
 
 @add_wrp_kws
 @history.track_history
-def eff(wrps, option=''):
+def eff(wrps, option='cl=0.683 b(1,1) mode'):
     """
     Applies to HistoWrappers only. Returns GraphWrapper. Takes lumi from first.
 
