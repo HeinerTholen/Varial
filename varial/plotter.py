@@ -245,9 +245,18 @@ class RootFilePlotter(toolinterface.ToolChain):
         self.aliases = aliases
 
         # define some generators factories
+        def rename_th2(wrps):
+            for wrp in wrps:
+                if 'TH2' in wrp.type:
+                    wrp.name += '_' + wrp.legend
+                    wrp.in_file_path[-1] += '_' + wrp.legend
+                yield wrp
+
         def plot_grouper(wrps):
-            return gen.group(wrps,
-                             key_func=lambda w: "/".join(w.in_file_path))
+            return gen.group(
+                rename_th2(wrps),
+                key_func=lambda w: "/".join(w.in_file_path)
+            )
 
         legendnames = _mk_legendnames(rootfiles)
         legendnames = dict(itertools.izip(rootfiles, legendnames))

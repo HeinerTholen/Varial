@@ -62,7 +62,7 @@ class HistoRenderer(Renderer, wrappers.HistoWrapper):
         super(HistoRenderer, self).__init__(wrp)
         if hasattr(wrp, "draw_option"):
             self.draw_option = wrp.draw_option
-        elif isinstance(self.histo, ROOT.TH2D):
+        elif 'TH2' in wrp.type:
             self.draw_option = "colz"
         elif self.is_data:
             self.draw_option = "E1X0"
