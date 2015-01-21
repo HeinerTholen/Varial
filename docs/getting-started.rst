@@ -29,7 +29,7 @@ Installation is simple::
 
 Add this to your ``.bashrc`` or ``.bash_profile``::
 
-    export PYTHONPATH=<your_path_to_varial>:PYTHONPATH
+    export PYTHONPATH=<your_path_to_varial>:$PYTHONPATH
 
 **DISCLAIMER: The API is under permanent construction.** In order to ensure you
 can always get back to the Varial version you've build against, you should
