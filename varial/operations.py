@@ -862,6 +862,7 @@ def eff(wrps, option='cl=0.683 b(1,1) mode'):
 
     graph = TGraphAsymmErrors(nominator.histo, denominator.histo, option)
     graph.GetXaxis().SetTitle(nominator.histo.GetXaxis().GetTitle())
+    graph.GetYaxis().SetTitle('efficiency')
     info = nominator.all_info()
     return wrappers.GraphWrapper(graph, **info)
 
