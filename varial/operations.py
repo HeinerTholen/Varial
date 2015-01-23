@@ -177,7 +177,7 @@ def diff(wrps):
     for wrp in wrps:
         if not isinstance(wrp, wrappers.HistoWrapper):
             raise WrongInputError(
-                "sum accepts only HistoWrappers. wrp: "
+                "diff accepts only HistoWrappers. wrp: "
                 + str(wrp)
             )
         if histo:
@@ -361,7 +361,7 @@ def div(wrps):
 @history.track_history
 def lumi(wrp):
     """
-    Applies to HistoWrapper. Returns FloatWrapper.
+    Requires ``lumi`` to be defined on wrp. Returns FloatWrapper.
     
     >>> from ROOT import TH1I
     >>> h1 = TH1I("h1", "", 2, .5, 2.5)
@@ -372,12 +372,11 @@ def lumi(wrp):
     >>> w2.float
     2.0
     """
-    if not isinstance(wrp, wrappers.HistoWrapper):
+    if not hasattr(wrp, 'lumi'):
         raise WrongInputError(
-            "lumi needs argument of type HistoWrapper. histo: "
+            "lumi needs ``lumi`` to be defined on wrp. wrp: "
             + str(wrp)
         )
-
     info = wrp.all_info()
     return wrappers.FloatWrapper(wrp.lumi, **info)
 
@@ -614,7 +613,7 @@ def mv_in(wrp, overflow=True, underflow=True):
     """
     if not isinstance(wrp, wrappers.HistoWrapper):
         raise WrongInputError(
-            "mv_bin needs argument of type HistoWrapper. histo: "
+            "mv_in needs argument of type HistoWrapper. histo: "
             + str(wrp)
         )
     histo = wrp.histo.Clone()
@@ -653,7 +652,7 @@ def integral(wrp, use_bin_width=False):
     """
     if not isinstance(wrp, wrappers.HistoWrapper):
         raise WrongInputError(
-            "int needs argument of type HistoWrapper. histo: "
+            "integral needs argument of type HistoWrapper. histo: "
             + str(wrp)
         )
     option = "width" if use_bin_width else ""

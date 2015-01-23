@@ -209,6 +209,27 @@ def _generate_op(op_func):
             yield op_func(wrp, *args, **kws)
     return gen_op
 
+
+def _generate_op_noex(op_func):
+    """
+    Same as ``_generate_op`` but catches ``op.WrongInputError``.
+
+    >>> from varial.wrappers import FloatWrapper
+    >>> gen_noex_mv_in = _generate_op_noex(op.mv_in)
+    >>> w1 = FloatWrapper(2.0)
+    >>> w2 = list(gen_noex_mv_in([w1]))  # WrongInputError is catched
+    >>> w1 == w2[0]
+    True
+    """
+    def gen_op_noex(wrps, *args, **kws):
+        for wrp in wrps:
+            try:
+                yield op_func(wrp, *args, **kws)
+            except op.WrongInputError:
+                yield wrp
+    return gen_op_noex
+
+
 gen_add_wrp_info        = _generate_op(op.add_wrp_info)
 gen_stack               = _generate_op(op.stack)
 gen_sum                 = _generate_op(op.sum)
@@ -228,6 +249,9 @@ gen_int_r               = _generate_op(op.int_r)
 gen_eff                 = _generate_op(op.eff)
 gen_th2d_projection_x   = _generate_op(op.th2d_projection_x)
 gen_th2d_projection_y   = _generate_op(op.th2d_projection_y)
+
+gen_noex_norm_to_lumi       = _generate_op_noex(op.norm_to_lumi)
+gen_noex_norm_to_integral   = _generate_op_noex(op.norm_to_integral)
 
 
 def gen_norm_to_data_lumi(wrps):
