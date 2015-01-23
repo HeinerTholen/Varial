@@ -901,6 +901,16 @@ def th2d_projection(wrp, projection,
     return wrappers.HistoWrapper(histo, **info)
 
 
+def th2d_projection_x(wrp, name='_p', firstbin=0, lastbin=-1, option='eo'):
+    """Proxy for th2d_projection."""
+    return th2d_projection(wrp, 'x', name, firstbin, lastbin, option)
+
+
+def th2d_projection_y(wrp, name='_p', firstbin=0, lastbin=-1, option='eo'):
+    """Proxy for th2d_projection."""
+    return th2d_projection(wrp, 'y', name, firstbin, lastbin, option)
+
+
 if __name__ == "__main__":
     import ROOT
     ROOT.TH1.AddDirectory(False)
