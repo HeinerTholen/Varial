@@ -174,7 +174,7 @@ def split_data_mc(wrps):
 import operations as op
 
 
-def generate_op(op_func):
+def _generate_op(op_func):
     """
     Transforms an operation with one argument into a generator.
 
@@ -192,11 +192,11 @@ def generate_op(op_func):
     >>> h1.Fill(3)
     2
     >>> w1 = [HistoWrapper(h1, lumi=2.)]
-    >>> gen_lumi = generate_op(op.lumi)
+    >>> gen_lumi = _generate_op(op.lumi)
     >>> w2 = list(gen_lumi(w1))
     >>> w2[0].float
     2.0
-    >>> gen_int = generate_op(op.integral)
+    >>> gen_int = _generate_op(op.integral)
     >>> w3 = list(gen_int(w1))
     >>> w3[0].float
     2.0
@@ -209,22 +209,25 @@ def generate_op(op_func):
             yield op_func(wrp, *args, **kws)
     return gen_op
 
-gen_stack               = generate_op(op.stack)
-gen_sum                 = generate_op(op.sum)
-gen_merge               = generate_op(op.merge)
-gen_prod                = generate_op(op.prod)
-gen_div                 = generate_op(op.div)
-gen_lumi                = generate_op(op.lumi)
-gen_norm_to_lumi        = generate_op(op.norm_to_lumi)
-gen_norm_to_integral    = generate_op(op.norm_to_integral)
-gen_copy                = generate_op(op.copy)
-gen_mv_in               = generate_op(op.mv_in)
-gen_rebin               = generate_op(op.rebin)
-gen_trim                = generate_op(op.trim)
-gen_integral            = generate_op(op.integral)
-gen_int_l               = generate_op(op.int_l)
-gen_int_r               = generate_op(op.int_r)
-gen_eff                 = generate_op(op.eff)
+gen_add_wrp_info        = _generate_op(op.add_wrp_info)
+gen_stack               = _generate_op(op.stack)
+gen_sum                 = _generate_op(op.sum)
+gen_merge               = _generate_op(op.merge)
+gen_prod                = _generate_op(op.prod)
+gen_div                 = _generate_op(op.div)
+gen_lumi                = _generate_op(op.lumi)
+gen_norm_to_lumi        = _generate_op(op.norm_to_lumi)
+gen_norm_to_integral    = _generate_op(op.norm_to_integral)
+gen_copy                = _generate_op(op.copy)
+gen_mv_in               = _generate_op(op.mv_in)
+gen_rebin               = _generate_op(op.rebin)
+gen_trim                = _generate_op(op.trim)
+gen_integral            = _generate_op(op.integral)
+gen_int_l               = _generate_op(op.int_l)
+gen_int_r               = _generate_op(op.int_r)
+gen_eff                 = _generate_op(op.eff)
+gen_th2d_projection_x   = _generate_op(op.th2d_projection_x)
+gen_th2d_projection_y   = _generate_op(op.th2d_projection_y)
 
 
 def gen_norm_to_data_lumi(wrps):
