@@ -854,6 +854,53 @@ def eff(wrps, option='cl=0.683 b(1,1) mode'):
     return wrappers.GraphWrapper(graph, **info)
 
 
+@history.track_history
+def th2d_projection(wrp, projection,
+                    name='_p', firstbin=0, lastbin=-1, option='eo'):
+    """
+    Applies to HistoWrapper with TH2 type. Returns HistoWrapper.
+
+    >>> from ROOT import TH2I
+    >>> h1 = TH2I("h1", "", 2, -.5, 1.5, 2, -.5, 1.5)
+    >>> h1.Fill(0,1)
+    9
+    >>> h1.Fill(1,1,2)
+    10
+    >>> h1.Fill(1,0,3)
+    6
+    >>> w1 = wrappers.HistoWrapper(h1)
+    >>> w2 = th2d_projection(w1, 'x')
+    >>> w2.histo.GetBinContent(1)
+    1.0
+    >>> w2.histo.GetBinContent(2)
+    5.0
+    >>> w2 = th2d_projection(w1, 'y')
+    >>> w2.histo.GetBinContent(1)
+    3.0
+    >>> w2.histo.GetBinContent(2)
+    3.0
+    """
+    projection = projection.lower()
+    if projection not in ('x', 'y'):
+        raise WrongInputError(
+            'th2d_projection needs ``projection`` argument to be one of '
+            '("x", "y"). projection: ' + str(projection)
+        )
+    if not (isinstance(wrp, wrappers.HistoWrapper) and 'TH2' in wrp.type):
+        raise WrongInputError(
+            'th2d_projection needs argument of type HistoWrapper with TH2 type '
+            'histo. Histo: ' + str(wrp)
+        )
+    name += projection
+    if projection == 'x':
+        histo = wrp.histo.ProjectionX(name, firstbin, lastbin, option)
+    else:
+        histo = wrp.histo.ProjectionY(name, firstbin, lastbin, option)
+    histo.SetDirectory(0)
+    info = wrp.all_info()
+    return wrappers.HistoWrapper(histo, **info)
+
+
 if __name__ == "__main__":
     import ROOT
     ROOT.TH1.AddDirectory(False)
