@@ -32,19 +32,23 @@ def iterableize(obj):
         return [obj]
 
 
-def add_wrp_kws(func):
-    """Pops 'wrp_kws' from given keywords and updates returned wrapper."""
+def add_wrp_info(wrp, **kw_funcs):
+    """
+    Updates wrapper with values from keyfunctions.
 
-    @functools.wraps(func)
-    def catch_wrp_kws(*args, **kws):
-        wrp_kws = kws.pop('wrp_kws', {})
-        ret = func(*args, **kws)
-        ret.__dict__.update(wrp_kws)
-        return ret
-    return catch_wrp_kws
+    Example: Set the legend to the filename like this:
+
+    >>> import os
+    >>> w1 = wrappers.Wrapper(name='a_name', file_path='/path/to/my_file.root')
+    >>> w1 = add_wrp_info(w1, legend=lambda w: os.path.basename(w.file_path)[:-5])
+    >>> w1.legend
+    'my_file'
+    """
+    for k, f in kw_funcs.iteritems():
+    	setattr(wrp, k, f(wrp))
+    return wrp
 
 
-@add_wrp_kws
 @history.track_history
 def stack(wrps):
     """
@@ -100,7 +104,6 @@ def stack(wrps):
     return wrappers.StackWrapper(stk_wrp, **info)
 
 
-@add_wrp_kws
 @history.track_history
 def sum(wrps):
     """
@@ -147,7 +150,6 @@ def sum(wrps):
     return wrappers.HistoWrapper(histo, **info)
 
 
-@add_wrp_kws
 @history.track_history
 def diff(wrps):
     """
@@ -192,7 +194,6 @@ def diff(wrps):
     return wrappers.HistoWrapper(histo, **info)
 
 
-@add_wrp_kws
 @history.track_history
 def merge(wrps):
     """
@@ -238,7 +239,6 @@ def merge(wrps):
     return wrappers.HistoWrapper(histo, **info)
 
 
-@add_wrp_kws
 @history.track_history
 def prod(wrps):
     """
@@ -299,7 +299,6 @@ def prod(wrps):
     return wrappers.HistoWrapper(histo, **info)
 
 
-@add_wrp_kws
 @history.track_history
 def div(wrps):
     """
@@ -359,7 +358,6 @@ def div(wrps):
     return wrappers.HistoWrapper(histo, **info)
 
 
-@add_wrp_kws
 @history.track_history
 def lumi(wrp):
     """
@@ -384,7 +382,6 @@ def lumi(wrp):
     return wrappers.FloatWrapper(wrp.lumi, **info)
 
 
-@add_wrp_kws
 @history.track_history
 def norm_to_lumi(wrp):
     """
@@ -413,7 +410,6 @@ def norm_to_lumi(wrp):
     return wrappers.HistoWrapper(histo, **info)
 
 
-@add_wrp_kws
 @history.track_history
 def norm_to_integral(wrp, use_bin_width=False):
     """
@@ -444,7 +440,6 @@ def norm_to_integral(wrp, use_bin_width=False):
     return wrappers.HistoWrapper(histo, **info)
 
 
-@add_wrp_kws
 @history.track_history
 def copy(wrp):
     """
@@ -475,7 +470,6 @@ def copy(wrp):
     return wrappers.HistoWrapper(histo, **info)
 
 
-@add_wrp_kws
 @history.track_history
 def rebin(wrp, bin_bounds, norm_by_bin_width=False):
     """
@@ -523,7 +517,6 @@ def rebin(wrp, bin_bounds, norm_by_bin_width=False):
     return wrappers.HistoWrapper(histo, **info)
 
 
-@add_wrp_kws
 @history.track_history
 def trim(wrp, left=True, right=True):
     """
@@ -592,7 +585,6 @@ def trim(wrp, left=True, right=True):
     return rebin(wrp, bin_bounds)
 
 
-@add_wrp_kws
 @history.track_history
 def mv_in(wrp, overflow=True, underflow=True):
     """
@@ -640,7 +632,6 @@ def mv_in(wrp, overflow=True, underflow=True):
     return wrappers.HistoWrapper(histo, **wrp.all_info())
 
 
-@add_wrp_kws
 @history.track_history
 def integral(wrp, use_bin_width=False):
     """
@@ -670,7 +661,6 @@ def integral(wrp, use_bin_width=False):
     return wrappers.FloatWrapper(wrp.histo.Integral(option), **info)
 
 
-@add_wrp_kws
 @history.track_history
 def int_l(wrp, use_bin_width=False):
     """
@@ -710,7 +700,6 @@ def int_l(wrp, use_bin_width=False):
     return wrappers.HistoWrapper(int_histo, **info)
 
 
-@add_wrp_kws
 @history.track_history
 def int_r(wrp, use_bin_width=False):
     """
@@ -751,7 +740,6 @@ def int_r(wrp, use_bin_width=False):
     return wrappers.HistoWrapper(int_histo, **info)
 
 
-@add_wrp_kws
 @history.track_history
 def chi2(wrps, x_min=0, x_max=0):
     """
@@ -803,7 +791,6 @@ def chi2(wrps, x_min=0, x_max=0):
     )
 
 
-@add_wrp_kws
 @history.track_history
 def eff(wrps, option='cl=0.683 b(1,1) mode'):
     """
