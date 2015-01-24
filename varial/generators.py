@@ -45,6 +45,62 @@ def debug_printer(iterable, print_obj=True):
         yield obj
 
 
+def imap_conditional(iterable, keyfunc, func):
+    """
+    Like itertools.imap, but only applying func if keyfunc evaluates to True. 
+
+    >>> def change_sign(value):
+    ...     return -value
+    >>> def is_even_val(v):
+    ...     return v%2 == 0
+    >>> list(imap_conditional([1, 2, 3, 4, 5, 6, 7], is_even_val, change_sign))
+    [1, -2, 3, -4, 5, -6, 7]
+    """
+    for val in iterable:
+        if keyfunc(val):
+             yield func(val)
+        else:
+             yield val
+
+
+def switch(iterable, keyfunc, generator):
+    """
+    Switches items to go through generator or not.
+
+    The order of items is preserved if ``generator`` does not reshuffle them. 
+    
+    :param iterable:    input iterable
+    :param keyfunc:     function, called with items from iterable. If an item
+                        evaluates to True, the item goes through generator, 
+                        otherwise it's yielded as is.
+    :param generator:   generator function, through with items are passed if 
+                        ``keyfunc`` evaluates to True for them.
+
+    >>> def gen_change_sign(values):
+    ...     for v in values:
+    ...         yield -v
+    >>> def is_even_val(v):
+    ...     return v%2 == 0
+    >>> list(switch([1, 2, 3, 4, 5, 6, 7], is_even_val, gen_change_sign))
+    [1, -2, 3, -4, 5, -6, 7]
+    """
+    passing_queue = collections.deque()
+    def pre(it):
+        for newval in it:
+            if keyfunc(newval):
+                yield newval
+            else:
+                passing_queue.append(newval) 
+    def post(gen):
+        for gen_val in gen:
+            while (passing_queue):          # empty passing items first
+                yield passing_queue.popleft() 
+            yield gen_val
+        while (passing_queue):              # empty leftover items
+            yield passing_queue.popleft()
+    return post(generator(pre(iterable)))
+
+
 def consume_n_count(iterable):
     """
     Walks over iterable and counts number of items.

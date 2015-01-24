@@ -12,6 +12,8 @@ For the efficient use of the histogram manipulation tools, knowledge about
 python generators and generator expressions is kind of crucial. A nice guide
 with practical application can be found at
 http://www.dabeaz.com/generators/index.html
+and also at 
+http://anandology.com/python-practice-book/iterators.html
 . Furthermore, the itertools package, at
 http://docs.python.org/2/library/itertools.html
 , is of great help.
