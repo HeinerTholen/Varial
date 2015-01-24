@@ -230,6 +230,7 @@ def _generate_op_noex(op_func):
     return gen_op_noex
 
 
+#TODO: write doc for these into _generate_op and _generate_op_noex
 gen_add_wrp_info        = _generate_op(op.add_wrp_info)
 gen_stack               = _generate_op(op.stack)
 gen_sum                 = _generate_op(op.sum)
@@ -263,7 +264,45 @@ def gen_norm_to_data_lumi(wrps):
     )
 
 
-############################################################### load / save ###
+def make_eff_graphs(wrps, postfix_sub='_sub', postfix_tot='_tot'):
+    """
+    Makes efficiency graphs and interleaves them into a sorted stream.
+
+    Searches for histgrams ending with ``postfix_sub`` and ``postfix_tot``. On
+    finding a matching pair, it creates an efficiency graph. The graphs are
+    interleaved in a sorted stream without disturbing the order needed for 
+    plotting. 
+
+    :param wrps:        Wrapper iterable
+    :param postfix_sub: str, search token for histograms of passing data,
+                        default: ``_sub``
+    :param postfix_tot: str, search token for histograms of all data,
+                        default: ``_tot``
+    :yields:            Wrapper (simply forwarding), GraphWrapper
+    """
+    token = lambda w: w.legend + ":" + "/".join(w.in_file_path)[:-4]
+    subs, tots = {}, {}
+    res = []
+    for wrp in wrps:
+        yield wrp
+        if wrp.name.endswith(postfix_sub):
+            t = token(wrp)
+            if t in tots:
+                res.append(op.eff((wrp, tots.pop(t))))
+            else:
+                subs[t] = wrp
+        elif wrp.name.endswith(postfix_tot):
+            t = token(wrp)
+            if t in subs:
+                res.append(op.eff((subs.pop(t), wrp)))
+            else:
+                tots[t] = wrp
+        if res and not (subs or tots):
+            for _ in xrange(len(res)):
+                yield res.pop(0)
+
+
+###############################################################oad / save ###
 import settings
 
 
