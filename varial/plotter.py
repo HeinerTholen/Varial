@@ -245,7 +245,7 @@ class RootFilePlotter(toolinterface.ToolChain):
         self.aliases = aliases
 
         # define some generators factories
-        def rename_th2(wrps):
+        def _rename_th2(wrps):
             for wrp in wrps:
                 if 'TH2' in wrp.type:
                     wrp.name += '_' + wrp.legend
@@ -254,7 +254,7 @@ class RootFilePlotter(toolinterface.ToolChain):
 
         def plot_grouper(wrps):
             return gen.group(
-                rename_th2(wrps),
+                _rename_th2(wrps),
                 key_func=lambda w: "/".join(w.in_file_path)
             )
 
@@ -322,7 +322,7 @@ class RootFilePlotter(toolinterface.ToolChain):
                     )
 
     def run(self):
-        time.sleep(1)  # wierd bug in root...
+        time.sleep(1)  # weird bug in root...
         old_aliases = analysis.fs_aliases
         if self.rootfile:
             analysis.fs_aliases = self.aliases

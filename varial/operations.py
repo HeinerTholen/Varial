@@ -854,8 +854,8 @@ def eff(wrps, option='cl=0.683 b(1,1) mode'):
 
 
 @history.track_history
-def th2d_projection(wrp, projection,
-                    name='_p', firstbin=0, lastbin=-1, option='eo'):
+def th2_projection(wrp, projection,
+                   name='_p', firstbin=0, lastbin=-1, option='eo'):
     """
     Applies to HistoWrapper with TH2 type. Returns HistoWrapper.
 
@@ -891,23 +891,26 @@ def th2d_projection(wrp, projection,
             'histo. Histo: ' + str(wrp)
         )
     name += projection
+    th2 = wrp.histo
     if projection == 'x':
-        histo = wrp.histo.ProjectionX(name, firstbin, lastbin, option)
+        histo = th2.ProjectionX(name, firstbin, lastbin, option)
     else:
-        histo = wrp.histo.ProjectionY(name, firstbin, lastbin, option)
+        histo = th2.ProjectionY(name, firstbin, lastbin, option)
     histo.SetDirectory(0)
     info = wrp.all_info()
+    info['in_file_path'] = info['in_file_path'][:]
+    info['in_file_path'][-1] += '_p' + projection
     return wrappers.HistoWrapper(histo, **info)
 
 
-def th2d_projection_x(wrp, name='_p', firstbin=0, lastbin=-1, option='eo'):
-    """Proxy for th2d_projection."""
-    return th2d_projection(wrp, 'x', name, firstbin, lastbin, option)
+def th2_projection_x(wrp, name='_p', firstbin=0, lastbin=-1, option='eo'):
+    """Proxy for th2_projection."""
+    return th2_projection(wrp, 'x', name, firstbin, lastbin, option)
 
 
-def th2d_projection_y(wrp, name='_p', firstbin=0, lastbin=-1, option='eo'):
-    """Proxy for th2d_projection."""
-    return th2d_projection(wrp, 'y', name, firstbin, lastbin, option)
+def th2_projection_y(wrp, name='_p', firstbin=0, lastbin=-1, option='eo'):
+    """Proxy for th2_projection."""
+    return th2_projection(wrp, 'y', name, firstbin, lastbin, option)
 
 
 if __name__ == "__main__":

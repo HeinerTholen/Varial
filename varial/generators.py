@@ -84,20 +84,23 @@ def switch(iterable, keyfunc, generator):
     >>> list(switch([1, 2, 3, 4, 5, 6, 7], is_even_val, gen_change_sign))
     [1, -2, 3, -4, 5, -6, 7]
     """
-    passing_queue = collections.deque()
+    passing_queue = []
+
     def pre(it):
         for newval in it:
             if keyfunc(newval):
                 yield newval
             else:
-                passing_queue.append(newval) 
+                passing_queue.append(newval)
+
     def post(gen):
         for gen_val in gen:
-            while (passing_queue):          # empty passing items first
-                yield passing_queue.popleft() 
+            while passing_queue:            # empty passing items first
+                yield passing_queue.pop(0)
             yield gen_val
-        while (passing_queue):              # empty leftover items
-            yield passing_queue.popleft()
+        while passing_queue:                # empty leftover items
+            yield passing_queue.pop(0)
+
     return post(generator(pre(iterable)))
 
 
@@ -304,13 +307,13 @@ gen_integral            = _generate_op(op.integral)
 gen_int_l               = _generate_op(op.int_l)
 gen_int_r               = _generate_op(op.int_r)
 gen_eff                 = _generate_op(op.eff)
-gen_th2d_projection_x   = _generate_op(op.th2d_projection_x)
-gen_th2d_projection_y   = _generate_op(op.th2d_projection_y)
+gen_th2_projection_x    = _generate_op(op.th2_projection_x)
+gen_th2_projection_y    = _generate_op(op.th2_projection_y)
 
 gen_noex_norm_to_lumi       = _generate_op_noex(op.norm_to_lumi)
 gen_noex_norm_to_integral   = _generate_op_noex(op.norm_to_integral)
-gen_noex_th2d_projection_x   = _generate_op_noex(op.th2d_projection_x)
-gen_noex_th2d_projection_y   = _generate_op_noex(op.th2d_projection_y)
+gen_noex_th2_projection_x   = _generate_op_noex(op.th2_projection_x)
+gen_noex_th2_projection_y   = _generate_op_noex(op.th2_projection_y)
 
 
 def gen_norm_to_data_lumi(wrps):
@@ -322,7 +325,7 @@ def gen_norm_to_data_lumi(wrps):
     )
 
 
-def make_eff_graphs(wrps, postfix_sub='_sub', postfix_tot='_tot'):
+def gen_make_eff_graphs(wrps, postfix_sub='_sub', postfix_tot='_tot'):
     """
     Makes efficiency graphs and interleaves them into a sorted stream.
 
@@ -358,6 +361,35 @@ def make_eff_graphs(wrps, postfix_sub='_sub', postfix_tot='_tot'):
         if res and not (subs or tots):
             for _ in xrange(len(res)):
                 yield res.pop(0)
+
+
+def gen_make_th2_projections(wrps, keep_th2=True):
+    token = lambda w: "/".join(w.in_file_path)
+    current_token = None
+    x_buf, y_buf = [], []
+
+    for wrp in wrps:
+        if current_token:
+            if token(wrp) != current_token:
+                current_token = None
+                while x_buf:
+                    yield x_buf.pop(0)
+                while y_buf:
+                    yield y_buf.pop(0)
+        if 'TH2' in wrp.type:
+            current_token = token(wrp)
+            x_buf.append(op.th2_projection_x(wrp))
+            y_buf.append(op.th2_projection_y(wrp))
+            if keep_th2:
+                yield wrp
+        else:
+            yield wrp
+
+    while x_buf:
+        yield x_buf.pop(0)
+    while y_buf:
+        yield y_buf.pop(0)
+
 
 
 ###############################################################oad / save ###
