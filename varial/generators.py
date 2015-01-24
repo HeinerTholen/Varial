@@ -253,6 +253,8 @@ gen_th2d_projection_y   = _generate_op(op.th2d_projection_y)
 
 gen_noex_norm_to_lumi       = _generate_op_noex(op.norm_to_lumi)
 gen_noex_norm_to_integral   = _generate_op_noex(op.norm_to_integral)
+gen_noex_th2d_projection_x   = _generate_op_noex(op.th2d_projection_x)
+gen_noex_th2d_projection_y   = _generate_op_noex(op.th2d_projection_y)
 
 
 def gen_norm_to_data_lumi(wrps):
