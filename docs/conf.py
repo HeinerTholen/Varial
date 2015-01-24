@@ -232,7 +232,7 @@ man_pages = [
 texinfo_documents = [
   ('index', 'Varial', u'Varial Documentation',
    u'Heiner Tholen', 'Varial',
-   'This package provides toolkit for performing an analysis with ROOT.',
+   'Toolkit for analysis with ROOT. No gui, just library.',
    'Miscellaneous'),
 ]
 

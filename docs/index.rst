@@ -5,11 +5,11 @@
 
 
 
-Welcome to the Varial documentation!
-====================================
+Varial. Toolkit for analysis with ROOT.
+=======================================
 
-This package provides toolkit for performing an analysis with ROOT. No gui,
-only library. Varial has a specific focus on the CMS Experiments and has
+This package provides a toolkit for performing a data-analysis with ROOT. No gui,
+just library. Varial has a specific focus on the CMS Experiments and has
 extensions for running CMSSW jobs.
 
 Varial has two main design features (both leaning on UNIX-principles, sort of):
