@@ -241,12 +241,15 @@ class CanvasBuilder(object):
 
         # for stacks and overlays
         if len(wrps) > 1:
-            if (isinstance(wrps[0], wrappers.StackWrapper)
-                    and not hasattr(wrps[0], 'draw_option')):
-                wrps[0].draw_option = 'hist'
+            if isinstance(wrps[0], wrappers.StackWrapper):
+                if not hasattr(wrps[0], 'draw_option'):
+                    wrps[0].draw_option = 'hist'
                 for w in wrps[1:]:
                     if not hasattr(w, 'draw_option'):
-                        if not w.is_data:  # circles for pseudo-data
+                        if w.is_signal:
+                            w.draw_option = 'hist'
+                            w.histo.SetLineWidth(2)
+                        elif not w.is_data:  # circles for pseudo-data
                             w.draw_option = 'E1X0'
                             w.draw_option_legend = 'p'
                             w.histo.SetMarkerStyle(4)

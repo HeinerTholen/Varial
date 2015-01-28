@@ -45,7 +45,7 @@ def add_wrp_info(wrp, **kw_funcs):
     'my_file'
     """
     for k, f in kw_funcs.iteritems():
-    	setattr(wrp, k, f(wrp))
+        setattr(wrp, k, f(wrp))
     return wrp
 
 

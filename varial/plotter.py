@@ -12,14 +12,25 @@ import settings
 import toolinterface
 
 
-_group_th2d_iter = iter(xrange(9999))
-def stack_grouper(wrps):
-    # enumerate th2d wrappers, so they get their own groups
-    return gen.group(wrps, key_func=lambda w: w.analyzer+"_"+w.name+(
-        '%03d' % next(_group_th2d_iter)
-        if 'TH2' in w.type
-        else ""
-    ))
+def rename_th2(wrps):
+    for wrp in wrps:
+        if 'TH2' in wrp.type:
+            wrp.name += '_' + wrp.legend
+            wrp.in_file_path = wrp.in_file_path[:]
+            wrp.in_file_path[-1] += '_' + wrp.legend
+        yield wrp
+
+
+def plot_grouper_by_in_file_path(wrps, separate_th2=True):
+    if separate_th2:
+        wrps = rename_th2(wrps)
+    return gen.group(wrps, key_func=lambda w: "/".join(w.in_file_path))
+
+
+def plot_grouper_by_analyzer_name(wrps, separate_th2=True):
+    if separate_th2:
+        wrps = rename_th2(wrps)
+    return gen.group(wrps, key_func=lambda w: '%s/%s' % (w.analyzer, w.name))
 
 
 def overlay_colorizer(wrps, colors=None):
@@ -41,7 +52,7 @@ class Plotter(toolinterface.Tool):
     ...    'filter_keyfunc': None,
     ...    'load_func': gen.fs_filter_active_sort_load,
     ...    'hook_loaded_histos': None,
-    ...    'stack_grouper': stack_grouper,
+    ...    'stack_grouper': plot_grouper_by_analyzer_name,
     ...    'plot_grouper': lambda wrps: ((w,) for w in wrps),
     ...    'stack_setup': lambda w: gen.mc_stack_n_data_sum(w, None, True),
     ...    'plot_setup': lambda wrps: wrps,
@@ -62,7 +73,7 @@ class Plotter(toolinterface.Tool):
         'filter_keyfunc': None,
         'load_func': gen.fs_filter_active_sort_load,
         'hook_loaded_histos': None,
-        'stack_grouper': stack_grouper,
+        'stack_grouper': plot_grouper_by_analyzer_name,
         'plot_grouper': lambda wrps: ((w,) for w in wrps),
         'stack_setup': lambda w: gen.mc_stack_n_data_sum(w, None, True),
         'plot_setup': lambda wrps: wrps,
@@ -244,20 +255,6 @@ class RootFilePlotter(toolinterface.ToolChain):
         )
         self.aliases = aliases
 
-        # define some generators factories
-        def _rename_th2(wrps):
-            for wrp in wrps:
-                if 'TH2' in wrp.type:
-                    wrp.name += '_' + wrp.legend
-                    wrp.in_file_path[-1] += '_' + wrp.legend
-                yield wrp
-
-        def plot_grouper(wrps):
-            return gen.group(
-                _rename_th2(wrps),
-                key_func=lambda w: "/".join(w.in_file_path)
-            )
-
         legendnames = _mk_legendnames(rootfiles)
         legendnames = dict(itertools.izip(rootfiles, legendnames))
         self.message(
@@ -278,7 +275,7 @@ class RootFilePlotter(toolinterface.ToolChain):
             self.private_plotter = plotter_factory(
                 filter_keyfunc='Dummy',
                 load_func=lambda _: colorizer(gen.load(gen.fs_content())),
-                plot_grouper=plot_grouper,
+                plot_grouper=plot_grouper_by_in_file_path,
                 plot_setup=lambda ws: gen.mc_stack_n_data_sum(
                     ws, lambda w: '', True),
                 save_name_func=lambda w: '_'.join(
@@ -304,7 +301,7 @@ class RootFilePlotter(toolinterface.ToolChain):
                     def _mk_loader(p):
                         #"""This function creates a separate namespace for p"""
                         def loader(_):
-                            wrps = gen.fs_content()
+                            wrps = analysis.fs_aliases
                             wrps = itertools.ifilter(
                                 lambda w: w.in_file_path[:-1] == p,
                                 wrps
@@ -316,7 +313,7 @@ class RootFilePlotter(toolinterface.ToolChain):
 
                     rfp.private_plotter = plotter_factory(
                         filter_keyfunc='Dummy',
-                        plot_grouper=plot_grouper,
+                        plot_grouper=plot_grouper_by_in_file_path,
                         save_name_func=lambda w: w._renderers[0].name,
                         load_func=_mk_loader(path[:-1]),
                         canvas_decorators=[rendering.Legend],

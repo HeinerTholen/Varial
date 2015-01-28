@@ -76,7 +76,7 @@ class WebCreator(toolinterface.Tool):
             self.name + ': ' + self.working_dir,
             '</title>',
             '<style type="text/css">',
-            'html * {font-family: Helvetica, Verdana, Arial, "sans-serif"; }',
+            'body {font-family: Helvetica, Verdana, Arial, "sans-serif"; }',
             '</style>',
             '<script type="text/javascript" language="JavaScript"><!--',
             'function ToggleDiv(d) {',

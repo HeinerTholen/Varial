@@ -96,7 +96,7 @@ def get_stack_position(sample):
         else:
             return legend
     else:
-        return ''
+        return sample
 
 
 ################################################ result / folder management ###

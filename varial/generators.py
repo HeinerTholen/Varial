@@ -216,17 +216,18 @@ def interleave(*grouped_wrps):
         yield itertools.chain(*grp)
 
 
-def split_data_mc(wrps):
+def split_data_bkg_sig(wrps):
     """
     Split stream into data and mc stream.
 
     :param wrps:        Wrapper iterable
     :returns:           two wrapper iterators: ``(stream_data, stream_mc)``
     """
-    wrp_a, wrp_b = itertools.tee(wrps)
-    data = itertools.ifilter(lambda w: w.is_data, wrp_a)
-    mcee = itertools.ifilter(lambda w: not w.is_data, wrp_b)
-    return data, mcee
+    wrps_a, wrps_b, wrps_c = itertools.tee(wrps, 3)
+    dat = itertools.ifilter(lambda w: w.is_data, wrps_a)
+    sig = itertools.ifilter(lambda w: w.is_signal, wrps_b)
+    bkg = itertools.ifilter(lambda w: not (w.is_data or w.is_signal), wrps_c)
+    return dat, bkg, sig
 
 
 ################################################################ operations ###
@@ -364,6 +365,12 @@ def gen_make_eff_graphs(wrps, postfix_sub='_sub', postfix_tot='_tot'):
 
 
 def gen_make_th2_projections(wrps, keep_th2=True):
+    """
+    Makes x- and y-projections of TH2 hists and interleaves them in the stream.
+
+    :param wrps:        Wrapper iterable
+    :param keep_th2:    bool, if False the TH2 hists are dropped.
+    """
     token = lambda w: "/".join(w.in_file_path)
     current_token = None
     x_buf, y_buf = [], []
@@ -598,7 +605,6 @@ def switch_log_scale(cnvs, y_axis=True, x_axis=False):
 
 
 ################################################### application & packaging ###
-from ROOT import TH2D
 
 
 def fs_filter_sort_load(filter_keyfunc=None, sort_keys=None):
@@ -689,47 +695,54 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=False):
     for grp in wrps:
 
         # split stream
-        data, mc = split_data_mc(grp)
+        dat, bkg, sig = split_data_bkg_sig(grp)
 
-        # sum up data
-        data_sum = None
+        # data
+        dat_sum = None
         try:
-            data_sum = op.sum(data)
+            dat_sum = op.sum(dat)
         except op.TooFewWrpsError:
-            print "INFO generators.mc_stack_n_data_sum(..): "\
-                  "No data histos present! I will yield only mc."
-        if data_sum and not use_all_data_lumi:
-            data_lumi = op.lumi(data_sum)
+            if settings.debug_mode:
+                print 'DEBUG generators.mc_stack_n_data_sum(..): '\
+                      'No data histograms present!'
+        if dat_sum and not use_all_data_lumi:
+            data_lumi = op.lumi(dat_sum)
         else:
             data_lumi = analysis.data_lumi_sum_wrp()
 
-        # merge mc samples (merge also normalizes to lumi = 1.)
-        mc_sorted = sorted(mc, key=merge_mc_key_func)
-        mc_groupd = group(mc_sorted, merge_mc_key_func)
-        mc_merged = (op.merge(g) for g in mc_groupd)
-        mc_colord = apply_fillcolor(mc_merged)
-        is_2d = mc_sorted and 'TH2' in mc_sorted[0].type
-
-        # stack mc
-        mc_norm = gen_prod(itertools.izip(mc_colord,
-                                          itertools.repeat(data_lumi)))
-        mc_stck = None
+        # background (op.merge normalizes to lumi = 1.)
+        bkg = sorted(bkg, key=merge_mc_key_func)
+        is_2d = bkg and 'TH2' in bkg[0].type
+        bkg = group(bkg, merge_mc_key_func)
+        bkg = (op.merge(g) for g in bkg)
+        bkg = apply_fillcolor(bkg)
+        bkg = apply_linecolor(bkg, [1])
+        bkg = gen_prod(itertools.izip(bkg, itertools.repeat(data_lumi)))
+        bkg_stk = None
         try:
             if is_2d:
-                mc_stck = op.sum(mc_norm)
+                bkg_stk = op.sum(bkg)
             else:
-                mc_stck = op.stack(mc_norm)
+                bkg_stk = op.stack(bkg)
         except op.TooFewWrpsError:
-            print "INFO generators.mc_stack_n_data_sum(..): " \
-                  "No mc histos present! I will yield only data"
-        if mc_stck and data_sum:
-            yield mc_stck, data_sum
-        elif mc_stck:
-            yield (mc_stck, )
-        elif data_sum:
-            yield (data_sum, )
+            if settings.debug_mode:
+                print 'DEBUG generators.mc_stack_n_data_sum(..): '\
+                      'No background histograms present!'
+
+        # signal
+        sig = apply_linecolor(sig)
+        sig_lst = list(sig)
+        if not sig_lst and settings.debug_mode:
+            print 'DEBUG generators.mc_stack_n_data_sum(..): '\
+                  'No signal histograms present!'
+
+        # return in order for plotting: bkg, signals, data
+        res = [bkg_stk] + sig_lst + [dat_sum]
+        res = tuple(w for w in res if w)
+        if res:
+            yield tuple(res)
         else:
-            raise op.TooFewWrpsError("Neither data nor mc histos present!")
+            raise op.TooFewWrpsError("No histograms present!")
 
 
 def fs_mc_stack_n_data_sum(filter_keyfunc=None, merge_mc_key_func=None):
