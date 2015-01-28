@@ -432,7 +432,8 @@ class Legend(util.Decorator):
         If self.legend == None, this method will create a default legend and
         store it to self.legend
         """
-        if self.legend: return
+        if self.legend:
+            return
 
         tmp_leg = self.main_pad.BuildLegend(0.1, 0.6, 0.5, 0.8) # get legend entry objects
         entries = self.make_entry_tupels(tmp_leg)

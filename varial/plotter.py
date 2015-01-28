@@ -269,7 +269,8 @@ class RootFilePlotter(toolinterface.ToolChain):
             wrps = gen.apply_linecolor(wrps, colors)
             wrps = gen.apply_markercolor(wrps, colors)
             for w in wrps:
-                w.legend = legendnames[os.path.basename(w.file_path)]
+                if not w.legend:
+                    w.legend = legendnames[os.path.basename(w.file_path)]
                 yield w
 
         # either print all in one dir...
