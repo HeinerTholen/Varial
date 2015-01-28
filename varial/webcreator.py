@@ -145,10 +145,10 @@ class WebCreator(toolinterface.Tool):
                 )
 
     def make_image_divs(self):
-        self.web_lines += ('<h2>Images:</h2>',)
-
-        # toc
+        # headline / toc
         self.web_lines += (
+            '<a name="anchor_top"></a>',
+            '<h2>Images:</h2>',
             '<div><p>',
         ) + tuple(
             '<a href="#anchor_%s">%s</a></br>' % (img, img)
@@ -176,6 +176,7 @@ class WebCreator(toolinterface.Tool):
                 + '\')">(toggle history)</a>',
                 '<a href="javascript:ToggleDiv(\'' + i_id   # toggle info
                 + '\')">(toggle info)</a>',
+                '<a href="#anchor_top">(back to top)</a>',
                 '</p>',
                 '<div id="' + h_id                          # history div
                 + '" style="display:none;"><pre>',
