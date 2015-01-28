@@ -94,6 +94,8 @@ def stack(wrps):
             )
         if sample != wrp.sample:                                # add to stack
             sample = ""
+        if wrp.legend:
+            wrp.histo.SetTitle(wrp.legend)
         stk_wrp.Add(wrp.histo)
     if not info:
         raise TooFewWrpsError(
