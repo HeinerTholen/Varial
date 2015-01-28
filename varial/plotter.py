@@ -16,8 +16,8 @@ _group_th2d_iter = iter(xrange(9999))
 def stack_grouper(wrps):
     # enumerate th2d wrappers, so they get their own groups
     return gen.group(wrps, key_func=lambda w: w.analyzer+"_"+w.name+(
-        "%03d" % next(_group_th2d_iter)
-        if isinstance(w.histo, ROOT.TH2D)
+        '%03d' % next(_group_th2d_iter)
+        if 'TH2' in w.type
         else ""
     ))
 
