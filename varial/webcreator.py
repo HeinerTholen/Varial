@@ -146,6 +146,18 @@ class WebCreator(toolinterface.Tool):
 
     def make_image_divs(self):
         self.web_lines += ('<h2>Images:</h2>',)
+
+        # toc
+        self.web_lines += (
+            '<div><p>',
+        ) + tuple(
+            '<a href="#anchor_%s">%s</a></br>' % (img, img)
+            for img in self.image_names
+        ) + (
+            '</p></div>',
+        )
+
+        # images
         for img in self.image_names:
             #TODO get history from full wrapper!!
             with open(os.path.join(self.working_dir,img + ".info")) as f:
@@ -158,6 +170,7 @@ class WebCreator(toolinterface.Tool):
             self.web_lines += (
                 '<div>',
                 '<p>',
+                ('<a name="anchor_%s">' % img),             # anchor
                 '<b>' + img + ':</b>',                      # image headline
                 '<a href="javascript:ToggleDiv(\'' + h_id   # toggle history
                 + '\')">(toggle history)</a>',
