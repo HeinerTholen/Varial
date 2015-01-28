@@ -17,6 +17,7 @@ class Sample(wrappers.WrapperBase):
 
     :param name:        str
     :param is_data:     bool (default: False)
+    :param is_signal:   bool (default: False)
     :param lumi:        float
     :param x_sec:       float
     :param n_events:    int
@@ -34,6 +35,7 @@ class Sample(wrappers.WrapperBase):
     def __init__(self, **kws):
         self.__dict__.update({
             'is_data': False,
+            'is_signal': False,
             'x_sec': 0.,
             'n_events': 0,
             'lumi': 0.,
@@ -46,6 +48,7 @@ class Sample(wrappers.WrapperBase):
         })
         self.__dict__.update(kws)
         # check/correct input
+        assert(not(self.is_data and self.is_signal))  # both is forbidden!
         if not getattr(self, 'name', 0):
             self.name = self.__class__.__name__
         assert isinstance(self.cmsRun_add_lines, list)

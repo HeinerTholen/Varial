@@ -77,10 +77,10 @@ class FileServiceAlias(Alias):
     Alias of a histogram in the fileservice output.
 
     :param  name:           histogram name
-    :param  analyzer:       name of the CMSSW analyzer
-    :param  sample:         name of the sample
-    :param  is_data:        data or not?
-    :type   is_data:        bool
+    :param  analyzer:       name of the CMSSW analyzer or rootfile folder
+    :param  filename:       path to file
+    :param  sample:         sample instance
+    :param  typ:            type of root object
     """
     def __init__(self, name, analyzer, filename, sample, typ):
         super(FileServiceAlias, self).__init__(
@@ -94,6 +94,8 @@ class FileServiceAlias(Alias):
         self.legend         = sample.legend
         self.lumi           = sample.lumi
         self.is_data        = sample.is_data
+        self.is_signal      = sample.is_signal
+        assert(not(self.is_data and self.is_signal))  # both is forbidden!
 
 
 class Wrapper(WrapperBase):
@@ -161,6 +163,7 @@ class HistoWrapper(Wrapper):
     **Keywords:**
     ``lumi``,
     ``is_data``,
+    ``is_signal``,
     ``sample``,
     ``analyzer``,
     and also see superclass.
@@ -174,6 +177,8 @@ class HistoWrapper(Wrapper):
         self.name           = histo.GetName()
         self.title          = histo.GetTitle()
         self.is_data        = kws.get("is_data", False)
+        self.is_signal      = kws.get("is_signal", False)
+        assert(not(self.is_data and self.is_signal))  # both is forbidden!
         self.lumi           = kws.get("lumi", 1.)
         self.sample         = kws.get("sample", "")
         self.legend         = kws.get("legend", "")
@@ -241,6 +246,7 @@ class GraphWrapper(Wrapper):
     **Keywords:**
     ``lumi``,
     ``is_data``
+    ``is_signal``
     and also see superclass.
 
     :raises: TypeError
@@ -252,6 +258,8 @@ class GraphWrapper(Wrapper):
         self.name           = graph.GetName()
         self.title          = graph.GetTitle()
         self.is_data        = kws.get("is_data", False)
+        self.is_signal      = kws.get("is_signal", False)
+        assert(not(self.is_data and self.is_signal))  # both is forbidden!
         self.lumi           = kws.get("lumi", 1.)
         self.sample         = kws.get("sample", "")
         self.legend         = kws.get("legend", "")
