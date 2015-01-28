@@ -72,6 +72,12 @@ class WebCreator(toolinterface.Tool):
         self.web_lines += [
             '<html>',
             '<head>',
+            '<title>',
+            self.name + ': ' + self.working_dir,
+            '</title>',
+            '<style type="text/css">',
+            'html * {font-family: Helvetica, Verdana, Arial, "sans-serif"; }',
+            '</style>',
             '<script type="text/javascript" language="JavaScript"><!--',
             'function ToggleDiv(d) {',
             '  if(document.getElementById(d).style.display == "none") { ',
@@ -83,10 +89,9 @@ class WebCreator(toolinterface.Tool):
             '//--></script>',
             '</head>',
             '<body>',
-            '<h2>'
-            'DISCLAIMER: latest-super-preliminary-nightly'
-            '-build-work-in-progress-analysis-snapshot'
-            '</h2>'
+            '<h2>',
+            'DISCLAIMER: This page contains an intermediate analysis-snapshot!',
+            '</h2>',
         ]
 
     def make_headline(self):
@@ -97,6 +102,8 @@ class WebCreator(toolinterface.Tool):
         )
 
     def make_subfolder_links(self):
+        if not self.subfolders:
+            return
         self.web_lines += ('<h2>Subfolders:</h2>',)
         for sf in self.subfolders:
             self.web_lines += (
@@ -109,6 +116,8 @@ class WebCreator(toolinterface.Tool):
         self.web_lines += ('<hr width="60%">', "")
 
     def make_info_file_divs(self):
+        if not self.plain_info:
+            return
         self.web_lines += ('<h2>Info files:</h2>',)
         for nfo in self.plain_info:
             wrp = self.io.read(
@@ -127,6 +136,8 @@ class WebCreator(toolinterface.Tool):
             )
 
     def make_tex_file_divs(self):
+        if not self.plain_tex:
+            return
         self.web_lines += ('<h2>Tex files:</h2>',)
         for tex in self.plain_tex:
             with open(os.path.join(self.working_dir, tex), "r") as f:
@@ -145,6 +156,9 @@ class WebCreator(toolinterface.Tool):
                 )
 
     def make_image_divs(self):
+        if not self.image_names:
+            return
+
         # headline / toc
         self.web_lines += (
             '<a name="anchor_top"></a>',
