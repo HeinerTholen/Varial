@@ -868,12 +868,12 @@ def th2_projection(wrp, projection,
     >>> h1.Fill(1,0,3)
     6
     >>> w1 = wrappers.HistoWrapper(h1)
-    >>> w2 = th2d_projection(w1, 'x')
+    >>> w2 = th2_projection(w1, 'x')
     >>> w2.histo.GetBinContent(1)
     1.0
     >>> w2.histo.GetBinContent(2)
     5.0
-    >>> w2 = th2d_projection(w1, 'y')
+    >>> w2 = th2_projection(w1, 'y')
     >>> w2.histo.GetBinContent(1)
     3.0
     >>> w2.histo.GetBinContent(2)
