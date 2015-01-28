@@ -33,20 +33,20 @@ class Sample(wrappers.WrapperBase):
 
     def __init__(self, **kws):
         self.__dict__.update({
-            "is_data": False,
-            "x_sec": 0.,
-            "n_events": 0,
-            "lumi": 0.,
-            "legend": "",
-            "input_files": [],
-            "output_file": "",
-            "cmsRun_builtin": {},
-            "cmsRun_add_lines": [],
-            "cmsRun_args": [],
+            'is_data': False,
+            'x_sec': 0.,
+            'n_events': 0,
+            'lumi': 0.,
+            'legend': '',
+            'input_files': [],
+            'output_file': '',
+            'cmsRun_builtin': {},
+            'cmsRun_add_lines': [],
+            'cmsRun_args': [],
         })
         self.__dict__.update(kws)
         # check/correct input
-        if not getattr(self, "name", 0):
+        if not getattr(self, 'name', 0):
             self.name = self.__class__.__name__
         assert isinstance(self.cmsRun_add_lines, list)
         assert isinstance(self.cmsRun_args, list)
@@ -58,7 +58,7 @@ class Sample(wrappers.WrapperBase):
         if not self.lumi:
             monitor.message(
                 self.name,
-                "WARNING lumi or (x_sec and n_events) seems to be undefined."
+                'WARNING lumi or (x_sec and n_events) seems to be undefined.'
             )
         if not self.legend:
             self.legend = self.name
@@ -67,7 +67,7 @@ class Sample(wrappers.WrapperBase):
 def _check_n_load(field):
     if inspect.isclass(field) and issubclass(field, Sample):
         smp = field()
-        if hasattr(smp, "enable"):
+        if hasattr(smp, 'enable'):
             if smp.enable:
                 return {smp.name: smp}
         elif settings.default_enable_sample:
@@ -89,7 +89,7 @@ def load_samples(module):
             samples.update(load_samples(mod))
     else:
         for name in dir(module):
-            if name[0] == "_":
+            if name[0] == '_':
                 continue
             field = getattr(module, name)
             try:                    # handle iterable
@@ -100,7 +100,7 @@ def load_samples(module):
     return samples
 
 
-def generate_samples(in_filenames, in_path="", out_path=""):
+def generate_samples(in_filenames, in_path='', out_path=''):
     """
     Generates samples for analysis.all_samples.
 
@@ -130,12 +130,12 @@ def generate_samples_glob(glob_path, out_path):
     """Globs for files and creates according samples."""
     in_filenames = glob.glob(glob_path)
     in_filenames = itertools.imap(
-        lambda t: "file:" + t,  # prefix with 'file:' for cmssw
+        lambda t: 'file:' + t,  # prefix with 'file:' for cmssw
         in_filenames
     )
     return generate_samples(
         in_filenames, 
-        "", 
+        '',
         out_path
     )
 
