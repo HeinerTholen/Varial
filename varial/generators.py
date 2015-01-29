@@ -218,10 +218,13 @@ def interleave(*grouped_wrps):
 
 def split_data_bkg_sig(wrps):
     """
-    Split stream into data and mc stream.
+    Split stream into data and two mc streams.
+
+    This function splits the wrapper stream into three by the ``is_data`` and 
+    ``is_signal`` attributes of the given wrappers.
 
     :param wrps:        Wrapper iterable
-    :returns:           two wrapper iterators: ``(stream_data, stream_mc)``
+    :returns:           three wrapper iterators: ``(data, bkg, sig)``
     """
     wrps_a, wrps_b, wrps_c = itertools.tee(wrps, 3)
     dat = itertools.ifilter(lambda w: w.is_data, wrps_a)
@@ -630,7 +633,7 @@ def fs_filter_sort_load(filter_keyfunc=None, sort_keys=None):
 
 def fs_filter_active_sort_load(filter_keyfunc=None, sort_keys=None):
     """
-    Just as fs_filter_sort_load, but also filter for active samples.
+    Just as fs_filter_sort_load, but also filters for active samples.
     """
     wrps = fs_content()
     wrps = filter_active_samples(wrps)
@@ -681,13 +684,14 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=False):
     """
     Stacks MC histos and merges data, input needs to be sorted and grouped.
 
-    The output are tuples of MC stacks and data histograms.
-    ATTENTION: This crashes, if the proper histograms are not present!
+    Yields tuples of an MC stack, signal histograms, and a data histogram, if 
+    all kinds of data are present. Raises an exception if no histograms are
+    given at all.
 
     :param wrps:                Iterables of HistoWrapper (grouped)
     :param merge_mc_key_func:   key function for python sorted(...), default
                                 tries to sort after stack position
-    :yields:                    (StackWrapper, HistoWrapper)
+    :yields:                    tuples of wrappers for plotting
     """
     if not merge_mc_key_func:
         merge_mc_key_func = lambda w: analysis.get_stack_position(w.sample)
@@ -750,12 +754,11 @@ def fs_mc_stack_n_data_sum(filter_keyfunc=None, merge_mc_key_func=None):
     The full job to stacked histos and data, directly from fileservice.
 
     The output are tuples of MC stacks and data histograms.
-    ATTENTION: This crashes, if the proper histograms are not present!
 
     :param filter_dict:         see function filter(...) above
     :param merge_mc_key_func:   key function for python sorted(...), default
                                 tries to sort after stack position
-    :yields:                    (StackWrapper, HistoWrapper)
+    :yields:                    tuples of wrappers for plotting
     """
     loaded = fs_filter_active_sort_load(filter_keyfunc)
     grouped = group(loaded)     # default: group by analyzer_histo
