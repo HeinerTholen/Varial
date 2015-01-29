@@ -44,8 +44,19 @@ def add_wrp_info(wrp, **kw_funcs):
     >>> w1.legend
     'my_file'
     """
+    # evaluate
+    kw_args = {}
     for k, f in kw_funcs.iteritems():
-        setattr(wrp, k, f(wrp))
+        val = f(wrp)
+        kw_args[k] = val
+        setattr(wrp, k, val)
+
+    # (need to track history manually)
+    h = history.History('add_wrp_info')
+    h.add_args([wrp.history])
+    h.add_kws(kw_args)
+    wrp.history = h
+
     return wrp
 
 

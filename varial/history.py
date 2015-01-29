@@ -9,53 +9,53 @@ class History(object):
     """
     Tracking of operations provenance.
 
-    >>> h = History("some_op")
+    >>> h = History('some_op')
     >>> print str(h)
     some_op()
-    >>> h.add_args(["w1", "w2"])
+    >>> h.add_args(['w1', 'w2'])
     >>> print str(h)
     some_op(
-        w1,
-        w2,
+        'w1',
+        'w2',
     )
-    >>> h.add_kws({"a_keyword": "a_value"})
+    >>> h.add_kws({'a_keyword': 'a_value'})
     >>> print str(h)
     some_op(
-        w1,
-        w2,
-        a_keyword=a_value,
+        'w1',
+        'w2',
+        a_keyword='a_value',
     )
     >>> h
-    some_op(w1,w2,a_keyword=a_value,)
-    >>> h2 = History("another_op")
+    some_op('w1','w2',a_keyword='a_value',)
+    >>> h2 = History('another_op')
     >>> h2.add_args(['foo'])
     >>> h.add_args([h2])
     >>> print str(h)
     some_op(
         another_op(
-            foo,
+            'foo',
         ),
-        a_keyword=a_value,
+        a_keyword='a_value',
     )
     >>> # new history test
-    >>> h = History("other_op")
-    >>> h.add_args([[History("w1"), History("w2")], 'bar'])
+    >>> h = History('other_op')
+    >>> h.add_args([[History('w1'), History('w2')], 'bar'])
     >>> print str(h)
     other_op(
         [
             w1(),
             w2(),
         ],
-        bar,
+        'bar',
     )
     """
     def __init__(self, operation):
-        self.op = str(operation)
+        self.op   = str(operation)
         self.args = None
         self.kws  = None
 
     def __str__(self):
-        string = ""
+        string = ''
         if self.args:
             def arg_str(arg):
                 if (
@@ -63,23 +63,23 @@ class History(object):
                     and arg
                     and isinstance(arg[0], History)
                 ):
-                    return '[\n        ' + ",\n        ".join(
+                    return '[\n        ' + ',\n        '.join(
                         str(a).replace('\n', '\n        ') for a in arg
                     ) + ',\n    ]'
                 elif isinstance(arg, History):
                     return str(arg).replace('\n', '\n    ')
                 else:
-                    return str(arg)
+                    return repr(arg)
 
-            string += "\n".join("    %s," % arg_str(a) for a in self.args)
+            string += '\n'.join('    %s,' % arg_str(a) for a in self.args)
         if self.kws:
-            string += "\n"
-            string += "\n".join(
-                "    %s=%s," % (k, str(v)) for k, v in self.kws.iteritems())
+            string += '\n'
+            string += '\n'.join(
+                '    %s=%s,' % (k, repr(v)) for k, v in self.kws.iteritems())
         if string:
-            return self.op + "(\n" + string + "\n)"
+            return self.op + '(\n' + string + '\n)'
         else:
-            return self.op + "()"
+            return self.op + '()'
 
     def __repr__(self):
         pat = re.compile(r'\s+')
@@ -94,7 +94,7 @@ class History(object):
 
 def _gen_catch_history(wrps, list_of_histories):
     for wrp in wrps:
-        if hasattr(wrp, "history"):
+        if hasattr(wrp, 'history'):
             list_of_histories.append(wrp.history)
         yield wrp
 
@@ -117,8 +117,8 @@ def track_history(func):
             w1(),
             w2(),
         ],
-        an_arg,
-        kw=a_kw,
+        'an_arg',
+        kw='a_kw',
     )
     """
     @functools.wraps(func)
@@ -144,7 +144,7 @@ def track_history(func):
     return decorator
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     import doctest
     doctest.testmod()
 
