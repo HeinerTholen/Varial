@@ -299,11 +299,12 @@ class RootFilePlotter(toolinterface.ToolChain):
                 # make plotter instance if not done already
                 if not rfp.private_plotter:
                     def _mk_loader(p):
-                        #"""This function creates a separate namespace for p"""
-                        def loader(_):
+                        # This function creates a separate namespace for p
+                        def loader(filter_keyfunc):
                             wrps = analysis.fs_aliases
                             wrps = itertools.ifilter(
-                                lambda w: w.in_file_path[:-1] == p,
+                                lambda w: w.in_file_path[:-1] == p
+                                          and filter_keyfunc(w),
                                 wrps
                             )
                             wrps = gen.load(wrps)
@@ -312,7 +313,7 @@ class RootFilePlotter(toolinterface.ToolChain):
                         return loader
 
                     rfp.private_plotter = plotter_factory(
-                        filter_keyfunc='Dummy',
+                        filter_keyfunc=lambda _: True,
                         plot_grouper=plot_grouper_by_in_file_path,
                         save_name_func=lambda w: w._renderers[0].name,
                         load_func=_mk_loader(path[:-1]),
