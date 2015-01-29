@@ -149,7 +149,7 @@ class Decorator(object):
     in FooDecorator.f2()
     in Foo.f2()
     """
-    def __init__(self, target, deep_decoration = True, **kws):
+    def __init__(self, target=None, deep_decoration=True, **kws):
         """
         Init a decorator. "deep_decoration" activates a wrapping of the
         original methods. If true, direct calls to the inner object methods
@@ -158,6 +158,7 @@ class Decorator(object):
         """
         if not self.__dict__.has_key('dec_par'):
             self.__dict__['dec_par'] = dict()
+        self.__dict__['dec_par'].update(kws)
         if not target:
             return
         self.__dict__['decoratee']  = target
@@ -192,7 +193,7 @@ class Decorator(object):
     def __setattr__(self, name, value):
         setattr(self.decoratee, name, value)
 
-    def __call__(self, target, dd = True):
+    def __call__(self, target, dd=True):
         Decorator.__init__(self, target, dd)
         return self
 
