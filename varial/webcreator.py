@@ -161,11 +161,11 @@ class WebCreator(toolinterface.Tool):
 
         # headline / toc
         self.web_lines += (
-            '<a name="anchor_top"></a>',
+            '<a name="toc"></a>',
             '<h2>Images:</h2>',
             '<div><p>',
         ) + tuple(
-            '<a href="#anchor_%s">%s</a></br>' % (img, img)
+            '<a href="#%s">%s</a></br>' % (img, img)
             for img in self.image_names
         ) + (
             '</p></div>',
@@ -184,13 +184,13 @@ class WebCreator(toolinterface.Tool):
             self.web_lines += (
                 '<div>',
                 '<p>',
-                ('<a name="anchor_%s">' % img),             # anchor
+                ('<a name="%s">' % img),                    # anchor
                 '<b>' + img + ':</b>',                      # image headline
                 '<a href="javascript:ToggleDiv(\'' + h_id   # toggle history
                 + '\')">(toggle history)</a>',
                 '<a href="javascript:ToggleDiv(\'' + i_id   # toggle info
                 + '\')">(toggle info)</a>',
-                '<a href="#anchor_top">(back to top)</a>',
+                '<a href="#toc">(back to top)</a>',
                 '</p>',
                 '<div id="' + h_id                          # history div
                 + '" style="display:none;"><pre>',
