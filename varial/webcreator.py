@@ -185,7 +185,7 @@ class WebCreator(toolinterface.Tool):
                 '<div>',
                 '<p>',
                 ('<a name="%s">' % img),                    # anchor
-                '<b>' + img + ':</b>',                      # image headline
+                '<b>' + img + ':</b></br>',                 # image headline
                 '<a href="javascript:ToggleDiv(\'' + h_id   # toggle history
                 + '\')">(toggle history)</a>',
                 '<a href="javascript:ToggleDiv(\'' + i_id   # toggle info
