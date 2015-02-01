@@ -124,40 +124,6 @@ def filter_active_samples(wrps):
     )
 
 
-def callback(wrps, func=None, filter_keyfunc=None):
-    """
-    Do a special treatment for selected wrps! All wrps are yielded.
-
-    :param wrps:            Wrapper iterable
-    :param filter_keyfunc:  callable with one argument
-    :param func:            callable
-    :yields:                Wrapper
-
-    **Example:** If you wanted to color all passing MC histograms blue::
-
-        def make_blue(wrp):
-            wrp.histo.SetFillColor(ROOT.kBlue)
-
-        callback(
-            wrappers,
-            make_blue,
-            lambda w: not w.is_data
-        )
-    """
-    if not func:
-        for wrp in wrps:
-            yield wrp
-    elif not filter_keyfunc:
-        for wrp in wrps:
-            func(wrp)
-            yield wrp
-    else:
-        for wrp in wrps:
-            if filter_keyfunc(wrp):
-                func(wrp)
-            yield wrp
-
-
 def sort(wrps, key_list=None):
     """
     Sort stream after items in key_list. Loads full stream into memory.
@@ -465,6 +431,8 @@ def save(wrps, filename_func, suffices=None):
 import rendering as rnd
 
 
+# TODO all color generators should use (wrp.legend or wpr.sample) and 
+# analysis.get_color
 def apply_fillcolor(wrps, colors=None):
     """
     Uses ``histo.SetFillColor``. Colors from analysis module, if not given.
