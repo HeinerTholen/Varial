@@ -236,3 +236,6 @@ class WebCreator(toolinterface.Tool):
         self.write_page()
         if self.is_base:
             self.io.use_analysis_cwd = True
+
+# TODO: Make breadcrumb links with '../'
+
