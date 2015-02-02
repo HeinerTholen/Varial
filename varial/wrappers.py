@@ -20,10 +20,10 @@ class WrapperBase(object):
     """
     def __str__(self):
         """Writes all __dict__ entries into a string."""
-        name = self.__dict__.get("name", self.__class__.__name__)
-        txt = "_____________" + name + "____________\n"
+        name = self.__dict__.get('name', self.__class__.__name__)
+        txt = '_____________' + name + '____________\n'
         txt += self.pretty_info_lines()
-        txt += "\n"
+        txt += '\n'
         return txt
 
     def __repr__(self):
@@ -49,26 +49,25 @@ class WrapperBase(object):
 
     def _pretty_lines(self, keys):
         size = max(len(k) for k in keys) + 2
-        return "{\n" + ",\n".join(
-                    ("%"+str(size)+"s: ")%("'"+k+"'")
+        return '{\n' + ',\n'.join(
+                    ('%'+str(size)+'s: ')%('''+k+''')
                     + repr(getattr(self, k))
                     for k in keys
-                ) + ",\n}"
+                ) + ',\n}'
 
 
 class Alias(WrapperBase):
     """
     Alias of a non-loaded histogram on disk.
 
-    :param  filename:       path to root file
-    :param  in_file_path:   path to ROOT-object within the root file.
-    :type   in_file_path:   list of strings
+    :param  filename:       str, path to root file
+    :param  in_file_path:   str, path to ROOT-object within the root file.
     """
     def __init__(self, file_path, in_file_path, typ):
         self.klass          = self.__class__.__name__
         self.file_path      = file_path
         self.in_file_path   = in_file_path
-        self.name           = in_file_path[-1]
+        self.name           = in_file_path.split('/')[-1]
         self.type           = typ
 
 
@@ -106,15 +105,15 @@ class Wrapper(WrapperBase):
 
     **Example:**
 
-    >>> w = Wrapper(name="n", title="t", history="h")
+    >>> w = Wrapper(name='n', title='t', history='h')
     >>> info = w.all_info()
-    >>> info["name"]
+    >>> info['name']
     'n'
     """
     def __init__(self, **kws):
-        self.name           = ""
+        self.name           = ''
         self.title          = self.name
-        self.history        = ""
+        self.history        = ''
         kws.pop('type', None)  # do not overwrite type
         self.__dict__.update(kws)
         self.klass          = self.__class__.__name__
@@ -123,11 +122,11 @@ class Wrapper(WrapperBase):
         if not isinstance(obj, typ):
             raise TypeError(
                 self.__class__.__name__
-                + " needs a "
+                + ' needs a '
                 + str(typ)
-                + " instance as first argument! He got "
+                + ' instance as first argument! He got '
                 + str(obj)
-                + "."
+                + '.'
             )
         if isinstance(obj, TObject):
             self.type = obj.ClassName()
@@ -176,17 +175,17 @@ class HistoWrapper(Wrapper):
         self.histo          = histo
         self.name           = histo.GetName()
         self.title          = histo.GetTitle()
-        self.is_data        = kws.get("is_data", False)
-        self.is_signal      = kws.get("is_signal", False)
+        self.is_data        = kws.get('is_data', False)
+        self.is_signal      = kws.get('is_signal', False)
         assert(not(self.is_data and self.is_signal))  # both is forbidden!
-        self.lumi           = kws.get("lumi", 1.)
-        self.sample         = kws.get("sample", "")
-        self.legend         = kws.get("legend", "")
-        self.analyzer       = kws.get("analyzer", "")
-        self.file_path      = kws.get("file_path", "")
-        self.in_file_path   = kws.get("in_file_path", "")
+        self.lumi           = kws.get('lumi', 1.)
+        self.sample         = kws.get('sample', '')
+        self.legend         = kws.get('legend', '')
+        self.analyzer       = kws.get('analyzer', '')
+        self.file_path      = kws.get('file_path', '')
+        self.in_file_path   = kws.get('in_file_path', '')
         if not self.file_path:
-            self.file_path      = self.sample + ".root"
+            self.file_path      = self.sample + '.root'
             self.in_file_path   = [self.analyzer, self.name]
 
     def all_info(self):
@@ -194,7 +193,7 @@ class HistoWrapper(Wrapper):
         :returns: dict with all members, but not the histo.
         """
         info = super(HistoWrapper, self).all_info()
-        del info["histo"]
+        del info['histo']
         return info
 
     def primary_object(self):
@@ -211,8 +210,8 @@ class StackWrapper(HistoWrapper):
     """
     def __init__(self, stack, **kws):
         self._check_object_type(stack, THStack)
-        if not kws.has_key("histo"):
-            kws["histo"] = self._add_stack_up(stack)
+        if not kws.has_key('histo'):
+            kws['histo'] = self._add_stack_up(stack)
         super(StackWrapper, self).__init__(**kws)
         self.stack          = stack
         self.name           = stack.GetName()
@@ -232,7 +231,7 @@ class StackWrapper(HistoWrapper):
         :returns: dict with all members, but not the stack.
         """
         info = super(StackWrapper, self).all_info()
-        del info["stack"]
+        del info['stack']
         return info
 
     def primary_object(self):
@@ -257,17 +256,17 @@ class GraphWrapper(Wrapper):
         self.graph          = graph
         self.name           = graph.GetName()
         self.title          = graph.GetTitle()
-        self.is_data        = kws.get("is_data", False)
-        self.is_signal      = kws.get("is_signal", False)
+        self.is_data        = kws.get('is_data', False)
+        self.is_signal      = kws.get('is_signal', False)
         assert(not(self.is_data and self.is_signal))  # both is forbidden!
-        self.lumi           = kws.get("lumi", 1.)
-        self.sample         = kws.get("sample", "")
-        self.legend         = kws.get("legend", "")
-        self.analyzer       = kws.get("analyzer", "")
-        self.filename       = kws.get("filename", "")
-        self.in_file_path   = kws.get("in_file_path", "")
+        self.lumi           = kws.get('lumi', 1.)
+        self.sample         = kws.get('sample', '')
+        self.legend         = kws.get('legend', '')
+        self.analyzer       = kws.get('analyzer', '')
+        self.filename       = kws.get('filename', '')
+        self.in_file_path   = kws.get('in_file_path', '')
         if not self.filename:
-            self.filename       = self.sample + ".root"
+            self.filename       = self.sample + '.root'
             self.in_file_path   = [self.analyzer, self.name]
 
     def all_info(self):
@@ -275,7 +274,7 @@ class GraphWrapper(Wrapper):
         :returns: dict with all members, but not the histo.
         """
         info = super(GraphWrapper, self).all_info()
-        del info["graph"]
+        del info['graph']
         return info
 
     def primary_object(self):
@@ -296,14 +295,14 @@ class CanvasWrapper(Wrapper):
         self.canvas     = canvas
         self.name       = canvas.GetName()
         self.title      = canvas.GetTitle()
-        self.main_pad   = kws.get("main_pad", canvas)
-        self.second_pad = kws.get("second_pad")
-        self.legend     = kws.get("legend")
-        self.first_drawn= kws.get("first_drawn")
-        self.x_bounds   = kws.get("x_bounds")
-        self.y_bounds   = kws.get("y_bounds")
-        self.y_min_gr_0 = kws.get("y_min_gr_0")
-        self.lumi       = kws.get("lumi", 1.)
+        self.main_pad   = kws.get('main_pad', canvas)
+        self.second_pad = kws.get('second_pad')
+        self.legend     = kws.get('legend')
+        self.first_drawn= kws.get('first_drawn')
+        self.x_bounds   = kws.get('x_bounds')
+        self.y_bounds   = kws.get('y_bounds')
+        self.y_min_gr_0 = kws.get('y_min_gr_0')
+        self.lumi       = kws.get('lumi', 1.)
 
     def primary_object(self):
         self.canvas.Modified()
@@ -353,7 +352,7 @@ class FileServiceWrapper(Wrapper):
             for obj in self.__dict__.itervalues()
         )
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     import doctest
     doctest.testmod()
 
