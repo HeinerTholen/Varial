@@ -170,9 +170,9 @@ def _read_wrapper_objs(info, path):
     is_fs_wrp = info['klass'] == 'FileServiceWrapper'
     for key, value in obj_paths.iteritems():
         if is_fs_wrp:
-            obj = _get_obj_from_file(root_file, [info['name'], value])
+            obj = _get_obj_from_file(root_file, info['name'] + '/' + value)
         else:
-            obj = _get_obj_from_file(root_file, [key, value])
+            obj = _get_obj_from_file(root_file, key + '/' + value)
         if hasattr(obj, "SetDirectory"):
             obj.SetDirectory(0)
         info[key] = obj
@@ -233,21 +233,20 @@ def generate_aliases(glob_path="./*.root"):
 
 def _recursive_make_alias(root_dir, filename, in_file_path):
     for key in root_dir.GetListOfKeys():
-        in_file_path += [key.GetName()]
+        key_path = in_file_path + '/' + key.GetName()
         if key.IsFolder():
             for alias in _recursive_make_alias(
                 key.ReadObj(),
                 filename,
-                in_file_path
+                key_path
             ):
                 yield alias
         else:
             yield wrappers.Alias(
                 filename,
-                in_file_path[:],
+                key_path,
                 key.GetClassName()
             )
-        in_file_path.pop(-1)
 
 
 def load_bare_object(alias):
@@ -283,7 +282,7 @@ def load_histogram(alias):
 def _get_obj_from_file(filename, in_file_path):
     obj = get_open_root_file(filename)
     # browse through file
-    for name in in_file_path:
+    for name in in_file_path.split('/'):
         obj_key = obj.GetKey(name)
         if not obj_key:
             raise NoObjectError(

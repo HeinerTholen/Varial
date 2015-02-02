@@ -50,7 +50,7 @@ class WrapperBase(object):
     def _pretty_lines(self, keys):
         size = max(len(k) for k in keys) + 2
         return '{\n' + ',\n'.join(
-                    ('%'+str(size)+'s: ')%('''+k+''')
+                    ('%'+str(size)+'s: ')%('"'+k+'"')
                     + repr(getattr(self, k))
                     for k in keys
                 ) + ',\n}'
@@ -84,7 +84,7 @@ class FileServiceAlias(Alias):
     def __init__(self, name, analyzer, filename, sample, typ):
         super(FileServiceAlias, self).__init__(
             filename,
-            [analyzer, name],
+            analyzer + '/' + name,
             typ
         )
         self.name           = name
@@ -186,7 +186,7 @@ class HistoWrapper(Wrapper):
         self.in_file_path   = kws.get('in_file_path', '')
         if not self.file_path:
             self.file_path      = self.sample + '.root'
-            self.in_file_path   = [self.analyzer, self.name]
+            self.in_file_path   = self.analyzer + '/' + self.name
 
     def all_info(self):
         """
@@ -267,7 +267,7 @@ class GraphWrapper(Wrapper):
         self.in_file_path   = kws.get('in_file_path', '')
         if not self.filename:
             self.filename       = self.sample + '.root'
-            self.in_file_path   = [self.analyzer, self.name]
+            self.in_file_path   = self.analyzer + '/' + self.name
 
     def all_info(self):
         """
@@ -359,4 +359,3 @@ if __name__ == '__main__':
 
 # TODO: RootObjWrapper
 # TODO: WrapperWrapper
-# TODO: in_file_path should be str, not list
