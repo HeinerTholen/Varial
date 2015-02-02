@@ -95,13 +95,13 @@ class WebCreator(toolinterface.Tool):
         ]
 
     def make_headline(self):
-        bread_crump = list(d1 for d1 in self.working_dir.split('/') if d1)
-        n_folders = len(bread_crump) - 1
+        breadcrumb = list(d1 for d1 in self.working_dir.split('/') if d1)
+        n_folders = len(breadcrumb) - 1
         self.web_lines += (
             '<h1> Folder: ',
         ) + tuple(
             '<a href="%sindex.html">%s</a> / ' % ('../'*(n_folders-i), d)
-            for i, d in enumerate(bread_crump)
+            for i, d in enumerate(breadcrumb)
         ) + (
             '</h1>',
             '<hr width="60%">',
