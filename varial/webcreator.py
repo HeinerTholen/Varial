@@ -95,8 +95,15 @@ class WebCreator(toolinterface.Tool):
         ]
 
     def make_headline(self):
+        bread_crump = list(d1 for d1 in self.working_dir.split('/') if d1)
+        n_folders = len(bread_crump) - 1
         self.web_lines += (
-            '<h1> Folder: ' + self.working_dir + '</h1>',
+            '<h1> Folder: ',
+        ) + tuple(
+            '<a href="%sindex.html">%s</a> / ' % ('../'*(n_folders-i), d)
+            for i, d in enumerate(bread_crump)
+        ) + (
+            '</h1>',
             '<hr width="60%">',
             ''
         )
@@ -173,8 +180,7 @@ class WebCreator(toolinterface.Tool):
 
         # images
         for img in self.image_names:
-            #TODO get history from full wrapper!!
-            with open(os.path.join(self.working_dir,img + '.info')) as f:
+            with open(os.path.join(self.working_dir, img + '.info')) as f:
                 wrp = wrappers.Wrapper(**diskio._read_wrapper_info(f))
                 del wrp.history
                 info_lines = wrp.pretty_writeable_lines()
