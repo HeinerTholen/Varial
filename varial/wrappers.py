@@ -121,12 +121,8 @@ class Wrapper(WrapperBase):
     def _check_object_type(self, obj, typ):
         if not isinstance(obj, typ):
             raise TypeError(
-                self.__class__.__name__
-                + ' needs a '
-                + str(typ)
-                + ' instance as first argument! He got '
-                + str(obj)
-                + '.'
+                '%s needs a %s instance as first argument! She got a %s.' %
+                (self.__class__.__name__, str(typ), str(type(obj)))
             )
         if isinstance(obj, TObject):
             self.type = obj.ClassName()
@@ -137,6 +133,29 @@ class Wrapper(WrapperBase):
         """Overwrite! Should returned wrapped object."""
 
 
+class WrapperWrapper(Wrapper):
+    """
+    Wrapper to wrap many wrappers.
+
+    **Keywords:** See superclass.
+
+    :raises: TypeError
+    """
+    _list_type = list
+    def __init__(self, wrps, **kws):
+        self._check_object_type(wrps, self._list_type)
+        if not all(isinstance(w, Wrapper) for w in wrps):
+            raise TypeError(
+                '%s needs a list of wrappers as first argument! She got '
+                'something else in the list.' % self.__class__.__name__
+            )
+        super(WrapperWrapper, self).__init__(**kws)
+        self.wrps = wrps
+
+    def primary_object(self):
+        return self.wrps
+
+
 class FloatWrapper(Wrapper):
     """
     Wrapper for float values.
@@ -145,9 +164,9 @@ class FloatWrapper(Wrapper):
 
     :raises: TypeError
     """
-    float_type = float
+    _float_type = float
     def __init__(self, float, **kws):
-        self._check_object_type(float, self.float_type)
+        self._check_object_type(float, self._float_type)
         super(FloatWrapper, self).__init__(**kws)
         self.float = float
 
@@ -177,7 +196,7 @@ class HistoWrapper(Wrapper):
         self.title          = histo.GetTitle()
         self.is_data        = kws.get('is_data', False)
         self.is_signal      = kws.get('is_signal', False)
-        assert(not(self.is_data and self.is_signal))  # both is forbidden!
+        assert(not(self.is_data and self.is_signal))  # being both is forbidden!
         self.lumi           = kws.get('lumi', 1.)
         self.sample         = kws.get('sample', '')
         self.legend         = kws.get('legend', '')
@@ -258,7 +277,7 @@ class GraphWrapper(Wrapper):
         self.title          = graph.GetTitle()
         self.is_data        = kws.get('is_data', False)
         self.is_signal      = kws.get('is_signal', False)
-        assert(not(self.is_data and self.is_signal))  # both is forbidden!
+        assert(not(self.is_data and self.is_signal))  # being both is forbidden!
         self.lumi           = kws.get('lumi', 1.)
         self.sample         = kws.get('sample', '')
         self.legend         = kws.get('legend', '')
@@ -356,6 +375,3 @@ if __name__ == '__main__':
     import doctest
     doctest.testmod()
 
-
-# TODO: RootObjWrapper
-# TODO: WrapperWrapper
