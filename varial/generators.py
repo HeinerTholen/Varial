@@ -779,3 +779,6 @@ def save_canvas_lin_log(cnvs, filename_func):
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
+
+
+# TODO use WrapperWrapper
