@@ -93,6 +93,9 @@ def write(wrp, filename=None, suffices=(), mode='RECREATE'):
     # save with suffices
     for suffix in suffices:
         wrp.primary_object().SaveAs(filename + suffix)
+    # WrapperWrapper: store others first
+    if isinstance(wrp, wrappers.WrapperWrapper):
+        _write_wrapperwrapper(wrp, filename)
     # write root objects (if any)
     if any(isinstance(o, TObject) for o in wrp.__dict__.itervalues()):
         wrp.root_filename = basename(filename+".root")
@@ -137,6 +140,17 @@ def _write_wrapper_objs(wrp, file_handle):
             wrp.root_file_obj_names[key] = value.GetName()
 
 
+def _write_wrapperwrapper(wrp, filename=None):
+    if not filename:
+        filename = wrp.name
+    wrp_names = []
+    for w in wrp.wrps:
+        name = filename + '_WRPWRP_' + w.name
+        wrp_names.append(basename(name))
+        write(w, name)
+    wrp.wrps = wrp_names
+
+
 def read(filename):
     """Reads wrapper from disk, including root objects."""
     if filename[-5:] != ".info":
@@ -148,6 +162,9 @@ def read(filename):
     if "root_filename" in info:
         _read_wrapper_objs(info, dirname(filename))
     klass = getattr(wrappers, info.get("klass"))
+    if klass == wrappers.WrapperWrapper:
+        p = dirname(filename)
+        info['wrps'] = _read_wrapperwrapper(join(p, f) for f in info['wrps'])
     wrp = klass(**info)
     _clean_wrapper(wrp)
     return wrp
@@ -165,6 +182,7 @@ def _read_wrapper_info(file_handle):
 
 
 def _read_wrapper_objs(info, path):
+    #"""Reads root objects from disk."""
     root_file = join(path, info["root_filename"])
     obj_paths = info["root_file_obj_names"]
     is_fs_wrp = info['klass'] == 'FileServiceWrapper'
@@ -176,6 +194,13 @@ def _read_wrapper_objs(info, path):
         if hasattr(obj, "SetDirectory"):
             obj.SetDirectory(0)
         info[key] = obj
+
+
+def _read_wrapperwrapper(wrp_list):
+    wrps = []
+    for fname in wrp_list:
+        wrps.append(read(fname))
+    return wrps
 
 
 def _clean_wrapper(wrp):

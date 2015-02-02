@@ -3,7 +3,7 @@
 import os
 from ROOT import TH1F
 from test_histotoolsbase import TestHistoToolsBase
-from varial.wrappers import FileServiceAlias
+from varial.wrappers import FileServiceAlias, HistoWrapper, WrapperWrapper
 from varial import diskio
 from varial import analysis
 
@@ -84,6 +84,34 @@ class TestDiskio(TestHistoToolsBase):
         # check histograms (same integral, different instance)
         self.assertEqual(self.test_wrp.histo.Integral(), loaded.histo.Integral())
         self.assertNotEqual(str(self.test_wrp.histo), str(loaded.histo))
+
+    def test_write_wrpwrp(self):
+        fname = 'test_data/wrpwrp_save.info'
+        wrpwrp1 = WrapperWrapper([
+            HistoWrapper(TH1F('h1', 'h1', 2, 0, 2)),
+            HistoWrapper(TH1F('h2', 'h2', 2, 0, 2)),
+        ])
+        diskio.write(wrpwrp1, fname)
+
+        with open(fname) as fhandle:
+            n_lines = len(list(fhandle))
+            self.assertGreater(n_lines, 4)
+
+    def test_read_wrpwrp(self):
+        fname = 'test_data/wrpwrp_load'
+        wrpwrp1 = WrapperWrapper([
+            HistoWrapper(TH1F('h3', 'h3', 2, 0, 2)),
+            HistoWrapper(TH1F('h4', 'h4', 2, 0, 2)),
+        ])
+        wrpwrp1.wrps[0].histo.Fill(0.5)
+        wrpwrp1.wrps[1].histo.Fill(1.5)
+        diskio.write(wrpwrp1, fname)
+
+        wrpwrp2 = diskio.read(fname)
+        self.assertAlmostEqual(wrpwrp2.wrps[0].histo.GetBinContent(1), 1.)
+        self.assertAlmostEqual(wrpwrp2.wrps[0].histo.GetBinContent(2), 0.)
+        self.assertAlmostEqual(wrpwrp2.wrps[1].histo.GetBinContent(1), 0.)
+        self.assertAlmostEqual(wrpwrp2.wrps[1].histo.GetBinContent(2), 1.)
 
 
 import unittest
