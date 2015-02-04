@@ -199,16 +199,26 @@ class Plotter(toolinterface.Tool):
 
 
 def _mk_legendnames(filenames):
-    # trims filesnames from front and back
+    # only one file: return directly
     if len(filenames) < 2:
         return filenames[:]
+
+    # try the sframe way:
+    lns = list(n.split('.') for n in filenames)
+    if all(len(l) == 5 for l in lns):
+        return list(l[3] for l in lns)
+
+    # try trim filesnames from front and back
     lns = filenames[:]
-    while all(n[0] == lns[0][0] for n in lns):
-        for i in xrange(len(lns)):
-            lns[i] = lns[i][1:]
-    while all(n[-1] == lns[0][-1] for n in lns):
-        for i in xrange(len(lns)):
-            lns[i] = lns[i][:-1]
+    try:
+        while all(n[0] == lns[0][0] for n in lns):
+            for i in xrange(len(lns)):
+                lns[i] = lns[i][1:]
+        while all(n[-1] == lns[0][-1] for n in lns):
+            for i in xrange(len(lns)):
+                lns[i] = lns[i][:-1]
+    except IndexError:
+        return filenames[:]
     return lns
 
 
@@ -265,8 +275,8 @@ class RootFilePlotter(toolinterface.ToolChain):
         legendnames = _mk_legendnames(rootfiles)
         legendnames = dict(itertools.izip(rootfiles, legendnames))
         self.message(
-            'INFO Here are the rootfiles and legend names that I will use: %s'
-            % str(legendnames)
+            'INFO Here are the rootfiles and legend names that I will use:\n'
+            + '\n'.join('%22s: %s' % (v,k) for k,v in legendnames.iteritems())
         )
         colors = settings.default_colors[:len(rootfiles)]
         def colorizer(wrps):
