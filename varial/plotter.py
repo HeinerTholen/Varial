@@ -245,7 +245,9 @@ class RootFilePlotter(toolinterface.ToolChain):
             plotter_factory = Plotter
         aliases = diskio.generate_aliases(self.rootfile)
         aliases = itertools.ifilter(
-            lambda a: type(a.type) == str and a.type.startswith('TH'),
+            lambda a: type(a.type) == str and (
+                a.type.startswith('TH') or a.type == 'TProfile'
+            ),
             aliases
         )
         aliases = sorted(
