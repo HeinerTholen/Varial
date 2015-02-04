@@ -74,26 +74,6 @@ class TestGenerators(TestHistoToolsBase):
         self.assertEqual(gen.consume_n_count(crtlplt2), 39)
         self.assertEqual(gen.consume_n_count(ttgam_cf), 2)
 
-    def test_gen_callback(self):
-        sample = ["tt", "zjets"]
-        name = "cutflow"
-        class TreatCls(object):
-            def __init__(self, test):
-                self.test = test
-                self.n_times_called = 0
-            def __call__(self, alias):
-                self.n_times_called += 1
-                self.test.assertTrue(alias.sample in sample)
-                self.test.assertEqual(alias.name, name)
-        treat_func = TreatCls(self)
-        treated = gen.callback(
-            gen.fs_content(),
-            treat_func,
-            lambda w: w.sample in sample and w.name == name
-        )
-        self.assertEqual(gen.consume_n_count(treated), 150)
-        self.assertEqual(treat_func.n_times_called, 2)
-
     def test_gen_sort(self):
         aliases      = list(gen.fs_content())
         tmplt        = ifilter(lambda w: w.analyzer == "fakeTemplate", aliases)

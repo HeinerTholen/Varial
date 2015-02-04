@@ -18,7 +18,7 @@ class WebCreator(toolinterface.Tool):
     :param is_base:         bool, **Do not touch! =)**
     """
 
-    def __init__(self, name=None, working_dir="", is_base=True):
+    def __init__(self, name=None, working_dir='', is_base=True):
         super(WebCreator, self).__init__(name)
         self.working_dir = working_dir
         self.web_lines = []
@@ -31,15 +31,15 @@ class WebCreator(toolinterface.Tool):
 
     def configure(self):
         # get image format
-        for pf in [".png", ".jpg", ".jpeg"]:
+        for pf in ['.png', '.jpg', '.jpeg']:
             if pf in settings.rootfile_postfixes:
                 self.image_postfix = pf
                 break
         if not self.image_postfix:
-            self.message("ERROR No image formats for web available!")
-            self.message("ERROR settings.rootfile_postfixes:"
+            self.message('ERROR No image formats for web available!')
+            self.message('ERROR settings.rootfile_postfixes:'
                          + str(settings.rootfile_postfixes))
-            self.message("ERROR html production aborted")
+            self.message('ERROR html production aborted')
             return
 
         # collect folders and images
@@ -51,12 +51,12 @@ class WebCreator(toolinterface.Tool):
         for wd, dirs, files in os.walk(self.working_dir):
             self.subfolders += dirs
             for f in files:
-                if f[-5:] == ".info":
+                if f[-5:] == '.info':
                     if f[:-5] + self.image_postfix in files:
                         self.image_names.append(f[:-5])
                     else:
                         self.plain_info.append(f)
-                if f[-4:] == ".tex":
+                if f[-4:] == '.tex':
                     self.plain_tex.append(f)
             break
 
@@ -65,7 +65,7 @@ class WebCreator(toolinterface.Tool):
             path = os.path.join(self.working_dir, sf)
             inst = self.__class__(self.name, path, False)
             inst.run()
-            if not os.path.exists(os.path.join(path, "index.html")):
+            if not os.path.exists(os.path.join(path, 'index.html')):
                 self.subfolders.remove(sf)
 
     def make_html_head(self):
@@ -95,10 +95,17 @@ class WebCreator(toolinterface.Tool):
         ]
 
     def make_headline(self):
+        breadcrumb = list(d1 for d1 in self.working_dir.split('/') if d1)
+        n_folders = len(breadcrumb) - 1
         self.web_lines += (
-            '<h1> Folder: ' + self.working_dir + '</h1>',
+            '<h1> Folder: ',
+        ) + tuple(
+            '<a href="%sindex.html">%s</a> / ' % ('../'*(n_folders-i), d)
+            for i, d in enumerate(breadcrumb)
+        ) + (
+            '</h1>',
             '<hr width="60%">',
-            ""
+            ''
         )
 
     def make_subfolder_links(self):
@@ -108,12 +115,12 @@ class WebCreator(toolinterface.Tool):
         for sf in self.subfolders:
             self.web_lines += (
                 '<p><a href="'
-                + os.path.join(sf, "index.html")
+                + os.path.join(sf, 'index.html')
                 + '">'
                 + sf
                 + '</a></p>',
             )
-        self.web_lines += ('<hr width="60%">', "")
+        self.web_lines += ('<hr width="60%">', '')
 
     def make_info_file_divs(self):
         if not self.plain_info:
@@ -140,7 +147,7 @@ class WebCreator(toolinterface.Tool):
             return
         self.web_lines += ('<h2>Tex files:</h2>',)
         for tex in self.plain_tex:
-            with open(os.path.join(self.working_dir, tex), "r") as f:
+            with open(os.path.join(self.working_dir, tex), 'r') as f:
                 self.web_lines += (
                     '<div>',
                     '<p>',
@@ -161,11 +168,11 @@ class WebCreator(toolinterface.Tool):
 
         # headline / toc
         self.web_lines += (
-            '<a name="anchor_top"></a>',
+            '<a name="toc"></a>',
             '<h2>Images:</h2>',
             '<div><p>',
         ) + tuple(
-            '<a href="#anchor_%s">%s</a></br>' % (img, img)
+            '<a href="#%s">%s</a></br>' % (img, img)
             for img in self.image_names
         ) + (
             '</p></div>',
@@ -173,24 +180,23 @@ class WebCreator(toolinterface.Tool):
 
         # images
         for img in self.image_names:
-            #TODO get history from full wrapper!!
-            with open(os.path.join(self.working_dir,img + ".info")) as f:
+            with open(os.path.join(self.working_dir, img + '.info')) as f:
                 wrp = wrappers.Wrapper(**diskio._read_wrapper_info(f))
                 del wrp.history
                 info_lines = wrp.pretty_writeable_lines()
-                history_lines = "".join(f)
-            i_id = "info_" + img
-            h_id = "history_" + img
+                history_lines = ''.join(f)
+            i_id = 'info_' + img
+            h_id = 'history_' + img
             self.web_lines += (
                 '<div>',
                 '<p>',
-                ('<a name="anchor_%s">' % img),             # anchor
-                '<b>' + img + ':</b>',                      # image headline
+                ('<a name="%s">' % img),                    # anchor
+                '<b>' + img + ':</b></br>',                 # image headline
                 '<a href="javascript:ToggleDiv(\'' + h_id   # toggle history
                 + '\')">(toggle history)</a>',
                 '<a href="javascript:ToggleDiv(\'' + i_id   # toggle info
                 + '\')">(toggle info)</a>',
-                '<a href="#anchor_top">(back to top)</a>',
+                '<a href="#toc">(back to top)</a>',
                 '</p>',
                 '<div id="' + h_id                          # history div
                 + '" style="display:none;"><pre>',
@@ -208,12 +214,12 @@ class WebCreator(toolinterface.Tool):
             )
 
     def finalize_page(self):
-        self.web_lines += ["", "</body>", "</html>", ""]
+        self.web_lines += ['', '</body>', '</html>', '']
 
     def write_page(self):
         for i, l in enumerate(self.web_lines):
-            self.web_lines[i] += "\n"
-        with open(os.path.join(self.working_dir, "index.html"), "w") as f:
+            self.web_lines[i] += '\n'
+        with open(os.path.join(self.working_dir, 'index.html'), 'w') as f:
             f.writelines(self.web_lines)
 
     def run(self):
@@ -222,7 +228,7 @@ class WebCreator(toolinterface.Tool):
         if not self.image_postfix:
             return
         if self.image_names or self.subfolders or self.plain_info:
-            self.message("INFO Building page in " + self.working_dir)
+            self.message('INFO Building page in ' + self.working_dir)
         else:
             return
         self.go4subdirs()
@@ -236,3 +242,6 @@ class WebCreator(toolinterface.Tool):
         self.write_page()
         if self.is_base:
             self.io.use_analysis_cwd = True
+
+# TODO: Make breadcrumb links with '../'
+

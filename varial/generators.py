@@ -39,9 +39,9 @@ def debug_printer(iterable, print_obj=True):
     :yields:            same as input
     """
     for obj in iterable:
-        print "DEBUG: debug_printer: obj type: ", type(obj)
+        print 'DEBUG: debug_printer: obj type: ', type(obj)
         if print_obj:
-            print "DEBUG: debug_printer: obj:      ", obj
+            print 'DEBUG: debug_printer: obj:      ', obj
         yield obj
 
 
@@ -124,40 +124,6 @@ def filter_active_samples(wrps):
     )
 
 
-def callback(wrps, func=None, filter_keyfunc=None):
-    """
-    Do a special treatment for selected wrps! All wrps are yielded.
-
-    :param wrps:            Wrapper iterable
-    :param filter_keyfunc:  callable with one argument
-    :param func:            callable
-    :yields:                Wrapper
-
-    **Example:** If you wanted to color all passing MC histograms blue::
-
-        def make_blue(wrp):
-            wrp.histo.SetFillColor(ROOT.kBlue)
-
-        callback(
-            wrappers,
-            make_blue,
-            lambda w: not w.is_data
-        )
-    """
-    if not func:
-        for wrp in wrps:
-            yield wrp
-    elif not filter_keyfunc:
-        for wrp in wrps:
-            func(wrp)
-            yield wrp
-    else:
-        for wrp in wrps:
-            if filter_keyfunc(wrp):
-                func(wrp)
-            yield wrp
-
-
 def sort(wrps, key_list=None):
     """
     Sort stream after items in key_list. Loads full stream into memory.
@@ -186,18 +152,18 @@ def group(wrps, key_func=None):
 
     :param wrps:        Wrapper iterable
     :param key_func:    callable to group the wrappers. If ``None``, then
-                        ``lambda w: w.analyzer + "_" + w.name`` is used.
+                        ``lambda w: w.analyzer + '_' + w.name`` is used.
     :yields:            Wrapper
 
     **Example:** This is neccessary before stacking, in order to have only
     same-observable-histograms stacked together::
 
-        # wrappers has the names ["h1", "h1", "h2", "h2"]
+        # wrappers has the names ['h1', 'h1', 'h2', 'h2']
         wrappers = group(wrappers)
-        # result is like: [ ("h1", "h1"), ("h2", "h2") ]
+        # result is like: [ ('h1', 'h1'), ('h2', 'h2') ]
     """
     if not key_func:
-        key_func = lambda w: w.analyzer+"_"+w.name
+        key_func = lambda w: w.analyzer+'_'+w.name
     for k, g in itertools.groupby(wrps, key_func):
         yield g
 
@@ -249,7 +215,7 @@ def _generate_op(op_func):
 
     >>> from ROOT import TH1I
     >>> from varial.wrappers import HistoWrapper
-    >>> h1 = TH1I("h1", "", 2, .5, 4.5)
+    >>> h1 = TH1I('h1', '', 2, .5, 4.5)
     >>> h1.Fill(1)
     1
     >>> h1.Fill(3)
@@ -345,7 +311,7 @@ def gen_make_eff_graphs(wrps, postfix_sub='_sub', postfix_tot='_tot'):
                         default: ``_tot``
     :yields:            Wrapper (simply forwarding), GraphWrapper
     """
-    token = lambda w: w.legend + ":" + "/".join(w.in_file_path)[:-4]
+    token = lambda w: w.legend + ':' + w.in_file_path[:-4]
     subs, tots = {}, {}
     res = []
     for wrp in wrps:
@@ -374,7 +340,7 @@ def gen_make_th2_projections(wrps, keep_th2=True):
     :param wrps:        Wrapper iterable
     :param keep_th2:    bool, if False the TH2 hists are dropped.
     """
-    token = lambda w: "/".join(w.in_file_path)
+    token = lambda w: w.in_file_path
     current_token = None
     x_buf, y_buf = [], []
 
@@ -416,7 +382,7 @@ def fs_content():
         yield alias
 
 
-def dir_content(dir_path="./"):
+def dir_content(dir_path='./'):
     """
     Proxy of diskio.generate_aliases(directory)
 
@@ -465,6 +431,8 @@ def save(wrps, filename_func, suffices=None):
 import rendering as rnd
 
 
+# TODO all color generators should use (wrp.legend or wpr.sample) and 
+# analysis.get_color
 def apply_fillcolor(wrps, colors=None):
     """
     Uses ``histo.SetFillColor``. Colors from analysis module, if not given.
@@ -746,7 +714,7 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=False):
         if res:
             yield tuple(res)
         else:
-            raise op.TooFewWrpsError("No histograms present!")
+            raise op.TooFewWrpsError('No histograms present!')
 
 
 def fs_mc_stack_n_data_sum(filter_keyfunc=None, merge_mc_key_func=None):
@@ -777,8 +745,8 @@ def canvas(grps, decorators=None):
     """
     def put_ana_histo_name(groups):
         for grp in groups:
-            if hasattr(grp.renderers[0], "analyzer"):
-                grp.name = grp.renderers[0].analyzer+"_"+grp.name
+            if hasattr(grp.renderers[0], 'analyzer'):
+                grp.name = grp.renderers[0].analyzer+'_'+grp.name
             yield grp
     if not decorators:
         decorators = []
@@ -798,16 +766,19 @@ def save_canvas_lin_log(cnvs, filename_func):
     """
     cnvs = save(
         cnvs,
-        lambda c: filename_func(c) + "_lin"
+        lambda c: filename_func(c) + '_lin'
     )
     cnvs = switch_log_scale(cnvs)
     cnvs = save(
         cnvs,
-        lambda c: filename_func(c) + "_log"
+        lambda c: filename_func(c) + '_log'
     )
     return cnvs
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     import doctest
     doctest.testmod()
+
+
+# TODO use WrapperWrapper
