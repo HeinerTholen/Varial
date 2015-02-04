@@ -251,14 +251,17 @@ def generate_aliases(glob_path="./*.root"):
         for alias in _recursive_make_alias(
             root_file,
             abspath(filename),
-            []
+            ''
         ):
             yield alias
 
 
 def _recursive_make_alias(root_dir, filename, in_file_path):
     for key in root_dir.GetListOfKeys():
-        key_path = in_file_path + '/' + key.GetName()
+        if in_file_path:
+            key_path = in_file_path + '/' + key.GetName()
+        else:
+            key_path = key.GetName()
         if key.IsFolder():
             for alias in _recursive_make_alias(
                 key.ReadObj(),
