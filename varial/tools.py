@@ -200,7 +200,8 @@ def mk_rootfile_plotter(name="RootFilePlots",
                         pattern='*.root',
                         flat=False,
                         plotter_factory=None,
-                        combine_files=False):
+                        combine_files=False,
+                        filter_keyfunc=None):
     """
     Make a plotter chain that plots all content of all rootfiles in cwd.
 
@@ -219,12 +220,17 @@ def mk_rootfile_plotter(name="RootFilePlots",
     """
     if combine_files:
         plotters = [RootFilePlotter(
-            pattern, plotter_factory, flat, name=name)]
+            pattern, plotter_factory, flat, name, filter_keyfunc)]
         tc = ToolChain(name, plotters)
     else:
         plotters = list(
             RootFilePlotter(
-                f, plotter_factory, flat, name=f[:-5].split('/')[-1])
+                f,
+                plotter_factory,
+                flat,
+                f[:-5].split('/')[-1],
+                filter_keyfunc,
+            )
             for f in glob.iglob(pattern)
         )
         tc = ToolChain(name, [ToolChain(name, plotters)])

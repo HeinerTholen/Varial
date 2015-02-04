@@ -226,7 +226,12 @@ class RootFilePlotter(toolinterface.ToolChain):
     :param name:                str, tool name
     """
 
-    def __init__(self, rootfile, plotter_factory=None, flat=False, name=None):
+    def __init__(self,
+                 rootfile,
+                 plotter_factory=None,
+                 flat=False,
+                 name=None,
+                 filter_keyfunc=None):
         super(RootFilePlotter, self).__init__(name)
 
         self.private_plotter = None
@@ -250,6 +255,7 @@ class RootFilePlotter(toolinterface.ToolChain):
             ),
             aliases
         )
+        aliases = itertools.ifilter(filter_keyfunc, aliases)
         aliases = sorted(
             aliases,
             key=lambda a: a.in_file_path
@@ -274,7 +280,7 @@ class RootFilePlotter(toolinterface.ToolChain):
         # either print all in one dir...
         if flat:
             self.private_plotter = plotter_factory(
-                filter_keyfunc='Dummy',
+                filter_keyfunc=lambda _: True,
                 load_func=lambda _: colorizer(gen.load(gen.fs_content())),
                 plot_grouper=plot_grouper_by_in_file_path,
                 plot_setup=lambda ws: gen.mc_stack_n_data_sum(
