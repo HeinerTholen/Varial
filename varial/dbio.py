@@ -1,5 +1,5 @@
 """
-Implements storing of Wrappers into a sqlite database.
+Store wrappers into a sqlite database.
 
 Please checkout the :ref:`diskio-module` documentation for more information.
 """
@@ -76,15 +76,6 @@ def get(name, default=None):
         return read(name)
     except RuntimeError:
         return default
-
-
-########################################################## i/o with aliases ###
-def generate_aliases(path=None):
-    pass
-
-
-def load_histogram(alias):
-    pass
 
 
 ################################################### write and close on exit ###
