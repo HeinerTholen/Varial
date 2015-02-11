@@ -81,7 +81,7 @@ class Plotter(toolinterface.Tool):
         'save_log_scale': False,
         'save_lin_log_scale': False,
         'keep_content_as_result': False,
-        'save_name_fnuc': lambda wrp: wrp.name,
+        'save_name_func': lambda wrp: wrp.name,
         'canvas_decorators': [
             rendering.BottomPlotRatioSplitErr,
             rendering.Legend

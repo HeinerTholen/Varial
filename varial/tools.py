@@ -93,8 +93,8 @@ class CopyTool(Tool):
                  wipe_dest_dir=True,
                  name=None):
         super(CopyTool, self).__init__(name)
-        self.dest = dest
-        self.src = src
+        self.dest = dest.replace('~', os.getenv('HOME'))
+        self.src = src.replace('~', os.getenv('HOME'))
         self.ignore = ignore
         self.wipe_dest_dir = wipe_dest_dir
 
