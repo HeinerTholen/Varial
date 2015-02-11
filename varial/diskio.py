@@ -291,7 +291,8 @@ def load_histogram(alias):
         raise NoHistogramError(
             "Loaded object is not of type TH1: %s" % str(histo)
         )
-    histo.Sumw2()
+    if not histo.GetSumw2().GetSize():
+        histo.Sumw2()
     wrp = wrappers.HistoWrapper(histo, **alias.all_info())
     if isinstance(alias, wrappers.FileServiceAlias):
         histo.SetTitle(alias.legend)
