@@ -60,8 +60,9 @@ class Alias(WrapperBase):
     """
     Alias of a non-loaded histogram on disk.
 
-    :param  filename:       str, path to root file
-    :param  in_file_path:   str, path to ROOT-object within the root file.
+    :param file_path:       str, path to root file
+    :param in_file_path:    str, path to ROOT-object within the root file.
+    :param typ:             str, classname of the root object
     """
     def __init__(self, file_path, in_file_path, typ):
         self.klass          = self.__class__.__name__
@@ -75,25 +76,22 @@ class FileServiceAlias(Alias):
     """
     Alias of a histogram in the fileservice output.
 
-    :param  name:           histogram name
-    :param  analyzer:       name of the CMSSW analyzer or rootfile folder
-    :param  filename:       path to file
-    :param  sample:         sample instance
-    :param  typ:            type of root object
+    :param file_path:       str, path to root file
+    :param in_file_path:    str, path to ROOT-object within the root file.
+    :param typ:             str, classname of the root object
+    :param sample_inst:     sample instance which should be associated
     """
-    def __init__(self, name, analyzer, filename, sample, typ):
+    def __init__(self, file_path, in_file_path, typ, sample_inst):
         super(FileServiceAlias, self).__init__(
-            filename,
-            analyzer + '/' + name,
+            file_path,
+            in_file_path,
             typ
         )
-        self.name           = name
-        self.analyzer       = analyzer
-        self.sample         = sample.name
-        self.legend         = sample.legend
-        self.lumi           = sample.lumi
-        self.is_data        = sample.is_data
-        self.is_signal      = sample.is_signal
+        self.sample         = sample_inst.name
+        self.legend         = sample_inst.legend
+        self.lumi           = sample_inst.lumi
+        self.is_data        = sample_inst.is_data
+        self.is_signal      = sample_inst.is_signal
         assert(not(self.is_data and self.is_signal))  # both is forbidden!
 
 
@@ -101,14 +99,14 @@ class Wrapper(WrapperBase):
     """
     Wrapper base class.
 
-    **Keywords:** ``name``, ``title`` and ``history`` are accepted.
+    All constructor keywords are added as attributes.
 
     **Example:**
 
-    >>> w = Wrapper(name='n', title='t', history='h')
+    >>> w = Wrapper(name='n', title='t', history='h', blabla=True)
     >>> info = w.all_info()
-    >>> info['name']
-    'n'
+    >>> info['blabla']
+    True
     """
     def __init__(self, **kws):
         self.name           = ''
@@ -177,14 +175,6 @@ class FloatWrapper(Wrapper):
 class HistoWrapper(Wrapper):
     """
     Wrapper class for a ROOT histogram TH1.
-    
-    **Keywords:**
-    ``lumi``,
-    ``is_data``,
-    ``is_signal``,
-    ``sample``,
-    ``analyzer``,
-    and also see superclass.
 
     :raises: TypeError
     """
@@ -200,17 +190,10 @@ class HistoWrapper(Wrapper):
         self.lumi           = kws.get('lumi', 1.)
         self.sample         = kws.get('sample', '')
         self.legend         = kws.get('legend', '')
-        self.analyzer       = kws.get('analyzer', '')
         self.file_path      = kws.get('file_path', '')
         self.in_file_path   = kws.get('in_file_path', '')
-        if not self.file_path:
-            self.file_path      = self.sample + '.root'
-            self.in_file_path   = self.analyzer + '/' + self.name
 
     def all_info(self):
-        """
-        :returns: dict with all members, but not the histo.
-        """
         info = super(HistoWrapper, self).all_info()
         del info['histo']
         return info
@@ -222,8 +205,6 @@ class HistoWrapper(Wrapper):
 class StackWrapper(HistoWrapper):
     """
     Wrapper class for a ROOT histogram stack THStack.
-
-    **Keywords:** See superclass.
 
     :raises: TypeError
     """
@@ -281,12 +262,8 @@ class GraphWrapper(Wrapper):
         self.lumi           = kws.get('lumi', 1.)
         self.sample         = kws.get('sample', '')
         self.legend         = kws.get('legend', '')
-        self.analyzer       = kws.get('analyzer', '')
-        self.filename       = kws.get('filename', '')
+        self.file_path      = kws.get('file_path', '')
         self.in_file_path   = kws.get('in_file_path', '')
-        if not self.filename:
-            self.filename       = self.sample + '.root'
-            self.in_file_path   = self.analyzer + '/' + self.name
 
     def all_info(self):
         """

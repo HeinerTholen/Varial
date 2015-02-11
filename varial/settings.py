@@ -16,7 +16,7 @@ varial_working_dir = "./"
 db_name = '.varial.db'
 default_data_lumi = 1.
 default_colors = [632, 878, 596, 870, 434, 840, 902, 417, 828, 618, 400, 800]
-wrp_sorting_keys = ['analyzer', 'name', 'is_data', 'sample']
+wrp_sorting_keys = ['in_file_path', 'is_signal', 'is_data', 'sample']
 max_open_root_files = 998
 
 

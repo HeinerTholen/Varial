@@ -26,12 +26,6 @@ def plot_grouper_by_in_file_path(wrps, separate_th2=True):
     return gen.group(wrps, key_func=lambda w: w.in_file_path)
 
 
-def plot_grouper_by_analyzer_name(wrps, separate_th2=True):
-    if separate_th2:
-        wrps = rename_th2(wrps)
-    return gen.group(wrps, key_func=lambda w: '%s/%s' % (w.analyzer, w.name))
-
-
 def overlay_colorizer(wrps, colors=None):
     wrps = gen.apply_linecolor(wrps, colors)
     for w in wrps:
@@ -51,7 +45,7 @@ class Plotter(toolinterface.Tool):
     ...    'filter_keyfunc': None,
     ...    'load_func': gen.fs_filter_active_sort_load,
     ...    'hook_loaded_histos': None,
-    ...    'stack_grouper': plot_grouper_by_analyzer_name,
+    ...    'stack_grouper': plot_grouper_by_in_file_path,
     ...    'plot_grouper': lambda wrps: ((w,) for w in wrps),
     ...    'stack_setup': lambda w: gen.mc_stack_n_data_sum(w, None, True),
     ...    'plot_setup': lambda wrps: wrps,
@@ -72,7 +66,7 @@ class Plotter(toolinterface.Tool):
         'filter_keyfunc': None,
         'load_func': gen.fs_filter_active_sort_load,
         'hook_loaded_histos': None,
-        'stack_grouper': plot_grouper_by_analyzer_name,
+        'stack_grouper': plot_grouper_by_in_file_path,
         'plot_grouper': lambda wrps: ((w,) for w in wrps),
         'stack_setup': lambda w: gen.mc_stack_n_data_sum(w, None, True),
         'plot_setup': lambda wrps: wrps,
@@ -143,7 +137,7 @@ class Plotter(toolinterface.Tool):
     def set_up_make_canvas(self):
         def put_ana_histo_name(grps):
             for grp in grps:
-                grp.name = grp.renderers[0].analyzer+"_"+grp.name
+                grp.name = grp.renderers[0].in_file_path.replace('/', '_')
                 yield grp
 
         def run_build_procedure(bldr):

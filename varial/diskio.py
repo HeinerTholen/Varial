@@ -225,56 +225,38 @@ def get(filename, default=None):
 
 
 ########################################################## i/o with aliases ###
-def generate_fs_aliases(root_file_path, sample_inst):
+def generate_fs_aliases(file_path, sample_inst):
     """Produces list of all fileservice histograms for registered samples."""
     if not isinstance(sample_inst, sample.Sample):
         raise RuntimeError(
             '2nd arg of generate_fs_aliases must be instance of sample.Sample')
-    fs_file = get_open_root_file(root_file_path)
-    for analyzer_key in fs_file.GetListOfKeys():
-        analyzer = analyzer_key.ReadObj()
-        analyzer_name = analyzer_key.GetName()
-        for histo_key in analyzer.GetListOfKeys():
-            yield wrappers.FileServiceAlias(
-                histo_key.GetName(),
-                analyzer_name,
-                root_file_path,
-                sample_inst,
-                histo_key.GetClassName()
-            )
+    root_file = get_open_root_file(file_path)
+    for ifp, typ in _recursive_path_and_type(root_file, ''):
+        yield wrappers.FileServiceAlias(file_path, ifp, typ, sample_inst)
 
 
 def generate_aliases(glob_path="./*.root"):
     """Looks for root files and produces aliases."""
-    for filename in glob.iglob(glob_path):
-        root_file = get_open_root_file(filename)
-        for alias in _recursive_make_alias(
-            root_file,
-            abspath(filename),
-            ''
-        ):
-            yield alias
+    for file_path in glob.iglob(glob_path):
+        root_file = get_open_root_file(file_path)
+        for ifp, typ in _recursive_path_and_type(root_file, ''):
+            yield wrappers.Alias(file_path, ifp, typ)
 
 
-def _recursive_make_alias(root_dir, filename, in_file_path):
+def _recursive_path_and_type(root_dir, in_file_path):
     for key in root_dir.GetListOfKeys():
         if in_file_path:
             key_path = in_file_path + '/' + key.GetName()
         else:
             key_path = key.GetName()
         if key.IsFolder():
-            for alias in _recursive_make_alias(
+            for info in _recursive_path_and_type(
                 key.ReadObj(),
-                filename,
                 key_path
             ):
-                yield alias
+                yield info
         else:
-            yield wrappers.Alias(
-                filename,
-                key_path,
-                key.GetClassName()
-            )
+            yield key_path, key.GetClassName()
 
 
 def load_bare_object(alias):
@@ -297,8 +279,8 @@ def load_histogram(alias):
     if isinstance(alias, wrappers.FileServiceAlias):
         histo.SetTitle(alias.legend)
         wrp.history = history.History(
-            'FileService(%s, %s, %s)' % (
-                alias.sample, alias.analyzer, alias.name))
+            'FileService(%s, %s)' % (
+                alias.in_file_path, alias.sample))
     else:
         info = alias.all_writeable_info()
         del info['klass']

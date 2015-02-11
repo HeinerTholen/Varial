@@ -131,7 +131,7 @@ def sort(wrps, key_list=None):
     :param wrps:        Wrapper iterable
     :param key_list:    (List of) token(s) after which the stream is sorted.
                         First item has highest importance. If ``None``, then
-                        ``['analyzer', 'name', 'is_data', 'sample']`` is used.
+                        ``settings.wrp_sorting_keys`` list is used.
     :returns:           sorted list of wrappers.
     """
     if not key_list:
@@ -142,7 +142,7 @@ def sort(wrps, key_list=None):
         try:
             wrps = sorted(wrps, key=operator.attrgetter(key))
         except AttributeError:
-            print 'INFO Sorting by "%s" failed.' % key
+            print 'WARNING Sorting by "%s" failed.' % key
     return wrps
 
 
@@ -152,7 +152,7 @@ def group(wrps, key_func=None):
 
     :param wrps:        Wrapper iterable
     :param key_func:    callable to group the wrappers. If ``None``, then
-                        ``lambda w: w.analyzer + '_' + w.name`` is used.
+                        ``lambda w: w.in_file_path`` is used.
     :yields:            Wrapper
 
     **Example:** This is neccessary before stacking, in order to have only
@@ -163,7 +163,7 @@ def group(wrps, key_func=None):
         # result is like: [ ('h1', 'h1'), ('h2', 'h2') ]
     """
     if not key_func:
-        key_func = lambda w: w.analyzer+'_'+w.name
+        key_func = lambda w: w.in_file_path
     for k, g in itertools.groupby(wrps, key_func):
         yield g
 
@@ -519,7 +519,7 @@ def make_canvas_builder(grps):
         yield rnd.CanvasBuilder(grp)
 
 
-def decorate(wrps, decorators=None):
+def decorate(wrps, decorators=()):
     """
     Decorate any iterable with a list of decorators.
 
@@ -532,8 +532,6 @@ def decorate(wrps, decorators=None):
         result = decorate([CanvasBuilder, ...], [Legend, TextBox])
         # result = [TextBox(Legend(CanvasBuilder)), ...]
     """
-    if not decorators:
-        decorators = []
     for wrp in wrps:
         for dec in decorators:
             wrp = dec(wrp)
@@ -729,12 +727,11 @@ def fs_mc_stack_n_data_sum(filter_keyfunc=None, merge_mc_key_func=None):
     :yields:                    tuples of wrappers for plotting
     """
     loaded = fs_filter_active_sort_load(filter_keyfunc)
-    grouped = group(loaded)     # default: group by analyzer_histo
-                                # (the fs histo 'ID')
+    grouped = group(loaded)     # default: group by in_file_path
     return mc_stack_n_data_sum(grouped, merge_mc_key_func, True)
 
 
-def canvas(grps, decorators=None):
+def canvas(grps, decorators=()):
     """
     Packaging of canvas builder, decorating, callback and canvas building.
 
@@ -743,15 +740,7 @@ def canvas(grps, decorators=None):
     :param decorators:      see function decorate(...) above
     :yields:                CanvasWrapper
     """
-    def put_ana_histo_name(groups):
-        for grp in groups:
-            if hasattr(grp.renderers[0], 'analyzer'):
-                grp.name = grp.renderers[0].analyzer+'_'+grp.name
-            yield grp
-    if not decorators:
-        decorators = []
     grps = make_canvas_builder(grps)            # a builder for every group
-    grps = put_ana_histo_name(grps)             # only applies to fs histos
     grps = decorate(grps, decorators)           # apply decorators
     return build_canvas(grps)                   # and do the job
 

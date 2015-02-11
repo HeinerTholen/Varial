@@ -11,8 +11,8 @@ class TestDiskio(TestHistoToolsBase):
 
     def setUp(self):
         super(TestDiskio, self).setUp()
-        if not os.path.exists("test_data"):
-            os.mkdir("test_data")
+        if not os.path.exists('test_data'):
+            os.mkdir('test_data')
 
     def test_fileservice_aliases(self):
         for name, smp in analysis.all_samples.items():
@@ -29,34 +29,36 @@ class TestDiskio(TestHistoToolsBase):
 
         # Are sample names correct?
         samples = set(a.sample for a in aliases)
-        self.assertTrue("tt" in samples)
-        self.assertTrue("ttgamma" in samples)
-        self.assertTrue("zjets" in samples)
+        self.assertTrue('tt' in samples)
+        self.assertTrue('ttgamma' in samples)
+        self.assertTrue('zjets' in samples)
 
-        # Check for some analyzers
-        analyzers = set(a.analyzer for a in aliases)
-        self.assertTrue("realTemplate" in analyzers)
-        self.assertTrue("analyzer_ET" in analyzers)
+        # Check for some in_file_path
+        ifps = set(a.in_file_path for a in aliases)
+        self.assertIn('realTemplate/sihihEB', ifps)
+        self.assertIn('analyzer_ET/photonET', ifps)
 
         # Check for some histonames
         histos = set(a.name for a in aliases)
-        self.assertTrue("histo" in histos)
-        self.assertTrue("sihihEB" in histos)
+        self.assertTrue('histo' in histos)
+        self.assertTrue('sihihEB' in histos)
 
     def test_load_histogram(self):
         test_alias = FileServiceAlias(
-            "cutflow", "analyzeSelection", "fileservice/ttgamma.root",
-            analysis.all_samples["ttgamma"], 'TH1F'
+            'fileservice/ttgamma.root',
+            'analyzeSelection/cutflow',
+            'TH1D',
+            analysis.all_samples['ttgamma']
         )
         wrp = diskio.load_histogram(test_alias)
         self.assertEqual(wrp.name, test_alias.name)
-        self.assertEqual(wrp.analyzer, test_alias.analyzer)
+        self.assertEqual(wrp.in_file_path, test_alias.in_file_path)
         self.assertEqual(wrp.sample, test_alias.sample)
         self.assertTrue(isinstance(wrp.histo, TH1F))
         self.assertAlmostEqual(wrp.histo.Integral(), 280555.0)
 
     def test_write(self):
-        fname = "test_data/wrp_save.info"
+        fname = 'test_data/wrp_save.info'
         diskio.write(self.test_wrp, fname)
 
         # file should exist
@@ -70,7 +72,7 @@ class TestDiskio(TestHistoToolsBase):
             self.assertGreater(n_lines, 10)
 
     def test_read(self):
-        fname = "test_data/wrp_load.info"
+        fname = 'test_data/wrp_load.info'
         diskio.write(self.test_wrp, fname)
         loaded = diskio.read(fname)
         self.test_wrp.history = str(self.test_wrp.history)
