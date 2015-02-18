@@ -11,7 +11,7 @@ import resource
 from os.path import abspath, basename, dirname, exists, join
 from ast import literal_eval
 from itertools import takewhile
-from ROOT import TFile, TDirectory, TH1, TObject
+from ROOT import TFile, TDirectory, TH1, TObject, TTree
 
 import history
 import monitor
@@ -250,8 +250,11 @@ def _recursive_path_and_type(root_dir, in_file_path):
         else:
             key_path = key.GetName()
         if key.IsFolder():
+            obj = key.ReadObj()
+            if isinstance(obj, TTree):
+                continue
             for info in _recursive_path_and_type(
-                key.ReadObj(),
+                obj,
                 key_path
             ):
                 yield info
