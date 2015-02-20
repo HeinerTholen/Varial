@@ -149,6 +149,11 @@ class WrapperWrapper(Wrapper):
             )
         super(WrapperWrapper, self).__init__(**kws)
         self.wrps = wrps
+        if not self.name:
+            if 'name_func' in kws:
+                self.name = kws['name_func'](self)
+            else:
+                self.name = 'WrpWrp'
 
     def primary_object(self):
         return self.wrps
