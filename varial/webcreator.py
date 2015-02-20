@@ -87,6 +87,7 @@ class WebCreator(toolinterface.Tool):
             '  }',
             '}',
             '//--></script>',
+            '<META name="robots" content="NOINDEX, NOFOLLOW" />',
             '</head>',
             '<body>',
             '<h2>',
