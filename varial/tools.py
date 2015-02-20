@@ -19,9 +19,9 @@ import os
 import shutil
 
 import analysis
-import dbio
 import diskio
 import generators as gen
+import pklio
 import settings
 import wrappers
 
@@ -54,7 +54,7 @@ class HistoLoader(Tool):
                  pattern=None,
                  filter_keyfunc=None,
                  hook_loaded_histos=None,
-                 io=dbio,
+                 io=pklio,
                  name=None):
         super(HistoLoader, self).__init__(name)
         self.pattern = pattern
