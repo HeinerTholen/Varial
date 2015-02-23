@@ -166,9 +166,7 @@ def group(wrps, key_func=None):
     if not key_func:
         key_func = lambda w: w.in_file_path
     for k, g in itertools.groupby(wrps, key_func):
-        yield wrappers.WrapperWrapper(list(g),
-                                      name=k.replace('/', '_'),
-                                      group_key=k)
+        yield wrappers.WrapperWrapper(list(g), name=k)
 
 
 def interleave(*grouped_wrps):
