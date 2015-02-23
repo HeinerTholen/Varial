@@ -142,10 +142,11 @@ class WrapperWrapper(Wrapper):
     _list_type = list
     def __init__(self, wrps, **kws):
         self._check_object_type(wrps, self._list_type)
-        if not all(isinstance(w, Wrapper) for w in wrps):
+        if not all(isinstance(w, WrapperBase) for w in wrps):
             raise TypeError(
-                '%s needs a list of wrappers as first argument! She got '
-                'something else in the list.' % self.__class__.__name__
+                ('%s needs a list of wrappers as first argument! She got '
+                 'something else in the list: \n' % self.__class__.__name__)
+                + str(wrps)
             )
         super(WrapperWrapper, self).__init__(**kws)
         self.wrps = wrps
@@ -154,6 +155,9 @@ class WrapperWrapper(Wrapper):
                 self.name = kws['name_func'](self)
             else:
                 self.name = 'WrpWrp'
+
+    def __iter__(self):
+        return iter(self.wrps)
 
     def primary_object(self):
         return self.wrps

@@ -128,12 +128,12 @@ def track_history(func):
             func_args = list(args)
             hist_args = list(args)
             for i, arg in enumerate(args):
-                if isinstance(arg, wrappers.Wrapper):
-                    hist_args[i] = arg.history
-                elif isinstance(arg, collections.Iterable) and not i:
+                if isinstance(arg, collections.Iterable) and not i:
                     list_of_histories = []
                     func_args[i] = _gen_catch_history(arg, list_of_histories)
                     hist_args[i] = list_of_histories
+                elif isinstance(arg, wrappers.Wrapper):
+                    hist_args[i] = arg.history
             history.add_args(hist_args)
             args = func_args
         if len(kws):

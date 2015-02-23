@@ -17,8 +17,9 @@ import collections
 import itertools
 
 import analysis
-import operator
 import diskio
+import wrappers
+import operator
 
 
 def _iterableize(obj_or_iterable):
@@ -153,7 +154,7 @@ def group(wrps, key_func=None):
     :param wrps:        Wrapper iterable
     :param key_func:    callable to group the wrappers. If ``None``, then
                         ``lambda w: w.in_file_path`` is used.
-    :yields:            Wrapper
+    :yields:            WrapperWrapper
 
     **Example:** This is neccessary before stacking, in order to have only
     same-observable-histograms stacked together::
@@ -165,7 +166,9 @@ def group(wrps, key_func=None):
     if not key_func:
         key_func = lambda w: w.in_file_path
     for k, g in itertools.groupby(wrps, key_func):
-        yield g
+        yield wrappers.WrapperWrapper(list(g),
+                                      name=k.replace('/', '_'),
+                                      group_key=k)
 
 
 def interleave(*grouped_wrps):
@@ -657,7 +660,7 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=False):
     :param wrps:                Iterables of HistoWrapper (grouped)
     :param merge_mc_key_func:   key function for python sorted(...), default
                                 tries to sort after stack position
-    :yields:                    tuples of wrappers for plotting
+    :yields:                    WrapperWrapper of wrappers for plotting
     """
     if not merge_mc_key_func:
         merge_mc_key_func = lambda w: analysis.get_stack_position(w.sample)
@@ -708,9 +711,9 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=False):
 
         # return in order for plotting: bkg, signals, data
         res = [bkg_stk] + sig_lst + [dat_sum]
-        res = tuple(w for w in res if w)
+        res = filter(None, res)
         if res:
-            yield tuple(res)
+            yield wrappers.WrapperWrapper(res, name=grp.name)
         else:
             raise op.TooFewWrpsError('No histograms present!')
 
