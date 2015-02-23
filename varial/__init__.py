@@ -5,3 +5,9 @@ import operations
 import rendering
 import settings
 import wrappers
+
+ana = analysis
+gen = generators
+op = operations
+rnd = rendering
+wrp = wrappers
