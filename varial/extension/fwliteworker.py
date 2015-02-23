@@ -11,9 +11,9 @@ import sys
 import traceback
 import os
 
-import diskio
-import settings
-import wrappers
+from varial import diskio
+from varial import settings
+from varial import wrappers
 
 
 ############################################ executed in parallel processes ###

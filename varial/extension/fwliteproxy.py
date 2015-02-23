@@ -7,12 +7,12 @@ import subprocess
 import time
 from os.path import exists, join
 
-import analysis
-import diskio
-import monitor
-import settings
-import toolinterface
-import wrappers
+from varial import analysis
+from varial import diskio
+from varial import monitor
+from varial import settings
+from varial import toolinterface
+from varial import wrappers
 
 
 class FwliteProxy(toolinterface.Tool):

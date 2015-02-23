@@ -30,10 +30,11 @@ from toolinterface import \
     ToolChain, \
     ToolChainIndie, \
     ToolChainVanilla
-from cmsrunproxy import CmsRunProxy
-from fwliteproxy import FwliteProxy
-from plotter import Plotter, RootFilePlotter
-from webcreator import WebCreator
+from plotter import \
+    Plotter, \
+    RootFilePlotter
+from webcreator import \
+    WebCreator
 
 
 class HistoLoader(Tool):

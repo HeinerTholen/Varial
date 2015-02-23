@@ -9,13 +9,13 @@ import time
 import os
 join = os.path.join
 
-import analysis
-import diskio
-import monitor
-import settings
-import sample
-import toolinterface
-import wrappers
+from varial import analysis
+from varial import diskio
+from varial import monitor
+from varial import settings
+from varial import sample
+from varial import toolinterface
+from varial import wrappers
 
 
 class CmsRunProcess(object):
