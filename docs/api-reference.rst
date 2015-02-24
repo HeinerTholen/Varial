@@ -44,15 +44,13 @@ Tools & Toolchains
    webcreator.rst
 
 
-Processing events with CMSSW
-============================
+Extensions (CMSSW, Fitting)
+===========================
 
 .. toctree::
    :maxdepth: 1
 
-   cmsrunproxy.rst
-   fwliteproxy.rst
-   fwliteworker.rst
+   extensions.rst
 
 
 Miscellaneous

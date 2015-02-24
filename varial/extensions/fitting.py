@@ -1,5 +1,5 @@
 """
-Tools from former analyses. EXPERIMENTAL!
+Tools from former analyses. **EXPERIMENTAL!**
 """
 
 import itertools
@@ -329,7 +329,7 @@ def set_no_exp(cnvs):
 
 
 ################################################################## Fit Tool ###
-class TemplateFitTool(varial.tools.FSPlotter):
+class TemplateFitTool(varial.tools.Plotter):
     def __init__(self,
                  input_result_path,
                  fitter=Fitter(),
