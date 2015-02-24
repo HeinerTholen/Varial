@@ -44,13 +44,15 @@ def get_open_root_file(filename):
     else:
         if len(_open_root_files) > settings.max_open_root_files:
             monitor.message(
-                "diskio",
-                "WARNING to many open root files. Closing all. "
-                "Please check for lost histograms. "
-                "(Use hist.SetDirectory(0) to keep them)"
+                'diskio',
+                'WARNING to many open root files. Closing all. '
+                'Please check for lost histograms. '
+                '(Use hist.SetDirectory(0) to keep them)'
             )
             close_open_root_files()
-        file_handle = TFile.Open(filename, "READ")
+        file_handle = TFile.Open(filename, 'READ')
+        if (not file_handle) or file_handle.IsZombie():
+            raise RuntimeError('Cannot open file with root: "%s"' % filename)
         _open_root_files[filename] = file_handle
     return file_handle
 
@@ -62,8 +64,8 @@ def close_open_root_files():
 
 
 def close_root_file(filename):
-    if not filename[-5:] == ".root":
-        filename += ".root"
+    if not filename[-5:] == '.root':
+        filename += '.root'
     if filename in _open_root_files:
         _open_root_files[filename].Close()
         del _open_root_files[filename]
@@ -80,7 +82,7 @@ def write(wrp, filename=None, suffices=(), mode='RECREATE'):
         filename = wrp.name
     if use_analysis_cwd:
         filename = join(analysis.cwd, filename)
-    if filename[-5:] == ".info":
+    if filename[-5:] == '.info':
         filename = filename[:-5]
     # check for overwriting something
     if filename in _save_log:
@@ -98,13 +100,13 @@ def write(wrp, filename=None, suffices=(), mode='RECREATE'):
         _write_wrapperwrapper(wrp, filename)
     # write root objects (if any)
     if any(isinstance(o, TObject) for o in wrp.__dict__.itervalues()):
-        wrp.root_filename = basename(filename+".root")
-        f = TFile.Open(filename+".root", mode)
+        wrp.root_filename = basename(filename+'.root')
+        f = TFile.Open(filename+'.root', mode)
         f.cd()
         _write_wrapper_objs(wrp, f)
         f.Close()
     # write wrapper infos
-    with open(filename+".info", "w") as f:
+    with open(filename+'.info', 'w') as f:
         _write_wrapper_info(wrp, f)
     _clean_wrapper(wrp)
 
@@ -112,8 +114,8 @@ def write(wrp, filename=None, suffices=(), mode='RECREATE'):
 def _write_wrapper_info(wrp, file_handle):
     #"""Serializes Wrapper to python code dict."""
     history, wrp.history = wrp.history, str(wrp.history)
-    file_handle.write(wrp.pretty_writeable_lines() + " \n\n")
-    file_handle.write(wrp.history + "\n")
+    file_handle.write(wrp.pretty_writeable_lines() + ' \n\n')
+    file_handle.write(wrp.history + '\n')
     wrp.history = history
 
 
@@ -153,15 +155,15 @@ def _write_wrapperwrapper(wrp, filename=None):
 
 def read(filename):
     """Reads wrapper from disk, including root objects."""
-    if filename[-5:] != ".info":
-        filename += ".info"
+    if filename[-5:] != '.info':
+        filename += '.info'
     if use_analysis_cwd:
         filename = join(analysis.cwd, filename)
-    with open(filename, "r") as f:
+    with open(filename, 'r') as f:
         info = _read_wrapper_info(f)
-    if "root_filename" in info:
+    if 'root_filename' in info:
         _read_wrapper_objs(info, dirname(filename))
-    klass = getattr(wrappers, info.get("klass"))
+    klass = getattr(wrappers, info.get('klass'))
     if klass == wrappers.WrapperWrapper:
         p = dirname(filename)
         info['wrps'] = _read_wrapperwrapper(join(p, f) for f in info['wrps'])
@@ -172,26 +174,26 @@ def read(filename):
 
 def _read_wrapper_info(file_handle):
     #"""Instaciates Wrapper from info file, without root objects."""
-    lines = takewhile(lambda l: l!="\n", file_handle)
+    lines = takewhile(lambda l: l!='\n', file_handle)
     lines = (l.strip() for l in lines)
-    lines = "".join(lines)
+    lines = ''.join(lines)
     info = literal_eval(lines)
     if not type(info) == dict:
-        raise NoDictInFileError("Could not read file: "+file_handle.name)
+        raise NoDictInFileError('Could not read file: '+file_handle.name)
     return info
 
 
 def _read_wrapper_objs(info, path):
     #"""Reads root objects from disk."""
-    root_file = join(path, info["root_filename"])
-    obj_paths = info["root_file_obj_names"]
+    root_file = join(path, info['root_filename'])
+    obj_paths = info['root_file_obj_names']
     is_fs_wrp = info['klass'] == 'FileServiceWrapper'
     for key, value in obj_paths.iteritems():
         if is_fs_wrp:
             obj = _get_obj_from_file(root_file, info['name'] + '/' + value)
         else:
             obj = _get_obj_from_file(root_file, key + '/' + value)
-        if hasattr(obj, "SetDirectory"):
+        if hasattr(obj, 'SetDirectory'):
             obj.SetDirectory(0)
         info[key] = obj
 
@@ -204,7 +206,7 @@ def _read_wrapperwrapper(wrp_list):
 
 
 def _clean_wrapper(wrp):
-    del_attrs = ["root_filename", "root_file_obj_names", "wrapped_object_key"]
+    del_attrs = ['root_filename', 'root_file_obj_names', 'wrapped_object_key']
     for attr in del_attrs:
         if hasattr(wrp, attr):
             delattr(wrp, attr)
@@ -213,7 +215,7 @@ def _clean_wrapper(wrp):
 def get(filename, default=None):
     """Reads wrapper from disk if availible, else returns default."""
     fname = join(analysis.cwd, filename) if use_analysis_cwd else filename
-    if fname[-5:] == ".info":
+    if fname[-5:] == '.info':
         fname = fname[:-5]
     if exists('%s.info' % fname):
         try:
@@ -235,7 +237,7 @@ def generate_fs_aliases(file_path, sample_inst):
         yield wrappers.FileServiceAlias(file_path, ifp, typ, sample_inst)
 
 
-def generate_aliases(glob_path="./*.root"):
+def generate_aliases(glob_path='./*.root'):
     """Looks for root files and produces aliases."""
     for file_path in glob.iglob(glob_path):
         root_file = get_open_root_file(file_path)
@@ -274,7 +276,7 @@ def load_histogram(alias):
     histo = load_bare_object(alias)
     if not isinstance(histo, TH1):
         raise NoHistogramError(
-            "Loaded object is not of type TH1: %s" % str(histo)
+            'Loaded object is not of type TH1: %s' % str(histo)
         )
     if not histo.GetSumw2().GetSize():
         histo.Sumw2()
@@ -300,7 +302,7 @@ def _get_obj_from_file(filename, in_file_path):
         obj_key = obj.GetKey(name)
         if not obj_key:
             raise NoObjectError(
-                "I cannot find '%s' in root file '%s'!" % (name, filename))
+                'I cannot find "%s" in root file "%s"!' % (name, filename))
         obj = obj_key.ReadObj()
     return obj
 

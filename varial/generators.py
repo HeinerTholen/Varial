@@ -383,7 +383,7 @@ def fs_content():
         yield alias
 
 
-def dir_content(dir_path='./'):
+def dir_content(dir_path='./*.root'):
     """
     Proxy of diskio.generate_aliases(directory)
 
