@@ -397,13 +397,11 @@ class TextBox(util.Decorator):
     """Draw Textboxes individually by renderer name"""
     def __init__(self, inner, dd=True, **kws):
         super(TextBox, self).__init__(inner, dd, **kws)
-        self.dec_par.update(kws)
-        assert('textbox_dict' in self.dec_par)
+        assert('textbox' in self.dec_par)
 
     def do_final_cosmetics(self):
         self.decoratee.do_final_cosmetics()
-        textbox = self.dec_par['textbox_dict'][self.renderers[0].name]
-        textbox.Draw()
+        self.dec_par['textbox'].Draw()
 
 
 class Legend(util.Decorator):
