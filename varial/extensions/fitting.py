@@ -37,16 +37,16 @@ class Fitter(object):
         self.x_max = 0.
         self.fit_func = None
         self.fitted = None
-        self.mc_tmplts = None
+        self.tmplts = None
         self.ndf = 0
         self.val_err = []
 
-    def build_fit_function(self, fitted, mc_tmplts, x_min, x_max):
-        templates = [tw.histo for tw in mc_tmplts]
+    def build_fit_function(self, fitted, tmplts, x_min, x_max):
+        templates = [tw.histo for tw in tmplts]
         size = len(templates)
         self.x_min, self.x_max = x_min, x_max
         self.fitted = fitted
-        self.mc_tmplts = mc_tmplts
+        self.tmplts = tmplts
 
         def fit_func(x, par):
             value = 0.
@@ -71,7 +71,7 @@ class Fitter(object):
         self.val_err = list(
             (self.fit_func.GetParameter(i_par),
              self.fit_func.GetParError(i_par))
-            for i_par in xrange(len(self.mc_tmplts))
+            for i_par in xrange(len(self.tmplts))
         )
         self.ndf = self.fit_func.GetNDF()
 
@@ -92,10 +92,10 @@ class Fitter(object):
     def get_total_fit_err(self, mc_integrals):
         return 0.
 
-    def make_fit_result(self, result_wrp, mc_tmplts):
+    def make_fit_result(self, result_wrp, tmplts):
         r = result_wrp
         r.Chi2 = self.get_chi2() or gen.op.chi2(
-            (gen.op.sum(mc_tmplts), self.fitted),
+            (gen.op.sum(tmplts), self.fitted),
         ).float
         r.NDF = self.get_ndf()
         r.FitProb = ROOT.TMath.Prob(r.Chi2, r.NDF)
@@ -105,7 +105,7 @@ class Fitter(object):
         r.binIntegralMC = []
         r.binIntegralScaled = []
         r.binIntegralScaledError = []
-        for i, tmplt in enumerate(mc_tmplts):
+        for i, tmplt in enumerate(tmplts):
             r.legend.append(tmplt.legend)
             val, err = self.get_val_err(i)
             r.value.append(val)
@@ -121,10 +121,11 @@ class Fitter(object):
 
 
 class ThetaFitter(Fitter):
-    def __init__(self):
+    def __init__(self, model_callback=None):
         super(ThetaFitter, self).__init__()
         self.model = None
         self.fit_res = None
+        self.model_callback = model_callback
 
     def _store_histos_for_theta(self, wrp):
         filename = os.path.join(varial.analysis.cwd, wrp.name + ".root")
@@ -136,48 +137,62 @@ class ThetaFitter(Fitter):
                 value.Write()
         f.Close()
 
-    def build_fit_function(self, fitted, mc_tmplts, x_min, x_max):
+    def build_fit_function(self, fitted, tmplts, x_min, x_max):
         self.x_min, self.x_max = x_min, x_max
         self.fitted = fitted
-        self.mc_tmplts = mc_tmplts
+        self.tmplts = tmplts
 
-        theta_root_wrp = varial.wrappers.Wrapper(
-            name="ThetaHistos",
-            histo__DATA=fitted.histo,
-        )
+        theta_root_wrp = varial.wrappers.Wrapper(name="ThetaHistos")
+        if fitted:
+            setattr(theta_root_wrp, 'histo__DATA', fitted.histo)
         self.template_names = []
-        for i, tmplt in enumerate(mc_tmplts):
+        signal_procs = []
+        for i, tmplt in enumerate(tmplts):
             name = 'template%02d' % (i + 1)
             self.template_names.append(name)
             setattr(theta_root_wrp, 'histo__' + name, tmplt.histo)
+            if tmplt.is_signal:
+                signal_procs.append(name)
         self._store_histos_for_theta(theta_root_wrp)
         theta_auto.config.workdir = varial.analysis.cwd
+        theta_auto.config.report = theta_auto.html_report(os.path.join(
+            varial.analysis.cwd, 'theta.html'
+        ))
+        plt_dir = os.path.join(varial.analysis.cwd, 'plots')
+        if not os.path.exists(plt_dir):
+            os.mkdir(plt_dir)
         self.model = theta_auto.build_model_from_rootfile(
             os.path.join(varial.analysis.cwd, "ThetaHistos.root"),
             include_mc_uncertainties=True
         )
-        self.model.set_signal_processes([self.template_names[-1]])
-        for tmplt_name in self.template_names[:-1]:
-            self.model.get_coeff(
-                "histo", tmplt_name).add_factor(
-                    'id', parameter='bg_' + tmplt_name)
-            self.model.distribution.set_distribution(
-                'bg_' + tmplt_name,
-                'gauss', 1.0, theta_auto.inf, [0.0, theta_auto.inf]
-            )
-        self.ndf = fitted.histo.GetNbinsX() - len(self.template_names)
+        self.model.fill_histogram_zerobins()
+        self.model.set_signal_processes(signal_procs)
+        if self.model_callback:
+            self.model_callback(self.model)
+        #for tmplt_name in self.template_names[:-1]:
+        #    self.model.get_coeff(
+        #        "histo", tmplt_name).add_factor(
+        #            'id', parameter='bg_' + tmplt_name)
+        #    self.model.distribution.set_distribution(
+        #        'bg_' + tmplt_name,
+        #        'gauss', 1.0, theta_auto.inf, [0.0, theta_auto.inf]
+        #    )
+        # TODO: get ndf from theta directly
+        self.ndf = tmplts[0].histo.GetNbinsX() - len(self.template_names)
 
     def do_the_fit(self):
         options = theta_auto.Options()
         options.set('minimizer', 'strategy', 'robust')
-        self.fit_res = theta_auto.mle(
-            self.model,
-            "data",
-            1,
-            chi2=True,
-            options=options,
-            with_covariance=True,
-        )[self.template_names[-1]]
+        #self.fit_res = theta_auto.mle(
+        #    self.model,
+        #    "data",
+        #    1,
+        #    chi2=True,
+        #    options=options,
+        #    with_covariance=True,
+        #)[self.template_names[-1]]
+        #self.fit_res = theta_auto.bayesian_limits(self.model, what='expected')
+        self.fit_res = theta_auto.asymptotic_cls_limits(self.model) #, what='expected')
         print self.fit_res
 
         par_values = {
@@ -211,10 +226,10 @@ class ThetaFitter(Fitter):
 
 
 class PyMCFitter(Fitter):
-    def build_fit_function(self, fitted, mc_tmplts, x_min, x_max):
+    def build_fit_function(self, fitted, tmplts, x_min, x_max):
         self.x_min, self.x_max = x_min, x_max
         self.fitted = fitted
-        self.mc_tmplts = mc_tmplts
+        self.tmplts = tmplts
 
         # convert to numpy arrays
         fitted_cont = numpy.fromiter(
@@ -223,37 +238,37 @@ class PyMCFitter(Fitter):
             dtype=float,
             count=fitted.histo.GetNbinsX()
         )
-        mc_tmplts_cont = list(numpy.fromiter(
+        tmplts_cont = list(numpy.fromiter(
             (mc_t.histo.GetBinContent(i)
              for i in xrange(mc_t.histo.GetNbinsX())),
             dtype=float,
             count=mc_t.histo.GetNbinsX()
-        ) for mc_t in mc_tmplts)
-        mc_tmplts_errs = list(numpy.fromiter(
+        ) for mc_t in tmplts)
+        tmplts_errs = list(numpy.fromiter(
             (mc_t.histo.GetBinError(i) or 1e-7
              for i in xrange(mc_t.histo.GetNbinsX())),
             dtype=float,
             count=mc_t.histo.GetNbinsX()
-        ) for mc_t in mc_tmplts)
+        ) for mc_t in tmplts)
 
         # remove entries without prediction
-        all_mc = sum(mc_tmplts_cont)
+        all_mc = sum(tmplts_cont)
         mask = numpy.nonzero(all_mc)
         fitted_cont = fitted_cont[mask]
-        mc_tmplts_cont = list(d[mask] for d in mc_tmplts_cont)
-        mc_tmplts_errs = list(d[mask] for d in mc_tmplts_errs)
+        tmplts_cont = list(d[mask] for d in tmplts_cont)
+        tmplts_errs = list(d[mask] for d in tmplts_errs)
 
         # model
-        n_tmplts = len(mc_tmplts)
+        n_tmplts = len(tmplts)
         n_datapoints = len(fitted_cont)
-        mc_tmplts = pymc.Container(list(
+        tmplts = pymc.Container(list(
             pymc.Normal(('MC_%02d' % i),
                         v[0],                                       # value
                         numpy.vectorize(lambda x: x**-2)(v[1]),     # precision
                         value=v[0],
                         size=n_datapoints)
-            for i, v in enumerate(itertools.izip(mc_tmplts_cont,
-                                                 mc_tmplts_errs))
+            for i, v in enumerate(itertools.izip(tmplts_cont,
+                                                 tmplts_errs))
         ))
         mc_factors = pymc.Container(list(
             pymc.Lognormal('factor_%02d' % i, 1., 1e-10, value=1.)
@@ -261,15 +276,15 @@ class PyMCFitter(Fitter):
         ))
 
         @pymc.deterministic
-        def fit_func(tmplts=mc_tmplts, factors=mc_factors):
+        def fit_func(ts=tmplts, factors=mc_factors):
             return sum(
                 f * tmplt
-                for f, tmplt in itertools.izip(factors, tmplts)
+                for f, tmplt in itertools.izip(factors, ts)
             )
 
         fitted = pymc.Poisson('fitted', fit_func, fitted_cont,
                               size=n_datapoints, observed=True)
-        self.model = pymc.Model([fitted, mc_factors, mc_tmplts])
+        self.model = pymc.Model([fitted, mc_factors, tmplts])
 
         # for later reference
         self.n_tmplts, self.n_datapoints = n_tmplts, n_datapoints
@@ -277,7 +292,7 @@ class PyMCFitter(Fitter):
 
     def do_the_fit(self):
 
-        # pymc.MAP(self.model).fit(method='fmin_powell')
+        pymc.MAP(self.model).fit(method='fmin_powell')
 
         if varial.settings.store_mcmc:
             mcmc = pymc.MCMC(self.model, db='pickle',
@@ -331,14 +346,16 @@ def set_no_exp(cnvs):
 ################################################################## Fit Tool ###
 class TemplateFitTool(varial.tools.Plotter):
     def __init__(self,
-                 input_result_path,
+                 template_result_path,
+                 fitted_result_path='',
                  fitter=Fitter(),
                  fitbox_bounds=(0.6, 0.9, 0.6),
                  save_name_lambda=lambda w: w.name,
                  name=None):
-        super(TemplateFitTool, self).__init__(
-            name, input_result_path=input_result_path)
-        self.mc_tmplts = None
+        super(TemplateFitTool, self).__init__(name)
+        self.template_result_path = template_result_path
+        self.fitted_result_path = fitted_result_path
+        self.tmplts = None
         self.fitted = None
         self.fitbox_bounds = fitbox_bounds
         self.result = varial.wrappers.Wrapper()
@@ -386,19 +403,23 @@ class TemplateFitTool(varial.tools.Plotter):
     def set_up_content(self):
         self.result.fitter = self.fitter.__class__.__name__
 
-        wrps = self.lookup(self.input_result_path)
-        self.fitted = wrps.pop(0)
-        self.mc_tmplts = wrps
-        self.n_templates = len(self.mc_tmplts)
+        self.tmplts = self.lookup_result(self.template_result_path)
+        if self.fitted_result_path == self.template_result_path:
+            self.fitted = self.tmplts.pop(0)
+        elif self.fitted_result_path:
+            self.fitted = self.lookup_result(self.fitted_result_path)[0]
+        self.n_templates = len(self.tmplts)
 
         # do fit procedure
-        self.x_min, self.x_max = find_x_range(self.fitted.histo)
+        self.x_min, self.x_max = find_x_range(
+            self.fitted.histo if self.fitted else self.tmplts[0].histo
+        )
         self.fitter.build_fit_function(
-            self.fitted, self.mc_tmplts, self.x_min, self.x_max
+            self.fitted, self.tmplts, self.x_min, self.x_max
         )
         self.fitter.do_the_fit()
-        self.fitter.scale_templates_to_fit(self.mc_tmplts)
-        self.fitter.make_fit_result(self.result, self.mc_tmplts)
+        self.fitter.scale_templates_to_fit(self.tmplts)
+        self.fitter.make_fit_result(self.result, self.tmplts)
 
         fit_textbox = self.make_fit_textbox()
         self.canvas_decorators.append(
@@ -408,8 +429,8 @@ class TemplateFitTool(varial.tools.Plotter):
             )
         )
 
-        tmplt_stack = op.stack(self.mc_tmplts)
-        self.stream_content = [(tmplt_stack, self.fitted)]
+        tmplt_stack = op.stack(self.tmplts)
+        self.stream_content = [filter(None, (tmplt_stack, self.fitted))]
 
         del self.fitter
 
