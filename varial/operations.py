@@ -453,6 +453,37 @@ def norm_to_integral(wrp, use_bin_width=False):
 
 
 @history.track_history
+def norm_to_max_val(wrp):
+    """
+    Applies to HistoWrapper. Returns HistoWrapper.
+
+    >>> from ROOT import TH1F
+    >>> h1 = TH1F("h1", "", 2, .5, 2.5)
+    >>> h1.Fill(1, 4)
+    1
+    >>> h1.Fill(2, 2)
+    2
+    >>> w1 = wrappers.HistoWrapper(h1, lumi=2.)
+    >>> w1.histo.Integral()
+    6.0
+    >>> w2 = norm_to_max_val(w1)
+    >>> w2.histo.Integral()
+    1.5
+    """
+    if not isinstance(wrp, wrappers.HistoWrapper):
+        raise WrongInputError(
+            "norm_to_max_val needs argument of type HistoWrapper. histo: "
+            + str(wrp)
+        )
+    histo = wrp.histo.Clone()
+    max_val = histo.GetBinContent(histo.GetMaximumBin()) or 1.
+    histo.Scale(1. / max_val)
+    info = wrp.all_info()
+    info["lumi"] /= max_val
+    return wrappers.HistoWrapper(histo, **info)
+
+
+@history.track_history
 def copy(wrp):
     """
     Applies to HistoWrapper. Returns HistoWrapper.
