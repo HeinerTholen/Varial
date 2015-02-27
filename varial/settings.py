@@ -12,7 +12,7 @@ import time
 debug_mode = False
 recieved_sigint = False
 only_reload_results = False
-varial_working_dir = "./"
+varial_working_dir = './'
 db_name = '.varial.db'
 default_data_lumi = 1.
 default_colors = [632, 878, 596, 870, 434, 840, 902, 417, 828, 618, 400, 800]
@@ -24,7 +24,7 @@ def logfilename():
     """Generate a logfile name with timestamp."""
     return time.strftime(
         os.path.join(varial_working_dir,
-                     ".varial_logs/varial_%Y%m%dT%H%M%S.log"),
+                     '.varial_logs/varial_%Y%m%dT%H%M%S.log'),
         time.localtime()
     )
 
@@ -47,19 +47,19 @@ canvas_size_y = 500
 
 box_text_size = 0.037
 defaults_Legend = {
-    "x_pos": 0.92,
-    "y_pos": 0.83,
-    "label_width": 0.24,
-    "label_height": 0.04,
-    "opt": "f",
-    "opt_data": "p",
-    "reverse": True
+    'x_pos': 0.83,
+    'y_pos': 0.92,
+    'label_width': 0.24,
+    'label_height': 0.04,
+    'opt': 'f',
+    'opt_data': 'p',
+    'reverse': True
 }
 defaults_BottomPlot = {
-    "y_title": "#frac{Data-MC}{MC}",
-    "draw_opt": "E1",
-    "x_min": -1.,
-    "x_max": 1.,
+    'y_title': '#frac{Data-MC}{MC}',
+    'draw_opt': 'E1',
+    'x_min': -1.,
+    'x_max': 1.,
 }
 
 rootfile_postfixes = ['.root', '.png']
@@ -79,7 +79,7 @@ class StyleClass(TStyle):
     #Places self as new ROOT style.
     #"""
     def __init__(self):
-        super(StyleClass, self).__init__("CmsRootStyle", "CmsRootStyle")
+        super(StyleClass, self).__init__('CmsRootStyle', 'CmsRootStyle')
 
         ################################ custom root style commands ###
         self.SetFrameBorderMode(0)
@@ -92,7 +92,7 @@ class StyleClass(TStyle):
         self.SetCanvasColor(0)
         self.SetStatColor(0)
         self.SetFillColor(0)
-        self.SetNdivisions(505, "XY")
+        self.SetNdivisions(505, 'XY')
 
         self.SetPaperSize(20, 26)
         #self.SetPadTopMargin(0.08)
@@ -108,11 +108,11 @@ class StyleClass(TStyle):
 
         self.SetTextFont(42) #132
         self.SetTextSize(0.09)
-        self.SetLabelFont(42, "xyz")
-        self.SetTitleFont(42, "xyz")
-        self.SetLabelSize(0.045, "xyz") #0.035
-        self.SetTitleSize(0.045, "xyz")
-        self.SetTitleOffset(1.3, "xy")
+        self.SetLabelFont(42, 'xyz')
+        self.SetTitleFont(42, 'xyz')
+        self.SetLabelSize(0.045, 'xyz') #0.035
+        self.SetTitleSize(0.045, 'xyz')
+        self.SetTitleOffset(1.3, 'xy')
 
         self.SetTitleX(0.16)
         self.SetTitleY(0.93)
@@ -143,13 +143,13 @@ class StyleClass(TStyle):
 
         self.cd()
         self.set_palette()
-        gROOT.SetStyle("CmsRootStyle")
+        gROOT.SetStyle('CmsRootStyle')
         gROOT.ForceStyle()
         TGaxis.SetMaxDigits(3)
 
     @staticmethod
     def set_palette(name='', ncontours=999):
-        if name == "gray" or name == "grayscale":
+        if name == 'gray' or name == 'grayscale':
             stops = [0.00, 0.34, 0.61, 0.84, 1.00]
             red   = [1.00, 0.84, 0.61, 0.34, 0.00]
             green = [1.00, 0.84, 0.61, 0.34, 0.00]
