@@ -296,7 +296,12 @@ def gen_norm_to_data_lumi(wrps):
     )
 
 
-def gen_make_eff_graphs(wrps, postfix_sub='_sub', postfix_tot='_tot'):
+def gen_make_eff_graphs(wrps,
+                        postfix_sub='_sub',
+                        postfix_tot='_tot',
+                        new_postfix='_eff',
+                        pair_func=lambda w, l: w.in_file_path[:-l],
+                        yield_everything=False):
     """
     Makes efficiency graphs and interleaves them into a sorted stream.
 
@@ -312,23 +317,34 @@ def gen_make_eff_graphs(wrps, postfix_sub='_sub', postfix_tot='_tot'):
                         default: ``_tot``
     :yields:            Wrapper (simply forwarding), GraphWrapper
     """
-    token = lambda w: w.legend + ':' + w.in_file_path[:-4]
+
+    len_postfix_sub = len(postfix_sub)
+    len_postfix_tot = len(postfix_tot)
+
+    def rename(w):
+        w.in_file_path = w.in_file_path[:-len_postfix_sub] + new_postfix
+        w.name = w.name[:-len_postfix_sub] + new_postfix
+        return w
+
     subs, tots = {}, {}
     res = []
     for wrp in wrps:
-        yield wrp
+        if yield_everything:
+            yield wrp
         if wrp.name.endswith(postfix_sub):
-            t = token(wrp)
+            t = pair_func(wrp, len_postfix_sub)
             if t in tots:
-                res.append(op.eff((wrp, tots.pop(t))))
+                res.append(rename(op.eff((wrp, tots.pop(t)))))
             else:
                 subs[t] = wrp
         elif wrp.name.endswith(postfix_tot):
-            t = token(wrp)
+            t = pair_func(wrp, len_postfix_tot)
             if t in subs:
-                res.append(op.eff((subs.pop(t), wrp)))
+                res.append(rename(op.eff((subs.pop(t), wrp))))
             else:
                 tots[t] = wrp
+        elif not yield_everything:  # do not yield everything twice
+            yield wrp
         if res and not (subs or tots):
             for _ in xrange(len(res)):
                 yield res.pop(0)
