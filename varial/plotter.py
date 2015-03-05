@@ -135,7 +135,9 @@ class Plotter(toolinterface.Tool):
                 itertools.chain.from_iterable(self.stream_content))
 
     def set_up_make_canvas(self):
+
         def put_ana_histo_name(grps):
+            # TODO this should be able to be changed from outside
             for grp in grps:
                 grp.name = grp.renderers[0].in_file_path.replace('/', '_')
                 yield grp
@@ -269,7 +271,7 @@ class RootFilePlotter(toolinterface.ToolChain):
         legendnames = _mk_legendnames(rootfiles)
         legendnames = dict(itertools.izip(rootfiles, legendnames))
         self.message(
-            'INFO Here are the rootfiles and legend names that I will use:\n'
+            'INFO  Legend names that I will use by default:\n'
             + '\n'.join('%22s: %s' % (v,k) for k,v in legendnames.iteritems())
         )
         colors = settings.default_colors[:len(rootfiles)]

@@ -34,7 +34,7 @@ def _iterableize(obj_or_iterable):
 
 def debug_printer(iterable, print_obj=True):
     """
-    Print objects and their type on flying by. Object printing can be turned off.
+    Print objects and their type on flying by. Object printing can be disabled.
 
     :param iterable:    An iterable with objects
     :yields:            same as input
@@ -323,7 +323,7 @@ def gen_make_eff_graphs(wrps,
 
     def rename(w):
         w.in_file_path = w.in_file_path[:-len_postfix_sub] + new_postfix
-        w.name = w.name[:-len_postfix_sub] + new_postfix
+        w.name = w.in_file_path.split('/')[-1]
         return w
 
     subs, tots = {}, {}
@@ -448,8 +448,6 @@ def save(wrps, filename_func, suffices=None):
 import rendering as rnd
 
 
-# TODO all color generators should use (wrp.legend or wpr.sample) and 
-# analysis.get_color
 def apply_fillcolor(wrps, colors=None):
     """
     Uses ``histo.SetFillColor``. Colors from analysis module, if not given.
@@ -461,10 +459,10 @@ def apply_fillcolor(wrps, colors=None):
     n = 0
     for wrp in wrps:
         if colors:
-            color = colors[n%len(colors)]
+            color = colors[n % len(colors)]
             n += 1
         else:
-            color = analysis.get_color(wrp.sample)
+            color = analysis.get_color(wrp.legend or wrp.sample)
         if color:
             wrp.primary_object().SetFillColor(color)
         yield wrp
@@ -481,10 +479,10 @@ def apply_linecolor(wrps, colors=None):
     n = 0
     for wrp in wrps:
         if colors:
-            color = colors[n%len(colors)]
+            color = colors[n % len(colors)]
             n += 1
         else:
-            color = analysis.get_color(wrp.sample)
+            color = analysis.get_color(wrp.legend or wrp.sample)
         if color:
             wrp.primary_object().SetLineColor(color)
         yield wrp
@@ -495,11 +493,24 @@ def apply_linewidth(wrps, linewidth=2):
     Uses ``histo.SetLineWidth``. Default is 2.
 
     :param wrps:        HistoWrapper iterable
-    :param line_width:  argument for SetLineWidth
+    :param linewidth:  argument for SetLineWidth
     :yields:            HistoWrapper
     """
     for wrp in wrps:
         wrp.primary_object().SetLineWidth(linewidth)
+        yield wrp
+
+
+def apply_fillstyle(wrps, fillstyle=3444):
+    """
+    Uses ``histo.SetLineWidth``. Default is 2.
+
+    :param wrps:        HistoWrapper iterable
+    :param fillstyle:   integer argument for SetFillStyle
+    :yields:            HistoWrapper
+    """
+    for wrp in wrps:
+        wrp.primary_object().SetFillStyle(fillstyle)
         yield wrp
 
 
@@ -514,10 +525,10 @@ def apply_markercolor(wrps, colors=None):
     n = 0
     for wrp in wrps:
         if colors:
-            color = colors[n%len(colors)]
+            color = colors[n % len(colors)]
             n += 1
         else:
-            color = analysis.get_color(wrp.sample)
+            color = analysis.get_color(wrp.legend or wrp.sample)
         if color:
             wrp.primary_object().SetMarkerColor(color)
         yield wrp

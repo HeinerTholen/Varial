@@ -146,7 +146,8 @@ class GraphRenderer(Renderer, wrappers.GraphWrapper):
         return self.val_x_max or self.graph.GetXaxis().GetXmax()
 
     def y_min(self):
-        return self.val_y_min or self.graph.GetYaxis().GetXmin() + 1e-23  # > 0 cuts away half numbers
+        # > 0 cuts away half numbers
+        return self.val_y_min or self.graph.GetYaxis().GetXmin() + 1e-23
 
     def y_max(self):
         return self.val_y_max or self.graph.GetYaxis().GetXmax()
