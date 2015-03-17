@@ -961,3 +961,6 @@ if __name__ == "__main__":
     ROOT.TH1.AddDirectory(False)
     import doctest
     doctest.testmod()
+
+
+# TODO def squash_info_data(list_of_info_dicts) => fix is_signal, ...
