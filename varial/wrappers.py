@@ -194,8 +194,12 @@ class HistoWrapper(Wrapper):
         self.name           = histo.GetName()
         self.title          = histo.GetTitle()
         self.is_data        = kws.get('is_data', False)
+        self.is_pseudo_data = kws.get('is_pseudo_data', False)
         self.is_signal      = kws.get('is_signal', False)
-        assert(not(self.is_data and self.is_signal))  # being both is forbidden!
+        assert(len(filter(
+            None,
+            (self.is_data, self.is_pseudo_data, self.is_signal)
+        )) <= 1)  # only one is allowed
         self.lumi           = kws.get('lumi', 1.)
         self.sample         = kws.get('sample', '')
         self.legend         = kws.get('legend', '')
@@ -266,8 +270,12 @@ class GraphWrapper(Wrapper):
         self.name           = graph.GetName()
         self.title          = graph.GetTitle()
         self.is_data        = kws.get('is_data', False)
+        self.is_pseudo_data = kws.get('is_pseudo_data', False)
         self.is_signal      = kws.get('is_signal', False)
-        assert(not(self.is_data and self.is_signal))  # being both is forbidden!
+        assert(len(filter(
+            None,
+            (self.is_data, self.is_pseudo_data, self.is_signal)
+        )) <= 1)  # only one is allowed
         self.lumi           = kws.get('lumi', 1.)
         self.sample         = kws.get('sample', '')
         self.legend         = kws.get('legend', '')
