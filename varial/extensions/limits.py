@@ -26,7 +26,6 @@ class ThetaLimits(varial.tools.Tool):
         self.dat_key = dat_key
         self.sig_key = sig_key
         self.bkg_key = bkg_key
-        self.fit_res = None
 
     def _store_histos_for_theta(self, dat, sigs, bkgs):
         # create wrp
@@ -70,15 +69,15 @@ class ThetaLimits(varial.tools.Tool):
 
         # setup theta
         theta_wrp = self._store_histos_for_theta(dat, sig, bkg)
-        theta_auto.config.workdir = varial.analysis.cwd
+        theta_auto.config.workdir = self.cwd
         theta_auto.config.report = theta_auto.html_report(os.path.join(
-            varial.analysis.cwd, 'theta.html'
+            self.cwd, 'report.html'
         ))
-        plt_dir = os.path.join(varial.analysis.cwd, 'plots')
+        plt_dir = os.path.join(self.cwd, 'plots')
         if not os.path.exists(plt_dir):
             os.mkdir(plt_dir)
         self.model = theta_auto.build_model_from_rootfile(
-            os.path.join(varial.analysis.cwd, "ThetaHistos.root"),
+            os.path.join(self.cwd, 'ThetaHistos.root'),
             include_mc_uncertainties=True
         )
         self.model.fill_histogram_zerobins()
@@ -93,11 +92,22 @@ class ThetaLimits(varial.tools.Tool):
         options.set('minimizer', 'strategy', 'robust')
         limit_func = theta_auto.asymptotic_cls_limits \
             if self.asymptotic else theta_auto.bayesian_limits
-        self.fit_res = limit_func(
+        res_exp, res_obs = limit_func(
             self.model,
             #what='expected'
         )
-        self.message('INFO theta result')
-        self.message('INFO ' + str(self.fit_res))
+
+        # shout it out loud
+        self.result = varial.wrappers.Wrapper(
+            name=self.name,
+            res_exp=str(res_exp),
+            res_obs=str(res_obs),
+        )
+        self.message(
+            'INFO theta result: expected limit:\n' + self.result.res_exp)
+        self.message(
+            'INFO theta result: expected limit:\n' + self.result.res_obs)
+        theta_auto.config.report.write_html(
+            os.path.join(self.cwd, 'result'))
 
 

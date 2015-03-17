@@ -26,6 +26,7 @@ class WebCreator(toolinterface.Tool):
         self.image_names = []
         self.plain_info = []
         self.plain_tex = []
+        self.html_files = []
         self.image_postfix = None
         self.is_base = is_base
 
@@ -40,7 +41,7 @@ class WebCreator(toolinterface.Tool):
             self.message('ERROR settings.rootfile_postfixes:'
                          + str(settings.rootfile_postfixes))
             self.message('ERROR html production aborted')
-            return
+            raise RuntimeError('No image postfixes')
 
         # collect folders and images
         if not self.working_dir:
@@ -51,13 +52,15 @@ class WebCreator(toolinterface.Tool):
         for wd, dirs, files in os.walk(self.working_dir):
             self.subfolders += dirs
             for f in files:
-                if f[-5:] == '.info':
+                if f.endswith('.info'):
                     if f[:-5] + self.image_postfix in files:
                         self.image_names.append(f[:-5])
                     else:
                         self.plain_info.append(f)
-                if f[-4:] == '.tex':
+                if f.endswith('.tex'):
                     self.plain_tex.append(f)
+                if f.endswith('.html') or f.endswith('.htm'):
+                    self.html_files.append(f)
             break
 
     def go4subdirs(self):
@@ -115,11 +118,18 @@ class WebCreator(toolinterface.Tool):
         self.web_lines += ('<h2>Subfolders:</h2>',)
         for sf in self.subfolders:
             self.web_lines += (
-                '<p><a href="'
-                + os.path.join(sf, 'index.html')
-                + '">'
-                + sf
-                + '</a></p>',
+                '<p><a href="%s">%s</a></p>' % (
+                    os.path.join(sf, 'index.html'), sf),
+            )
+        self.web_lines += ('<hr width="60%">', '')
+
+    def make_html_file_links(self):
+        if not self.html_files:
+            return
+        self.web_lines += ('<h2>HTML files:</h2>',)
+        for hf in self.html_files:
+            self.web_lines += (
+                '<p><a href="%s">%s</a></p>' % (hf, hf),
             )
         self.web_lines += ('<hr width="60%">', '')
 
@@ -226,23 +236,25 @@ class WebCreator(toolinterface.Tool):
     def run(self):
         self.io.use_analysis_cwd = False
         self.configure()
-        if not self.image_postfix:
-            return
-        if self.image_names or self.subfolders or self.plain_info:
-            self.message('INFO Building page in ' + self.working_dir)
-        else:
-            return
         self.go4subdirs()
-        self.make_html_head()
-        self.make_headline()
-        self.make_subfolder_links()
-        self.make_info_file_divs()
-        self.make_tex_file_divs()
-        self.make_image_divs()
-        self.finalize_page()
-        self.write_page()
+
+        if any((self.subfolders,
+                self.image_names,
+                self.plain_info,
+                self.plain_tex,
+                self.html_files)):
+            self.message('INFO Building page in ' + self.working_dir)
+            self.make_html_head()
+            self.make_headline()
+            self.make_subfolder_links()
+            self.make_html_file_links()
+            self.make_info_file_divs()
+            self.make_tex_file_divs()
+            self.make_image_divs()
+            self.finalize_page()
+            self.write_page()
+
         if self.is_base:
             self.io.use_analysis_cwd = True
 
-# TODO: Make breadcrumb links with '../'
 
