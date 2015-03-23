@@ -773,7 +773,7 @@ def canvas(grps, decorators=()):
     return build_canvas(grps)                   # and do the job
 
 
-def save_canvas_lin_log(cnvs, filename_func):
+def save_canvas_lin_log(cnvs, filename_func, log_only_1d_hists=True):
     """
     Saves canvasses, switches to logscale, saves again.
 
@@ -785,6 +785,12 @@ def save_canvas_lin_log(cnvs, filename_func):
         cnvs,
         lambda c: filename_func(c) + '_lin'
     )
+    if log_only_1d_hists:
+        cnvs = itertools.ifilter(
+            lambda c: not any(
+                'H2' in r.type or 'H3' in r.type for r in c._renderers),
+            cnvs
+        )
     cnvs = switch_log_scale(cnvs)
     cnvs = save(
         cnvs,
