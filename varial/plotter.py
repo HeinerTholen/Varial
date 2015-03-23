@@ -269,10 +269,13 @@ class RootFilePlotter(toolinterface.ToolChain):
         self.aliases = aliases
 
         legendnames = _mk_legendnames(rootfiles)
-        legendnames = dict(itertools.izip(rootfiles, legendnames))
+        legendnames = dict(itertools.izip(
+            itertools.imap(lambda p: os.path.basename(p), rootfiles),
+            legendnames
+        ))
         self.message(
             'INFO  Legend names that I will use by default:\n'
-            + '\n'.join('%22s: %s' % (v,k) for k,v in legendnames.iteritems())
+            + '\n'.join('%32s: %s' % (v,k) for k,v in legendnames.iteritems())
         )
         colors = settings.default_colors[:len(rootfiles)]
         def colorizer(wrps):
