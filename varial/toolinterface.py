@@ -5,6 +5,7 @@ Baseclasses for tools and toolchains.
 import os
 import time
 import inspect
+import multiprocessing
 
 import analysis
 import diskio
@@ -161,23 +162,26 @@ class ToolChain(_ToolBase):
         self.tool_names[tool.name] = tool
         self.tool_chain.append(tool)
 
+    def _run_tool(self, tool):
+        with tool as t:
+            if tool.wanna_reuse(self._reuse):
+                tool.reuse()
+                return
+            elif tool.can_reuse:
+                if settings.only_reload_results:
+                    monitor.reset()
+                    raise RuntimeError('End of reload results mode at: ', t)
+                self._reuse = False
+
+            t._reuse = self._reuse
+            t.starting()
+            t.run()
+            t.finished()
+            self._reuse = t._reuse
+
     def run(self):
         for tool in self.tool_chain:
-            with tool as t:
-                if tool.wanna_reuse(self._reuse):
-                    tool.reuse()
-                    continue
-                elif tool.can_reuse:
-                    if settings.only_reload_results:
-                        monitor.reset()
-                        raise RuntimeError('End of reload results mode at: ', t)
-                    self._reuse = False
-
-                t._reuse = self._reuse
-                t.starting()
-                t.run()
-                t.finished()
-                self._reuse = t._reuse
+            self._run_tool(tool)
 
 
 class ToolChainIndie(ToolChain):
@@ -236,5 +240,25 @@ class ToolChainVanilla(ToolChain):
         pass
 
 
+class ToolChainParallel(ToolChain):
+    """Parallel execution of tools. Tools need to not depend on each other."""
 
+    def _recursive_push_result(self, tool):
+        analysis.push_tool(tool)
+        if isinstance(tool, ToolChain):
+            for t in tool.tool_chain:
+                self._recursive_push_result(t)
+        analysis.pop_tool()
+            
+    def run(self):
+        def _runner(tool):
+            self._run_tool(tool)
+            return tool.name, self._reuse, tool.result
 
+        pool = multiprocessing.Pool(settings.max_num_processes)
+        result_iter = pool.imap_unordered(_runner, self.tool_chain)
+        for name, reused, result in result_iter:
+            self.tool_names[name].result = result
+            if not reused:
+                self._reuse = False
+            self._recursive_push_result(self.tool_names[name])
