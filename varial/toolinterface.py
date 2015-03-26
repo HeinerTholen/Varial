@@ -94,17 +94,17 @@ class Tool(_ToolBase):
         )  # TODO make check with hash over result, stored in self.logfile
 
     def reuse(self):
-        self.message("INFO reusing...")
+        self.message('INFO reusing...')
         res = self.io.get('result')
         if res:
-            if hasattr(res, "RESULT_WRAPPERS"):
+            if hasattr(res, 'RESULT_WRAPPERS'):
                 self.result = list(self.io.read(f) for f in res.RESULT_WRAPPERS)
             else:
                 self.result = res
 
     def starting(self):
         super(Tool, self).starting()
-        self.time_start = time.ctime() + "\n"
+        self.time_start = time.ctime() + '\n'
         if os.path.exists(self.logfile):
             os.remove(self.logfile)
 
@@ -115,7 +115,7 @@ class Tool(_ToolBase):
         elif isinstance(self.result, list) or isinstance(self.result, tuple):
             filenames = []
             for i, wrp in enumerate(self.result):
-                num_str = "_%03d" % i
+                num_str = '_%03d' % i
                 filenames.append('result' + num_str)
                 self.io.write(wrp, 'result' + num_str)
             self.io.write(
@@ -125,8 +125,8 @@ class Tool(_ToolBase):
                 ),
                 'result'
             )
-        self.time_fin = time.ctime() + "\n"
-        with open(self.logfile, "w") as f:    # TODO: mv log into result.info
+        self.time_fin = time.ctime() + '\n'
+        with open(self.logfile, 'w') as f:    # TODO: mv log into result.info
             f.write(self.time_start)
             f.write(self.time_fin)
         super(Tool, self).finished()
@@ -207,7 +207,7 @@ class ToolChainVanilla(ToolChain):
         old_analysis_data = {}
         for key, val in analysis.__dict__.iteritems():
             if not (
-                key[:2] == "__"
+                key[:2] == '__'
                 or inspect.ismodule(val)
                 or callable(val)
             ):
@@ -226,7 +226,7 @@ class ToolChainVanilla(ToolChain):
     def starting(self):
         super(ToolChainVanilla, self).starting()
         self.prepare_for_systematic()
-        self.message("INFO Resetting tools.")
+        self.message('INFO Resetting tools.')
         self.reset()
 
     def finished(self):
@@ -249,7 +249,7 @@ class ToolChainParallel(ToolChain):
             for t in tool.tool_chain:
                 self._recursive_push_result(t)
         analysis.pop_tool()
-            
+
     def run(self):
         def _runner(tool):
             self._run_tool(tool)
