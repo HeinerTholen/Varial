@@ -218,7 +218,7 @@ def _mk_legendnames(filenames):
     return lns
 
 
-class RootFilePlotter(toolinterface.ToolChain):
+class RootFilePlotter(toolinterface.ToolChainParallel):
     """
     Plots all histograms in a rootfile.
 

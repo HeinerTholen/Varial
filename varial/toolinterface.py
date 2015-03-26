@@ -5,7 +5,7 @@ Baseclasses for tools and toolchains.
 import os
 import time
 import inspect
-import multiprocessing
+import multiprocessing.pool
 
 import analysis
 import diskio
@@ -240,6 +240,28 @@ class ToolChainVanilla(ToolChain):
         pass
 
 
+_ref_to_toolchain = None
+def _run_tool(index):
+    chain = _ref_to_toolchain
+    tool = chain.tool_chain[index]
+    chain._run_tool(tool)
+    result = tool.result if hasattr(tool, 'result') else None
+    return tool.name, chain._reuse, result
+
+
+class _NoDaemonProcess(multiprocessing.Process):
+    # make 'daemon' attribute always return False
+    def _get_daemon(self):
+        return False
+    def _set_daemon(self, value):
+        pass
+    daemon = property(_get_daemon, _set_daemon)
+
+
+class _MyPool(multiprocessing.pool.Pool):
+    Process = _NoDaemonProcess
+
+
 class ToolChainParallel(ToolChain):
     """Parallel execution of tools. Tools need to not depend on each other."""
 
@@ -251,14 +273,16 @@ class ToolChainParallel(ToolChain):
         analysis.pop_tool()
 
     def run(self):
-        def _runner(tool):
-            self._run_tool(tool)
-            return tool.name, self._reuse, tool.result
-
-        pool = multiprocessing.Pool(settings.max_num_processes)
-        result_iter = pool.imap_unordered(_runner, self.tool_chain)
+        global _ref_to_toolchain
+        _ref_to_toolchain = self
+        pool = _MyPool(settings.max_num_processes)
+        task_list = list(xrange(len(self.tool_chain)))
+        result_iter = pool.imap_unordered(_run_tool, task_list)
+        diskio.close_open_root_files()
         for name, reused, result in result_iter:
             self.tool_names[name].result = result
             if not reused:
                 self._reuse = False
             self._recursive_push_result(self.tool_names[name])
+        pool.close()
+        pool.join()
