@@ -35,7 +35,23 @@ class NoHistogramError(RuntimeError): pass
 
 
 ################################################################# file refs ###
+class _BlockMaker(dict):
+    def __enter__(self):
+        global _in_a_block
+        _in_a_block = True
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        global _in_a_block
+        _in_a_block = False
+        for filename, in _block_of_open_files:
+            file_handle = _open_root_files.pop(filename)
+            file_handle.Close()
+
+
 _open_root_files = {}
+_block_of_open_files = []
+_in_a_block = False
+block_of_files = _BlockMaker()
 
 
 def get_open_root_file(filename):
@@ -54,6 +70,8 @@ def get_open_root_file(filename):
         if (not file_handle) or file_handle.IsZombie():
             raise RuntimeError('Cannot open file with root: "%s"' % filename)
         _open_root_files[filename] = file_handle
+        if _in_a_block:
+            _block_of_open_files.append(filename)
     return file_handle
 
 

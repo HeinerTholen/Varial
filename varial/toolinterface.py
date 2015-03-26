@@ -109,22 +109,23 @@ class Tool(_ToolBase):
             os.remove(self.logfile)
 
     def finished(self):
-        if isinstance(self.result, wrappers.Wrapper):
-            self.result.name = self.name
-            self.io.write(self.result, 'result')
-        elif isinstance(self.result, list) or isinstance(self.result, tuple):
-            filenames = []
-            for i, wrp in enumerate(self.result):
-                num_str = '_%03d' % i
-                filenames.append('result' + num_str)
-                self.io.write(wrp, 'result' + num_str)
-            self.io.write(
-                wrappers.Wrapper(
-                    name=self.name,
-                    RESULT_WRAPPERS=filenames
-                ),
-                'result'
-            )
+        with diskio.block_of_files:
+            if isinstance(self.result, wrappers.Wrapper):
+                self.result.name = self.name
+                self.io.write(self.result, 'result')
+            elif any(isinstance(self.result, t) for t in (list, tuple)):
+                filenames = []
+                for i, wrp in enumerate(self.result):
+                    num_str = '_%03d' % i
+                    filenames.append('result' + num_str)
+                    self.io.write(wrp, 'result' + num_str)
+                self.io.write(
+                    wrappers.Wrapper(
+                        name=self.name,
+                        RESULT_WRAPPERS=filenames
+                    ),
+                    'result'
+                )
         self.time_fin = time.ctime() + '\n'
         with open(self.logfile, 'w') as f:    # TODO: mv log into result.info
             f.write(self.time_start)
