@@ -320,7 +320,8 @@ def _get_obj_from_file(filename, in_file_path):
         obj_key = obj.GetKey(name)
         if not obj_key:
             raise NoObjectError(
-                'I cannot find "%s" in root file "%s"!' % (name, filename))
+                'I cannot find "%s" in root file "%s"!' % (in_file_path,
+                                                           filename))
         obj = obj_key.ReadObj()
     return obj
 
