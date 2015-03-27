@@ -100,7 +100,12 @@ class CopyTool(Tool):
         self.wipe_dest_dir = wipe_dest_dir
 
     def run(self):
-        src = os.path.abspath(self.src or os.path.join(self.cwd, '..'))
+        if self.src:
+            src = os.path.abspath(self.src)
+        elif self.cwd:
+            src = os.path.abspath(os.path.join(self.cwd, '..'))
+        else:
+            src = os.getcwd()
         dest = os.path.abspath(self.dest)
 
         # check for htaccess and copy it to src dirs
