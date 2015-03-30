@@ -59,7 +59,9 @@ class WebCreator(toolinterface.Tool):
                         self.plain_info.append(f)
                 if f.endswith('.tex'):
                     self.plain_tex.append(f)
-                if f.endswith('.html') or f.endswith('.htm'):
+                if f.endswith('.html') \
+                        or f.endswith('.htm') \
+                        and f != 'index.html':
                     self.html_files.append(f)
             break
 
