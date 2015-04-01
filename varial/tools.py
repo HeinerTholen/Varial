@@ -202,9 +202,12 @@ def mk_rootfile_plotter(name="RootFilePlots",
                         flat=False,
                         plotter_factory=None,
                         combine_files=False,
-                        filter_keyfunc=None):
+                        filter_keyfunc=None,
+                        **kws):
     """
     Make a plotter chain that plots all content of all rootfiles in cwd.
+
+    Additional keywords are forwarded to the plotter instanciation.
 
     :param name:                str, name of the folder in which the output is
                                 stored
@@ -219,15 +222,27 @@ def mk_rootfile_plotter(name="RootFilePlots",
                                 with ``flat`` option,
                                 default: ``False``
     """
+    def plotter_factory_kws(**kws_fctry):
+        kws_fctry.update(kws)
+        if plotter_factory:
+            return plotter_factory(**kws_fctry)
+        else:
+            return Plotter(**kws_fctry)
+
+    if kws:
+        new_plotter_factory = plotter_factory_kws
+    else:
+        new_plotter_factory = plotter_factory
+
     if combine_files:
         plotters = [RootFilePlotter(
-            pattern, plotter_factory, flat, name, filter_keyfunc)]
+            pattern, new_plotter_factory, flat, name, filter_keyfunc)]
         tc = ToolChain(name, plotters)
     else:
         plotters = list(
             RootFilePlotter(
                 f,
-                plotter_factory,
+                new_plotter_factory,
                 flat,
                 f[:-5].split('/')[-1],
                 filter_keyfunc,
