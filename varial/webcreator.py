@@ -1,10 +1,12 @@
+import itertools
+import heapq
 import os
 
-import analysis
-import diskio
-import settings
 import toolinterface
+import analysis
+import settings
 import wrappers
+import diskio
 
 
 class WebCreator(toolinterface.Tool):
@@ -177,20 +179,39 @@ class WebCreator(toolinterface.Tool):
         if not self.image_names:
             return
 
-        # headline / toc
+        # lin/log pairs
+        image_names = sorted(self.image_names)
+        image_name_tuples = []
+        for i in xrange(len(image_names) - 1):
+            a, b = image_names[i], image_names[i+1]
+            if (a.endswith('_log')
+                and image_name_tuples
+                and image_name_tuples[-1][1] == a
+            ):
+                continue
+            elif (a.endswith('_lin')
+                  and b.endswith('_log')
+                  and a[:-4] == b[:-4]
+            ):
+                image_name_tuples.append((a, b))
+            else:
+                image_name_tuples.append((a, None))
+
+        # toc
         self.web_lines += (
             '<a name="toc"></a>',
             '<h2>Images:</h2>',
             '<div><p>',
         ) + tuple(
-            '<a href="#%s">%s</a></br>' % (img, img)
-            for img in self.image_names
+            '<a href="#%s">%s%s</a></br>' % (img, img,
+                                             ' (+ log)' if img_log else '')
+            for img, img_log in image_name_tuples
         ) + (
             '</p></div>',
         )
 
         # images
-        for img in self.image_names:
+        for img, img_log in image_name_tuples:
             with open(os.path.join(self.working_dir, img + '.info')) as f:
                 wrp = wrappers.Wrapper(**diskio._read_wrapper_info(f))
                 del wrp.history
@@ -202,7 +223,8 @@ class WebCreator(toolinterface.Tool):
                 '<div>',
                 '<p>',
                 ('<a name="%s">' % img),                    # anchor
-                '<b>' + img + ':</b></br>',                 # image headline
+                                                            # image headline
+                ('<b>%s%s</b></br>' % (img, ' (+ _log)' if img_log else '')),
                 '<a href="javascript:ToggleDiv(\'' + h_id   # toggle history
                 + '\')">(toggle history)</a>',
                 '<a href="javascript:ToggleDiv(\'' + i_id   # toggle info
@@ -217,9 +239,9 @@ class WebCreator(toolinterface.Tool):
                 + '" style="display:none;"><pre>',
                 info_lines,
                 '</pre></div>',
-                '<img src="'                                # the image itself
-                + img + self.image_postfix
-                + '" />',
+                ('<img src="%s" />' % (img + self.image_postfix)),  # the images
+                ('<img src="%s" />' %
+                    (img_log + self.image_postfix)) if img_log else '',
                 '</div>',
                 '<hr width="95%">'
             )
