@@ -333,7 +333,8 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                     rfp.private_plotter = plotter_factory(
                         filter_keyfunc=lambda _: True,
                         plot_grouper=plot_grouper_by_in_file_path,
-                        save_name_func=lambda w: w._renderers[0].name,
+                        save_name_func=lambda w:
+                            w._renderers[0].in_file_path.replace('/', '_'),
                         load_func=_mk_loader(path[:-1]),
                         canvas_decorators=[rendering.Legend],
                     )
