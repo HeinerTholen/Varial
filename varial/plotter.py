@@ -248,7 +248,8 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
         if not rootfiles:
             return
 
-        self.message('INFO Setting up RootFilePlotter')
+        self.message('INFO Using parallel plotting. Disable with '
+                     '"varial.settings.use_parallel_chains = False"')
 
         # setup aliases
         ROOT.gROOT.SetBatch()

@@ -19,6 +19,7 @@ default_colors = [632, 814, 596, 870, 434, 840, 902, 797, 800, 618, 400, 800,
                   838, 420, 402, 893, 881, 804, 599, 615, 831, 403, 593, 872]
 wrp_sorting_keys = ['in_file_path', 'is_signal', 'is_data', 'sample']
 max_open_root_files = 998
+use_parallel_chains = True
 
 
 def logfilename():

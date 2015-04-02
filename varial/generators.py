@@ -419,7 +419,7 @@ def load(aliases):
         yield diskio.load_histogram(alias)
 
 
-def save(wrps, filename_func, suffices=None):
+def save(wrps, filename_func, suffices=None, write_complete_wrp=False):
     """
     Saves passing wrps to disk, plus .info file with the wrapper infos.
 
@@ -440,7 +440,14 @@ def save(wrps, filename_func, suffices=None):
         suffices = settings.rootfile_postfixes
     for wrp in wrps:
         filename = filename_func(wrp)
-        diskio.write(wrp, filename, suffices)
+        if write_complete_wrp:
+            diskio.write(wrp, filename, suffices)
+        else:
+            filename = diskio.prepare_filename(wrp, filename)
+            with open(filename+'.info', 'w') as f:
+                diskio._write_wrapper_info(wrp, f)
+            for suffix in suffices:
+                wrp.primary_object().SaveAs(filename + suffix)
         yield wrp
 
 

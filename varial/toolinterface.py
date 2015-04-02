@@ -242,7 +242,7 @@ class ToolChainVanilla(ToolChain):
 
 
 _ref_to_toolchain = None
-def _run_tool(index):
+def _run_tool_in_worker(index):
     chain = _ref_to_toolchain
     tool = chain.tool_chain[index]
     chain._run_tool(tool)
@@ -259,13 +259,12 @@ class _NoDaemonProcess(multiprocessing.Process):
     daemon = property(_get_daemon, _set_daemon)
 
 
-class _MyPool(multiprocessing.pool.Pool):
+class _NoDeamonWorkersPool(multiprocessing.pool.Pool):
     Process = _NoDaemonProcess
 
 
 class ToolChainParallel(ToolChain):
-    """Parallel execution of tools. Tools need to not depend on each other."""
-
+    """Parallel execution of tools. Tools must not depend on each other."""
     def _recursive_push_result(self, tool):
         analysis.push_tool(tool)
         if isinstance(tool, ToolChain):
@@ -276,10 +275,18 @@ class ToolChainParallel(ToolChain):
     def run(self):
         global _ref_to_toolchain
         _ref_to_toolchain = self
-        pool = _MyPool(settings.max_num_processes)
-        task_list = list(xrange(len(self.tool_chain)))
-        result_iter = pool.imap_unordered(_run_tool, task_list)
+
+        if not settings.use_parallel_chains:
+            return super(ToolChainParallel, self).run()
+
+        if not self.tool_chain:
+            return
+
         diskio.close_open_root_files()
+        n_tools = len(self.tool_chain)
+        task_list = list(xrange(n_tools))
+        pool = _NoDeamonWorkersPool(min(n_tools, settings.max_num_processes))
+        result_iter = pool.imap_unordered(_run_tool_in_worker, task_list)
         for name, reused, result in result_iter:
             self.tool_names[name].result = result
             if not reused:
