@@ -29,7 +29,8 @@ from toolinterface import \
     Tool, \
     ToolChain, \
     ToolChainIndie, \
-    ToolChainVanilla
+    ToolChainVanilla, \
+    ToolChainParallel
 from plotter import \
     Plotter, \
     RootFilePlotter
