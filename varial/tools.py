@@ -118,6 +118,7 @@ class CopyTool(Tool):
         # clean dest dir and copy
         if self.wipe_dest_dir:
             for f in glob.glob(dest + '/*'):
+                self.message('INFO Deleting: ' + f)
                 shutil.rmtree(f, True)
         ign_pat = shutil.ignore_patterns(*self.ignore)
         for f in glob.glob(src + '/*'):
