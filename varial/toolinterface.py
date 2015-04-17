@@ -241,10 +241,11 @@ class ToolChainVanilla(ToolChain):
         pass
 
 
-_ref_to_toolchain = None
-def _run_tool_in_worker(index):
-    chain = _ref_to_toolchain
-    tool = chain.tool_chain[index]
+######################################################### ToolChainParallel ###
+def _run_tool_in_worker(arg):
+    chain_path, tool_index = arg
+    chain = analysis.lookup_tool(chain_path)
+    tool = chain.tool_chain[tool_index]
     chain._run_tool(tool)
     result = tool.result if hasattr(tool, 'result') else None
     return tool.name, chain._reuse, result
@@ -273,8 +274,6 @@ class ToolChainParallel(ToolChain):
         analysis.pop_tool()
 
     def run(self):
-        global _ref_to_toolchain
-        _ref_to_toolchain = self
 
         if not settings.use_parallel_chains:
             return super(ToolChainParallel, self).run()
@@ -282,15 +281,21 @@ class ToolChainParallel(ToolChain):
         if not self.tool_chain:
             return
 
+        #  prepare queue and fork processes
         diskio.close_open_root_files()
         n_tools = len(self.tool_chain)
-        task_list = list(xrange(n_tools))
+        my_path = "/".join(t.name for t in analysis._tool_stack)
+        tool_index_list = list((my_path, i) for i in xrange(n_tools))
         pool = _NoDeamonWorkersPool(min(n_tools, settings.max_num_processes))
-        result_iter = pool.imap_unordered(_run_tool_in_worker, task_list)
+        result_iter = pool.imap_unordered(_run_tool_in_worker, tool_index_list)
+
+        # start processing
         for name, reused, result in result_iter:
             self.tool_names[name].result = result
             if not reused:
                 self._reuse = False
             self._recursive_push_result(self.tool_names[name])
+
+        #cleanup
         pool.close()
         pool.join()
