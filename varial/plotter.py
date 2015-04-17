@@ -346,6 +346,8 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
             analysis.fs_aliases = self.aliases
         super(RootFilePlotter, self).run()
         if self.private_plotter:
+            toolinterface.parallel_worker_start()
             self.private_plotter.run()
+            toolinterface.parallel_worker_done()
         if self.rootfile:
             analysis.fs_aliases = old_aliases

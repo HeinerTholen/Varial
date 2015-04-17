@@ -242,11 +242,35 @@ class ToolChainVanilla(ToolChain):
 
 
 ######################################################### ToolChainParallel ###
+_n_parallel_workers = None
+_n_parallel_workers_lock = None
+
+
+def parallel_worker_start():
+    while _n_parallel_workers.value >= settings.max_num_processes:
+        time.sleep(0.5)
+    _n_parallel_workers_lock.acquire()
+    _n_parallel_workers.value += 1
+    _n_parallel_workers_lock.release()
+
+
+def parallel_worker_done():
+    diskio.close_open_root_files()
+    _n_parallel_workers_lock.acquire()
+    _n_parallel_workers.value -= 1
+    _n_parallel_workers_lock.release()
+
+
 def _run_tool_in_worker(arg):
     chain_path, tool_index = arg
     chain = analysis.lookup_tool(chain_path)
     tool = chain.tool_chain[tool_index]
-    chain._run_tool(tool)
+    if not isinstance(tool, ToolChain):
+        parallel_worker_start()
+        chain._run_tool(tool)
+        parallel_worker_done()
+    else:
+        chain._run_tool(tool)
     result = tool.result if hasattr(tool, 'result') else None
     return tool.name, chain._reuse, result
 
@@ -274,6 +298,7 @@ class ToolChainParallel(ToolChain):
         analysis.pop_tool()
 
     def run(self):
+        global _n_parallel_workers, _n_parallel_workers_lock
 
         if not settings.use_parallel_chains:
             return super(ToolChainParallel, self).run()
@@ -281,7 +306,12 @@ class ToolChainParallel(ToolChain):
         if not self.tool_chain:
             return
 
-        #  prepare queue and fork processes
+        #  prepare and fork processes
+        if not _n_parallel_workers:
+            manager = multiprocessing.Manager()
+            _n_parallel_workers = manager.Value('i', 0)
+            _n_parallel_workers_lock = manager.Lock()
+
         diskio.close_open_root_files()
         n_tools = len(self.tool_chain)
         my_path = "/".join(t.name for t in analysis._tool_stack)
