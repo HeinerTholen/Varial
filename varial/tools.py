@@ -103,37 +103,42 @@ class CopyTool(Tool):
     def run(self):
         if self.src:
             src = os.path.abspath(self.src)
+            src_objs = glob.glob(src)
         elif self.cwd:
             src = os.path.abspath(os.path.join(self.cwd, '..'))
+            src_objs = glob.glob(src + '/*')
         else:
             src = os.getcwd()
-        src_objs = glob.glob(src + '/*')
+            src_objs = glob.glob(src + '/*')
         dest = os.path.abspath(self.dest)
 
         # check for htaccess and copy it to src dirs
         htaccess = os.path.join(dest, '.htaccess')
         if os.path.exists(htaccess):
-            for path, _, _ in os.walk(src):
-                shutil.copy2(htaccess, path)
+            for src in src_objs:
+                for path, _, _ in os.walk(src):
+                    shutil.copy2(htaccess, path)
 
-        # clean dest dir and copy
+        # clean dest dir
         if self.wipe_dest_dir:
             src_basenames = list(os.path.basename(p) for p in src_objs)
             for f in glob.glob(dest + '/*'):
                 if os.path.isdir(f) and os.path.basename(f) in src_basenames:
                     self.message('INFO Deleting: ' + f)
                     shutil.rmtree(f, True)
+
+        # copy
         ign_pat = shutil.ignore_patterns(*self.ignore)
-        for f in src_objs:
-            if os.path.isdir(f):
-                f = os.path.basename(f)
+        for src in src_objs:
+            if os.path.isdir(src):
+                f = os.path.basename(src)
                 shutil.copytree(
-                    os.path.join(src, f),
+                    src,
                     os.path.join(dest, f),
                     ignore=ign_pat,
                 )
             else:
-                shutil.copy2(f, dest)
+                shutil.copy2(src, dest)
 
 
 class ZipTool(Tool):
