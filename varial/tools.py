@@ -130,6 +130,7 @@ class CopyTool(Tool):
         # copy
         ign_pat = shutil.ignore_patterns(*self.ignore)
         for src in src_objs:
+            self.message('INFO Copying: ' + src)
             if os.path.isdir(src):
                 f = os.path.basename(src)
                 shutil.copytree(
@@ -218,6 +219,7 @@ def mk_rootfile_plotter(name="RootFilePlots",
                         plotter_factory=None,
                         combine_files=False,
                         filter_keyfunc=None,
+                        legendnames=None,
                         **kws):
     """
     Make a plotter chain that plots all content of all rootfiles in cwd.
@@ -251,7 +253,13 @@ def mk_rootfile_plotter(name="RootFilePlots",
 
     if combine_files:
         plotters = [RootFilePlotter(
-            pattern, new_plotter_factory, flat, name, filter_keyfunc)]
+            pattern,
+            new_plotter_factory,
+            flat,
+            name,
+            filter_keyfunc,
+            legendnames
+        )]
         tc = ToolChain(name, plotters)
     else:
         plotters = list(
@@ -261,6 +269,7 @@ def mk_rootfile_plotter(name="RootFilePlots",
                 flat,
                 f[:-5].split('/')[-1],
                 filter_keyfunc,
+                legendnames
             )
             for f in glob.iglob(pattern)
         )
