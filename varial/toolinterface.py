@@ -326,6 +326,8 @@ class ToolChainParallel(ToolChain):
                 self._reuse = False
             self._recursive_push_result(self.tool_names[name])
 
+        # TODO: return results for ParallelToolChains in ParallelToolChains
+
         #cleanup
         pool.close()
         pool.join()
