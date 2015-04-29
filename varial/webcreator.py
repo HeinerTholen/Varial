@@ -184,8 +184,11 @@ class WebCreator(toolinterface.Tool):
         # lin/log pairs
         image_names = sorted(self.image_names)
         image_name_tuples = []
-        for i in xrange(len(image_names) - 1):
-            a, b = image_names[i], image_names[i+1]
+        for i in xrange(len(image_names)):
+            try:
+                a, b = image_names[i], image_names[i+1]
+            except IndexError:
+                a, b = image_names[i], ''
             if (a.endswith('_log')
                 and image_name_tuples
                 and image_name_tuples[-1][1] == a
