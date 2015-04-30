@@ -45,6 +45,13 @@ def overlay_colorizer(wrps, colors=None):
         yield w
 
 
+def default_plot_colorizer(grps, colors=None):
+    grps = (gen.apply_linecolor(ws, colors) for ws in grps)
+    grps = (gen.apply_markercolor(ws, colors) for ws in grps)
+    return grps
+
+
+
 class Plotter(toolinterface.Tool):
     """
     A plotter. Makes stacks and overlays data by default.
@@ -60,7 +67,7 @@ class Plotter(toolinterface.Tool):
     ...    'stack_grouper': plot_grouper_by_in_file_path,
     ...    'plot_grouper': lambda wrps: ((w,) for w in wrps),
     ...    'stack_setup': lambda w: gen.mc_stack_n_data_sum(w, None, True),
-    ...    'plot_setup': lambda wrps: wrps,
+    ...    'plot_setup': default_plot_colorizer,
     ...    'hook_canvas_pre_build': None,
     ...    'hook_canvas_post_build': None,
     ...    'save_log_scale': False,
@@ -82,7 +89,7 @@ class Plotter(toolinterface.Tool):
         'stack_grouper': plot_grouper_by_in_file_path,
         'plot_grouper': lambda wrps: ((w,) for w in wrps),
         'stack_setup': lambda w: gen.mc_stack_n_data_sum(w, None, True),
-        'plot_setup': lambda wrps: wrps,
+        'plot_setup': default_plot_colorizer,
         'hook_canvas_pre_build': None,
         'hook_canvas_post_build': None,
         'save_log_scale': False,
@@ -289,10 +296,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
             'INFO  Legend names that I will use by default:\n'
             + '\n'.join('%32s: %s' % (v,k) for k,v in legendnames.iteritems())
         )
-        colors = settings.default_colors[:len(rootfiles)]
-        def colorizer(wrps):
-            wrps = gen.apply_linecolor(wrps, colors)
-            wrps = gen.apply_markercolor(wrps, colors)
+        def apply_legend(wrps):
             for w in wrps:
                 if not w.legend:
                     w.legend = legendnames[os.path.basename(w.file_path)]
@@ -302,7 +306,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
         if flat:
             self.private_plotter = plotter_factory(
                 filter_keyfunc=lambda _: True,
-                load_func=lambda _: colorizer(gen.load(gen.fs_content())),
+                load_func=lambda _: apply_legend(gen.load(gen.fs_content())),
                 plot_grouper=plot_grouper_by_in_file_path,
                 plot_setup=lambda ws: gen.mc_stack_n_data_sum(
                     ws, lambda w: '', True),
@@ -337,7 +341,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                                 wrps
                             )
                             wrps = gen.load(wrps)
-                            wrps = colorizer(wrps)
+                            wrps = apply_legend(wrps)
                             return wrps
                         return loader
 
