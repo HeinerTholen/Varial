@@ -20,6 +20,18 @@ def rename_th2(wrps):
         yield wrp
 
 
+def set_canvas_name_to_infilepath(grps):
+    for grp in grps:
+        grp.name = grp.renderers[0].in_file_path.replace('/', '_')
+        yield grp
+
+
+def set_canvas_name_to_plot_name(grps):
+    for grp in grps:
+        grp.name = grp.renderers[0].name
+        yield grp
+
+
 def plot_grouper_by_in_file_path(wrps, separate_th2=True):
     if separate_th2:
         wrps = rename_th2(wrps)
@@ -31,6 +43,13 @@ def overlay_colorizer(wrps, colors=None):
     for w in wrps:
         w.histo.SetFillStyle(0)
         yield w
+
+
+def default_plot_colorizer(grps, colors=None):
+    grps = (gen.apply_linecolor(ws, colors) for ws in grps)
+    grps = (gen.apply_markercolor(ws, colors) for ws in grps)
+    return grps
+
 
 
 class Plotter(toolinterface.Tool):
@@ -48,12 +67,13 @@ class Plotter(toolinterface.Tool):
     ...    'stack_grouper': plot_grouper_by_in_file_path,
     ...    'plot_grouper': lambda wrps: ((w,) for w in wrps),
     ...    'stack_setup': lambda w: gen.mc_stack_n_data_sum(w, None, True),
-    ...    'plot_setup': lambda wrps: wrps,
+    ...    'plot_setup': default_plot_colorizer,
     ...    'hook_canvas_pre_build': None,
     ...    'hook_canvas_post_build': None,
     ...    'save_log_scale': False,
     ...    'save_lin_log_scale': False,
     ...    'keep_content_as_result': False,
+    ...    'set_canvas_name': set_canvas_name_to_infilepath,
     ...    'save_name_func': lambda wrp: wrp.name,
     ...    'canvas_decorators': [
     ...        rendering.BottomPlotRatioSplitErr,
@@ -69,12 +89,13 @@ class Plotter(toolinterface.Tool):
         'stack_grouper': plot_grouper_by_in_file_path,
         'plot_grouper': lambda wrps: ((w,) for w in wrps),
         'stack_setup': lambda w: gen.mc_stack_n_data_sum(w, None, True),
-        'plot_setup': lambda wrps: wrps,
+        'plot_setup': default_plot_colorizer,
         'hook_canvas_pre_build': None,
         'hook_canvas_post_build': None,
         'save_log_scale': False,
         'save_lin_log_scale': False,
         'keep_content_as_result': False,
+        'set_canvas_name': set_canvas_name_to_infilepath,
         'save_name_func': lambda wrp: wrp.name,
         'canvas_decorators': [
             rendering.BottomPlotRatioSplitErr,
@@ -136,11 +157,7 @@ class Plotter(toolinterface.Tool):
 
     def set_up_make_canvas(self):
 
-        def put_ana_histo_name(grps):
-            # TODO this should be able to be changed from outside
-            for grp in grps:
-                grp.name = grp.renderers[0].in_file_path.replace('/', '_')
-                yield grp
+
 
         def run_build_procedure(bldr):
             for b in bldr:
@@ -155,7 +172,7 @@ class Plotter(toolinterface.Tool):
                         b = dec(b)
                 yield b
         bldr = gen.make_canvas_builder(self.stream_content)
-        bldr = put_ana_histo_name(bldr)
+        bldr = self.set_canvas_name(bldr)
         bldr = decorate(bldr)
         if self.hook_canvas_pre_build:
             bldr = self.hook_canvas_pre_build(bldr)
@@ -197,12 +214,12 @@ class Plotter(toolinterface.Tool):
 def _mk_legendnames(filenames):
     # only one file: return directly
     if len(filenames) < 2:
-        return filenames[:]
+        return {filenames[0]: filenames[0]}
 
     # try the sframe way:
     lns = list(n.split('.') for n in filenames)
     if all(len(l) == 5 for l in lns):
-        return list(l[3] for l in lns)
+        return dict((f, l[3]) for f, l in itertools.izip(filenames, lns))
 
     # try trim filesnames from front and back
     lns = filenames[:]
@@ -214,8 +231,8 @@ def _mk_legendnames(filenames):
             for i in xrange(len(lns)):
                 lns[i] = lns[i][:-1]
     except IndexError:
-        return filenames[:]
-    return lns
+        return dict((f, f) for f in filenames[:])
+    return dict((f, l) for f, l in itertools.izip(filenames, lns))
 
 
 class RootFilePlotter(toolinterface.ToolChainParallel):
@@ -237,7 +254,8 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                  plotter_factory=None,
                  flat=False,
                  name=None,
-                 filter_keyfunc=None):
+                 filter_keyfunc=None,
+                 legendnames=None):
         super(RootFilePlotter, self).__init__(name)
 
         self.private_plotter = None
@@ -269,19 +287,16 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
         )
         self.aliases = aliases
 
-        legendnames = _mk_legendnames(rootfiles)
-        legendnames = dict(itertools.izip(
-            itertools.imap(lambda p: os.path.basename(p), rootfiles),
-            legendnames
-        ))
+        if not legendnames:
+            legendnames = _mk_legendnames(rootfiles)
+        legendnames = dict((os.path.basename(p), l)
+                           for p, l in legendnames.iteritems())
+
         self.message(
             'INFO  Legend names that I will use by default:\n'
             + '\n'.join('%32s: %s' % (v,k) for k,v in legendnames.iteritems())
         )
-        colors = settings.default_colors[:len(rootfiles)]
-        def colorizer(wrps):
-            wrps = gen.apply_linecolor(wrps, colors)
-            wrps = gen.apply_markercolor(wrps, colors)
+        def apply_legend(wrps):
             for w in wrps:
                 if not w.legend:
                     w.legend = legendnames[os.path.basename(w.file_path)]
@@ -291,7 +306,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
         if flat:
             self.private_plotter = plotter_factory(
                 filter_keyfunc=lambda _: True,
-                load_func=lambda _: colorizer(gen.load(gen.fs_content())),
+                load_func=lambda _: apply_legend(gen.load(gen.fs_content())),
                 plot_grouper=plot_grouper_by_in_file_path,
                 plot_setup=lambda ws: gen.mc_stack_n_data_sum(
                     ws, lambda w: '', True),
@@ -326,15 +341,14 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                                 wrps
                             )
                             wrps = gen.load(wrps)
-                            wrps = colorizer(wrps)
+                            wrps = apply_legend(wrps)
                             return wrps
                         return loader
 
                     rfp.private_plotter = plotter_factory(
                         filter_keyfunc=lambda _: True,
                         plot_grouper=plot_grouper_by_in_file_path,
-                        save_name_func=lambda w:
-                            w._renderers[0].in_file_path.replace('/', '_'),
+                        set_canvas_name=set_canvas_name_to_plot_name,
                         load_func=_mk_loader(path[:-1]),
                         canvas_decorators=[rendering.Legend],
                     )
@@ -346,6 +360,8 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
             analysis.fs_aliases = self.aliases
         super(RootFilePlotter, self).run()
         if self.private_plotter:
+            toolinterface.parallel_worker_start()
             self.private_plotter.run()
+            toolinterface.parallel_worker_done()
         if self.rootfile:
             analysis.fs_aliases = old_aliases

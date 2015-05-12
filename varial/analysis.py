@@ -215,6 +215,29 @@ def lookup_children_names(key):
         return res.children.keys()
 
 
+def lookup_tool(abs_path):
+    """
+    Lookup a tool by its absolute path. Will return ``None`` if unsuccessful.
+    """
+    tokens = abs_path.split('/')
+    if not tokens:
+        return None
+    if not tokens[0]:
+        tokens.pop(0)
+    if not tokens:
+        return None
+    if not _tool_stack or tokens.pop(0) != _tool_stack[0].name:
+        return None
+    tmp = _tool_stack[0]
+    for tok in tokens:
+        try:
+            tmp = tmp.tool_names[tok]
+        except KeyError:
+            return None
+    return tmp
+
+
+
 ############################################################### fileservice ###
 fs_aliases = []
 fs_wrappers = {}
