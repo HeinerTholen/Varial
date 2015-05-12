@@ -87,12 +87,11 @@ class TmvaProxy(toolinterface.Tool):
             self.factory.AddSignaAddBackgroundTreelTree(t, 1.0)
             #factory.SetBackgroundWeightExpression('weight')
 
-    def run(self):
-        self.configure()
-        self.setup_tmva()
+    def prepare_training_and_test_tree(self):
+        self.factory.PrepareTrainingAndTestTree(ROOT.TCut(''),
+                                                'SplitMode=random:!V')
 
-
-        self.factory.PrepareTrainingAndTestTree(ROOT.TCut(''), 'SplitMode=random:!V')
+    def book_methods(self):
         self.factory.BookMethod(
             ROOT.TMVA.Types.kCuts,
             'Cuts',
@@ -108,16 +107,25 @@ class TmvaProxy(toolinterface.Tool):
         self.factory.BookMethod(
             ROOT.TMVA.Types.kBDT,
             "BDT",
-            "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:"
-            "UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20"
+            "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:"
+            "AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:"
+            "SeparationType=GiniIndex:nCuts=20"
         )
+
+    def train_test_evaluate(self):
         self.factory.TrainAllMethods()
         self.factory.TestAllMethods()
         self.factory.EvaluateAllMethods()
-        self.out_file.Close()
+
+    def run(self):
+        self.configure()
+        self.setup_tmva()
+        self.prepare_training_and_test_tree()
+        self.book_methods()
+
+        if self.out_file and self.out_file.IsOpen():
+            self.out_file.Close()
 
 
         #variables.remove('trigger_accept')
         #variables.remove('vlq_mass')
-        #variables = ['n_leptons', 'n_btags', 'n_higgs_tags']
-        #variables = ['leading_jet_pt', 'subleading_jet_pt', 'vlq_pt', 'vlq_eta']
