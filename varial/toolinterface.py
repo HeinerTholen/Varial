@@ -88,10 +88,16 @@ class Tool(_ToolBase):
         super(Tool, self).__exit__(exc_type, exc_val, exc_tb)
 
     def wanna_reuse(self, all_reused_before_me):
-        return (
-            super(Tool, self).wanna_reuse(all_reused_before_me)
+        if (super(Tool, self).wanna_reuse(all_reused_before_me)
             and os.path.exists(self.logfile)
-        )  # TODO make check with hash over result, stored in self.logfile
+        ):
+            with open(self.logfile) as f:
+                if f.readline() == 'result available\n':
+                    if os.path.exists(os.path.join(self.cwd, 'result.info')):
+                        return True
+                else:
+                    return True
+        return False
 
     def reuse(self):
         self.message('INFO reusing...')
@@ -120,6 +126,7 @@ class Tool(_ToolBase):
                     filenames.append('result' + num_str)
                     self.io.write(wrp, 'result' + num_str)
                 self.io.write(
+                    # TODO use wrpwrp here
                     wrappers.Wrapper(
                         name=self.name,
                         RESULT_WRAPPERS=filenames
@@ -127,7 +134,9 @@ class Tool(_ToolBase):
                     'result'
                 )
         self.time_fin = time.ctime() + '\n'
-        with open(self.logfile, 'w') as f:    # TODO: mv log into result.info
+        with open(self.logfile, 'w') as f:
+            if self.result:
+                f.write('result available\n')
             f.write(self.time_start)
             f.write(self.time_fin)
         super(Tool, self).finished()
