@@ -56,7 +56,7 @@ class TestGenerators(TestHistoToolsBase):
         self.assertTrue(os.path.exists('test_data/cutflow_zjets.root'))
         self.assertTrue(os.path.exists('test_data/cutflow_zjets.info'))
         self.tfile = TFile.Open('test_data/cutflow_ttgamma.root')
-        self.assertTrue(self.tfile.GetKey('histo'))
+        self.assertTrue(self.tfile.GetKey('cutflow'))
 
     def test_gen_filter(self):
         aliases  = list(gen.fs_content())
