@@ -29,8 +29,6 @@ class CmsRunProcess(object):
         super(CmsRunProcess, self).__init__()
 
         assert isinstance(sample_inst, sample.Sample)
-        if not cfg_filename:
-            raise RuntimeError('CmsRunProcess needs the cfg_filename argument!')
         name = sample_inst.name
         self.sample             = sample_inst
         self.name               = name
