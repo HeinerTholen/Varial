@@ -315,7 +315,7 @@ class ToolChainParallel(ToolChain):
     def run(self):
         global _n_parallel_workers, _n_parallel_workers_lock
 
-        if not settings.use_parallel_chains:
+        if not settings.use_parallel_chains or settings.max_num_processes == 1:
             return super(ToolChainParallel, self).run()
 
         if not self.tool_chain:
