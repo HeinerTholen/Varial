@@ -262,6 +262,9 @@ _n_parallel_workers_lock = None
 
 
 def parallel_worker_start():
+    if not _n_parallel_workers:
+        return
+
     while _n_parallel_workers.value >= settings.max_num_processes:
         time.sleep(0.5)
     _n_parallel_workers_lock.acquire()
@@ -270,6 +273,9 @@ def parallel_worker_start():
 
 
 def parallel_worker_done():
+    if not _n_parallel_workers:
+        return
+
     diskio.close_open_root_files()
     _n_parallel_workers_lock.acquire()
     _n_parallel_workers.value -= 1
