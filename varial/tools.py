@@ -65,15 +65,23 @@ class HistoLoader(Tool):
 
     def run(self):
         if self.pattern:
-            wrps = gen.dir_content(self.pattern)
-            wrps = itertools.ifilter(self.filter_keyfunc, wrps)
-            wrps = gen.sort(wrps)
-            wrps = gen.load(wrps)
+            if not glob.glob(self.pattern):
+                self.message('WARNING No input file found for pattern "%s"'
+                             % self.pattern)
+                wrps = []
+            else:
+                wrps = gen.dir_content(self.pattern)
+                wrps = itertools.ifilter(self.filter_keyfunc, wrps)
+                wrps = gen.sort(wrps)
+                wrps = gen.load(wrps)
         else:
             wrps = gen.fs_filter_active_sort_load(self.filter_keyfunc)
         if self.hook_loaded_histos:
             wrps = self.hook_loaded_histos(wrps)
         self.result = list(wrps)
+
+        if not self.result:
+            self.message('WARNING No histograms found.')
 
 
 class CopyTool(Tool):
