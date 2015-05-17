@@ -43,6 +43,9 @@ class _ToolBase(object):
     def reset(self):
         pass
 
+    def update(self):
+        pass
+
     def wanna_reuse(self, all_reused_before_me):
         """If True is returned, run is not called."""
         return self.can_reuse and all_reused_before_me
@@ -75,7 +78,10 @@ class Tool(_ToolBase):
         self.time_fin = None
 
     def __enter__(self):
-        self.reset()
+        if not self.time_fin:
+            self.update()  # see metaclass
+        else:
+            self.reset()  # see metaclass
         res = super(Tool, self).__enter__()
         self.cwd = analysis.cwd
         self.logfile = os.path.join(self.cwd, '%s.log' % self.name)
