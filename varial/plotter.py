@@ -51,6 +51,11 @@ def default_plot_colorizer(grps, colors=None):
     return grps
 
 
+default_canvas_decorators = [
+    rendering.BottomPlotRatioSplitErr,
+    rendering.Legend
+]
+
 
 class Plotter(toolinterface.Tool):
     """
@@ -75,10 +80,7 @@ class Plotter(toolinterface.Tool):
     ...    'keep_content_as_result': False,
     ...    'set_canvas_name': set_canvas_name_to_infilepath,
     ...    'save_name_func': lambda wrp: wrp.name,
-    ...    'canvas_decorators': [
-    ...        rendering.BottomPlotRatioSplitErr,
-    ...        rendering.Legend
-    ...    ]
+    ...    'canvas_decorators': default_canvas_decorators,
     ...}
     """
     defaults_attrs = {
@@ -97,10 +99,7 @@ class Plotter(toolinterface.Tool):
         'keep_content_as_result': False,
         'set_canvas_name': set_canvas_name_to_infilepath,
         'save_name_func': lambda wrp: wrp.name,
-        'canvas_decorators': [
-            rendering.BottomPlotRatioSplitErr,
-            rendering.Legend
-        ]
+        'canvas_decorators': default_canvas_decorators,
     }
 
     class NoFilterDictError(Exception):
@@ -346,6 +345,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                         return loader
 
                     rfp.private_plotter = plotter_factory(
+                        name=self.name,
                         filter_keyfunc=lambda _: True,
                         plot_grouper=plot_grouper_by_in_file_path,
                         set_canvas_name=set_canvas_name_to_plot_name,
