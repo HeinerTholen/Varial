@@ -72,12 +72,14 @@ class HistoLoader(Tool):
             else:
                 wrps = gen.dir_content(self.pattern)
                 wrps = itertools.ifilter(self.filter_keyfunc, wrps)
-                wrps = gen.sort(wrps)
                 wrps = gen.load(wrps)
+                if self.hook_loaded_histos:
+                    wrps = self.hook_loaded_histos(wrps)
+                wrps = gen.sort(wrps)
         else:
             wrps = gen.fs_filter_active_sort_load(self.filter_keyfunc)
-        if self.hook_loaded_histos:
-            wrps = self.hook_loaded_histos(wrps)
+            if self.hook_loaded_histos:
+                wrps = self.hook_loaded_histos(wrps)
         self.result = list(wrps)
 
         if not self.result:
