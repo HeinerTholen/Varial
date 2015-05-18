@@ -46,7 +46,7 @@ def debug_printer(iterable, print_obj=True):
         yield obj
 
 
-def imap_conditional(iterable, keyfunc, func):
+def imap_conditional(iterable, keyfunc, func, **func_kws):
     """
     Like itertools.imap, but only applying func if keyfunc evaluates to True. 
 
@@ -59,12 +59,12 @@ def imap_conditional(iterable, keyfunc, func):
     """
     for val in iterable:
         if keyfunc(val):
-             yield func(val)
+             yield func(val, **func_kws)
         else:
              yield val
 
 
-def switch(iterable, keyfunc, generator):
+def switch(iterable, keyfunc, generator, **gen_kws):
     """
     Switches items to go through generator or not.
 
@@ -102,7 +102,7 @@ def switch(iterable, keyfunc, generator):
         while passing_queue:                # empty leftover items
             yield passing_queue.pop(0)
 
-    return post(generator(pre(iterable)))
+    return post(generator(pre(iterable), **gen_kws))
 
 
 def consume_n_count(iterable):
