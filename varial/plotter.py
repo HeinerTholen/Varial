@@ -38,6 +38,15 @@ def plot_grouper_by_in_file_path(wrps, separate_th2=True):
     return gen.group(wrps, key_func=lambda w: w.in_file_path)
 
 
+def plot_grouper_by_number_of_plots(wrps, n_per_group):
+    n_th_obj = -1
+    def int_divisor(_):
+        global n_th_obj
+        n_th_obj += 1
+        return n_th_obj / n_per_group
+    return gen.group(wrps, int_divisor)
+
+
 def overlay_colorizer(wrps, colors=None):
     wrps = gen.apply_linecolor(wrps, colors)
     for w in wrps:
