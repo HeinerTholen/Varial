@@ -39,12 +39,14 @@ def plot_grouper_by_in_file_path(wrps, separate_th2=True):
 
 
 def plot_grouper_by_number_of_plots(wrps, n_per_group):
-    n_th_obj = -1
-    def int_divisor(_):
-        global n_th_obj
-        n_th_obj += 1
-        return n_th_obj / n_per_group
-    return gen.group(wrps, int_divisor)
+    class GroupKey(object):
+        def __init__(self, n_per_group):
+            self.n_th_obj = -1
+            self.n_per_group = n_per_group
+        def __call__(self):
+            self.n_th_obj += 1
+            return self.n_th_obj / self.n_per_group
+    return gen.group(wrps, GroupKey(n_per_group))
 
 
 def overlay_colorizer(wrps, colors=None):
