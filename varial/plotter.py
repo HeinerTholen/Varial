@@ -3,7 +3,6 @@ import itertools
 import os
 import time
 import ROOT
-import inspect
 
 import analysis
 import diskio
