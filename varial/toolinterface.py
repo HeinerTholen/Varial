@@ -191,7 +191,12 @@ class ToolChain(_ToolBase):
 
             t._reuse = self._reuse
             t.starting()
-            t.run()
+            try:
+                t.run()
+            except Exception:
+                if hasattr(t, 'cwd') and t.cwd:
+                    self.message('ERROR Exception in %s' % t.cwd)
+                raise
             t.finished()
             self._reuse = t._reuse
 
