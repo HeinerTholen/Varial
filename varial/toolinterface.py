@@ -2,10 +2,11 @@
 Baseclasses for tools and toolchains.
 """
 
-import os
-import time
-import inspect
 import multiprocessing.pool
+import inspect
+import time
+import sys
+import os
 
 import analysis
 import diskio
@@ -193,10 +194,14 @@ class ToolChain(_ToolBase):
             t.starting()
             try:
                 t.run()
-            except Exception:
-                if hasattr(t, 'cwd') and t.cwd:
-                    self.message('ERROR Exception in %s' % t.cwd)
-                raise
+            except:
+                etype, evalue, etb = sys.exc_info()
+                if not 'exception occured at path (class): ' in evalue.message:
+                    evalue = etype(
+                        '%s\nexception occured at path (class): %s (%s)' % (
+                            evalue, analysis.cwd[:-1], t.__class__.__name__)
+                    )
+                raise etype, evalue, etb
             t.finished()
             self._reuse = t._reuse
 

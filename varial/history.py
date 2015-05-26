@@ -1,5 +1,6 @@
 import collections
 import functools
+import sys
 import re
 
 import wrappers
@@ -122,7 +123,7 @@ def track_history(func):
     )
     """
     @functools.wraps(func)
-    def decorator(*args, **kws):
+    def history_tracker(*args, **kws):
         history = History(func.__name__)
         if len(args):
             func_args = list(args)
@@ -138,10 +139,19 @@ def track_history(func):
             args = func_args
         if len(kws):
             history.add_kws(kws)
-        ret = func(*args, **kws)
+        try:
+            ret = func(*args, **kws)
+        except:
+            etype, evalue, etb = sys.exc_info()
+            if not 'history for unfinished wrapper: ' in evalue.message:
+                evalue = etype(
+                    '%s\nhistory for unfinished wrapper: %s' % (
+                        evalue, str(history))
+                )
+            raise etype, evalue, etb
         ret.history = history
         return ret
-    return decorator
+    return history_tracker
 
 
 if __name__ == '__main__':
