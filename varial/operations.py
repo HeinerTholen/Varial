@@ -138,6 +138,9 @@ def sum(wrps):
     3.0
     >>> w3.lumi
     5.0
+    >>> w4 = sum([w3])  # one item is enough
+    >>> w4.lumi
+    5.0
     """
     wrps = iterableize(wrps)
     histo = None
