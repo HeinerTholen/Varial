@@ -405,7 +405,10 @@ def dir_content(dir_path='./*.root'):
 
     :yields:   Alias
     """
-    return diskio.generate_aliases(dir_path)
+    if type(dir_path) is str:
+        return diskio.generate_aliases(dir_path)
+    elif type(dir_path) is list:
+        return diskio.generate_aliases_list(dir_path)
 
 
 def load(aliases):

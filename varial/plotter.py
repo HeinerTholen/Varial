@@ -286,10 +286,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
         ROOT.gROOT.SetBatch()
         if not plotter_factory:
             plotter_factory = Plotter
-        if type(self.rootfile) is str:
-            aliases = diskio.generate_aliases(self.rootfile)
-        elif type(self.rootfile) is list:
-            aliases = diskio.generate_aliases_list(self.rootfile)
+        aliases = gen.dir_content(self.rootfile)
         aliases = itertools.ifilter(
             lambda a: type(a.type) == str and (
                 a.type.startswith('TH') or a.type == 'TProfile'
