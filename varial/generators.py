@@ -300,8 +300,8 @@ def gen_make_eff_graphs(wrps,
                         postfix_sub='_sub',
                         postfix_tot='_tot',
                         new_postfix='_eff',
-                        pair_func=lambda w, l: w.in_file_path[:-l],
-                        yield_everything=False):
+                        yield_everything=False,
+                        pair_func=lambda w, l: w.in_file_path[:-l]):
     """
     Makes efficiency graphs and interleaves them into a sorted stream.
 
