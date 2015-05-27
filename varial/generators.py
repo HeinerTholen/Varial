@@ -387,6 +387,27 @@ def gen_make_th2_projections(wrps, keep_th2=True):
 
 ############################################################### load / save ###
 import settings
+import glob
+import os
+
+
+def resolve_file_pattern(pattern='./*.root'):
+    """
+    Resolves search pattern(s) for files.
+
+    Raises RuntimeError if no files could be found for a pattern.
+
+    :param pattern: string or list of strings.
+    :returns:       List of filenames
+    """
+    if type(pattern) is str:
+        pattern = [pattern]
+    result = list(glob.glob(pat) for pat in pattern)
+    for pat, res in itertools.izip(pattern, result):
+        if not res or not all(os.path.isfile(f) for f in res):
+            raise RuntimeError('No file(s) found for pattern: %s' % pat)
+
+    return list(itertools.chain.from_iterable(result))
 
 
 def fs_content():
@@ -399,16 +420,13 @@ def fs_content():
         yield alias
 
 
-def dir_content(dir_path='./*.root'):
+def dir_content(pattern='./*.root'):
     """
     Proxy of diskio.generate_aliases(directory)
 
     :yields:   Alias
     """
-    if type(dir_path) is str:
-        return diskio.generate_aliases(dir_path)
-    elif type(dir_path) is list:
-        return diskio.generate_aliases_list(dir_path)
+    return diskio.generate_aliases_list(resolve_file_pattern(pattern))
 
 
 def load(aliases):
