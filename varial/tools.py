@@ -278,7 +278,7 @@ def mk_rootfile_plotter(name="RootFilePlots",
             )
             for f in glob.iglob(pattern)
         )
-        tc = ToolChain(name, [ToolChain(name, plotters)])
+        tc = ToolChain(name, [ToolChainParallel(name, plotters)])
     return tc
 
 
