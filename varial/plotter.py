@@ -123,7 +123,6 @@ class Plotter(toolinterface.Tool):
         defaults.update(kws)            # add keywords
         self.__dict__.update(defaults)  # set attributes in place
         self.stream_content = None
-        self.stream_canvas = None
         if stack:
             self.plot_setup = self.stack_setup
             self.plot_grouper = self.stack_grouper
@@ -144,20 +143,30 @@ class Plotter(toolinterface.Tool):
                 wrps = itertools.ifilter(self.filter_keyfunc, wrps)
         else:
             if not self.filter_keyfunc:
-                self.message("WARNING No filter_keyfunc set! "
-                             "Working with _all_ histograms.")
+                self.message('WARNING No filter_keyfunc set! '
+                             'Working with _all_ histograms.')
             wrps = self.load_func(self.filter_keyfunc)
         if self.hook_loaded_histos:
             wrps = self.hook_loaded_histos(wrps)
-        self.stream_content = wrps
+        self.stream_content = list(wrps)
+        if not self.stream_content:
+            self.message('WARNING Could not load histogram content!')
 
-    def set_up_content(self):
+    def group_content(self):
         wrps = self.stream_content
         if self.plot_grouper:
-            wrps = self.plot_grouper(wrps)
+            wrps = list(self.plot_grouper(wrps))
+        self.stream_content = list(wrps)
+        if not self.stream_content:
+            self.message('WARNING Could not group histogram content!')
+
+    def setup_content(self):
+        wrps = self.stream_content
         if self.plot_setup:
             wrps = self.plot_setup(wrps)
-        self.stream_content = wrps
+        self.stream_content = list(wrps)
+        if not self.stream_content:
+            self.message('WARNING Could not setup histogram content!')
 
     def store_content_as_result(self):
         if self.keep_content_as_result:
@@ -165,10 +174,7 @@ class Plotter(toolinterface.Tool):
             self.result = list(
                 itertools.chain.from_iterable(self.stream_content))
 
-    def set_up_make_canvas(self):
-
-
-
+    def make_canvases(self):
         def run_build_procedure(bldr):
             for b in bldr:
                 b.run_procedure()
@@ -181,6 +187,7 @@ class Plotter(toolinterface.Tool):
                     for dec in self.canvas_decorators:
                         b = dec(b)
                 yield b
+
         bldr = gen.make_canvas_builder(self.stream_content)
         bldr = self.set_canvas_name(bldr)
         bldr = decorate(bldr)
@@ -189,36 +196,35 @@ class Plotter(toolinterface.Tool):
         bldr = run_build_procedure(bldr)
         if self.hook_canvas_post_build:
             bldr = self.hook_canvas_post_build(bldr)
-        self.stream_canvas = gen.build_canvas(bldr)
+        self.stream_content = list(gen.build_canvas(bldr))
+        if not self.stream_content:
+            self.message('WARNING Could not make canvases!')
 
-    def set_up_save_canvas(self):
+    def save_canvases(self):
         if self.save_lin_log_scale:
-            self.stream_canvas = gen.save_canvas_lin_log(
-                self.stream_canvas,
+            self.stream_content = gen.save_canvas_lin_log(
+                self.stream_content,
                 self.save_name_func,
             )
         else:
             if self.save_log_scale:
-                self.stream_canvas = gen.switch_log_scale(self.stream_canvas)
-            self.stream_canvas = gen.save(
-                self.stream_canvas,
+                self.stream_content = gen.switch_log_scale(self.stream_content)
+            self.stream_content = gen.save(
+                self.stream_content,
                 self.save_name_func,
             )
-
-    def run_sequence(self):
-        count = gen.consume_n_count(self.stream_canvas)
-        level = "INFO " if count else "WARNING "
-        message = level+self.name+" produced "+str(count)+" canvases."
-        self.message(message)
+        count = gen.consume_n_count(self.stream_content)
+        level = "INFO" if count else "WARNING"
+        self.message("%s %s produced %d canvases." % (level, self.name, count))
 
     def run(self):
         self.configure()
         self.load_content()
-        self.set_up_content()
+        self.group_content()
+        self.setup_content()
         self.store_content_as_result()
-        self.set_up_make_canvas()
-        self.set_up_save_canvas()
-        self.run_sequence()
+        self.make_canvases()
+        self.save_canvases()
 
 
 class RootFilePlotter(toolinterface.ToolChainParallel):
