@@ -296,12 +296,7 @@ def _run_tool_in_worker(arg):
     chain_path, tool_index = arg
     chain = analysis.lookup_tool(chain_path)
     tool = chain.tool_chain[tool_index]
-    if not isinstance(tool, ToolChain):
-        parallel_worker_start()
-        chain._run_tool(tool)
-        parallel_worker_done()
-    else:
-        chain._run_tool(tool)
+    chain._run_tool(tool)
     result = tool.result if hasattr(tool, 'result') else None
     return tool.name, chain._reuse, result
 
@@ -327,6 +322,11 @@ class ToolChainParallel(ToolChain):
             for t in tool.tool_chain:
                 self._recursive_push_result(t)
         analysis.pop_tool()
+
+    def _run_tool(self, tool):
+        parallel_worker_start()
+        super(ToolChainParallel, self)._run_tool(tool)
+        parallel_worker_done()
 
     def run(self):
         global _n_parallel_workers, _n_parallel_workers_lock
