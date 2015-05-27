@@ -130,6 +130,11 @@ class Wrapper(WrapperBase):
     def primary_object(self):
         """Overwrite! Should returned wrapped object."""
 
+    @property
+    def obj(self):
+        """Getter property for primary object."""
+        return self.primary_object()
+
 
 class WrapperWrapper(Wrapper):
     """
@@ -170,6 +175,12 @@ class FloatWrapper(Wrapper):
     **Keywords:** See superclass.
 
     :raises: TypeError
+
+    >>> w = FloatWrapper(2.0, name='n', history='h')
+    >>> w.float
+    2.0
+    >>> w.obj  # using Wrapper property
+    2.0
     """
     _float_type = float
     def __init__(self, float, **kws):
