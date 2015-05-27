@@ -268,11 +268,12 @@ def generate_aliases(glob_path='./*.root'):
             yield wrappers.Alias(file_path, ifp, typ)
 
 
-def generate_aliases_list(list_of_files=['']):
+def generate_aliases_list(list_of_files=('',)):
     """Looks for root files based on a list and produces aliases."""
     for file_path in list_of_files:
         if type(file_path) is not str:
-            continue
+            raise RuntimeError(
+                'diskio.generate_aliases_list needs a list of strings')
         root_file = get_open_root_file(file_path)
         for ifp, typ in _recursive_path_and_type(root_file, ''):
             yield wrappers.Alias(file_path, ifp, typ)
