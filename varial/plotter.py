@@ -1,11 +1,9 @@
-import glob
 import itertools
 import os
 import time
 import ROOT
 
 import analysis
-import diskio
 import generators as gen
 import rendering
 import settings
