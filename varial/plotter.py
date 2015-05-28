@@ -313,7 +313,6 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
         # initialization for all instances
         self._private_plotter = None
         self._is_base_instance = bool(pattern)
-        self._logfile = None
         if not self._is_base_instance:
             return
 
@@ -383,24 +382,6 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                         canvas_decorators=[rendering.Legend],
                     )
 
-    def wanna_reuse(self, all_reused_before_me):
-        self._logfile = '%s/.pltr_done' % analysis.cwd
-        return (all_reused_before_me
-                and os.path.exists(self._logfile))
-
-    def reuse(self):
-        self.message('INFO reusing...')
-
-    def starting(self):
-        super(RootFilePlotter, self).starting()
-        if os.path.exists(self._logfile):
-            os.remove(self._logfile)
-
-    def finished(self):
-        with open(self._logfile, 'w') as f:
-            f.write('plotter done.')
-        super(RootFilePlotter, self).finished()
-
     def run(self):
         time.sleep(1)  # weird bug in root...
         old_aliases = analysis.fs_aliases
@@ -408,8 +389,16 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
             analysis.fs_aliases = self.aliases
         super(RootFilePlotter, self).run()
         if self._private_plotter:
-            self._parallel_worker_start()
-            self._private_plotter.run()
-            self._parallel_worker_done()
+            logfile = '%s/.pltr_done' % analysis.cwd
+            if self._reuse and os.path.exists(logfile):
+                self.message('INFO reusing...')
+            else:
+                if os.path.exists(logfile):
+                    os.remove(logfile)
+                self._parallel_worker_start()
+                self._private_plotter.run()
+                self._parallel_worker_done()
+                with open(logfile, 'w') as f:
+                    f.write('plotter done.\n')
         if self._is_base_instance:
             analysis.fs_aliases = old_aliases
