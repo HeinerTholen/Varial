@@ -202,8 +202,8 @@ class HistoWrapper(Wrapper):
         self._check_object_type(histo, TH1)
         super(HistoWrapper, self).__init__(**kws)
         self.histo          = histo
-        self.name           = histo.GetName()
-        self.title          = histo.GetTitle()
+        self.name           = kws.get('name', histo.GetName())
+        self.title          = kws.get('title', histo.GetTitle())
         self.is_data        = kws.get('is_data', False)
         self.is_pseudo_data = kws.get('is_pseudo_data', False)
         self.is_signal      = kws.get('is_signal', False)
@@ -238,8 +238,8 @@ class StackWrapper(HistoWrapper):
             kws['histo'] = self._add_stack_up(stack)
         super(StackWrapper, self).__init__(**kws)
         self.stack          = stack
-        self.name           = stack.GetName()
-        self.title          = stack.GetTitle()
+        self.name           = kws.get('name', stack.GetName())
+        self.title          = kws.get('title', stack.GetTitle())
 
     def _add_stack_up(self, stack):
         sum_hist = None
@@ -278,8 +278,8 @@ class GraphWrapper(Wrapper):
         self._check_object_type(graph, TGraph)
         super(GraphWrapper, self).__init__(**kws)
         self.graph          = graph
-        self.name           = graph.GetName()
-        self.title          = graph.GetTitle()
+        self.name           = kws.get('name', graph.GetName())
+        self.title          = kws.get('title', graph.GetTitle())
         self.is_data        = kws.get('is_data', False)
         self.is_pseudo_data = kws.get('is_pseudo_data', False)
         self.is_signal      = kws.get('is_signal', False)
@@ -317,8 +317,8 @@ class CanvasWrapper(Wrapper):
         self._check_object_type(canvas, TCanvas)
         super(CanvasWrapper, self).__init__(**kws)
         self.canvas     = canvas
-        self.name       = canvas.GetName()
-        self.title      = canvas.GetTitle()
+        self.name       = kws.get('name', canvas.GetName())
+        self.title      = kws.get('title', canvas.GetTitle())
         self.main_pad   = kws.get('main_pad', canvas)
         self.second_pad = kws.get('second_pad')
         self.legend     = kws.get('legend')

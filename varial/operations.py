@@ -945,6 +945,8 @@ def th2_projection(wrp, projection,
         histo = th2.ProjectionY(name, firstbin, lastbin, option)
     histo.SetDirectory(0)
     info = wrp.all_info()
+    info['name'] += name
+    histo.SetName(info['name'])
     info['in_file_path'] += '_p' + projection
     return wrappers.HistoWrapper(histo, **info)
 
