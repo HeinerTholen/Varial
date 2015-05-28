@@ -310,9 +310,10 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
         super(RootFilePlotter, self).__init__(name)
 
         # initialization for all instances
-        self.private_plotter = None
-        self.is_base_instance = bool(pattern)
-        if not self.is_base_instance:
+        self._private_plotter = None
+        self._is_base_instance = bool(pattern)
+        self._logfile = None
+        if not self._is_base_instance:
             return
 
         # initialization for base instance only
@@ -328,7 +329,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
 
         # either print all in one dir...
         if flat:
-            self.private_plotter = plotter_factory(
+            self._private_plotter = plotter_factory(
                 name=self.name,
                 filter_keyfunc=lambda _: True,
                 load_func=lambda _: gen_apply_legend(
@@ -356,7 +357,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                         rfp = rfp.tool_names[folder]
 
                 # make plotter instance if not done already
-                if not rfp.private_plotter:
+                if not rfp._private_plotter:
                     def _mk_private_loader(p):
                         # This function creates a separate namespace for p
                         # (the last reference to p would be lost otherwise)
@@ -372,7 +373,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                             return wrps
                         return loader
 
-                    rfp.private_plotter = plotter_factory(
+                    rfp._private_plotter = plotter_factory(
                         name=self.name,
                         filter_keyfunc=lambda _: True,
                         plot_grouper=plot_grouper_by_in_file_path,
@@ -381,15 +382,33 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                         canvas_decorators=[rendering.Legend],
                     )
 
+    def wanna_reuse(self, all_reused_before_me):
+        self._logfile = '%s/.pltr_done' % analysis.cwd
+        return (all_reused_before_me
+                and os.path.exists(self._logfile))
+
+    def reuse(self):
+        self.message('INFO reusing...')
+
+    def starting(self):
+        super(RootFilePlotter, self).starting()
+        if os.path.exists(self._logfile):
+            os.remove(self._logfile)
+
+    def finished(self):
+        with open(self._logfile, 'w') as f:
+            f.write('plotter done.')
+        super(RootFilePlotter, self).finished()
+
     def run(self):
         time.sleep(1)  # weird bug in root...
         old_aliases = analysis.fs_aliases
-        if self.is_base_instance:
+        if self._is_base_instance:
             analysis.fs_aliases = self.aliases
         super(RootFilePlotter, self).run()
-        if self.private_plotter:
+        if self._private_plotter:
             self._parallel_worker_start()
-            self.private_plotter.run()
+            self._private_plotter.run()
             self._parallel_worker_done()
-        if self.is_base_instance:
+        if self._is_base_instance:
             analysis.fs_aliases = old_aliases
