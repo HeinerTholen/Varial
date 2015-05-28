@@ -101,7 +101,7 @@ class Tool(_ToolBase):
         ):
             with open(self.logfile) as f:
                 if f.readline() == 'result available\n':
-                    if os.path.exists(os.path.join(self.cwd, 'result.info')):
+                    if self.io.exists('result'):
                         return True
                 else:
                     return True
