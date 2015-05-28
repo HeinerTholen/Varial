@@ -111,6 +111,7 @@ class Tool(_ToolBase):
         self.message('INFO reusing...')
         res = self.io.get('result')
         if res:
+            # TODO replace with wrpwrp
             if hasattr(res, 'RESULT_WRAPPERS'):
                 self.result = list(self.io.read(f) for f in res.RESULT_WRAPPERS)
             else:
