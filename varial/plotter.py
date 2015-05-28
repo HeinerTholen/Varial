@@ -194,9 +194,10 @@ class Plotter(toolinterface.Tool):
         bldr = run_build_procedure(bldr)
         if self.hook_canvas_post_build:
             bldr = self.hook_canvas_post_build(bldr)
-        self.stream_content = list(gen.build_canvas(bldr))
-        if not self.stream_content:
-            self.message('WARNING Could not make canvases!')
+
+        # no list and warning here, since canvases would be deleted if the have
+        # the same name. This way, diskio will tell if a file is overwritten.
+        self.stream_content = gen.build_canvas(bldr)
 
     def save_canvases(self):
         if self.save_lin_log_scale:
