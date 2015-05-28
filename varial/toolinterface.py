@@ -269,13 +269,27 @@ class ToolChainVanilla(ToolChain):
 ######################################################### ToolChainParallel ###
 _n_parallel_workers = None
 _n_parallel_workers_lock = None
+_exception_lock = None
 
 
 def _run_tool_in_worker(arg):
     chain_path, tool_index = arg
     chain = analysis.lookup_tool(chain_path)
     tool = chain.tool_chain[tool_index]
-    chain._run_tool(tool)
+    try:
+        chain._run_tool(tool)
+    except:
+        _exception_lock.acquire()
+        print '='*80
+        print 'EXCEPTION IN PARALLEL EXECUTION START'
+        print '='*80
+        import traceback
+        traceback.print_exception(*sys.exc_info())
+        print '='*80
+        print 'EXCEPTION IN PARALLEL EXECUTION END'
+        print '='*80
+        _exception_lock.release()
+        return tool.name, False, None
     result = tool.result if hasattr(tool, 'result') else None
     return tool.name, chain._reuse, result
 
@@ -332,7 +346,7 @@ class ToolChainParallel(ToolChain):
             self._parallel_worker_done()
 
     def run(self):
-        global _n_parallel_workers, _n_parallel_workers_lock
+        global _n_parallel_workers, _n_parallel_workers_lock, _exception_lock
 
         if not settings.use_parallel_chains or settings.max_num_processes == 1:
             return super(ToolChainParallel, self).run()
@@ -345,6 +359,7 @@ class ToolChainParallel(ToolChain):
             manager = multiprocessing.Manager()
             _n_parallel_workers = manager.Value('i', 0)
             _n_parallel_workers_lock = manager.Lock()
+            _exception_lock = manager.Lock()
 
         diskio.close_open_root_files()
         n_tools = len(self.tool_chain)
