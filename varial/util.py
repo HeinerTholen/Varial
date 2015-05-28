@@ -197,6 +197,9 @@ class Decorator(object):
         Decorator.__init__(self, target, dd)
         return self
 
+    def __str__(self):
+        return 'Decorator "%s" on\n%s' % (str(type(self)), str(self.decoratee))
+
     def get_decorator(self, klass):
         """
         Runs over all inner decorators, returns the match.
