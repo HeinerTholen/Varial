@@ -91,10 +91,6 @@ def close_root_file(filename):
 
 
 ##################################################### read / write wrappers ###
-use_analysis_cwd = True
-_save_log = {}
-
-
 def exists(filename):
     """Checks for existance."""
     filename = prepare_basename(filename)
@@ -120,14 +116,8 @@ def read(filename):
 def write(wrp, filename=None, suffices=(), mode='RECREATE'):
     """Writes wrapper to disk, including root objects."""
     filename = prepare_basename(filename or wrp.name)
-    # check for overwriting something
-    if filename in _save_log:
-        monitor.message(
-            'diskio.write',
-            'WARNING Overwriting file from this session: %s' % filename
-        )
-    else:
-        _save_log[filename] = True
+    record_in_save_log(filename)
+
     # save with suffices
     for suffix in suffices:
         wrp.primary_object().SaveAs(filename + suffix)
@@ -145,6 +135,16 @@ def write(wrp, filename=None, suffices=(), mode='RECREATE'):
     with open(filename+'.info', 'w') as f:
         _write_wrapper_info(wrp, f)
     _clean_wrapper(wrp)
+
+
+def small_write(wrp, filename, suffices=()):
+    """Writes only according to the given suffices and the wrp info."""
+    filename = prepare_basename(filename)
+    record_in_save_log(filename)
+    with open(filename+'.info', 'w') as f:
+        _write_wrapper_info(wrp, f)
+    for suffix in suffices:
+        wrp.primary_object().SaveAs(filename + suffix)
 
 
 def get(filename, default=None):
@@ -217,12 +217,26 @@ def load_histogram(alias):
 
 
 ########################################################## helper functions ###
+use_analysis_cwd = True
+_save_log = {}
+
+
 def prepare_basename(filename):
     if use_analysis_cwd:
         filename = join(analysis.cwd, filename)
     if filename[-5:] == '.info':
         filename = filename[:-5]
     return filename
+
+
+def record_in_save_log(filename):
+    if filename in _save_log:
+        monitor.message(
+            'diskio',
+            'WARNING Overwriting file from this session: %s' % filename
+        )
+    else:
+        _save_log[filename] = True
 
 
 def _write_wrapper_info(wrp, file_handle):
