@@ -49,7 +49,7 @@ class _ToolBase(object):
         pass
 
     def wanna_reuse(self, all_reused_before_me):
-        """If True is returned, run is not called."""
+        """If True is returned, run() will not be called."""
         return self.can_reuse and all_reused_before_me
 
     def starting(self):
@@ -271,27 +271,6 @@ _n_parallel_workers = None
 _n_parallel_workers_lock = None
 
 
-def parallel_worker_start():
-    if not _n_parallel_workers:
-        return
-
-    while _n_parallel_workers.value >= settings.max_num_processes:
-        time.sleep(0.5)
-    _n_parallel_workers_lock.acquire()
-    _n_parallel_workers.value += 1
-    _n_parallel_workers_lock.release()
-
-
-def parallel_worker_done():
-    if not _n_parallel_workers:
-        return
-
-    diskio.close_open_root_files()
-    _n_parallel_workers_lock.acquire()
-    _n_parallel_workers.value -= 1
-    _n_parallel_workers_lock.release()
-
-
 def _run_tool_in_worker(arg):
     chain_path, tool_index = arg
     chain = analysis.lookup_tool(chain_path)
@@ -323,10 +302,34 @@ class ToolChainParallel(ToolChain):
                 self._recursive_push_result(t)
         analysis.pop_tool()
 
+    @staticmethod
+    def _parallel_worker_start():
+        if not _n_parallel_workers:
+            return
+
+        while _n_parallel_workers.value >= settings.max_num_processes:
+            time.sleep(0.5)
+        _n_parallel_workers_lock.acquire()
+        _n_parallel_workers.value += 1
+        _n_parallel_workers_lock.release()
+
+    @staticmethod
+    def _parallel_worker_done():
+        if not _n_parallel_workers:
+            return
+
+        diskio.close_open_root_files()
+        _n_parallel_workers_lock.acquire()
+        _n_parallel_workers.value -= 1
+        _n_parallel_workers_lock.release()
+
     def _run_tool(self, tool):
-        parallel_worker_start()
-        super(ToolChainParallel, self)._run_tool(tool)
-        parallel_worker_done()
+        if isinstance(tool, ToolChainParallel):
+            super(ToolChainParallel, self)._run_tool(tool)
+        else:
+            self._parallel_worker_start()
+            super(ToolChainParallel, self)._run_tool(tool)
+            self._parallel_worker_done()
 
     def run(self):
         global _n_parallel_workers, _n_parallel_workers_lock
