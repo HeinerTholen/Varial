@@ -6,12 +6,13 @@ there's a .root file with the same name in the same directory.
 """
 
 
-import glob
-import resource
-from os.path import abspath, basename, dirname, exists, join
-from ast import literal_eval
-from itertools import takewhile
 from ROOT import TFile, TDirectory, TH1, TObject, TTree
+from os.path import basename, dirname, join
+from itertools import takewhile
+from ast import literal_eval
+import resource
+import glob
+import os
 
 import history
 import monitor
@@ -94,19 +95,31 @@ use_analysis_cwd = True
 _save_log = {}
 
 
-def prepare_filename(wrp, filename):
-    if not filename:
-        filename = wrp.name
-    if use_analysis_cwd:
-        filename = join(analysis.cwd, filename)
-    if filename[-5:] == '.info':
-        filename = filename[:-5]
-    return filename
+def exists(filename):
+    """Checks for existance."""
+    filename = prepare_basename(filename)
+    return os.path.exists('%s.info' % filename)
+
+
+def read(filename):
+    """Reads wrapper from disk, including root objects."""
+    filename = prepare_basename(filename) + '.info'
+    with open(filename) as f:
+        info = _read_wrapper_info(f)
+    if 'root_filename' in info:
+        _read_wrapper_objs(info, dirname(filename))
+    klass = getattr(wrappers, info.get('klass'))
+    if klass == wrappers.WrapperWrapper:
+        p = dirname(filename)
+        info['wrps'] = _read_wrapperwrapper(join(p, f) for f in info['wrps'])
+    wrp = klass(**info)
+    _clean_wrapper(wrp)
+    return wrp
 
 
 def write(wrp, filename=None, suffices=(), mode='RECREATE'):
     """Writes wrapper to disk, including root objects."""
-    filename = prepare_filename(wrp, filename)
+    filename = prepare_basename(filename or wrp.name)
     # check for overwriting something
     if filename in _save_log:
         monitor.message(
@@ -132,6 +145,84 @@ def write(wrp, filename=None, suffices=(), mode='RECREATE'):
     with open(filename+'.info', 'w') as f:
         _write_wrapper_info(wrp, f)
     _clean_wrapper(wrp)
+
+
+def get(filename, default=None):
+    """Reads wrapper from disk if availible, else returns default."""
+    try:
+        return read(filename)
+    except (RuntimeError, IOError):
+        return default
+
+
+########################################################## i/o with aliases ###
+def generate_fs_aliases(file_path, sample_inst):
+    """Produces list of all fileservice histograms for registered samples."""
+    if not isinstance(sample_inst, sample.Sample):
+        raise RuntimeError(
+            '2nd arg of generate_fs_aliases must be instance of sample.Sample')
+    root_file = get_open_root_file(file_path)
+    for ifp, typ in _recursive_path_and_type(root_file, ''):
+        yield wrappers.FileServiceAlias(file_path, ifp, typ, sample_inst)
+
+
+def generate_aliases(glob_path='./*.root'):
+    """Looks for root files based on a pattern string and produces aliases."""
+    for file_path in glob.iglob(glob_path):
+        root_file = get_open_root_file(file_path)
+        for ifp, typ in _recursive_path_and_type(root_file, ''):
+            yield wrappers.Alias(file_path, ifp, typ)
+
+
+def generate_aliases_list(list_of_files=('',)):
+    """Looks for root files based on a list and produces aliases."""
+    for file_path in list_of_files:
+        if type(file_path) is not str:
+            raise RuntimeError(
+                'diskio.generate_aliases_list needs a list of strings')
+        root_file = get_open_root_file(file_path)
+        for ifp, typ in _recursive_path_and_type(root_file, ''):
+            yield wrappers.Alias(file_path, ifp, typ)
+
+
+def load_bare_object(alias):
+    return _get_obj_from_file(
+        alias.file_path,
+        alias.in_file_path
+    )
+
+
+def load_histogram(alias):
+    """Returns a wrapper with a fileservice histogram."""
+    histo = load_bare_object(alias)
+    if not isinstance(histo, TH1):
+        raise NoHistogramError(
+            'Loaded object is not of type TH1: %s' % str(histo)
+        )
+    if not histo.GetSumw2().GetSize():
+        histo.Sumw2()
+    wrp = wrappers.HistoWrapper(histo, **alias.all_info())
+    if isinstance(alias, wrappers.FileServiceAlias):
+        histo.SetTitle(alias.legend)
+        wrp.history = history.History(
+            'FileService(%s, %s)' % (
+                alias.in_file_path, alias.sample))
+    else:
+        info = alias.all_writeable_info()
+        del info['klass']
+        wrp.history = history.History(
+            'RootFile(%s)' % info
+        )
+    return wrp
+
+
+########################################################## helper functions ###
+def prepare_basename(filename):
+    if use_analysis_cwd:
+        filename = join(analysis.cwd, filename)
+    if filename[-5:] == '.info':
+        filename = filename[:-5]
+    return filename
 
 
 def _write_wrapper_info(wrp, file_handle):
@@ -176,25 +267,6 @@ def _write_wrapperwrapper(wrp, filename=None):
     wrp.wrps = wrp_names
 
 
-def read(filename):
-    """Reads wrapper from disk, including root objects."""
-    if filename[-5:] != '.info':
-        filename += '.info'
-    if use_analysis_cwd:
-        filename = join(analysis.cwd, filename)
-    with open(filename, 'r') as f:
-        info = _read_wrapper_info(f)
-    if 'root_filename' in info:
-        _read_wrapper_objs(info, dirname(filename))
-    klass = getattr(wrappers, info.get('klass'))
-    if klass == wrappers.WrapperWrapper:
-        p = dirname(filename)
-        info['wrps'] = _read_wrapperwrapper(join(p, f) for f in info['wrps'])
-    wrp = klass(**info)
-    _clean_wrapper(wrp)
-    return wrp
-
-
 def _read_wrapper_info(file_handle):
     #"""Instaciates Wrapper from info file, without root objects."""
     lines = takewhile(lambda l: l!='\n', file_handle)
@@ -235,48 +307,17 @@ def _clean_wrapper(wrp):
             delattr(wrp, attr)
 
 
-def get(filename, default=None):
-    """Reads wrapper from disk if availible, else returns default."""
-    fname = join(analysis.cwd, filename) if use_analysis_cwd else filename
-    if fname[-5:] == '.info':
-        fname = fname[:-5]
-    if exists('%s.info' % fname):
-        try:
-            return read(filename)
-        except RuntimeError:
-            return default
-    else:
-        return default
-
-
-########################################################## i/o with aliases ###
-def generate_fs_aliases(file_path, sample_inst):
-    """Produces list of all fileservice histograms for registered samples."""
-    if not isinstance(sample_inst, sample.Sample):
-        raise RuntimeError(
-            '2nd arg of generate_fs_aliases must be instance of sample.Sample')
-    root_file = get_open_root_file(file_path)
-    for ifp, typ in _recursive_path_and_type(root_file, ''):
-        yield wrappers.FileServiceAlias(file_path, ifp, typ, sample_inst)
-
-
-def generate_aliases(glob_path='./*.root'):
-    """Looks for root files based on a pattern string and produces aliases."""
-    for file_path in glob.iglob(glob_path):
-        root_file = get_open_root_file(file_path)
-        for ifp, typ in _recursive_path_and_type(root_file, ''):
-            yield wrappers.Alias(file_path, ifp, typ)
-
-
-def generate_aliases_list(list_of_files=('',)):
-    """Looks for root files based on a list and produces aliases."""
-    for file_path in list_of_files:
-        if type(file_path) is not str:
-            raise RuntimeError(
-                'diskio.generate_aliases_list needs a list of strings')
-        root_file = get_open_root_file(file_path)
-        for ifp, typ in _recursive_path_and_type(root_file, ''):
-            yield wrappers.Alias(file_path, ifp, typ)
+def _get_obj_from_file(filename, in_file_path):
+    obj = get_open_root_file(filename)
+    # browse through file
+    for name in in_file_path.split('/'):
+        obj_key = obj.GetKey(name)
+        if not obj_key:
+            raise NoObjectError(
+                'I cannot find "%s" in root file "%s"!' % (in_file_path,
+                                                           filename))
+        obj = obj_key.ReadObj()
+    return obj
 
 
 def _recursive_path_and_type(root_dir, in_file_path):
@@ -296,50 +337,6 @@ def _recursive_path_and_type(root_dir, in_file_path):
                 yield info
         else:
             yield key_path, key.GetClassName()
-
-
-def load_bare_object(alias):
-    return _get_obj_from_file(
-        alias.file_path,
-        alias.in_file_path
-    )
-
-
-def load_histogram(alias):
-    """Returns a wrapper with a fileservice histogram."""
-    histo = load_bare_object(alias)
-    if not isinstance(histo, TH1):
-        raise NoHistogramError(
-            'Loaded object is not of type TH1: %s' % str(histo)
-        )
-    if not histo.GetSumw2().GetSize():
-        histo.Sumw2()
-    wrp = wrappers.HistoWrapper(histo, **alias.all_info())
-    if isinstance(alias, wrappers.FileServiceAlias):
-        histo.SetTitle(alias.legend)
-        wrp.history = history.History(
-            'FileService(%s, %s)' % (
-                alias.in_file_path, alias.sample))
-    else:
-        info = alias.all_writeable_info()
-        del info['klass']
-        wrp.history = history.History(
-            'RootFile(%s)' % info
-        )
-    return wrp
-
-
-def _get_obj_from_file(filename, in_file_path):
-    obj = get_open_root_file(filename)
-    # browse through file
-    for name in in_file_path.split('/'):
-        obj_key = obj.GetKey(name)
-        if not obj_key:
-            raise NoObjectError(
-                'I cannot find "%s" in root file "%s"!' % (in_file_path,
-                                                           filename))
-        obj = obj_key.ReadObj()
-    return obj
 
 
 ################################################### write and close on exit ###

@@ -40,6 +40,10 @@ def _close():
 
 
 ##################################################### read / write wrappers ###
+def exists(name):
+    raise NotImplementedError()
+
+
 def write(wrp, name=None):
     """Write a wrapper."""
     if not _db_conn:

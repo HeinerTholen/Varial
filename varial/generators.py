@@ -464,7 +464,7 @@ def save(wrps, filename_func, suffices=None, write_complete_wrp=False):
         if write_complete_wrp:
             diskio.write(wrp, filename, suffices)
         else:
-            filename = diskio.prepare_filename(wrp, filename)
+            filename = diskio.prepare_basename(filename)
             with open(filename+'.info', 'w') as f:
                 diskio._write_wrapper_info(wrp, f)
             for suffix in suffices:

@@ -45,6 +45,12 @@ def _sync():
 
 
 ##################################################### read / write wrappers ###
+def exists(name):
+    """Check if data exists."""
+    _sync()
+    return name in _current_pack
+
+
 def write(wrp, name=None):
     """Write a wrapper."""
     global _current_pack, _changed
