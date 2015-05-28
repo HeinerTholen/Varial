@@ -4,6 +4,7 @@ Baseclasses for tools and toolchains.
 
 import multiprocessing.pool
 import inspect
+import signal
 import time
 import sys
 import os
@@ -269,7 +270,8 @@ class ToolChainVanilla(ToolChain):
 ######################################################### ToolChainParallel ###
 _n_parallel_workers = None
 _n_parallel_workers_lock = None
-_exception_lock = None
+_exception_lock = None  # exception printing should not be mingled
+_kill_request = None  # initialized to 0, if > 0, the process group is killed
 
 
 def _run_tool_in_worker(arg):
@@ -278,16 +280,20 @@ def _run_tool_in_worker(arg):
     tool = chain.tool_chain[tool_index]
     try:
         chain._run_tool(tool)
-    except:
+    except KeyboardInterrupt:  # these will be handled from main process
+        return tool.name, False, None
+    except:  # print exception and request termination
         _exception_lock.acquire()
-        print '='*80
-        print 'EXCEPTION IN PARALLEL EXECUTION START'
-        print '='*80
-        import traceback
-        traceback.print_exception(*sys.exc_info())
-        print '='*80
-        print 'EXCEPTION IN PARALLEL EXECUTION END'
-        print '='*80
+        if _kill_request.value == 0:
+            print '='*80
+            print 'EXCEPTION IN PARALLEL EXECUTION START'
+            print '='*80
+            import traceback
+            traceback.print_exception(*sys.exc_info())
+            print '='*80
+            print 'EXCEPTION IN PARALLEL EXECUTION END'
+            print '='*80
+            _kill_request.value = 1
         _exception_lock.release()
         return tool.name, False, None
     result = tool.result if hasattr(tool, 'result') else None
@@ -301,6 +307,12 @@ class _NoDaemonProcess(multiprocessing.Process):
     def _set_daemon(self, value):
         pass
     daemon = property(_get_daemon, _set_daemon)
+
+    def run(self):
+        try:
+            super(_NoDaemonProcess, self).run()
+        except (KeyboardInterrupt, IOError):
+            exit(-1)
 
 
 class _NoDeamonWorkersPool(multiprocessing.pool.Pool):
@@ -346,7 +358,10 @@ class ToolChainParallel(ToolChain):
             self._parallel_worker_done()
 
     def run(self):
-        global _n_parallel_workers, _n_parallel_workers_lock, _exception_lock
+        global _n_parallel_workers, \
+            _n_parallel_workers_lock, \
+            _exception_lock, \
+            _kill_request
 
         if not settings.use_parallel_chains or settings.max_num_processes == 1:
             return super(ToolChainParallel, self).run()
@@ -354,13 +369,15 @@ class ToolChainParallel(ToolChain):
         if not self.tool_chain:
             return
 
-        #  prepare and fork processes
+        # prepare parallelism (only once for the all processes)
         if not _n_parallel_workers:
             manager = multiprocessing.Manager()
             _n_parallel_workers = manager.Value('i', 0)
             _n_parallel_workers_lock = manager.Lock()
             _exception_lock = manager.Lock()
+            _kill_request = manager.Value('i', 0)
 
+        # prepare multiprocessing
         diskio.close_open_root_files()
         n_tools = len(self.tool_chain)
         my_path = "/".join(t.name for t in analysis._tool_stack)
@@ -368,12 +385,19 @@ class ToolChainParallel(ToolChain):
         pool = _NoDeamonWorkersPool(min(n_tools, settings.max_num_processes))
         result_iter = pool.imap_unordered(_run_tool_in_worker, tool_index_list)
 
-        # start processing
-        for name, reused, result in result_iter:
-            self.tool_names[name].result = result
-            if not reused:
-                self._reuse = False
-            self._recursive_push_result(self.tool_names[name])
+        # run processing
+        try:
+            for name, reused, result in result_iter:
+                if _kill_request.value > 0:
+                    pool.close()
+                    os.killpg(os.getpid(), signal.SIGTERM)  # one evil line!
+
+                self.tool_names[name].result = result
+                if not reused:
+                    self._reuse = False
+                self._recursive_push_result(self.tool_names[name])
+        except KeyboardInterrupt:
+            os.killpg(os.getpid(), signal.SIGTERM)  # again!
 
         # TODO: return results for ParallelToolChains in ParallelToolChains
 
