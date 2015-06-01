@@ -19,14 +19,16 @@ ROOT.gROOT.ProcessLine('gErrorIgnoreLevel = kError;')
 # import the tools module
 import varial.tools
 
-# get a plotter instance and run it (all arguments are optional)
-pltr = varial.tools.mk_rootfile_plotter(
-    name=outdir,        # output folder name
-    pattern='*.root',   # file matching pattern
-    flat=False          # recreate directory struction in rootfile
-)
 
 if __name__ == '__main__':
+
+    # get a plotter instance and run it (all arguments are optional)
+    pltr = varial.tools.mk_rootfile_plotter(
+        name=outdir,        # output folder name
+        pattern='*.root',   # file matching pattern
+        flat=False          # recreate directory struction in rootfile
+    )
+
     pltr.run()                          # run the plotter
     varial.tools.WebCreator().run()     # run the WebCreator
 
