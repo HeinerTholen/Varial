@@ -13,10 +13,12 @@ FwliteProxy         :ref:`fwliteproxy-module`
 =================== ==========================
 """
 
+import subprocess
 import itertools
+import random
+import shutil
 import glob
 import os
-import shutil
 
 import analysis
 import diskio
@@ -171,6 +173,46 @@ class ZipTool(Tool):
         )
 
 
+class CompileTool(Tool):
+    """
+    Calls make in the directories given in paths.
+
+    If compilation was needed (i.e. the output of make was different from
+    "make: Nothing to be done for `all'") wanna_reuse will return False and
+    by that cause all following modules to run.
+
+    :param paths:   list of str: paths where make should be invoked
+    """
+    nothing_done = 'make: Nothing to be done for `all\'.\n'
+
+    def __init__(self, paths):
+        super(CompileTool, self).__init__()
+        self.paths = paths
+
+    def wanna_reuse(self, all_reused_before_me):
+        nothing_compiled_yet = True
+        for path in self.paths:
+            self.message('Compiling in: ' + path)
+            tmp_out = '/tmp/varial_compile_%06i' % random.randint(0, 999999)
+            if subprocess.call(
+                ['make -j 9 | tee %s' % tmp_out],
+                cwd=path,
+                shell=True,
+            ):
+                os.remove(tmp_out)
+                raise RuntimeError('Compilation failed in: ' + path)
+            if nothing_compiled_yet:
+                with open(tmp_out) as f:
+                    if not f.readline() == self.nothing_done:
+                        nothing_compiled_yet = False
+            os.remove(tmp_out)
+
+        return nothing_compiled_yet and all_reused_before_me
+
+    def run(self):
+        pass
+
+
 class SampleNormalizer(Tool):
     """
     Normalize MC cross sections.
@@ -237,7 +279,7 @@ def mk_rootfile_plotter(name="RootFilePlots",
     Make a plotter chain that plots all content of all rootfiles in cwd.
 
     Additional keywords are forwarded to the plotter instanciation.
-    For running the plotter(s), use a ToolRunner.
+    For running the plotter(s), use a Runner.
 
     :param name:                str, name of the folder in which the output is
                                 stored
