@@ -30,8 +30,10 @@ class _ToolBase(object):
         # name
         if not tool_name:
             self.name = self.__class__.__name__
-        else:
+        elif isinstance(tool_name, str):
             self.name = tool_name
+        else:
+            raise RuntimeError('tool_name must be string or None.')
 
         # messenger
         self.message = monitor.connect_object_with_messenger(self)
