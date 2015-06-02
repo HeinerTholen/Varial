@@ -164,11 +164,16 @@ class Tool(_ToolBase):
 class ToolChain(_ToolBase):
     """Executes PostProcTools."""
 
-    def __init__(self, name=None, tools=None, default_reuse=False):
+    def __init__(self,
+                 name=None,
+                 tools=None,
+                 default_reuse=False,
+                 lazy_eval_tools_func=None):
         super(ToolChain, self).__init__(name)
         self._reuse = default_reuse
         self.tool_chain = []
         self.tool_names = {}
+        self.lazy_eval_tools_func = lazy_eval_tools_func
         if tools:
             self.add_tools(tools)
 
@@ -223,6 +228,8 @@ class ToolChain(_ToolBase):
             self._reuse = t._reuse
 
     def run(self):
+        if self.lazy_eval_tools_func:
+            self.add_tools(self.lazy_eval_tools_func())
         for tool in self.tool_chain:
             self._run_tool(tool)
 
@@ -381,6 +388,9 @@ class ToolChainParallel(ToolChain):
 
         if not settings.use_parallel_chains or settings.max_num_processes == 1:
             return super(ToolChainParallel, self).run()
+
+        if self.lazy_eval_tools_func:
+            self.add_tools(self.lazy_eval_tools_func())
 
         if not self.tool_chain:
             return
