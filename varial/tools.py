@@ -38,10 +38,10 @@ from webcreator import \
     WebCreator
 
 
-class ToolRunner(ToolChain):
+class Runner(ToolChain):
     """Runs tools upon instanciation (including proper folder creation)."""
     def __init__(self, tool, default_reuse=False):
-        super(ToolRunner, self).__init__(None, [tool], default_reuse)
+        super(Runner, self).__init__(None, [tool], default_reuse)
         self.run()
 
 
