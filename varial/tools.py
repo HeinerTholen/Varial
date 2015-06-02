@@ -38,6 +38,13 @@ from webcreator import \
     WebCreator
 
 
+class Runner(ToolChain):
+    """Runs tools upon instanciation (including proper folder creation)."""
+    def __init__(self, tool, default_reuse=False):
+        super(Runner, self).__init__(None, [tool], default_reuse)
+        self.run()
+
+
 class HistoLoader(Tool):
     """
     Loads histograms from any rootfile or from fileservice.
@@ -230,6 +237,7 @@ def mk_rootfile_plotter(name="RootFilePlots",
     Make a plotter chain that plots all content of all rootfiles in cwd.
 
     Additional keywords are forwarded to the plotter instanciation.
+    For running the plotter(s), use a ToolRunner.
 
     :param name:                str, name of the folder in which the output is
                                 stored
@@ -257,15 +265,14 @@ def mk_rootfile_plotter(name="RootFilePlots",
         new_plotter_factory = plotter_factory
 
     if combine_files:
-        plotters = [RootFilePlotter(
+        tc = RootFilePlotter(
             pattern,
             new_plotter_factory,
             flat,
             name,
             filter_keyfunc,
             legendnames
-        )]
-        tc = ToolChain(name, plotters)
+        )
     else:
         plotters = list(
             RootFilePlotter(
@@ -278,7 +285,7 @@ def mk_rootfile_plotter(name="RootFilePlots",
             )
             for f in glob.iglob(pattern)
         )
-        tc = ToolChain(name, [ToolChain(name, plotters)])
+        tc = ToolChainParallel(name, plotters)
     return tc
 
 

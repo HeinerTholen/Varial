@@ -155,9 +155,13 @@ def pop_tool():
 
 def _lookup(key):
     keys = key.split('/')
+    if keys[0] == '.':
+        keys.pop(0)
     if keys[0] == '..':
         return current_result.lookup(keys)
     else:
+        if keys[0] == results_base.name:
+            keys.pop(0)
         return results_base.lookup(keys)
 
 
@@ -235,7 +239,6 @@ def lookup_tool(abs_path):
         except KeyError:
             return None
     return tmp
-
 
 
 ############################################################### fileservice ###

@@ -50,9 +50,12 @@ class WebCreator(toolinterface.Tool):
             if self.cwd:
                 self.working_dir = os.path.join(*self.cwd.split('/')[:-2])
             else:
-                self.working_dir = analysis.cwd
+                self.working_dir = analysis.cwd.replace('//', '/')
         for wd, dirs, files in os.walk(self.working_dir):
-            self.subfolders += dirs
+            self.subfolders += list(  # check that tools have worked there..
+                d for d in dirs
+                if analysis.lookup_path(os.path.join(self.working_dir, d))
+            )
             for f in files:
                 if f.endswith('.info'):
                     if f[:-5] + self.image_postfix in files:

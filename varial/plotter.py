@@ -1,11 +1,9 @@
-import glob
 import itertools
 import os
 import time
 import ROOT
 
 import analysis
-import diskio
 import generators as gen
 import rendering
 import settings
@@ -123,7 +121,6 @@ class Plotter(toolinterface.Tool):
         defaults.update(kws)            # add keywords
         self.__dict__.update(defaults)  # set attributes in place
         self.stream_content = None
-        self.stream_canvas = None
         if stack:
             self.plot_setup = self.stack_setup
             self.plot_grouper = self.stack_grouper
@@ -144,20 +141,30 @@ class Plotter(toolinterface.Tool):
                 wrps = itertools.ifilter(self.filter_keyfunc, wrps)
         else:
             if not self.filter_keyfunc:
-                self.message("WARNING No filter_keyfunc set! "
-                             "Working with _all_ histograms.")
+                self.message('WARNING No filter_keyfunc set! '
+                             'Working with _all_ histograms.')
             wrps = self.load_func(self.filter_keyfunc)
         if self.hook_loaded_histos:
             wrps = self.hook_loaded_histos(wrps)
-        self.stream_content = wrps
+        self.stream_content = list(wrps)
+        if not self.stream_content:
+            self.message('WARNING Could not load histogram content!')
 
-    def set_up_content(self):
+    def group_content(self):
         wrps = self.stream_content
         if self.plot_grouper:
-            wrps = self.plot_grouper(wrps)
+            wrps = list(self.plot_grouper(wrps))
+        self.stream_content = list(wrps)
+        if not self.stream_content:
+            self.message('WARNING Could not group histogram content!')
+
+    def setup_content(self):
+        wrps = self.stream_content
         if self.plot_setup:
             wrps = self.plot_setup(wrps)
-        self.stream_content = wrps
+        self.stream_content = list(wrps)
+        if not self.stream_content:
+            self.message('WARNING Could not setup histogram content!')
 
     def store_content_as_result(self):
         if self.keep_content_as_result:
@@ -165,10 +172,7 @@ class Plotter(toolinterface.Tool):
             self.result = list(
                 itertools.chain.from_iterable(self.stream_content))
 
-    def set_up_make_canvas(self):
-
-
-
+    def make_canvases(self):
         def run_build_procedure(bldr):
             for b in bldr:
                 b.run_procedure()
@@ -181,6 +185,7 @@ class Plotter(toolinterface.Tool):
                     for dec in self.canvas_decorators:
                         b = dec(b)
                 yield b
+
         bldr = gen.make_canvas_builder(self.stream_content)
         bldr = self.set_canvas_name(bldr)
         bldr = decorate(bldr)
@@ -189,60 +194,36 @@ class Plotter(toolinterface.Tool):
         bldr = run_build_procedure(bldr)
         if self.hook_canvas_post_build:
             bldr = self.hook_canvas_post_build(bldr)
-        self.stream_canvas = gen.build_canvas(bldr)
 
-    def set_up_save_canvas(self):
+        # no list and warning here, since canvases would be deleted if the have
+        # the same name. This way, diskio will tell if a file is overwritten.
+        self.stream_content = gen.build_canvas(bldr)
+
+    def save_canvases(self):
         if self.save_lin_log_scale:
-            self.stream_canvas = gen.save_canvas_lin_log(
-                self.stream_canvas,
+            self.stream_content = gen.save_canvas_lin_log(
+                self.stream_content,
                 self.save_name_func,
             )
         else:
             if self.save_log_scale:
-                self.stream_canvas = gen.switch_log_scale(self.stream_canvas)
-            self.stream_canvas = gen.save(
-                self.stream_canvas,
+                self.stream_content = gen.switch_log_scale(self.stream_content)
+            self.stream_content = gen.save(
+                self.stream_content,
                 self.save_name_func,
             )
-
-    def run_sequence(self):
-        count = gen.consume_n_count(self.stream_canvas)
-        level = "INFO " if count else "WARNING "
-        message = level+self.name+" produced "+str(count)+" canvases."
-        self.message(message)
+        count = gen.consume_n_count(self.stream_content)
+        level = "INFO" if count else "WARNING"
+        self.message("%s %s produced %d canvases." % (level, self.name, count))
 
     def run(self):
         self.configure()
         self.load_content()
-        self.set_up_content()
+        self.group_content()
+        self.setup_content()
         self.store_content_as_result()
-        self.set_up_make_canvas()
-        self.set_up_save_canvas()
-        self.run_sequence()
-
-
-def _mk_legendnames(filenames):
-    # only one file: return directly
-    if len(filenames) < 2:
-        return {filenames[0]: filenames[0]}
-
-    # try the sframe way:
-    lns = list(n.split('.') for n in filenames if type(n) is str)
-    if all(len(l) == 5 for l in lns):
-        return dict((f, l[3]) for f, l in itertools.izip(filenames, lns))
-
-    # try trim filesnames from front and back
-    lns = filenames[:]
-    try:
-        while all(n[0] == lns[0][0] for n in lns):
-            for i in xrange(len(lns)):
-                lns[i] = lns[i][1:]
-        while all(n[-1] == lns[0][-1] for n in lns):
-            for i in xrange(len(lns)):
-                lns[i] = lns[i][:-1]
-    except IndexError:
-        return dict((f, f) for f in filenames[:])
-    return dict((f, l) for f, l in itertools.izip(filenames, lns))
+        self.make_canvases()
+        self.save_canvases()
 
 
 class RootFilePlotter(toolinterface.ToolChainParallel):
@@ -251,7 +232,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
 
     **NOTE: please use the** ``tools.mk_rootfile_plotter`` **function!**
 
-    :param rootfile:            str, search pattern for rootfiles
+    :param pattern:             str, search pattern for rootfiles
     :param plotter_factory:     factory function for RootFilePlotter
                                 default: ``None``
     :param flat:                bool, flatten the rootfile structure
@@ -259,8 +240,69 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
     :param name:                str, tool name
     """
 
+    def _setup_aliases(self, pattern, filter_keyfunc):
+        aliases = gen.dir_content(pattern)
+        if not aliases:
+            self.message('WARNING Could not create aliases for plotting.')
+        else:
+            aliases = itertools.ifilter(
+                lambda a: type(a.type) == str and (
+                    a.type.startswith('TH') or a.type == 'TProfile'
+                ),
+                aliases
+            )
+            aliases = itertools.ifilter(filter_keyfunc, aliases)
+            aliases = sorted(
+                aliases,
+                key=lambda a: a.in_file_path
+            )
+        self.aliases = aliases
+
+    @staticmethod
+    def _setup_legendnames_from_files(pattern):
+        filenames = gen.resolve_file_pattern(pattern)
+
+        # only one file: return directly
+        if len(filenames) < 2:
+            return {filenames[0]: filenames[0]}
+
+        # try the sframe way:
+        lns = list(n.split('.') for n in filenames if type(n) is str)
+        if all(len(l) == 5 for l in lns):
+            return dict((f, l[3]) for f, l in itertools.izip(filenames, lns))
+
+        # try trim filesnames from front and back
+        lns = filenames[:]
+        try:
+            while all(n[0] == lns[0][0] for n in lns):
+                for i in xrange(len(lns)):
+                    lns[i] = lns[i][1:]
+            while all(n[-1] == lns[0][-1] for n in lns):
+                for i in xrange(len(lns)):
+                    lns[i] = lns[i][:-1]
+        except IndexError:
+            return dict((f, f) for f in filenames[:])
+        return dict((f, l) for f, l in itertools.izip(filenames, lns))
+
+    def _setup_gen_legend(self, pattern, legendnames=None):
+        if not legendnames:
+            legendnames = self._setup_legendnames_from_files(pattern)
+        legendnames = dict((os.path.basename(p), l)
+                           for p, l in legendnames.iteritems())
+        self.message(
+            'INFO  Legend names that I will use if not overwritten:\n'
+            + '\n'.join('%32s: %s' % (v,k) for k,v in legendnames.iteritems())
+        )
+
+        def gen_apply_legend(wrps):
+            for w in wrps:
+                if not w.legend:
+                    w.legend = legendnames[os.path.basename(w.file_path)]
+                yield w
+        return gen_apply_legend
+
     def __init__(self,
-                 rootfile,
+                 pattern,
                  plotter_factory=None,
                  flat=False,
                  name=None,
@@ -268,58 +310,30 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                  legendnames=None):
         super(RootFilePlotter, self).__init__(name)
 
-        self.private_plotter = None
-        self.rootfile = rootfile  # only the base instance has this
-        if not rootfile:
-            return
-        if type(rootfile) is str:
-            rootfiles = glob.glob(rootfile)
-        elif type(rootfile) is list:
-            rootfiles = rootfile
-        if not rootfiles:
+        # initialization for all instances
+        self._private_plotter = None
+        self._is_base_instance = bool(pattern)
+        if not self._is_base_instance:
             return
 
-        self.message('INFO Using parallel plotting. Disable with '
-                     '"varial.settings.use_parallel_chains = False"')
-
-        # setup aliases
+        # initialization for base instance only
+        if settings.use_parallel_chains and settings.max_num_processes > 1:
+            self.message('INFO Using parallel plotting. Disable with '
+                         '"varial.settings.use_parallel_chains = False"')
         ROOT.gROOT.SetBatch()
         if not plotter_factory:
             plotter_factory = Plotter
-        aliases = gen.dir_content(self.rootfile)
-        aliases = itertools.ifilter(
-            lambda a: type(a.type) == str and (
-                a.type.startswith('TH') or a.type == 'TProfile'
-            ),
-            aliases
-        )
-        aliases = itertools.ifilter(filter_keyfunc, aliases)
-        aliases = sorted(
-            aliases,
-            key=lambda a: a.in_file_path
-        )
-        self.aliases = aliases
 
-        if not legendnames:
-            legendnames = _mk_legendnames(rootfiles)
-        legendnames = dict((os.path.basename(p), l)
-                           for p, l in legendnames.iteritems())
-
-        self.message(
-            'INFO  Legend names that I will use by default:\n'
-            + '\n'.join('%32s: %s' % (v,k) for k,v in legendnames.iteritems())
-        )
-        def apply_legend(wrps):
-            for w in wrps:
-                if not w.legend:
-                    w.legend = legendnames[os.path.basename(w.file_path)]
-                yield w
+        self._setup_aliases(pattern, filter_keyfunc)
+        gen_apply_legend = self._setup_gen_legend(pattern, legendnames)
 
         # either print all in one dir...
         if flat:
-            self.private_plotter = plotter_factory(
+            self._private_plotter = plotter_factory(
+                name=self.name,
                 filter_keyfunc=lambda _: True,
-                load_func=lambda _: apply_legend(gen.load(gen.fs_content())),
+                load_func=lambda _: gen_apply_legend(
+                    gen.load(gen.fs_content())),
                 plot_grouper=plot_grouper_by_in_file_path,
                 plot_setup=lambda ws: gen.mc_stack_n_data_sum(
                     ws, lambda w: '', True),
@@ -334,7 +348,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                 rfp = self
                 path = path.split('/')
 
-                # make dirs if not in basedir
+                # make RootFilePlotters for dirs if not in basedir
                 if len(path) > 1:
                     for folder in path[:-1]:
                         if not folder in rfp.tool_names:
@@ -343,9 +357,10 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                         rfp = rfp.tool_names[folder]
 
                 # make plotter instance if not done already
-                if not rfp.private_plotter:
-                    def _mk_loader(p):
+                if not rfp._private_plotter:
+                    def _mk_private_loader(p):
                         # This function creates a separate namespace for p
+                        # (the last reference to p would be lost otherwise)
                         def loader(filter_keyfunc):
                             wrps = analysis.fs_aliases
                             wrps = itertools.ifilter(
@@ -354,28 +369,36 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                                 wrps
                             )
                             wrps = gen.load(wrps)
-                            wrps = apply_legend(wrps)
+                            wrps = gen_apply_legend(wrps)
                             return wrps
                         return loader
 
-                    rfp.private_plotter = plotter_factory(
+                    rfp._private_plotter = plotter_factory(
                         name=self.name,
                         filter_keyfunc=lambda _: True,
                         plot_grouper=plot_grouper_by_in_file_path,
                         set_canvas_name=set_canvas_name_to_plot_name,
-                        load_func=_mk_loader(path[:-1]),
+                        load_func=_mk_private_loader(path[:-1]),
                         canvas_decorators=[rendering.Legend],
                     )
 
     def run(self):
         time.sleep(1)  # weird bug in root...
         old_aliases = analysis.fs_aliases
-        if self.rootfile:
+        if self._is_base_instance:
             analysis.fs_aliases = self.aliases
         super(RootFilePlotter, self).run()
-        if self.private_plotter:
-            toolinterface.parallel_worker_start()
-            self.private_plotter.run()
-            toolinterface.parallel_worker_done()
-        if self.rootfile:
+        if self._private_plotter:
+            logfile = '%s/.pltr_done' % analysis.cwd
+            if self._reuse and os.path.exists(logfile):
+                self.message('INFO reusing...')
+            else:
+                if os.path.exists(logfile):
+                    os.remove(logfile)
+                self._parallel_worker_start()
+                self._private_plotter.run()
+                self._parallel_worker_done()
+                with open(logfile, 'w') as f:
+                    f.write('plotter done.\n')
+        if self._is_base_instance:
             analysis.fs_aliases = old_aliases
