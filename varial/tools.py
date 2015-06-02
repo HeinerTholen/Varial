@@ -38,6 +38,12 @@ from webcreator import \
     WebCreator
 
 
+class ToolRunner(ToolChain):
+    def __init__(self, tool, default_reuse=False):
+        super(ToolRunner, self).__init__(None, [tool], default_reuse)
+        self.run()
+
+
 class HistoLoader(Tool):
     """
     Loads histograms from any rootfile or from fileservice.
