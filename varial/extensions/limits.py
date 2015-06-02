@@ -4,9 +4,11 @@ Limit derivation with theta: http://theta-framework.org
 
 import os
 import ROOT
+import math
 
 import varial.tools
 import theta_auto
+import string
 theta_auto.config.theta_dir = os.environ["CMSSW_BASE"] + "/theta"
 
 
@@ -18,6 +20,7 @@ class ThetaLimits(varial.tools.Tool):
         dat_key=lambda w: w.is_data or w.is_pseudo_data,
         sig_key=lambda w: w.is_signal,
         bkg_key=lambda w: not any((w.is_signal, w.is_data, w.is_pseudo_data)),
+        model_func=None,
         name=None,
     ):
         super(ThetaLimits, self).__init__(name)
@@ -26,6 +29,7 @@ class ThetaLimits(varial.tools.Tool):
         self.dat_key = dat_key
         self.sig_key = sig_key
         self.bkg_key = bkg_key
+        self.model_func = model_func
 
     def _store_histos_for_theta(self, dat, sigs, bkgs):
         # create wrp
@@ -33,9 +37,12 @@ class ThetaLimits(varial.tools.Tool):
         if dat:
             setattr(wrp, 'histo__DATA', dat[0].histo)
         for bkg in bkgs:
-            setattr(wrp, 'histo__bkg_' + bkg.sample, bkg.histo)
+            cat_name = bkg.in_file_path.split('/')[-2]
+            setattr(wrp, cat_name + '__' + bkg.sample, bkg.histo)
         for sig in sigs:
-            setattr(wrp, 'histo__sig_' + sig.sample, sig.histo)
+            cat_name = sig.in_file_path.split('/')[-2]
+            # sig_name = string.replace(sig.sample, '_', '')
+            setattr(wrp, cat_name + '__' + sig.sample, sig.histo)
 
         # write manually
         filename = os.path.join(varial.analysis.cwd, wrp.name + ".root")
@@ -61,7 +68,7 @@ class ThetaLimits(varial.tools.Tool):
         if not bkg:
             raise RuntimeError('No background histograms present.')
         if not sig:
-            raise RuntimeError('No signal histograms presen.t')
+            raise RuntimeError('No signal histograms present.')
         if len(dat) > 1:
             raise RuntimeError('Too many data histograms present (>1).')
         if not dat:
@@ -76,25 +83,32 @@ class ThetaLimits(varial.tools.Tool):
         plt_dir = os.path.join(self.cwd, 'plots')
         if not os.path.exists(plt_dir):
             os.mkdir(plt_dir)
-        self.model = theta_auto.build_model_from_rootfile(
-            os.path.join(self.cwd, 'ThetaHistos.root'),
-            include_mc_uncertainties=True
-        )
-        self.model.fill_histogram_zerobins()
-        self.model.set_signal_processes(list(
-            k[7:]
-            for k in theta_wrp.__dict__
-            if k.startswith('histo__sig_')
-        ))
+        self.model = self.model_func()
+        # self.model = theta_auto.build_model_from_rootfile(
+        #     os.path.join(self.cwd, 'ThetaHistos.root'),
+        #     include_mc_uncertainties=True
+        # )
+        # self.model.fill_histogram_zerobins()
+        # self.model.set_signal_processes(list(
+        #     k.split('__')[-1]
+        #     for k in theta_wrp.__dict__
+        #     if 'TpTp' in k
+        # ))
+        # # self.model.add_lognormal_uncertainty('ttbar_rate', math.log(1.15), 'TTJets')
+        # # self.model.add_lognormal_uncertainty('qcd_rate', math.log(1.30), 'QCD')
+        # # self.model.add_lognormal_uncertainty('wjets_rate', math.log(1.25), 'WJets')
+        # # self.model.add_lognormal_uncertainty('zjets_rate', math.log(1.50), 'ZJets')
+        # # self.model.add_lognormal_uncertainty('signal_rate', math.log(1.15), 'TpTp_M1000')
 
         # let the fit run
         options = theta_auto.Options()
         options.set('minimizer', 'strategy', 'robust')
+        theta_auto.model_summary(self.model)
         limit_func = theta_auto.asymptotic_cls_limits \
             if self.asymptotic else theta_auto.bayesian_limits
         res_exp, res_obs = limit_func(
             self.model,
-            #what='expected'
+            what='expected'
         )
 
         # shout it out loud
