@@ -46,10 +46,14 @@ class _ToolBase(object):
         analysis.pop_tool()
 
     def reset(self):
-        pass
+        pass  # see metaclass
 
     def update(self):
-        pass
+        pass  # see metaclass
+
+    def tool_paths(self):
+        """Return a list of tool paths for all children."""
+        raise RuntimeError('Superclass method should be called.')
 
     def wanna_reuse(self, all_reused_before_me):
         """If True is returned, run() will not be called."""
@@ -96,6 +100,10 @@ class Tool(_ToolBase):
         self.cwd = None
         self.logfile = None
         super(Tool, self).__exit__(exc_type, exc_val, exc_tb)
+
+    def tool_paths(self):
+        """Return a list of tool paths for all children."""
+        return [self.name]
 
     def wanna_reuse(self, all_reused_before_me):
         if (super(Tool, self).wanna_reuse(all_reused_before_me)
@@ -182,6 +190,11 @@ class ToolChain(_ToolBase):
                     tool.name, self.name))
         self.tool_names[tool.name] = tool
         self.tool_chain.append(tool)
+
+    def tool_paths(self):
+        return list(os.path.join(self.name, p)
+                    for t in self.tool_chain
+                    for p in t.tool_paths())
 
     def _run_tool(self, tool):
         with tool as t:
