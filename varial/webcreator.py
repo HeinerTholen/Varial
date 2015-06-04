@@ -17,10 +17,12 @@ class WebCreator(toolinterface.Tool):
 
     :param name:            str, tool name
     :param working_dir:     str, directory to start with.
+    :param no_tool_check:   bool, only run in dirs that ran as a tool before
     :param is_base:         bool, **Do not touch! =)**
     """
 
-    def __init__(self, name=None, working_dir='', is_base=True):
+    def __init__(self, name=None, working_dir='', no_tool_check=False,
+                 is_base=True):
         super(WebCreator, self).__init__(name)
         self.working_dir = working_dir
         self.web_lines = []
@@ -30,6 +32,7 @@ class WebCreator(toolinterface.Tool):
         self.plain_tex = []
         self.html_files = []
         self.image_postfix = None
+        self.no_tool_check = no_tool_check
         self.is_base = is_base
 
     def configure(self):
@@ -54,7 +57,8 @@ class WebCreator(toolinterface.Tool):
         for wd, dirs, files in os.walk(self.working_dir):
             self.subfolders += list(  # check that tools have worked there..
                 d for d in dirs
-                if analysis.lookup_path(os.path.join(self.working_dir, d))
+                if (self.no_tool_check
+                    or analysis.lookup_path(os.path.join(self.working_dir, d)))
             )
             for f in files:
                 if f.endswith('.info'):
@@ -73,7 +77,8 @@ class WebCreator(toolinterface.Tool):
     def go4subdirs(self):
         for sf in self.subfolders[:]:
             path = os.path.join(self.working_dir, sf)
-            inst = self.__class__(self.name, path, False)
+            inst = self.__class__(self.name, path, self.no_tool_check,
+                                  False)
             inst.run()
             if not os.path.exists(os.path.join(path, 'index.html')):
                 self.subfolders.remove(sf)

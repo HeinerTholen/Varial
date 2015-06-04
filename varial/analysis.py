@@ -129,6 +129,8 @@ class ResultProxy(object):
         if not keys:
             return self
         k = keys.pop(0)
+        if k == '.':
+            return self.lookup(keys)
         if k == '..' and self.parent:
             return self.parent.lookup(keys)
         elif k in self.children:

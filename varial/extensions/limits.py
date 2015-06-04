@@ -113,13 +113,13 @@ class ThetaLimits(varial.tools.Tool):
         # shout it out loud
         self.result = varial.wrappers.Wrapper(
             name=self.name,
-            res_exp=str(res_exp),
-            res_obs=str(res_obs),
+            res_exp=res_exp,
+            res_obs=res_obs,
         )
         self.message(
-            'INFO theta result: expected limit:\n' + self.result.res_exp)
+            'INFO theta result: expected limit:\n' + str(self.result.res_exp))
         self.message(
-            'INFO theta result: expected limit:\n' + self.result.res_obs)
+            'INFO theta result: expected limit:\n' + str(self.result.res_obs))
         theta_auto.config.report.write_html(
             os.path.join(self.cwd, 'result'))
 
@@ -142,9 +142,11 @@ class TriangleLimitPlots(varial.tools.Tool):
 
 
     def run(self):
-        parent = os.listdir('..')
-        print parent.name
-        theta_tools = list(k for k in parent.tool_names if k.startswith("ThetaLimit"))
+        # parent = varial.analysis.lookup_tool('../.')
+        parents = os.listdir(self.cwd+'/..')
+        print parents
+        theta_tools = list(k for k in parents if k.startswith("ThetaLimit"))
+        print theta_tools
         wrps = list(self.lookup_result('../' + k) for k in theta_tools)
         for w in wrps:
             print w.res_exp.x
