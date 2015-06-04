@@ -17,6 +17,7 @@ class WebCreator(toolinterface.Tool):
 
     :param name:            str, tool name
     :param working_dir:     str, directory to start with.
+    :param no_tool_check:   bool, only run in dirs that ran as a tool before
     :param is_base:         bool, **Do not touch! =)**
     """
 
