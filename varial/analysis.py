@@ -243,6 +243,20 @@ def lookup_tool(abs_path):
     return tmp
 
 
+def print_tool_tree():
+    """"""
+    print '='*80
+    print 'Tools available through analysis.lookup:'
+    _print_tool_tree(results_base, 1)
+    print '='*80
+
+
+def _print_tool_tree(res, indent):
+    print ' '*indent, res.name
+    for r in res.children.itervalues():
+        _print_tool_tree(r, indent + 4)
+
+
 ############################################################### fileservice ###
 fs_aliases = []
 fs_wrappers = {}
