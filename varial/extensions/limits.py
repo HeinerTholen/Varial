@@ -7,6 +7,7 @@ import ROOT
 import math
 
 import varial.tools
+import varial.analysis
 import theta_auto
 import string
 theta_auto.config.theta_dir = os.environ["CMSSW_BASE"] + "/theta"
@@ -83,7 +84,7 @@ class ThetaLimits(varial.tools.Tool):
         plt_dir = os.path.join(self.cwd, 'plots')
         if not os.path.exists(plt_dir):
             os.mkdir(plt_dir)
-        self.model = self.model_func()
+        self.model = self.model_func(self.cwd)
         # self.model = theta_auto.build_model_from_rootfile(
         #     os.path.join(self.cwd, 'ThetaHistos.root'),
         #     include_mc_uncertainties=True
@@ -104,12 +105,10 @@ class ThetaLimits(varial.tools.Tool):
         options = theta_auto.Options()
         options.set('minimizer', 'strategy', 'robust')
         theta_auto.model_summary(self.model)
-        limit_func = theta_auto.asymptotic_cls_limits \
-            if self.asymptotic else theta_auto.bayesian_limits
-        res_exp, res_obs = limit_func(
-            self.model,
-            what='expected'
-        )
+        if self.asymptotic:
+            limit_func = lambda w: theta_auto.asymptotic_cls_limits(w)
+        else: limit_func = lambda w: theta_auto.bayesian_limits(w, what='expected')
+        res_exp, res_obs = limit_func(self.model)
 
         # shout it out loud
         self.result = varial.wrappers.Wrapper(
@@ -123,5 +122,32 @@ class ThetaLimits(varial.tools.Tool):
             'INFO theta result: expected limit:\n' + self.result.res_obs)
         theta_auto.config.report.write_html(
             os.path.join(self.cwd, 'result'))
+
+class TpTpThetaLimits(ThetaLimits):
+    def __init__(self,
+        brs = None,
+        *args,**kws
+    ):
+        super(TpTpThetaLimits, self).__init__(*args, **kws)
+        self.brs = brs
+
+
+
+
+class TriangleLimitPlots(varial.tools.Tool):
+    def __init__(self,
+        name=None
+    ):
+        super(TriangleLimitPlots, self).__init__(name)
+
+
+    def run(self):
+        parent = os.listdir('..')
+        print parent.name
+        theta_tools = list(k for k in parent.tool_names if k.startswith("ThetaLimit"))
+        wrps = list(self.lookup_result('../' + k) for k in theta_tools)
+        for w in wrps:
+            print w.res_exp.x
+
 
 
