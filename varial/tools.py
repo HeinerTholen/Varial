@@ -44,6 +44,7 @@ class Runner(ToolChain):
     """Runs tools upon instanciation (including proper folder creation)."""
     def __init__(self, tool, default_reuse=False):
         super(Runner, self).__init__(None, [tool], default_reuse)
+        analysis.reset()
         self.run()
 
 
