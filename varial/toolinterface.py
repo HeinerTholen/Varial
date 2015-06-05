@@ -257,7 +257,9 @@ class ToolChainVanilla(ToolChain):
         old_analysis_data = {}
         for key, val in analysis.__dict__.iteritems():
             if not (
-                key[:2] == '__'
+                key[0] == '_'
+                or key == 'results_base'    # must be kept for lookup
+                or key == 'current_result'  # must be kept for lookup
                 or inspect.ismodule(val)
                 or callable(val)
             ):
