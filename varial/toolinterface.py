@@ -347,7 +347,8 @@ class ToolChainParallel(ToolChain):
     """Parallel execution of tools. Tools must not depend on each other."""
     def _load_results(self, tool):
         analysis.push_tool(tool)
-        tool.result = tool.io.get('result')
+        with tool.io.block_of_files:
+            tool.result = tool.io.get('result')
         if isinstance(tool, ToolChain):
             for t in tool.tool_chain:
                 self._load_results(t)
