@@ -30,8 +30,13 @@ class TestTools(unittest.TestCase):
         super(TestTools, self).__init__(methodName)
         self.base_name = 'VanillaChain'
 
+    def setUp(self):
+        super(TestTools, self).setUp()
+        varial.monitor.current_error_level = 2
+
     def tearDown(self):
         super(TestTools, self).tearDown()
+        varial.monitor.current_error_level = 0
         if os.path.exists(self.base_name):
             shutil.rmtree(self.base_name)
 
