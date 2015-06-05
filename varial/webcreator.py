@@ -164,7 +164,7 @@ class WebCreator(toolinterface.Tool):
                     '</div>',
                     '<hr width="60%">',
                 )
-            except (SyntaxError, IOError):
+            except (SyntaxError, ValueError, IOError):
                 self.message('WARNING Could not read info file at %s' % p_nfo)
                 etype, evalue, _ = sys.exc_info()
                 traceback.print_exception(etype, evalue, None)

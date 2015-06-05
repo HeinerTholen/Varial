@@ -12,6 +12,7 @@ import time
 debug_mode = False
 recieved_sigint = False
 only_reload_results = False
+diskio_check_readability = False
 varial_working_dir = './'
 db_name = '.varial.db'
 default_data_lumi = 1.
