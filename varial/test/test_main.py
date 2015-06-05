@@ -12,6 +12,7 @@ from test_pklio import suite as pki_suite
 from test_generators import suite as gen_suite
 from test_ops import suite as ops_suite
 from test_rendering import suite as rnd_suite
+from test_tools import suite as tls_suite
 
 import doctest
 import varial.generators as gen
@@ -36,6 +37,7 @@ suite = unittest.TestSuite((
     pki_suite,
     gen_suite,
     rnd_suite,
+    tls_suite,
 ))
 
 import sys
