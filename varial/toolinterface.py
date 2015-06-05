@@ -320,9 +320,8 @@ def _run_tool_in_worker(arg):
             print '='*80
             _kill_request.value = 1
         _exception_lock.release()
-        return tool.name, False, None
-    result = tool.result if hasattr(tool, 'result') else None
-    return tool.name, chain._reuse, result
+        return tool.name, False
+    return tool.name, chain._reuse
 
 
 class _NoDaemonProcess(multiprocessing.Process):
@@ -346,11 +345,12 @@ class _NoDeamonWorkersPool(multiprocessing.pool.Pool):
 
 class ToolChainParallel(ToolChain):
     """Parallel execution of tools. Tools must not depend on each other."""
-    def _recursive_push_result(self, tool):
+    def _load_results(self, tool):
         analysis.push_tool(tool)
+        tool.result = tool.io.get('result')
         if isinstance(tool, ToolChain):
             for t in tool.tool_chain:
-                self._recursive_push_result(t)
+                self._load_results(t)
         analysis.pop_tool()
 
     @staticmethod
@@ -415,15 +415,14 @@ class ToolChainParallel(ToolChain):
 
         # run processing
         try:
-            for name, reused, result in result_iter:
+            for name, reused in result_iter:
                 if _kill_request.value > 0:
                     pool.close()
                     os.killpg(os.getpid(), signal.SIGTERM)  # one evil line!
 
-                self.tool_names[name].result = result
                 if not reused:
                     self._reuse = False
-                self._recursive_push_result(self.tool_names[name])
+                self._load_results(self.tool_names[name])
         except KeyboardInterrupt:
             os.killpg(os.getpid(), signal.SIGTERM)  # again!
 
