@@ -37,27 +37,37 @@ class TestTools(unittest.TestCase):
 
     def _setup_chains(self, chain_class):
         searchers = [
-            ResultSearcher('ResultSearcher0', '../ResultCreator'),
-            ResultSearcher('ResultSearcher1', '../././ResultCreator'),
-            ResultSearcher('ResultSearcher2', '../InnerChain/ResultCreator'),
-            ResultSearcher('ResultSearcher3',
-                           'BaseChain/InnerChain/ResultCreator'),
-            ResultSearcher('ResultSearcher4',
-                           '/BaseChain/InnerChain/ResultCreator'),
-            ResultSearcher('ResultSearcher5',
-                           '%s/BaseChain/InnerChain/ResultCreator'
-                           % self.base_name),
+            ResultSearcher(
+                'ResultSearcher0',
+                '../../../Creators/InnerCreators/ResultCreator'
+            ),
+            ResultSearcher(
+                'ResultSearcher1',
+                '../.././../Creators/./InnerCreators/./ResultCreator'
+            ),
+            ResultSearcher(
+                'ResultSearcher3',
+                'BaseChain/Creators/ResultCreator'
+            ),
+            ResultSearcher(
+                'ResultSearcher4',
+                '/BaseChain/Creators/ResultCreator'
+            ),
+            ResultSearcher(
+                'ResultSearcher5',
+                self.base_name + '/BaseChain/Creators/ResultCreator'
+            ),
         ]
-        chain = chain_class('BaseChain', [
-            chain_class('InnerChain', [
+        chain = varial.tools.ToolChain('BaseChain', [
+            chain_class('Creators', [
+                chain_class('InnerCreators', [
+                    ResultCreator(),
+                ]),
                 ResultCreator(),
-                searchers[0],
-                searchers[1],
             ]),
-            searchers[2],
-            searchers[3],
-            searchers[4],
-            searchers[5],
+            chain_class('Searchers', [
+                chain_class('InnerSearchers', searchers[:2]),
+            ] + searchers[2:]),
         ])
         return searchers, chain
 
@@ -70,6 +80,16 @@ class TestTools(unittest.TestCase):
 
     def test_lookup_result(self):
         searchers, chain = self._setup_chains(varial.tools.ToolChain)
+        chain = varial.tools.ToolChainVanilla(self.base_name, [chain])
+        varial.tools.Runner(chain)
+        for srchr in searchers:
+            self.assertIsNotNone(
+                srchr.result,
+                'Result not found for input_path: %s' % srchr.input_path
+            )
+
+    def test_lookup_result_parallel(self):
+        searchers, chain = self._setup_chains(varial.tools.ToolChainParallel)
         chain = varial.tools.ToolChainVanilla(self.base_name, [chain])
         varial.tools.Runner(chain)
         for srchr in searchers:
