@@ -39,6 +39,18 @@ def _close():
     pass
 
 
+class _BlockMaker(dict):
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if _db_conn:
+            _db_conn.commit()
+
+
+block_of_files = _BlockMaker()
+
+
 ##################################################### read / write wrappers ###
 def exists(name):
     raise NotImplementedError()

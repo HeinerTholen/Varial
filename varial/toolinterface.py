@@ -134,7 +134,7 @@ class Tool(_ToolBase):
             os.remove(self.logfile)
 
     def finished(self):
-        with diskio.block_of_files:
+        with self.io.block_of_files:
             if isinstance(self.result, wrappers.Wrapper):
                 self.result.name = self.name
                 self.io.write(self.result, 'result')
