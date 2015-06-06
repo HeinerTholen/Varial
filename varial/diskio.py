@@ -274,13 +274,19 @@ def _write_wrapper_objs(wrp, file_handle):
 
 
 def _write_wrapperwrapper(wrp, filename=None):
+    global use_analysis_cwd
     if not filename:
         filename = wrp.name
     wrp_names = []
     for w in wrp.wrps:
         name = filename + '_WRPWRP_' + w.name
         wrp_names.append(basename(name))
-        write(w, name)
+        with_ana_cwd = use_analysis_cwd
+        try:
+            use_analysis_cwd = False  # write should not prepend cwd again
+            write(w, name)
+        finally:
+            use_analysis_cwd = with_ana_cwd  # reset
     wrp.wrps = wrp_names
 
 
