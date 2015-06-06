@@ -241,10 +241,13 @@ def record_in_save_log(filename):
 
 def _write_wrapper_info(wrp, file_handle):
     #"""Serializes Wrapper to python code dict."""
-    history, wrp.history = wrp.history, str(wrp.history)
-    file_handle.write(wrp.pretty_writeable_lines() + ' \n\n')
-    file_handle.write(wrp.history + '\n')
-    wrp.history = history
+    if hasattr(wrp, 'history'):
+        history, wrp.history = wrp.history, str(wrp.history)
+        file_handle.write(wrp.pretty_writeable_lines() + ' \n\n')
+        file_handle.write(wrp.history + '\n')
+        wrp.history = history
+    else:
+        file_handle.write(wrp.pretty_writeable_lines() + ' \n\n')
 
 
 def _write_wrapper_objs(wrp, file_handle):
