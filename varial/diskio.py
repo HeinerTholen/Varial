@@ -118,6 +118,8 @@ def write(wrp, filename=None, suffices=(), mode='RECREATE'):
     filename = prepare_basename(filename or wrp.name)
     record_in_save_log(filename)
 
+    if settings.diskio_check_readability:
+        _check_readability(wrp)
     # save with suffices
     for suffix in suffices:
         wrp.primary_object().SaveAs(filename + suffix)
@@ -328,6 +330,16 @@ def _clean_wrapper(wrp):
     for attr in del_attrs:
         if hasattr(wrp, attr):
             delattr(wrp, attr)
+
+
+def _check_readability(wrp):
+    try:
+        literal_eval(wrp.pretty_writeable_lines().replace('\n', ''))
+    except (ValueError, SyntaxError):
+        monitor.message(
+            'diskio.write',
+            'WARNING Wrapper will not be readable:\n%s' % str(wrp)
+        )
 
 
 def _get_obj_from_file(filename, in_file_path):

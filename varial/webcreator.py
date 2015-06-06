@@ -1,5 +1,5 @@
-import itertools
-import heapq
+import traceback
+import sys
 import os
 
 import toolinterface
@@ -150,20 +150,26 @@ class WebCreator(toolinterface.Tool):
             return
         self.web_lines += ('<h2>Info files:</h2>',)
         for nfo in self.plain_info:
-            wrp = self.io.read(
-                os.path.join(self.working_dir, nfo)
-            )
-            self.web_lines += (
-                '<div>',
-                '<p>',
-                '<b>' + nfo + '</b>',
-                '<p>',
-                '<pre>',
-                str(wrp),
-                '</pre>',
-                '</div>',
-                '<hr width="60%">',
-            )
+            p_nfo = os.path.join(self.working_dir, nfo)
+            try:
+                wrp = self.io.read(p_nfo)
+                self.web_lines += (
+                    '<div>',
+                    '<p>',
+                    '<b>' + nfo + '</b>',
+                    '<p>',
+                    '<pre>',
+                    str(wrp),
+                    '</pre>',
+                    '</div>',
+                    '<hr width="60%">',
+                )
+            except (SyntaxError, ValueError, IOError):
+                self.message('WARNING Could not read info file at %s' % p_nfo)
+                etype, evalue, _ = sys.exc_info()
+                traceback.print_exception(etype, evalue, None)
+
+
 
     def make_tex_file_divs(self):
         if not self.plain_tex:
