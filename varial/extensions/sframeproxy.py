@@ -10,6 +10,7 @@ join = os.path.join
 
 from varial import analysis
 from varial import diskio
+from varial import pklio
 from varial import settings
 from varial import toolinterface
 from varial import wrappers
@@ -21,16 +22,19 @@ class SFrameProcess(toolinterface.Tool):
 
     sframe output is streamed into a logfile.
     """
+    io = pklio
 
     def __init__(self,
                  cfg_filename,
                  xml_tree_callback=None,
                  add_aliases_to_analysis=True,
+                 halt_on_exception=True,
                  name=None):
         super(SFrameProcess, self).__init__(name)
         self.cfg_filename           = cfg_filename
         self.xml_tree_callback      = xml_tree_callback
         self.add_aliases_to_analysis= add_aliases_to_analysis
+        self.halt_on_exception      = halt_on_exception
         self.log_file               = None
         self.log_filename           = 'sframe_output.log'
         self.private_conf           = 'conf.xml'
@@ -52,11 +56,7 @@ class SFrameProcess(toolinterface.Tool):
             ))
         self.private_conf = self.cfg_filename
 
-
     def make_result(self):
-        if settings.recieved_sigint:
-            return
-
         self.result = wrappers.WrapperWrapper(
             list(diskio.generate_aliases(self.cwd + '*.root')),
             exit_code=self.subprocess.returncode,
@@ -70,13 +70,15 @@ class SFrameProcess(toolinterface.Tool):
 
     def successful(self):
         return (
-            self.time_fin
+            self.subprocess
             and self.subprocess.returncode == 0
             and not settings.recieved_sigint
         )
 
     def finalize(self):
+        err_msg = 'SFrame execution exited with error.'
         if self.subprocess:
+            err_msg += ' (ret: %s)' % str(self.subprocess.returncode)
             if self.subprocess.returncode == 0 and self.log_file:
                 self.log_file.close()
                 self.log_file = None
@@ -87,17 +89,35 @@ class SFrameProcess(toolinterface.Tool):
         if self.log_file:
             self.log_file.close()
             self.log_file = None
+
+        if self.successful():
             self.make_result()
+        elif self.halt_on_exception and not settings.recieved_sigint:
+            raise RuntimeError(err_msg)
+        else:
+            self.message('WARNING ' + err_msg)
+
+    def wanna_reuse(self, all_reused_before_me):
+        return all_reused_before_me and self.io.exists('result')
+
+    def reuse(self):
+        super(SFrameProcess, self).reuse()
+        if self.add_aliases_to_analysis:
+            analysis.fs_aliases += self.result.wrps
 
     def run(self):
         self.prepare_run_conf()
 
-        self.log_file = open(os.path.join(self.cwd, self.log_filename), "w")
+        log_path = os.path.join(self.cwd, self.log_filename)
+        self.log_file = open(log_path, "w")
+        self.message(
+            'INFO Starting SFrame. Follow with `tail -f %s`.' % log_path)
         self.subprocess = subprocess.Popen(
-            ["sframe_main", self.private_conf],
+            ['sframe_main ' + self.private_conf],
             stdout=self.log_file,
             stderr=subprocess.STDOUT,
             cwd=self.cwd,
+            shell=True,
         )
         while self.subprocess.returncode == None:
             self.subprocess.poll()
