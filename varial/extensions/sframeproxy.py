@@ -93,7 +93,7 @@ class SFrameProcess(toolinterface.Tool):
 
         if self.successful():
             self.make_result()
-        elif self.halt_on_exception and not settings.recieved_sigint:
+        elif self.halt_on_exception or settings.recieved_sigint:
             raise RuntimeError(err_msg)
         else:
             self.message('WARNING ' + err_msg)
