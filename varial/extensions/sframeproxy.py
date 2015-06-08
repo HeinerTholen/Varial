@@ -54,7 +54,8 @@ class SFrameProcess(toolinterface.Tool):
                 os.path.dirname(self.cfg_filename) + '/JobConfig.dtd',
                 self.cwd + '/JobConfig.dtd'
             ))
-        self.private_conf = self.cfg_filename
+        else:
+            self.private_conf = self.cfg_filename
 
     def make_result(self):
         self.result = wrappers.WrapperWrapper(
@@ -96,9 +97,6 @@ class SFrameProcess(toolinterface.Tool):
             raise RuntimeError(err_msg)
         else:
             self.message('WARNING ' + err_msg)
-
-    def wanna_reuse(self, all_reused_before_me):
-        return all_reused_before_me and self.io.exists('result')
 
     def reuse(self):
         super(SFrameProcess, self).reuse()
