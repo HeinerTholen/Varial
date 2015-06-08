@@ -194,12 +194,17 @@ class CompileTool(Tool):
         nothing_compiled_yet = True
         for path in self.paths:
             self.message('Compiling in: ' + path)
+            # here comes a workaround: we need to examine the output of make,
+            # but want to stream it directly to the console as well. Hence use
+            # tee and look at the output after make finished.
             tmp_out = '/tmp/varial_compile_%06i' % random.randint(0, 999999)
-            if subprocess.call(
-                ['make -j 9 | tee %s' % tmp_out],
+            res = subprocess.call(
+                # PIPESTATUS is needed to get the returncode from make
+                ['make -j 9 | tee %s; test ${PIPESTATUS[0]} -eq 0' % tmp_out],
                 cwd=path,
                 shell=True,
-            ):
+            )
+            if res:
                 os.remove(tmp_out)
                 raise RuntimeError('Compilation failed in: ' + path)
             if nothing_compiled_yet:
