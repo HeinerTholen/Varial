@@ -49,7 +49,7 @@ class _BlockMaker(dict):
         pass
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        _sync()
+        _write_out()
 
 
 block_of_files = _BlockMaker()
