@@ -616,8 +616,8 @@ def trim(wrp, left=True, right=True):
                     break
         else:
             right = axis.GetXmax()
-    if left > right:
-        raise OperationError("bounds: left > right")
+    if left >= right:
+        raise OperationError("bounds: left >= right")
 
     # create new bin_bounds
     index = 0
