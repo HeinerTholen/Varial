@@ -83,10 +83,7 @@ class SFrameProcess(toolinterface.Tool):
             if self.subprocess.returncode == 0 and self.log_file:
                 self.log_file.close()
                 self.log_file = None
-                # TODO: find way to check for sframe error message
-                #with open(self.log_filename, "r") as f:
-                #    if 'Exception ------' in "".join(f.readlines()):
-                #        self.subprocess.returncode = -1
+
         if self.log_file:
             self.log_file.close()
             self.log_file = None
