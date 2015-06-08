@@ -1,5 +1,5 @@
-import itertools
-import heapq
+import traceback
+import sys
 import os
 
 import toolinterface
@@ -17,10 +17,12 @@ class WebCreator(toolinterface.Tool):
 
     :param name:            str, tool name
     :param working_dir:     str, directory to start with.
+    :param no_tool_check:   bool, only run in dirs that ran as a tool before
     :param is_base:         bool, **Do not touch! =)**
     """
 
-    def __init__(self, name=None, working_dir='', is_base=True):
+    def __init__(self, name=None, working_dir='', no_tool_check=False,
+                 is_base=True):
         super(WebCreator, self).__init__(name)
         self.working_dir = working_dir
         self.web_lines = []
@@ -30,6 +32,7 @@ class WebCreator(toolinterface.Tool):
         self.plain_tex = []
         self.html_files = []
         self.image_postfix = None
+        self.no_tool_check = no_tool_check
         self.is_base = is_base
 
     def configure(self):
@@ -50,9 +53,13 @@ class WebCreator(toolinterface.Tool):
             if self.cwd:
                 self.working_dir = os.path.join(*self.cwd.split('/')[:-2])
             else:
-                self.working_dir = analysis.cwd
+                self.working_dir = analysis.cwd.replace('//', '/')
         for wd, dirs, files in os.walk(self.working_dir):
-            self.subfolders += dirs
+            self.subfolders += list(  # check that tools have worked there..
+                d for d in dirs
+                if (self.no_tool_check
+                    or analysis.lookup_path(os.path.join(self.working_dir, d)))
+            )
             for f in files:
                 if f.endswith('.info'):
                     if f[:-5] + self.image_postfix in files:
@@ -61,14 +68,17 @@ class WebCreator(toolinterface.Tool):
                         self.plain_info.append(f)
                 if f.endswith('.tex'):
                     self.plain_tex.append(f)
-                if f.endswith('.html') or f.endswith('.htm'):
+                if f.endswith('.html') \
+                        or f.endswith('.htm') \
+                        and f != 'index.html':
                     self.html_files.append(f)
             break
 
     def go4subdirs(self):
         for sf in self.subfolders[:]:
             path = os.path.join(self.working_dir, sf)
-            inst = self.__class__(self.name, path, False)
+            inst = self.__class__(self.name, path, self.no_tool_check,
+                                  False)
             inst.run()
             if not os.path.exists(os.path.join(path, 'index.html')):
                 self.subfolders.remove(sf)
@@ -140,20 +150,26 @@ class WebCreator(toolinterface.Tool):
             return
         self.web_lines += ('<h2>Info files:</h2>',)
         for nfo in self.plain_info:
-            wrp = self.io.read(
-                os.path.join(self.working_dir, nfo)
-            )
-            self.web_lines += (
-                '<div>',
-                '<p>',
-                '<b>' + nfo + '</b>',
-                '<p>',
-                '<pre>',
-                str(wrp),
-                '</pre>',
-                '</div>',
-                '<hr width="60%">',
-            )
+            p_nfo = os.path.join(self.working_dir, nfo)
+            try:
+                wrp = self.io.read(p_nfo)
+                self.web_lines += (
+                    '<div>',
+                    '<p>',
+                    '<b>' + nfo + '</b>',
+                    '<p>',
+                    '<pre>',
+                    str(wrp),
+                    '</pre>',
+                    '</div>',
+                    '<hr width="60%">',
+                )
+            except (SyntaxError, ValueError, IOError):
+                self.message('WARNING Could not read info file at %s' % p_nfo)
+                etype, evalue, _ = sys.exc_info()
+                traceback.print_exception(etype, evalue, None)
+
+
 
     def make_tex_file_divs(self):
         if not self.plain_tex:
@@ -182,8 +198,11 @@ class WebCreator(toolinterface.Tool):
         # lin/log pairs
         image_names = sorted(self.image_names)
         image_name_tuples = []
-        for i in xrange(len(image_names) - 1):
-            a, b = image_names[i], image_names[i+1]
+        for i in xrange(len(image_names)):
+            try:
+                a, b = image_names[i], image_names[i+1]
+            except IndexError:
+                a, b = image_names[i], ''
             if (a.endswith('_log')
                 and image_name_tuples
                 and image_name_tuples[-1][1] == a

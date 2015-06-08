@@ -653,3 +653,5 @@ class BottomPlotRatioSplitErr(BottomPlot):
 
 
 # TODO use WrapperWrapper
+# TODO make a setting for choosing the default bottom plot
+# TODO BottomPlotSignificance

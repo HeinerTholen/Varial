@@ -46,7 +46,7 @@ def debug_printer(iterable, print_obj=True):
         yield obj
 
 
-def imap_conditional(iterable, keyfunc, func):
+def imap_conditional(iterable, keyfunc, func, **func_kws):
     """
     Like itertools.imap, but only applying func if keyfunc evaluates to True. 
 
@@ -59,12 +59,12 @@ def imap_conditional(iterable, keyfunc, func):
     """
     for val in iterable:
         if keyfunc(val):
-             yield func(val)
+             yield func(val, **func_kws)
         else:
              yield val
 
 
-def switch(iterable, keyfunc, generator):
+def switch(iterable, keyfunc, generator, **gen_kws):
     """
     Switches items to go through generator or not.
 
@@ -102,7 +102,7 @@ def switch(iterable, keyfunc, generator):
         while passing_queue:                # empty leftover items
             yield passing_queue.pop(0)
 
-    return post(generator(pre(iterable)))
+    return post(generator(pre(iterable), **gen_kws))
 
 
 def consume_n_count(iterable):
@@ -300,8 +300,8 @@ def gen_make_eff_graphs(wrps,
                         postfix_sub='_sub',
                         postfix_tot='_tot',
                         new_postfix='_eff',
-                        pair_func=lambda w, l: w.in_file_path[:-l],
-                        yield_everything=False):
+                        yield_everything=False,
+                        pair_func=lambda w, l: w.in_file_path[:-l]):
     """
     Makes efficiency graphs and interleaves them into a sorted stream.
 
@@ -387,6 +387,27 @@ def gen_make_th2_projections(wrps, keep_th2=True):
 
 ############################################################### load / save ###
 import settings
+import glob
+import os
+
+
+def resolve_file_pattern(pattern='./*.root'):
+    """
+    Resolves search pattern(s) for files.
+
+    Raises RuntimeError if no files could be found for a pattern.
+
+    :param pattern: string or list of strings.
+    :returns:       List of filenames
+    """
+    if type(pattern) is str:
+        pattern = [pattern]
+    result = list(glob.glob(pat) for pat in pattern)
+    for pat, res in itertools.izip(pattern, result):
+        if not res or not all(os.path.isfile(f) for f in res):
+            raise RuntimeError('No file(s) found for pattern: %s' % pat)
+
+    return list(itertools.chain.from_iterable(result))
 
 
 def fs_content():
@@ -399,13 +420,13 @@ def fs_content():
         yield alias
 
 
-def dir_content(dir_path='./*.root'):
+def dir_content(pattern='./*.root'):
     """
     Proxy of diskio.generate_aliases(directory)
 
     :yields:   Alias
     """
-    return diskio.generate_aliases(dir_path)
+    return diskio.generate_aliases_list(resolve_file_pattern(pattern))
 
 
 def load(aliases):
@@ -443,11 +464,7 @@ def save(wrps, filename_func, suffices=None, write_complete_wrp=False):
         if write_complete_wrp:
             diskio.write(wrp, filename, suffices)
         else:
-            filename = diskio.prepare_filename(wrp, filename)
-            with open(filename+'.info', 'w') as f:
-                diskio._write_wrapper_info(wrp, f)
-            for suffix in suffices:
-                wrp.primary_object().SaveAs(filename + suffix)
+            diskio.small_write(wrp, filename, suffices)
         yield wrp
 
 

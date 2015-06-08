@@ -13,10 +13,12 @@ FwliteProxy         :ref:`fwliteproxy-module`
 =================== ==========================
 """
 
+import subprocess
 import itertools
+import random
+import shutil
 import glob
 import os
-import shutil
 
 import analysis
 import diskio
@@ -29,12 +31,21 @@ from toolinterface import \
     Tool, \
     ToolChain, \
     ToolChainIndie, \
-    ToolChainVanilla
+    ToolChainVanilla, \
+    ToolChainParallel
 from plotter import \
     Plotter, \
     RootFilePlotter
 from webcreator import \
     WebCreator
+
+
+class Runner(ToolChain):
+    """Runs tools upon instanciation (including proper folder creation)."""
+    def __init__(self, tool, default_reuse=False):
+        super(Runner, self).__init__(None, [tool], default_reuse)
+        analysis.reset()
+        self.run()
 
 
 class HistoLoader(Tool):
@@ -65,17 +76,12 @@ class HistoLoader(Tool):
 
     def run(self):
         if self.pattern:
-            if not glob.glob(self.pattern):
-                self.message('WARNING No input file found for pattern "%s"'
-                             % self.pattern)
-                wrps = []
-            else:
-                wrps = gen.dir_content(self.pattern)
-                wrps = itertools.ifilter(self.filter_keyfunc, wrps)
-                wrps = gen.load(wrps)
-                if self.hook_loaded_histos:
-                    wrps = self.hook_loaded_histos(wrps)
-                wrps = gen.sort(wrps)
+            wrps = gen.dir_content(self.pattern)
+            wrps = itertools.ifilter(self.filter_keyfunc, wrps)
+            wrps = gen.load(wrps)
+            if self.hook_loaded_histos:
+                wrps = self.hook_loaded_histos(wrps)
+            wrps = gen.sort(wrps)
         else:
             wrps = gen.fs_filter_active_sort_load(self.filter_keyfunc)
             if self.hook_loaded_histos:
@@ -112,33 +118,43 @@ class CopyTool(Tool):
     def run(self):
         if self.src:
             src = os.path.abspath(self.src)
+            src_objs = glob.glob(src)
         elif self.cwd:
             src = os.path.abspath(os.path.join(self.cwd, '..'))
+            src_objs = glob.glob(src + '/*')
         else:
             src = os.getcwd()
+            src_objs = glob.glob(src + '/*')
         dest = os.path.abspath(self.dest)
 
         # check for htaccess and copy it to src dirs
         htaccess = os.path.join(dest, '.htaccess')
         if os.path.exists(htaccess):
-            for path, _, _ in os.walk(src):
-                shutil.copy2(htaccess, path)
+            for src in src_objs:
+                for path, _, _ in os.walk(src):
+                    shutil.copy2(htaccess, path)
 
-        # clean dest dir and copy
+        # clean dest dir
         if self.wipe_dest_dir:
+            src_basenames = list(os.path.basename(p) for p in src_objs)
             for f in glob.glob(dest + '/*'):
-                shutil.rmtree(f, True)
+                if os.path.isdir(f) and os.path.basename(f) in src_basenames:
+                    self.message('INFO Deleting: ' + f)
+                    shutil.rmtree(f, True)
+
+        # copy
         ign_pat = shutil.ignore_patterns(*self.ignore)
-        for f in glob.glob(src + '/*'):
-            if os.path.isdir(f):
-                f = os.path.basename(f)
+        for src in src_objs:
+            self.message('INFO Copying: ' + src)
+            if os.path.isdir(src):
+                f = os.path.basename(src)
                 shutil.copytree(
-                    os.path.join(src, f),
+                    src,
                     os.path.join(dest, f),
                     ignore=ign_pat,
                 )
             else:
-                shutil.copy2(f, dest)
+                shutil.copy2(src, dest)
 
 
 class ZipTool(Tool):
@@ -156,6 +172,51 @@ class ZipTool(Tool):
         os.system(
             'zip -r %s %s' % (p, p)
         )
+
+
+class CompileTool(Tool):
+    """
+    Calls make in the directories given in paths.
+
+    If compilation was needed (i.e. the output of make was different from
+    "make: Nothing to be done for `all'") wanna_reuse will return False and
+    by that cause all following modules to run.
+
+    :param paths:   list of str: paths where make should be invoked
+    """
+    nothing_done = 'make: Nothing to be done for `all\'.\n'
+
+    def __init__(self, paths):
+        super(CompileTool, self).__init__()
+        self.paths = paths
+
+    def wanna_reuse(self, all_reused_before_me):
+        nothing_compiled_yet = True
+        for path in self.paths:
+            self.message('INFO Compiling in: ' + path)
+            # here comes a workaround: we need to examine the output of make,
+            # but want to stream it directly to the console as well. Hence use
+            # tee and look at the output after make finished.
+            tmp_out = '/tmp/varial_compile_%06i' % random.randint(0, 999999)
+            res = subprocess.call(
+                # PIPESTATUS is needed to get the returncode from make
+                ['make -j 9 | tee %s; test ${PIPESTATUS[0]} -eq 0' % tmp_out],
+                cwd=path,
+                shell=True,
+            )
+            if res:
+                os.remove(tmp_out)
+                raise RuntimeError('Compilation failed in: ' + path)
+            if nothing_compiled_yet:
+                with open(tmp_out) as f:
+                    if not f.readline() == self.nothing_done:
+                        nothing_compiled_yet = False
+            os.remove(tmp_out)
+
+        return nothing_compiled_yet and all_reused_before_me
+
+    def run(self):
+        pass
 
 
 class SampleNormalizer(Tool):
@@ -218,11 +279,13 @@ def mk_rootfile_plotter(name="RootFilePlots",
                         plotter_factory=None,
                         combine_files=False,
                         filter_keyfunc=None,
+                        legendnames=None,
                         **kws):
     """
     Make a plotter chain that plots all content of all rootfiles in cwd.
 
     Additional keywords are forwarded to the plotter instanciation.
+    For running the plotter(s), use a Runner.
 
     :param name:                str, name of the folder in which the output is
                                 stored
@@ -250,9 +313,14 @@ def mk_rootfile_plotter(name="RootFilePlots",
         new_plotter_factory = plotter_factory
 
     if combine_files:
-        plotters = [RootFilePlotter(
-            pattern, new_plotter_factory, flat, name, filter_keyfunc)]
-        tc = ToolChain(name, plotters)
+        tc = RootFilePlotter(
+            pattern,
+            new_plotter_factory,
+            flat,
+            name,
+            filter_keyfunc,
+            legendnames
+        )
     else:
         plotters = list(
             RootFilePlotter(
@@ -261,10 +329,11 @@ def mk_rootfile_plotter(name="RootFilePlots",
                 flat,
                 f[:-5].split('/')[-1],
                 filter_keyfunc,
+                legendnames
             )
             for f in glob.iglob(pattern)
         )
-        tc = ToolChain(name, [ToolChain(name, plotters)])
+        tc = ToolChainParallel(name, plotters)
     return tc
 
 

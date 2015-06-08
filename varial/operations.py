@@ -138,6 +138,9 @@ def sum(wrps):
     3.0
     >>> w3.lumi
     5.0
+    >>> w4 = sum([w3])  # one item is enough
+    >>> w4.lumi
+    5.0
     """
     wrps = iterableize(wrps)
     histo = None
@@ -613,8 +616,8 @@ def trim(wrp, left=True, right=True):
                     break
         else:
             right = axis.GetXmax()
-    if left > right:
-        raise OperationError("bounds: left > right")
+    if left >= right:
+        raise OperationError("bounds: left >= right")
 
     # create new bin_bounds
     index = 0
@@ -942,6 +945,8 @@ def th2_projection(wrp, projection,
         histo = th2.ProjectionY(name, firstbin, lastbin, option)
     histo.SetDirectory(0)
     info = wrp.all_info()
+    info['name'] += name
+    histo.SetName(info['name'])
     info['in_file_path'] += '_p' + projection
     return wrappers.HistoWrapper(histo, **info)
 

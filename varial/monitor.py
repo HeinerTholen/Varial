@@ -7,6 +7,15 @@ import time
 import settings
 
 
+current_error_level = 0
+error_levels = {
+    'INFO': 0,
+    'WARN': 1,
+    'ERRO': 2,
+    'FATA': 3
+}
+
+
 class Messenger(object):
     #"""Message stub. Used to connect to monitor module."""
     def __init__(self, connected_obj):
@@ -55,8 +64,11 @@ class StdOutTee(object):
 
 
 def write_out(*args):
-    _info.outstream.write(' '.join(str(a) for a in args))
-    _info.outstream.write('\n')
+    message = ' '.join(str(a) for a in args)
+    if error_levels.get(
+            message.replace(' ', '')[:4], 0) >= current_error_level:
+        _info.outstream.write(message)
+        _info.outstream.write('\n')
 
 
 def proc_enqueued(process):

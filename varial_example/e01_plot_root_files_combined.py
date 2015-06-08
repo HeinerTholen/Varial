@@ -22,14 +22,16 @@ def plotter_factory(**kws):
     kws['hook_loaded_histos'] = varial.generators.gen_norm_to_integral
     return varial.tools.Plotter(**kws)
 
-# get a plotter instance and run it (all arguments are optional)
-pltr = varial.tools.mk_rootfile_plotter(
-    name=outdir,                        # output folder name
-    plotter_factory=plotter_factory,    # use own factory
-    combine_files=True                  # YES to combine_files!!!
-)
 
 if __name__ == '__main__':
+
+    # get a plotter instance and run it (all arguments are optional)
+    pltr = varial.tools.mk_rootfile_plotter(
+        name=outdir,                        # output folder name
+        plotter_factory=plotter_factory,    # use own factory
+        combine_files=True                  # YES to combine_files!!!
+    )
+
     pltr.run()                          # run the plotter
     varial.tools.WebCreator().run()     # run the WebCreator
 
