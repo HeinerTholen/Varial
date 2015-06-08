@@ -193,7 +193,7 @@ class CompileTool(Tool):
     def wanna_reuse(self, all_reused_before_me):
         nothing_compiled_yet = True
         for path in self.paths:
-            self.message('Compiling in: ' + path)
+            self.message('INFO Compiling in: ' + path)
             # here comes a workaround: we need to examine the output of make,
             # but want to stream it directly to the console as well. Hence use
             # tee and look at the output after make finished.
