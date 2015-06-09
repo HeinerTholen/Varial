@@ -18,6 +18,7 @@ import itertools
 
 import analysis
 import diskio
+import monitor
 import wrappers
 import operator
 
@@ -118,9 +119,18 @@ def consume_n_count(iterable):
 
 
 def filter_active_samples(wrps):
+    """
+    Check if wrp.sample is in list of active samples (analysis.active_samples).
+
+    :param wrps:    Wrapper iterable
+    :returns:       generator object
+    """
+    no_active_smpls = not analysis.active_samples
+    if no_active_smpls:
+        monitor.message('generators.filter_active_samples',
+                        'WARNING No active samples defined. Will yield all.')
     return itertools.ifilter(
-        lambda w: (not analysis.active_samples)
-                  or w.sample in analysis.active_samples,
+        lambda w: no_active_smpls or w.sample in analysis.active_samples,
         wrps
     )
 
