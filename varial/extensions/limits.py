@@ -4,12 +4,10 @@ Limit derivation with theta: http://theta-framework.org
 
 import os
 import ROOT
-import math
 
 import varial.tools
 import varial.analysis
 import theta_auto
-import string
 theta_auto.config.theta_dir = os.environ["CMSSW_BASE"] + "/theta"
 
 
@@ -34,9 +32,12 @@ class ThetaLimits(varial.tools.Tool):
         self.sig_key = sig_key
         self.bkg_key = bkg_key
 
-    def _store_histos_for_theta(self, dat, sigs, bkgs):
+    def _store_histos_for_theta(self, dat, sigs, bkgs, name="ThetaHistos"):
         # create wrp
-        wrp = varial.wrappers.Wrapper(name="ThetaHistos")
+        wrp = varial.wrappers.Wrapper(
+            name=name,
+            file_path=os.path.join(self.cwd, name + ".root"),
+        )
         if dat:
             setattr(wrp, 'histo__DATA', dat[0].histo)
         for bkg in bkgs:
@@ -48,8 +49,7 @@ class ThetaLimits(varial.tools.Tool):
             setattr(wrp, cat_name + '__' + sig.sample, sig.histo)
 
         # write manually
-        filename = os.path.join(varial.analysis.cwd, wrp.name + ".root")
-        f = ROOT.TFile.Open(filename, "RECREATE")
+        f = ROOT.TFile.Open(wrp.file_path, "RECREATE")
         f.cd()
         for key, value in wrp.__dict__.iteritems():
             if isinstance(value, ROOT.TH1):
@@ -89,7 +89,7 @@ class ThetaLimits(varial.tools.Tool):
         plt_dir = os.path.join(self.cwd, 'plots')
         if not os.path.exists(plt_dir):
             os.mkdir(plt_dir)
-        self.model = self.model_func(self.cwd)
+        self.model = self.model_func(theta_wrp.file_path)
         # self.model = theta_auto.build_model_from_rootfile(
         #     os.path.join(self.cwd, 'ThetaHistos.root'),
         #     include_mc_uncertainties=True
