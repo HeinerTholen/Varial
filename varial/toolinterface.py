@@ -86,6 +86,7 @@ class Tool(_ToolBase):
         self.cwd = None
         self.result = None
         self.logfile = None
+        self.logfile_res = None
         self.time_start = None
         self.time_fin = None
 
@@ -96,12 +97,16 @@ class Tool(_ToolBase):
             self.reset()  # see metaclass
         res = super(Tool, self).__enter__()
         self.cwd = analysis.cwd
-        self.logfile = os.path.join(self.cwd, '%s.log' % self.name)
+        self.logfile = os.path.join(
+            self.cwd, '%s.log' % self.name)
+        self.logfile_res = os.path.join(
+            self.cwd, '%s (result available).log' % self.name)
         return res
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.cwd = None
         self.logfile = None
+        self.logfile_res = None
         super(Tool, self).__exit__(exc_type, exc_val, exc_tb)
 
     def tool_paths(self):
@@ -109,15 +114,12 @@ class Tool(_ToolBase):
         return [self.name]
 
     def wanna_reuse(self, all_reused_before_me):
-        if (super(Tool, self).wanna_reuse(all_reused_before_me)
-            and os.path.exists(self.logfile)
-        ):
-            with open(self.logfile) as f:
-                if f.readline() == 'result available\n':
-                    if self.io.exists('result'):
-                        return True
-                else:
-                    return True
+        if super(Tool, self).wanna_reuse(all_reused_before_me):
+            if os.path.exists(self.logfile):
+                return True
+            if (os.path.exists(self.logfile_res)
+                and self.io.exists('result')):
+                return True
         return False
 
     def reuse(self):
@@ -135,6 +137,8 @@ class Tool(_ToolBase):
         self.time_start = time.ctime() + '\n'
         if os.path.exists(self.logfile):
             os.remove(self.logfile)
+        if os.path.exists(self.logfile_res):
+            os.remove(self.logfile_res)
 
     def finished(self):
         with self.io.block_of_files:
@@ -156,9 +160,8 @@ class Tool(_ToolBase):
                     'result'
                 )
         self.time_fin = time.ctime() + '\n'
-        with open(self.logfile, 'w') as f:
-            if self.result:
-                f.write('result available\n')
+        logfile = self.logfile_res if self.result else self.logfile
+        with open(logfile, 'w') as f:
             f.write(self.time_start)
             f.write(self.time_fin)
         super(Tool, self).finished()
