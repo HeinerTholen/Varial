@@ -16,7 +16,7 @@ from varial import toolinterface
 from varial import wrappers
 
 
-class SFrameProcess(toolinterface.Tool):
+class SFrame(toolinterface.Tool):
     """
     This class hosts a sframe process.
 
@@ -30,7 +30,7 @@ class SFrameProcess(toolinterface.Tool):
                  add_aliases_to_analysis=True,
                  halt_on_exception=True,
                  name=None):
-        super(SFrameProcess, self).__init__(name)
+        super(SFrame, self).__init__(name)
         self.cfg_filename           = cfg_filename
         self.xml_tree_callback      = xml_tree_callback
         self.add_aliases_to_analysis= add_aliases_to_analysis
@@ -96,7 +96,7 @@ class SFrameProcess(toolinterface.Tool):
             self.message('WARNING ' + err_msg)
 
     def reuse(self):
-        super(SFrameProcess, self).reuse()
+        super(SFrame, self).reuse()
         if self.add_aliases_to_analysis:
             analysis.fs_aliases += self.result.wrps
 
