@@ -16,23 +16,23 @@ theta_auto.config.theta_dir = os.environ["CMSSW_BASE"] + "/theta"
 class ThetaLimits(varial.tools.Tool):
     def __init__(
         self,
+        model_func,
         input_path='../HistoLoader',
         filter_keyfunc=None,
         asymptotic=True,
         dat_key=lambda w: w.is_data or w.is_pseudo_data,
         sig_key=lambda w: w.is_signal,
         bkg_key=lambda w: not any((w.is_signal, w.is_data, w.is_pseudo_data)),
-        model_func=None,
         name=None,
     ):
         super(ThetaLimits, self).__init__(name)
+        self.model_func = model_func
         self.input_path = input_path
         self.filter_keyfunc = filter_keyfunc
         self.asymptotic = asymptotic
         self.dat_key = dat_key
         self.sig_key = sig_key
         self.bkg_key = bkg_key
-        self.model_func = model_func
 
     def _store_histos_for_theta(self, dat, sigs, bkgs):
         # create wrp
