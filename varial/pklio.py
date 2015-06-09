@@ -44,6 +44,17 @@ def _sync():
             assert(type(_current_pack) == dict)
 
 
+class _BlockMaker(dict):
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        _write_out()
+
+
+block_of_files = _BlockMaker()
+
+
 ##################################################### read / write wrappers ###
 def exists(name):
     """Check if data exists."""

@@ -118,6 +118,8 @@ def write(wrp, filename=None, suffices=(), mode='RECREATE'):
     filename = prepare_basename(filename or wrp.name)
     record_in_save_log(filename)
 
+    if settings.diskio_check_readability:
+        _check_readability(wrp)
     # save with suffices
     for suffix in suffices:
         wrp.primary_object().SaveAs(filename + suffix)
@@ -241,10 +243,13 @@ def record_in_save_log(filename):
 
 def _write_wrapper_info(wrp, file_handle):
     #"""Serializes Wrapper to python code dict."""
-    history, wrp.history = wrp.history, str(wrp.history)
-    file_handle.write(wrp.pretty_writeable_lines() + ' \n\n')
-    file_handle.write(wrp.history + '\n')
-    wrp.history = history
+    if hasattr(wrp, 'history'):
+        history, wrp.history = wrp.history, str(wrp.history)
+        file_handle.write(wrp.pretty_writeable_lines() + ' \n\n')
+        file_handle.write(wrp.history + '\n')
+        wrp.history = history
+    else:
+        file_handle.write(wrp.pretty_writeable_lines() + ' \n\n')
 
 
 def _write_wrapper_objs(wrp, file_handle):
@@ -271,13 +276,19 @@ def _write_wrapper_objs(wrp, file_handle):
 
 
 def _write_wrapperwrapper(wrp, filename=None):
+    global use_analysis_cwd
     if not filename:
         filename = wrp.name
     wrp_names = []
     for w in wrp.wrps:
         name = filename + '_WRPWRP_' + w.name
         wrp_names.append(basename(name))
-        write(w, name)
+        with_ana_cwd = use_analysis_cwd
+        try:
+            use_analysis_cwd = False  # write should not prepend cwd again
+            write(w, name)
+        finally:
+            use_analysis_cwd = with_ana_cwd  # reset
     wrp.wrps = wrp_names
 
 
@@ -319,6 +330,16 @@ def _clean_wrapper(wrp):
     for attr in del_attrs:
         if hasattr(wrp, attr):
             delattr(wrp, attr)
+
+
+def _check_readability(wrp):
+    try:
+        literal_eval(wrp.pretty_writeable_lines().replace('\n', ''))
+    except (ValueError, SyntaxError):
+        monitor.message(
+            'diskio.write',
+            'WARNING Wrapper will not be readable:\n%s' % str(wrp)
+        )
 
 
 def _get_obj_from_file(filename, in_file_path):
