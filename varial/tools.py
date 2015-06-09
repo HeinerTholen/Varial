@@ -66,12 +66,14 @@ class HistoLoader(Tool):
                  pattern=None,
                  filter_keyfunc=None,
                  hook_loaded_histos=None,
+                 raise_on_empty_result=True,
                  io=pklio,
                  name=None):
         super(HistoLoader, self).__init__(name)
         self.pattern = pattern
         self.filter_keyfunc = filter_keyfunc
         self.hook_loaded_histos = hook_loaded_histos
+        self.raise_on_empty_result = raise_on_empty_result
         self.io = io
 
     def run(self):
@@ -89,7 +91,10 @@ class HistoLoader(Tool):
         self.result = list(wrps)
 
         if not self.result:
-            self.message('WARNING No histograms found.')
+            if self.raise_on_empty_result:
+                raise RuntimeError('ERROR No histograms found.')
+            else:
+                self.message('ERROR No histograms found.')
 
 
 class CopyTool(Tool):
