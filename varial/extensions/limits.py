@@ -17,6 +17,7 @@ class ThetaLimits(varial.tools.Tool):
     def __init__(
         self,
         input_path='../HistoLoader',
+        filter_keyfunc=None,
         asymptotic=True,
         dat_key=lambda w: w.is_data or w.is_pseudo_data,
         sig_key=lambda w: w.is_signal,
@@ -26,6 +27,7 @@ class ThetaLimits(varial.tools.Tool):
     ):
         super(ThetaLimits, self).__init__(name)
         self.input_path = input_path
+        self.filter_keyfunc = filter_keyfunc
         self.asymptotic = asymptotic
         self.dat_key = dat_key
         self.sig_key = sig_key
@@ -60,6 +62,9 @@ class ThetaLimits(varial.tools.Tool):
         wrps = self.lookup_result(self.input_path)
         if not wrps:
             raise RuntimeError('No histograms present.')
+
+        if self.filter_keyfunc:
+            wrps = filter(self.filter_keyfunc, wrps)
 
         dat = filter(self.dat_key, wrps)
         sig = filter(self.sig_key, wrps)
