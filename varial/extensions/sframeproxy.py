@@ -104,20 +104,19 @@ class SFrame(toolinterface.Tool):
         self.prepare_run_conf()
 
         log_path = os.path.join(self.cwd, self.log_filename)
-        cmd = 'sframe_main ' + self.private_conf
+        cmd = ['sframe_main', self.private_conf]
         self.log_file = open(log_path, "w")
         self.message('INFO Starting SFrame with command:')
-        self.message('INFO `%s`' % cmd)
+        self.message('INFO `%s`' % " ".join(cmd))
         self.message(
             'INFO Follow with `tail -f %s`.'
             % os.path.abspath(log_path)
         )
         self.subprocess = subprocess.Popen(
-            [cmd],
+            cmd,
             stdout=self.log_file,
             stderr=subprocess.STDOUT,
             cwd=self.cwd,
-            shell=True,
         )
         while self.subprocess.returncode == None:
             self.subprocess.poll()
