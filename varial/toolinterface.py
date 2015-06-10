@@ -96,8 +96,11 @@ class Tool(_ToolBase):
         self.cwd = analysis.cwd
         self.logfile = os.path.join(
             self.cwd, '%s.log' % self.name)
-        self.logfile_res = os.path.join(
-            self.cwd, '%s (result available).log' % self.name)
+        if self.can_reuse:
+            self.logfile_res = os.path.join(
+                self.cwd, '%s (result available).log' % self.name)
+        else:
+            self.logfile_res = self.logfile
         return res
 
     def __exit__(self, exc_type, exc_val, exc_tb):
