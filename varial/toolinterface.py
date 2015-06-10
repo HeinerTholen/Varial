@@ -122,13 +122,7 @@ class Tool(_ToolBase):
     def reuse(self):
         self.message('INFO reusing...')
         with self.io.block_of_files:
-            res = self.io.get('result')
-        if res:
-            # TODO replace with wrpwrp
-            if hasattr(res, 'RESULT_WRAPPERS'):
-                self.result = list(self.io.read(f) for f in res.RESULT_WRAPPERS)
-            else:
-                self.result = res
+            self.result = self.io.get('result')
 
     def starting(self):
         super(Tool, self).starting()
@@ -139,24 +133,15 @@ class Tool(_ToolBase):
             os.remove(self.logfile_res)
 
     def finished(self):
-        with self.io.block_of_files:
-            if isinstance(self.result, wrappers.Wrapper):
+        if any(isinstance(self.result, t) for t in (list, tuple)):
+            try:
+                self.result = wrappers.WrapperWrapper(self.result)
+            except TypeError:
+                pass
+        if isinstance(self.result, wrappers.Wrapper):
+            with self.io.block_of_files:
                 self.result.name = self.name
                 self.io.write(self.result, 'result')
-            elif any(isinstance(self.result, t) for t in (list, tuple)):
-                filenames = []
-                for i, wrp in enumerate(self.result):
-                    num_str = '_%03d' % i
-                    filenames.append('result' + num_str)
-                    self.io.write(wrp, 'result' + num_str)
-                self.io.write(
-                    # TODO use wrpwrp here
-                    wrappers.Wrapper(
-                        name=self.name,
-                        RESULT_WRAPPERS=filenames
-                    ),
-                    'result'
-                )
         self.time_fin = time.ctime() + '\n'
         logfile = self.logfile_res if self.result else self.logfile
         with open(logfile, 'w') as f:
