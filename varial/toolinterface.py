@@ -96,8 +96,11 @@ class Tool(_ToolBase):
         self.cwd = analysis.cwd
         self.logfile = os.path.join(
             self.cwd, '%s.log' % self.name)
-        self.logfile_res = os.path.join(
-            self.cwd, '%s (result available).log' % self.name)
+        if self.can_reuse:
+            self.logfile_res = os.path.join(
+                self.cwd, '%s (result available).log' % self.name)
+        else:
+            self.logfile_res = self.logfile
         return res
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -121,13 +124,8 @@ class Tool(_ToolBase):
 
     def reuse(self):
         self.message('INFO reusing...')
-        res = self.io.get('result')
-        if res:
-            # TODO replace with wrpwrp
-            if hasattr(res, 'RESULT_WRAPPERS'):
-                self.result = list(self.io.read(f) for f in res.RESULT_WRAPPERS)
-            else:
-                self.result = res
+        with self.io.block_of_files:
+            self.result = self.io.get('result')
 
     def starting(self):
         super(Tool, self).starting()
@@ -138,24 +136,15 @@ class Tool(_ToolBase):
             os.remove(self.logfile_res)
 
     def finished(self):
-        with self.io.block_of_files:
-            if isinstance(self.result, wrappers.Wrapper):
+        if any(isinstance(self.result, t) for t in (list, tuple)):
+            try:
+                self.result = wrappers.WrapperWrapper(self.result)
+            except TypeError:
+                pass
+        if isinstance(self.result, wrappers.Wrapper):
+            with self.io.block_of_files:
                 self.result.name = self.name
                 self.io.write(self.result, 'result')
-            elif any(isinstance(self.result, t) for t in (list, tuple)):
-                filenames = []
-                for i, wrp in enumerate(self.result):
-                    num_str = '_%03d' % i
-                    filenames.append('result' + num_str)
-                    self.io.write(wrp, 'result' + num_str)
-                self.io.write(
-                    # TODO use wrpwrp here
-                    wrappers.Wrapper(
-                        name=self.name,
-                        RESULT_WRAPPERS=filenames
-                    ),
-                    'result'
-                )
         self.time_fin = time.ctime() + '\n'
         logfile = self.logfile_res if self.result else self.logfile
         with open(logfile, 'w') as f:
@@ -350,8 +339,8 @@ class ToolChainParallel(ToolChain):
     """Parallel execution of tools. Tools must not depend on each other."""
     def _load_results(self, tool):
         analysis.push_tool(tool)
-        with tool.io.block_of_files:
-            tool.result = tool.io.get('result')
+        if isinstance(tool, Tool):
+            tool.reuse()
         if isinstance(tool, ToolChain):
             if tool.lazy_eval_tools_func and not tool.tool_chain:
                 tool.add_tools(tool.lazy_eval_tools_func())
