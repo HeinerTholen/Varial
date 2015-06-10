@@ -121,7 +121,8 @@ class Tool(_ToolBase):
 
     def reuse(self):
         self.message('INFO reusing...')
-        res = self.io.get('result')
+        with self.io.block_of_files:
+            res = self.io.get('result')
         if res:
             # TODO replace with wrpwrp
             if hasattr(res, 'RESULT_WRAPPERS'):
@@ -350,8 +351,8 @@ class ToolChainParallel(ToolChain):
     """Parallel execution of tools. Tools must not depend on each other."""
     def _load_results(self, tool):
         analysis.push_tool(tool)
-        with tool.io.block_of_files:
-            tool.result = tool.io.get('result')
+        if isinstance(tool, Tool):
+            tool.reuse()
         if isinstance(tool, ToolChain):
             if tool.lazy_eval_tools_func and not tool.tool_chain:
                 tool.add_tools(tool.lazy_eval_tools_func())
