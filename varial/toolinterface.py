@@ -53,10 +53,7 @@ class _ToolBase(object):
 
     def tool_paths(self):
         """Return a list of tool paths for all children."""
-        raise RuntimeError('Superclass method should be called.')
-
-    def update(self):
-        pass
+        raise RuntimeError('_ToolBase.tool_paths() should not be called.')
 
     def wanna_reuse(self, all_reused_before_me):
         """If True is returned, run() will not be called."""
@@ -356,6 +353,8 @@ class ToolChainParallel(ToolChain):
         with tool.io.block_of_files:
             tool.result = tool.io.get('result')
         if isinstance(tool, ToolChain):
+            if tool.lazy_eval_tools_func and not tool.tool_chain:
+                tool.add_tools(tool.lazy_eval_tools_func())
             for t in tool.tool_chain:
                 self._load_results(t)
         analysis.pop_tool()
@@ -429,7 +428,13 @@ class ToolChainParallel(ToolChain):
 
                 if not reused:
                     self._reuse = False
-                self._load_results(self.tool_names[name])
+
+                err_level = monitor.current_error_level
+                try:
+                    monitor.current_error_level = 2
+                    self._load_results(self.tool_names[name])
+                finally:
+                    monitor.current_error_level = err_level
         except KeyboardInterrupt:
             os.killpg(os.getpid(), signal.SIGTERM)  # again!
 

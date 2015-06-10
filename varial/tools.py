@@ -48,6 +48,14 @@ class Runner(ToolChain):
         self.run()
 
 
+class PrintToolTree(Tool):
+    """Calls analysis.print_tool_tree()"""
+    can_reuse = False
+
+    def run(self):
+        analysis.print_tool_tree()
+
+
 class HistoLoader(Tool):
     """
     Loads histograms from any rootfile or from fileservice.

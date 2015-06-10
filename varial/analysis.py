@@ -244,17 +244,19 @@ def lookup_tool(abs_path):
 
 
 def print_tool_tree():
-    """"""
+    """Print all tools the ran or were reused."""
     print '='*80
     print 'Tools available through analysis.lookup:'
-    _print_tool_tree(results_base, 1)
+    print '+', results_base.name
+    for rname in sorted(results_base.children):
+        _print_tool_tree(results_base.children[rname], 0)
     print '='*80
 
 
 def _print_tool_tree(res, indent):
-    print ' '*indent, res.name
-    for r in res.children.itervalues():
-        _print_tool_tree(r, indent + 4)
+    print '    ' + '|   '*indent + '+', res.name
+    for rname in sorted(res.children):
+        _print_tool_tree(res.children[rname], indent + 1)
 
 
 ############################################################### fileservice ###
