@@ -380,3 +380,5 @@ if __name__ == '__main__':
     import doctest
     doctest.testmod()
 
+
+# TODO merge_info(wrps) function that would return all common info -> rendering
