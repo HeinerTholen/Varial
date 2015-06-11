@@ -349,7 +349,10 @@ class CanvasBuilder(object):
         canvas = self.canvas
         canvas.Modified()
         canvas.Update()
-        kws = self.renderers[0].all_info()
+        kws = self.renderers[0].all_info()  # TODO only common info
+        for attr in ('is_signal', 'is_data', 'is_pseudo_data'):
+            if attr in kws:
+                del kws[attr]
         kws.update(self.kws)
         kws.update({
             'main_pad'    : self.main_pad,
