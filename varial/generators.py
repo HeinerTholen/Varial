@@ -38,6 +38,7 @@ def debug_printer(iterable, print_obj=True):
     Print objects and their type on flying by. Object printing can be disabled.
 
     :param iterable:    An iterable with objects
+    :param print_obj:   bool, print whole object
     :yields:            same as input
     """
     for obj in iterable:
@@ -46,6 +47,21 @@ def debug_printer(iterable, print_obj=True):
         if print_obj:
             monitor.message('generators.debug_printer',
                             'obj:      %s' % obj)
+        yield obj
+
+
+def attribute_printer(iterable, attr):
+    """
+    Print an attribute of passing objects.
+
+    :param iterable:    An iterable of wrappers
+    :param attr:        str, name of the attribute to be printed
+    :yields:            same as input
+    """
+    for obj in iterable:
+        monitor.message('generators.in_file_path_printer',
+                        'INFO: %s: %s'
+                        % (attr, getattr(obj, attr, '<not defined>')))
         yield obj
 
 
