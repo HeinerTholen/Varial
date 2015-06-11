@@ -18,6 +18,7 @@ class ThetaLimits(varial.tools.Tool):
         input_path='../HistoLoader',
         filter_keyfunc=None,
         asymptotic=True,
+        cat_key=lambda _: 'histo',  # lambda w: w.category,
         dat_key=lambda w: w.is_data or w.is_pseudo_data,
         sig_key=lambda w: w.is_signal,
         bkg_key=lambda w: not any((w.is_signal, w.is_data, w.is_pseudo_data)),
@@ -28,25 +29,26 @@ class ThetaLimits(varial.tools.Tool):
         self.input_path = input_path
         self.filter_keyfunc = filter_keyfunc
         self.asymptotic = asymptotic
+        self.cat_key = cat_key
         self.dat_key = dat_key
         self.sig_key = sig_key
         self.bkg_key = bkg_key
 
-    def _store_histos_for_theta(self, dat, sigs, bkgs, name="ThetaHistos"):
+    def _store_histos_for_theta(self, dats, sigs, bkgs, name="ThetaHistos"):
         # create wrp
         wrp = varial.wrappers.Wrapper(
             name=name,
             file_path=os.path.join(self.cwd, name + ".root"),
         )
-        if dat:
-            setattr(wrp, 'histo__DATA', dat[0].histo)
-        for bkg in bkgs:
-            cat_name = bkg.in_file_path.split('/')[-2]
-            setattr(wrp, cat_name + '__' + bkg.sample, bkg.histo)
-        for sig in sigs:
-            cat_name = sig.in_file_path.split('/')[-2]
-            # sig_name = string.replace(sig.sample, '_', '')
-            setattr(wrp, cat_name + '__' + sig.sample, sig.histo)
+        for w in dats:
+            category = self.cat_key(w)
+            setattr(wrp, category + '__DATA', w.histo)
+        for w in bkgs:
+            category = self.cat_key(w)
+            setattr(wrp, category + '__' + w.sample, w.histo)
+        for w in sigs:
+            category = self.cat_key(w)
+            setattr(wrp, category + '__' + w.sample, w.histo)
 
         # write manually
         f = ROOT.TFile.Open(wrp.file_path, "RECREATE")
@@ -118,8 +120,8 @@ class ThetaLimits(varial.tools.Tool):
         # shout it out loud
         self.result = varial.wrappers.Wrapper(
             name=self.name,
-            res_exp=res_exp,
-            res_obs=res_obs,
+            res_exp=res_exp,  # TODO only TObjects or native python objects (list, dict, int, str ...) allowed
+            res_obs=res_obs,  # TODO only TObjects or native python objects (list, dict, int, str ...) allowed
         )
         self.message(
             'INFO theta result: expected limit:\n' + str(self.result.res_exp))
@@ -127,6 +129,7 @@ class ThetaLimits(varial.tools.Tool):
             'INFO theta result: expected limit:\n' + str(self.result.res_obs))
         theta_auto.config.report.write_html(
             os.path.join(self.cwd, 'result'))
+
 
 class TpTpThetaLimits(ThetaLimits):
     def __init__(self,
@@ -144,8 +147,6 @@ class TpTpThetaLimits(ThetaLimits):
             res_obs=self.result.res_obs,
             brs=self.brs
         )
-
-
 
 
 class TriangleLimitPlots(varial.tools.Tool):
