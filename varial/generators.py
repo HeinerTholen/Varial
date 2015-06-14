@@ -38,12 +38,30 @@ def debug_printer(iterable, print_obj=True):
     Print objects and their type on flying by. Object printing can be disabled.
 
     :param iterable:    An iterable with objects
+    :param print_obj:   bool, print whole object
     :yields:            same as input
     """
     for obj in iterable:
-        print 'DEBUG: debug_printer: obj type: ', type(obj)
+        monitor.message('generators.debug_printer',
+                        'INFO: obj type: %s' % type(obj))
         if print_obj:
-            print 'DEBUG: debug_printer: obj:      ', obj
+            monitor.message('generators.debug_printer',
+                            'obj:      %s' % obj)
+        yield obj
+
+
+def attribute_printer(iterable, attr):
+    """
+    Print an attribute of passing objects.
+
+    :param iterable:    An iterable of wrappers
+    :param attr:        str, name of the attribute to be printed
+    :yields:            same as input
+    """
+    for obj in iterable:
+        monitor.message('generators.in_file_path_printer',
+                        'INFO: %s: %s'
+                        % (attr, getattr(obj, attr, '<not defined>')))
         yield obj
 
 
@@ -153,7 +171,8 @@ def sort(wrps, key_list=None):
         try:
             wrps = sorted(wrps, key=operator.attrgetter(key))
         except AttributeError:
-            print 'WARNING Sorting by "%s" failed.' % key
+            monitor.message('generators.sort',
+                            'WARNING Sorting by "%s" failed.' % key)
     return wrps
 
 
@@ -734,9 +753,8 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=False):
         try:
             dat_sum = op.sum(dat)
         except op.TooFewWrpsError:
-            if settings.debug_mode:
-                print 'DEBUG generators.mc_stack_n_data_sum(..): '\
-                      'No data histograms present!'
+            monitor.message('generators.mc_stack_n_data_sum',
+                            'DEBUG No data histograms present!')
         if dat_sum and not use_all_data_lumi:
             data_lumi = op.lumi(dat_sum)
         else:
@@ -757,16 +775,15 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=False):
             else:
                 bkg_stk = op.stack(bkg)
         except op.TooFewWrpsError:
-            if settings.debug_mode:
-                print 'DEBUG generators.mc_stack_n_data_sum(..): '\
-                      'No background histograms present!'
+            monitor.message('generators.mc_stack_n_data_sum',
+                            'DEBUG No background histograms present!')
 
         # signal
         sig = apply_linecolor(sig)
         sig_lst = list(sig)
-        if not sig_lst and settings.debug_mode:
-            print 'DEBUG generators.mc_stack_n_data_sum(..): '\
-                  'No signal histograms present!'
+        if not sig_lst:
+            monitor.message('generators.mc_stack_n_data_sum',
+                            'DEBUG No signal histograms present!')
 
         # return in order for plotting: bkg, signals, data
         res = [bkg_stk] + sig_lst + [dat_sum]

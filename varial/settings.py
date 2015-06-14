@@ -9,7 +9,6 @@ reference.
 ################################################################### general ###
 import os
 import time
-debug_mode = False
 recieved_sigint = False
 only_reload_results = False
 diskio_check_readability = False

@@ -263,6 +263,7 @@ class CanvasBuilder(object):
         self.name = kws.get('name', rnds[0].name)
         self.title = kws.get('title', rnds[0].title)
         self.in_file_path = kws.get('in_file_path', rnds[0].in_file_path)
+        self.canvas_wrp = None
 
     def __del__(self):
         """Remove the pads first."""
@@ -348,19 +349,23 @@ class CanvasBuilder(object):
         canvas = self.canvas
         canvas.Modified()
         canvas.Update()
-        wrp = wrappers.CanvasWrapper(
-            canvas,
-            main_pad    = self.main_pad,
-            second_pad  = self.second_pad,
-            legend      = self.legend,
-            first_drawn = self.first_drawn,
-            x_bounds    = self.x_bounds,
-            y_bounds    = self.y_bounds,
-            y_min_gr_0  = self.y_min_gr_zero,
-            history     = self._track_canvas_history(),
-            _renderers   = self.renderers,
-            **self.kws
-        )
+        kws = self.renderers[0].all_info()  # TODO only common info
+        for attr in ('is_signal', 'is_data', 'is_pseudo_data'):
+            if attr in kws:
+                del kws[attr]
+        kws.update(self.kws)
+        kws.update({
+            'main_pad'    : self.main_pad,
+            'second_pad'  : self.second_pad,
+            'legend'      : self.legend,
+            'first_drawn' : self.first_drawn,
+            'x_bounds'    : self.x_bounds,
+            'y_bounds'    : self.y_bounds,
+            'y_min_gr_0'  : self.y_min_gr_zero,
+            'history'     : self._track_canvas_history(),
+            '_renderers'  : self.renderers,
+        })
+        wrp = wrappers.CanvasWrapper(canvas, **kws)
         self._del_builder_refs()
         self.canvas_wrp = wrp
         return wrp

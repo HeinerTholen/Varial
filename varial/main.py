@@ -13,6 +13,7 @@ import analysis
 import settings
 import monitor
 import tools
+import toolinterface
 
 ipython_mode = False
 try:
@@ -30,6 +31,11 @@ class SigintHandler(object):
         if signal_int is signal.SIGINT:
             if not ipython_mode:
                 if self.hits:
+                    if toolinterface._n_parallel_workers:
+                        try:
+                            os.killpg(os.getpid(), signal.SIGTERM)
+                        except OSError:
+                            time.sleep(1)
                     exit(-1)
                 else:
                     print "WARNING: SIGINT caught. " \
@@ -139,3 +145,4 @@ def main(**main_kwargs):
             raise e
 
 
+#TODO grep "print " *.py and replace them with monitor

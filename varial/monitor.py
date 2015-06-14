@@ -9,6 +9,7 @@ import settings
 
 current_error_level = 0
 error_levels = {
+    'DEBU': -1,
     'INFO': 0,
     'WARN': 1,
     'ERRO': 2,
