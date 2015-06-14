@@ -33,6 +33,10 @@ class WebCreator(toolinterface.Tool):
         font-size: 10pt;
         background: #FFF;
     }
+    h3 {
+      background: darkred;
+      color: #fff;
+    }
     ul {
       text-align: left;
       display: inline;
@@ -179,21 +183,19 @@ class WebCreator(toolinterface.Tool):
             '<META name="robots" content="NOINDEX, NOFOLLOW" />',
             '</head>',
             '<body>',
-            '<h2>',
+            '<h3>',
             'DISCLAIMER: This page contains an intermediate analysis-snapshot!',
-            '</h2>',
+            '</h3>',
         ]
 
     def make_headline(self):
         breadcrumb = list(d1 for d1 in self.working_dir.split('/') if d1)
         n_folders = len(breadcrumb) - 1
         self.web_lines += (
-            '<h1> Folder: ',
-        ) + tuple(
-            '<a href="%sindex.html">%s</a> / ' % ('../'*(n_folders-i), d)
-            for i, d in enumerate(breadcrumb)
-        ) + (
-            '</h1>',
+            '<h2> Folder: ',
+            '/'.join('<a href="%sindex.html">%s</a>' % ('../'*(n_folders-i), d)
+            for i, d in enumerate(breadcrumb)),
+            '</h2>',
             '<hr width="60%">',
             ''
         )
