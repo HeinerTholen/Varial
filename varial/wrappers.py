@@ -135,6 +135,9 @@ class Wrapper(WrapperBase):
         """Getter property for primary object."""
         return self.primary_object()
 
+    # TODO: setattr and check for objects without leading underscore that
+    # they are either ROOT or generic python objects.
+
 
 class WrapperWrapper(Wrapper):
     """
