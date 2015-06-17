@@ -13,6 +13,7 @@ FwliteProxy         :ref:`fwliteproxy-module`
 =================== ==========================
 """
 
+from ast import literal_eval
 import subprocess
 import itertools
 import random
@@ -54,6 +55,28 @@ class PrintToolTree(Tool):
 
     def run(self):
         analysis.print_tool_tree()
+
+
+class UserInteraction(Tool):
+    def __init__(self,
+                 prompt='Hit enter to continue. Kill me otherwise.',
+                 eval_result=False,
+                 can_reuse=True,
+                 name=None):
+        super(UserInteraction, self).__init__(name)
+        self.prompt = prompt
+        self.eval_result = eval_result
+        self.can_reuse = can_reuse
+
+    def run(self):
+        if self.eval_result:
+            self.message('INFO Input will be evaluated as python code.')
+        if self.can_reuse:
+            self.message('INFO Input might be reused.')
+        res = raw_input(self.prompt+' ')
+        if self.eval_result:
+            res = literal_eval(res)
+        self.result = wrappers.Wrapper(input=res)
 
 
 class HistoLoader(Tool):
