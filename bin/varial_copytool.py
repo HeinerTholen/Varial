@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+import ROOT
+ROOT.gROOT.SetBatch(True)
+
 import varial.tools
 import sys
 
