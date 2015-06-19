@@ -267,10 +267,12 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
             return {filenames[0]: filenames[0]}
 
         # try the sframe way:
+        # TODO make setting for that!!
         lns = list(n.split('.') for n in filenames if type(n) is str)
         if all(len(l) == 5 for l in lns):
             return dict((f, l[3]) for f, l in itertools.izip(filenames, lns))
 
+        # TODO at least 10 characters
         # try trim filesnames from front and back
         lns = filenames[:]
         try:
