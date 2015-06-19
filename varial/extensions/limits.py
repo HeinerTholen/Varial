@@ -120,13 +120,13 @@ class ThetaLimits(varial.tools.Tool):
         # shout it out loud
         self.result = varial.wrappers.Wrapper(
             name=self.name,
-            res_exp=res_exp,  # TODO only TObjects or native python objects (list, dict, int, str ...) allowed
-            res_obs=res_obs,  # TODO only TObjects or native python objects (list, dict, int, str ...) allowed
+            _res_exp=res_exp,  # TODO only TObjects or native python objects (list, dict, int, str ...) allowed
+            _res_obs=res_obs,  # TODO only TObjects or native python objects (list, dict, int, str ...) allowed
         )
         self.message(
-            'INFO theta result: expected limit:\n' + str(self.result.res_exp))
+            'INFO theta result: expected limit:\n' + str(self.result._res_exp))
         self.message(
-            'INFO theta result: expected limit:\n' + str(self.result.res_obs))
+            'INFO theta result: observerd limit:\n' + str(self.result._res_obs))
         theta_auto.config.report.write_html(
             os.path.join(self.cwd, 'result'))
 
@@ -143,8 +143,8 @@ class TpTpThetaLimits(ThetaLimits):
         super(TpTpThetaLimits, self).run()
         self.result = varial.wrappers.Wrapper(
             name=self.result.name,
-            res_exp=self.result.res_exp,
-            res_obs=self.result.res_obs,
+            _res_exp=self.result._res_exp,
+            _res_obs=self.result._res_obs,
             brs=self.brs
         )
 
