@@ -630,7 +630,7 @@ def build_canvas(bldrs):
         yield bldr.build_canvas()
 
 
-def switch_log_scale(cnvs, y_axis=True, x_axis=False):
+def switch_log_scale(cnvs, x_axis=False, y_axis=True):
     """
     Sets main_pad in canvases to logscale.
     
@@ -646,7 +646,9 @@ def switch_log_scale(cnvs, y_axis=True, x_axis=False):
         else:
             cnv.main_pad.SetLogx(0)
         if y_axis:
-            cnv.first_drawn.SetMinimum(cnv.y_min_gr_0 * 0.5)
+            min_val = cnv.y_min_gr_0 * 0.5
+            min_val = max(min_val, 1e-9)
+            cnv.first_drawn.SetMinimum(min_val)
             cnv.main_pad.SetLogy(1)
         else:
             cnv.first_drawn.SetMinimum(cnv.y_min)
