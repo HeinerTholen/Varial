@@ -144,14 +144,39 @@ class CopyTool(Tool):
     def __init__(self, dest, src='',
                  ignore=("*.root", "*.pdf", "*.eps", "*.log", "*.info"),
                  wipe_dest_dir=True,
-                 name=None):
+                 name=None,
+                 use_rsync=False):
         super(CopyTool, self).__init__(name)
         self.dest = dest.replace('~', os.getenv('HOME'))
         self.src = src.replace('~', os.getenv('HOME'))
         self.ignore = ignore
         self.wipe_dest_dir = wipe_dest_dir
+        self.use_rsync = use_rsync
+
+    def def_copy(self, src_objs, dest, ignore):
+        ign_pat = shutil.ignore_patterns(*ignore)
+        for src in src_objs:
+            self.message('INFO Copying: ' + src)
+            if os.path.isdir(src):
+                f = os.path.basename(src)
+                shutil.copytree(
+                    src,
+                    os.path.join(dest, f),
+                    ignore=ign_pat,
+                    )
+            else:
+                shutil.copy2(src, dest)
 
     def run(self):
+        # CONTINUE HERE
+        if self.use_rsync:
+            self.wipe_dest_dir = False
+            self.ignore = list('--exclude='+w for w in self.ignore)
+            cp_func = lambda w, x, y: os.system('rsync -az {0} {1} {2}'.format(
+                ' '.join(w), x, ' '.join(y)))
+        else:
+            cp_func = lambda w, x, y: self.def_copy(w, x, y)
+
         if self.src:
             src = os.path.abspath(self.src)
             src_objs = glob.glob(src)
@@ -179,18 +204,7 @@ class CopyTool(Tool):
                     shutil.rmtree(f, True)
 
         # copy
-        ign_pat = shutil.ignore_patterns(*self.ignore)
-        for src in src_objs:
-            self.message('INFO Copying: ' + src)
-            if os.path.isdir(src):
-                f = os.path.basename(src)
-                shutil.copytree(
-                    src,
-                    os.path.join(dest, f),
-                    ignore=ign_pat,
-                )
-            else:
-                shutil.copy2(src, dest)
+        cp_func(src_objs, dest, self.ignore)
 
 
 class ZipTool(Tool):
