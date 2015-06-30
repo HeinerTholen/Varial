@@ -351,7 +351,14 @@ class WebCreator(toolinterface.Tool):
             self.cross_link_images[path_depth][path] = crosslink_set
 
     def finalize_page(self):
-        self.web_lines += ['', '</body>', '</html>', '']
+        self.web_lines += [
+            '',
+            '<p>Created with <a href="https://github.com/HeinAtCERN/Varial/blob'
+            '/master/bin/varial_webcreator.py" target="new">varial_webcreator'
+            '</a>.</p>',
+            '</body>',
+            '</html>',
+        ]
 
     def write_page(self):
         for i, l in enumerate(self.web_lines):
