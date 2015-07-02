@@ -353,9 +353,11 @@ class WebCreator(toolinterface.Tool):
     def finalize_page(self):
         self.web_lines += [
             '',
-            '<p>Created with <a href="https://github.com/HeinAtCERN/Varial/blob'
-            '/master/bin/varial_webcreator.py" target="new">varial_webcreator'
-            '</a>.</p>',
+            '<p>Created with '
+            '<a href="https://github.com/HeinAtCERN/Varial" target="new">'
+            'varial_webcreator'
+            '</a>.'
+            '</p>',
             '</body>',
             '</html>',
         ]
