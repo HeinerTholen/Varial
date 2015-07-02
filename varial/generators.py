@@ -222,10 +222,31 @@ def split_data_bkg_sig(wrps):
     :param wrps:        Wrapper iterable
     :returns:           three wrapper iterators: ``(data, bkg, sig)``
     """
+    class DataTypeTracker(object):
+        def __init__(self):
+            self.using_real_data = False
+            self.using_pseudo_data = False
+
+        def __call__(self, w):
+            if ((w.is_data and self.using_pseudo_data)
+                    or (w.is_pseudo_data and self.using_real_data)):
+                monitor.message(
+                    'generators.split_data_bkg_sig',
+                    'WARNING I have data and psuedo-data in the same stream!'
+                )
+            if w.is_data:
+                self.using_real_data = True
+                return True
+            if w.is_pseudo_data:
+                self.using_pseudo_data = True
+                return True
+            return False
+
+    is_data_type_tracking = DataTypeTracker()
     wrps_a, wrps_b, wrps_c = itertools.tee(wrps, 3)
-    dat = itertools.ifilter(lambda w: w.is_data, wrps_a)
+    dat = itertools.ifilter(lambda w: is_data_type_tracking(w), wrps_a)
     sig = itertools.ifilter(lambda w: w.is_signal, wrps_b)
-    bkg = itertools.ifilter(lambda w: not (w.is_data or w.is_signal), wrps_c)
+    bkg = itertools.ifilter(lambda w: w.is_background, wrps_c)
     return dat, bkg, sig
 
 
