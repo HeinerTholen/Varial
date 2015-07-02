@@ -70,15 +70,6 @@ varial.settings.canvas_size_y = 400
 varial.settings.root_style.SetPadRightMargin(0.3)
 varial.settings.rootfile_postfixes = ['.root', '.png']
 
-# this is a bit of a hack in order to let the samples always have the same color
-legendnames = varial.tools.RootFilePlotter._setup_legendnames_from_files(
-    all_input
-)
-varial.settings.colors = dict(
-    (f, varial.settings.default_colors[i % len(all_input)])
-    for i, f in enumerate(legendnames.itervalues())
-)
-
 # this function sets metainformation of the histograms
 def post_load_hook(wrps):
     wrps = varial.gen.gen_add_wrp_info(
