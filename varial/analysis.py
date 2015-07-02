@@ -80,7 +80,9 @@ def get_color(sample_or_legend_name, default=0):
         return settings.colors[name]
     if default:
         return default
-    new_color = settings.default_colors[len(settings.colors)]
+    new_color = settings.default_colors[
+        len(settings.colors) % len(settings.default_colors)
+    ]
     settings.colors[name] = new_color
     return new_color
 
