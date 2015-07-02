@@ -267,23 +267,25 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
             return {filenames[0]: filenames[0]}
 
         # try the sframe way:
-        # TODO make setting for that!!
         lns = list(n.split('.') for n in filenames if type(n) is str)
-        if all(len(l) == 5 for l in lns):
-            return dict((f, l[3]) for f, l in itertools.izip(filenames, lns))
+        if False:  # all(len(l) == 5 for l in lns):
+            res = dict((f, l[3]) for f, l in itertools.izip(filenames, lns))
 
-        # TODO at least 10 characters
+            # make sure the legend names are all different
+            if len(set(l for l in res.itervalues())) == len(res):
+                return res
+
         # try trim filesnames from front and back
-        lns = filenames[:]
-        try:
-            while all(n[0] == lns[0][0] for n in lns):
-                for i in xrange(len(lns)):
-                    lns[i] = lns[i][1:]
-            while all(n[-1] == lns[0][-1] for n in lns):
-                for i in xrange(len(lns)):
-                    lns[i] = lns[i][:-1]
-        except IndexError:
-            return dict((f, f) for f in filenames[:])
+        lns = list(os.path.splitext(f)[0] for f in filenames)
+        # shorten strings from front
+        while all(n[0] == lns[0][0] and len(n) > 5 for n in lns):
+            for i in xrange(len(lns)):
+                lns[i] = lns[i][1:]
+
+        # shorten strings from back
+        while all(n[-1] == lns[0][-1] and len(n) > 5 for n in lns):
+            for i in xrange(len(lns)):
+                lns[i] = lns[i][:-1]
         return dict((f, l) for f, l in itertools.izip(filenames, lns))
 
     def _setup_gen_legend(self, pattern, legendnames=None):
