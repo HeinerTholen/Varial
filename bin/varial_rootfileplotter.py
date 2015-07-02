@@ -5,7 +5,7 @@ import ROOT
 ROOT.gROOT.SetBatch(True)
 ROOT.gROOT.ProcessLine('gErrorIgnoreLevel = kError;')
 
-if len(sys.argv) < 2 or '--help' in sys.argv:
+if len(sys.argv) < 2:
     print """
 Usage:
 varial_rootfileplotter.py <signal-files>
@@ -24,7 +24,6 @@ the examples e01 and e02 in varial_example. The varial_rootfileplotter.py script
 (this script!) might be a good starting point as well.
 
 Options:
---help      display this message
 --norm      normalize all input histograms to integral
 """
     exit(-1)
