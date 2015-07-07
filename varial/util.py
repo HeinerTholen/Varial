@@ -1,7 +1,8 @@
-import copy
-import inspect
-import math
 from ROOT import TH1D
+import functools
+import inspect
+import copy
+import math
 
 
 def list2histogram(values, name='histo', title=None, n_bins=0):
@@ -65,6 +66,7 @@ _instance_init_states = {}
 
 
 def _wrap_init(original__init__):
+    @functools.wraps(original__init__)
     def init_hook(inst, *args, **kws):
         if inst not in _instance_init_states:
             _instance_init_states[inst] = None
