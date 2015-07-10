@@ -235,7 +235,7 @@ def setup_legendnames_from_files(pattern):
 
     # try the sframe way:
     lns = list(n.split('.') for n in filenames if type(n) is str)
-    if False:  # all(len(l) == 5 for l in lns):
+    if all(len(l) == 5 for l in lns):
         res = dict((f, l[3]) for f, l in itertools.izip(filenames, lns))
 
         # make sure the legend names are all different
