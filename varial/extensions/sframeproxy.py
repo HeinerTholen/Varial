@@ -15,7 +15,6 @@ from varial import pklio
 from varial import settings
 from varial import toolinterface
 from varial import wrappers
-from varial import gen
 
 
 class SFrame(toolinterface.Tool):
@@ -66,10 +65,13 @@ class SFrame(toolinterface.Tool):
             self.private_conf = self.cfg_filename
 
     def make_result(self):
+        def add_sample_name(w):
+            w.sample = self.samplename_func(w)
+            return w
         wrps = diskio.generate_aliases(self.cwd + '*.root')
-        wrps = gen.gen_add_wrp_info(wrps, sample=self.samplename_func)
+        wrps = list(add_sample_name(w) for w in wrps)
         self.result = wrappers.WrapperWrapper(
-            list(wrps),
+            wrps,
             exit_code=self.subprocess.returncode,
             cwd=self.cwd,
             log_file=self.log_filename,
