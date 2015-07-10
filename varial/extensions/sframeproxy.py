@@ -7,7 +7,7 @@ import subprocess
 import time
 import os
 join = os.path.join
-basename = os.path.basename()
+basename = os.path.basename
 
 from varial import analysis
 from varial import diskio
