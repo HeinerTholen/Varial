@@ -148,7 +148,10 @@ def filter_active_samples(wrps):
         monitor.message('generators.filter_active_samples',
                         'WARNING No active samples defined. Will yield all.')
     return itertools.ifilter(
-        lambda w: no_active_smpls or w.sample in analysis.active_samples,
+        lambda w: no_active_smpls or (
+                      hasattr(w, 'sample')
+                      and w.sample in analysis.active_samples
+                  ),
         wrps
     )
 
