@@ -163,7 +163,7 @@ class Decorator(object):
         self.__dict__['dec_par'].update(kws)
         if not target:
             return
-        self.__dict__['decoratee']  = target
+        self.__dict__['decoratee'] = target
 
         # this is automatically forwarded to the inner decoratee
         target._outermost_decorator = self
