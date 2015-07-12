@@ -228,6 +228,10 @@ class HistoWrapper(Wrapper):
     def primary_object(self):
         return self.histo
 
+    @property
+    def is_background(self):
+        return not any((self.is_data, self.is_pseudo_data, self.is_signal))
+
 
 class StackWrapper(HistoWrapper):
     """
@@ -306,6 +310,10 @@ class GraphWrapper(Wrapper):
 
     def primary_object(self):
         return self.graph
+
+    @property
+    def is_background(self):
+        return not any((self.is_data, self.is_pseudo_data, self.is_signal))
 
 
 class CanvasWrapper(Wrapper):
