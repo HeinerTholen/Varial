@@ -401,7 +401,7 @@ class TitleBox(util.Decorator):
 
 class TextBox(util.Decorator):
     """Draw Textboxes individually by renderer name"""
-    def __init__(self, inner, dd=True, **kws):
+    def __init__(self, inner=None, dd=True, **kws):
         super(TextBox, self).__init__(inner, dd, **kws)
         assert('textbox' in self.dec_par)
 
@@ -417,6 +417,9 @@ class Legend(util.Decorator):
     Takes entries from ``self.main_pad.BuildLegend()`` .
     The box height is adjusted by the number of legend entries.
     No border or shadow are printed. See __init__ for keywords.
+
+    You can set ``draw_option_legend`` on a wrapper. If it evaluates to
+    ``False`` (like an empty string), the item will be removed from the legend.
     """
     def __init__(self, inner, dd='True', **kws):
         super(Legend, self).__init__(inner, dd)
@@ -442,7 +445,8 @@ class Legend(util.Decorator):
                     if hasattr(rnd, 'draw_option_legend'):
                         draw_opt = rnd.draw_option_legend
                     break
-            entries.append((obj, label, draw_opt))
+            if draw_opt:
+                entries.append((obj, label, draw_opt))
         return entries
 
     def _calc_bounds(self, n_entries):
