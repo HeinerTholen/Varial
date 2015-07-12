@@ -330,7 +330,8 @@ def gen_make_eff_graphs(wrps,
                         postfix_tot='_tot',
                         new_postfix='_eff',
                         yield_everything=False,
-                        pair_func=lambda w, l: w.in_file_path[:-l]):
+                        pair_func=lambda w, l: w.in_file_path[:-l],
+                        eff_func=op.eff):
     """
     Makes efficiency graphs and interleaves them into a sorted stream.
 
@@ -363,13 +364,13 @@ def gen_make_eff_graphs(wrps,
         if wrp.name.endswith(postfix_sub):
             t = pair_func(wrp, len_postfix_sub)
             if t in tots:
-                res.append(rename(op.eff((wrp, tots.pop(t)))))
+                res.append(rename(eff_func((wrp, tots.pop(t)))))
             else:
                 subs[t] = wrp
         elif wrp.name.endswith(postfix_tot):
             t = pair_func(wrp, len_postfix_tot)
             if t in subs:
-                res.append(rename(op.eff((subs.pop(t), wrp))))
+                res.append(rename(eff_func((subs.pop(t), wrp))))
             else:
                 tots[t] = wrp
         elif not yield_everything:  # do not yield everything twice
