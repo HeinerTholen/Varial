@@ -226,6 +226,36 @@ class Plotter(toolinterface.Tool):
         self.save_canvases()
 
 
+def setup_legendnames_from_files(pattern):
+    filenames = gen.resolve_file_pattern(pattern)
+
+    # only one file: return directly
+    if len(filenames) < 2:
+        return {filenames[0]: filenames[0]}
+
+    # try the sframe way:
+    lns = list(n.split('.') for n in filenames if type(n) is str)
+    if all(len(l) == 5 for l in lns):
+        res = dict((f, l[3]) for f, l in itertools.izip(filenames, lns))
+
+        # make sure the legend names are all different
+        if len(set(l for l in res.itervalues())) == len(res):
+            return res
+
+    # try trim filesnames from front and back
+    lns = list(os.path.splitext(f)[0] for f in filenames)
+    # shorten strings from front
+    while all(n[0] == lns[0][0] and len(n) > 5 for n in lns):
+        for i in xrange(len(lns)):
+            lns[i] = lns[i][1:]
+
+    # shorten strings from back
+    while all(n[-1] == lns[0][-1] and len(n) > 5 for n in lns):
+        for i in xrange(len(lns)):
+            lns[i] = lns[i][:-1]
+    return dict((f, l) for f, l in itertools.izip(filenames, lns))
+
+
 class RootFilePlotter(toolinterface.ToolChainParallel):
     """
     Plots all histograms in a rootfile.
@@ -258,37 +288,15 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
             )
         self.aliases = aliases
 
-    @staticmethod
-    def _setup_legendnames_from_files(pattern):
-        filenames = gen.resolve_file_pattern(pattern)
-
-        # only one file: return directly
-        if len(filenames) < 2:
-            return {filenames[0]: filenames[0]}
-
-        # try the sframe way:
-        # TODO make setting for that!!
-        lns = list(n.split('.') for n in filenames if type(n) is str)
-        if all(len(l) == 5 for l in lns):
-            return dict((f, l[3]) for f, l in itertools.izip(filenames, lns))
-
-        # TODO at least 10 characters
-        # try trim filesnames from front and back
-        lns = filenames[:]
-        try:
-            while all(n[0] == lns[0][0] for n in lns):
-                for i in xrange(len(lns)):
-                    lns[i] = lns[i][1:]
-            while all(n[-1] == lns[0][-1] for n in lns):
-                for i in xrange(len(lns)):
-                    lns[i] = lns[i][:-1]
-        except IndexError:
-            return dict((f, f) for f in filenames[:])
-        return dict((f, l) for f, l in itertools.izip(filenames, lns))
-
     def _setup_gen_legend(self, pattern, legendnames=None):
         if not legendnames:
-            legendnames = self._setup_legendnames_from_files(pattern)
+            legendnames = setup_legendnames_from_files(pattern)
+
+        # update colors (sorting needed, since dict is unsorted, and parallel
+        # plotters should have the same result.
+        for l in sorted(legendnames.itervalues()):
+            analysis.get_color(l)
+
         legendnames = dict((os.path.basename(p), l)
                            for p, l in legendnames.iteritems())
         self.message(
