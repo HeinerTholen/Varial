@@ -89,6 +89,35 @@ def main(**main_kwargs):
     :param samples:                 list of sample.Sample instances
     :param toolchain:               root toolchain (see tools.py)
     """
+
+    # setup samples
+    if 'samples' in main_kwargs:
+        samples = main_kwargs.pop('samples')
+        analysis.all_samples = dict((s.name, s) for s in samples)
+
+    if 'active_samples' in main_kwargs:
+        analysis.active_samples = main_kwargs.pop('active_samples')
+
+    # setup toolchain
+    global toolchain
+    toolchain = main_kwargs.pop('toolchain')
+
+    # get more settings from sys.argv
+    for arg in sys.argv:
+        if 1 == arg.count('='):
+            k, v = arg.split('=')
+            main_kwargs[k] = ast.literal_eval(v)
+
+    # process kwargs for settings
+    main_args.update(main_kwargs)
+    _process_settings_kws(main_kwargs)
+    logfile = settings.logfilename()
+    logpath = os.path.split(logfile)[0]
+    if not os.path.exists(logpath):
+        os.mkdir(logpath)
+    monitor.MonitorInfo.outstream = monitor.StdOutTee(logfile)
+
+    # print settings?
     if '--settings' in sys.argv:
         import inspect
         print "Memberes of the settings module:"
@@ -98,31 +127,6 @@ def main(**main_kwargs):
             print "  ", member, "=", getattr(settings, member)
         exit()
 
-    # prepare...
-    for arg in sys.argv:
-        if 1 == arg.count('='):
-            k, v = arg.split('=')
-            main_kwargs[k] = ast.literal_eval(v)
-    main_args.update(main_kwargs)
-    _process_settings_kws(main_kwargs)
-    logfile = settings.logfilename()
-    logpath = os.path.split(logfile)[0]
-    if not os.path.exists(logpath):
-        os.mkdir(logpath)
-    monitor.MonitorInfo.outstream = monitor.StdOutTee(logfile)
-
-    # setup samples
-    if 'samples' in main_kwargs:
-        analysis.all_samples = dict((s.name, s) for s in main_kwargs['samples'])
-
-    if 'active_samples' in main_kwargs:
-        analysis.active_samples = main_kwargs['active_samples']
-    elif not analysis.active_samples:
-        analysis.active_samples = analysis.all_samples.keys()
-
-    # setup toolchain
-    global toolchain
-    toolchain = main_kwargs.get('toolchain')
     if not toolchain:
         monitor.message(
             'varial.main',
