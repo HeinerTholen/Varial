@@ -107,7 +107,10 @@ def read(filename):
     klass = getattr(wrappers, info.get('klass'))
     if klass == wrappers.WrapperWrapper:
         p = dirname(filename)
-        info['wrps'] = _read_wrapperwrapper(join(p, f) for f in info['wrps'])
+        info['wrps'] = _read_wrapperwrapper(
+            join(p, f)
+            for f in info['wrpwrp_names']
+        )
     wrp = klass(**info)
     _clean_wrapper(wrp)
     return wrp
@@ -289,7 +292,9 @@ def _write_wrapperwrapper(wrp, filename=None):
             write(w, name)
         finally:
             use_analysis_cwd = with_ana_cwd  # reset
-    wrp.wrps = wrp_names
+    wrp.wrpwrp_names = wrp_names
+    wrp._wrpwrp_wrps = wrp.wrps
+    del wrp.wrps
 
 
 def _read_wrapper_info(file_handle):
@@ -326,11 +331,17 @@ def _read_wrapperwrapper(wrp_list):
 
 
 def _clean_wrapper(wrp):
-    del_attrs = ['root_filename', 'root_file_obj_names', 'wrapped_object_key']
+    del_attrs = ['root_filename',
+                 'root_file_obj_names',
+                 'wrapped_object_key'
+                 'wrpwrp_names']
     for attr in del_attrs:
         if hasattr(wrp, attr):
             delattr(wrp, attr)
 
+    if hasattr(wrp, '_wrpwrp_wrps'):
+        wrp.wrps = wrp._wrpwrp_wrps
+        del wrp._wrpwrp_wrps
 
 def _check_readability(wrp):
     try:
