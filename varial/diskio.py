@@ -280,8 +280,8 @@ def _write_wrapperwrapper(wrp, filename=None):
     if not filename:
         filename = wrp.name
     wrp_names = []
-    for w in wrp.wrps:
-        name = filename + '_WRPWRP_' + w.name
+    for i, w in enumerate(wrp.wrps):
+        name = filename + '_WRPWRP_%03d' % i
         wrp_names.append(basename(name))
         with_ana_cwd = use_analysis_cwd
         try:
