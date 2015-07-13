@@ -95,9 +95,13 @@ class TestDiskio(TestHistoToolsBase):
         ])
         diskio.write(wrpwrp1, fname)
 
+        # check written data
         with open(fname) as fhandle:
             n_lines = len(list(fhandle))
             self.assertGreater(n_lines, 4)
+
+        # check written wrapper
+        self.assertTrue(isinstance(wrpwrp1.wrps[0], HistoWrapper))
 
     def test_read_wrpwrp(self):
         fname = 'test_data/wrpwrp_load'
