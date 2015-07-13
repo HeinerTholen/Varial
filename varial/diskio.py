@@ -21,8 +21,6 @@ import settings
 import wrappers
 
 
-# TODO: IOError problem with to many open file descriptors:
-# TODO: http://mihalop.blogspot.gr/2014/05/python-subprocess-and-file-descriptors.html
 _n_file_limit = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
 try:
     resource.setrlimit(resource.RLIMIT_NOFILE, (_n_file_limit, _n_file_limit))
@@ -91,6 +89,9 @@ def close_root_file(filename):
 
 
 ##################################################### read / write wrappers ###
+# TODO read and write should only call utility methods (see ugly wrpwrp writing)
+
+
 def exists(filename):
     """Checks for existance."""
     filename = prepare_basename(filename)
