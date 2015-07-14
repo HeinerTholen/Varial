@@ -382,7 +382,7 @@ class TitleBox(util.Decorator):
     Draws title-box with TPaveText above canvas window.
 
     Instanciate with text argument:
-    ``tb = TitleBox(None, text='My funny title')``.
+    ``tb = TitleBox(text='My funny title')``.
     """
     def do_final_cosmetics(self):
         self.decoratee.do_final_cosmetics()
@@ -400,12 +400,18 @@ class TitleBox(util.Decorator):
 
 
 class TextBox(util.Decorator):
-    """Draw Textboxes individually by renderer name"""
-    def __init__(self, inner=None, dd=True, **kws):
-        super(TextBox, self).__init__(inner, dd, **kws)
-        assert('textbox' in self.dec_par)
+    """
+    Draw Textbox.
+
+    Instanciate with textbox argument:
+    ``tb = TextBox(textbox=ROOT.TLatex(0.5, 0.5, 'My Box'))``.
+    """
 
     def do_final_cosmetics(self):
+        if 'textbox' not in self.dec_par:
+            self.dec_par['textbox'] = ROOT.TLatex(
+                0.5, 0.5,
+                'I need a textbox=ROOT.TLatex(0.5, 0.5, "My Box") parameter')
         self.decoratee.do_final_cosmetics()
         self.dec_par['textbox'].Draw()
 
@@ -420,8 +426,11 @@ class Legend(util.Decorator):
 
     You can set ``draw_option_legend`` on a wrapper. If it evaluates to
     ``False`` (like an empty string), the item will be removed from the legend.
+
+    All default settings in ``settings.defaults_Legend`` can be overwritten by
+    providing an argument with the same name, e.g. ``Legend(x_pos=0.2)``.
     """
-    def __init__(self, inner, dd='True', **kws):
+    def __init__(self, inner=None, dd='True', **kws):
         super(Legend, self).__init__(inner, dd)
         self.dec_par.update(settings.defaults_Legend)
         self.dec_par.update(kws)
@@ -451,16 +460,21 @@ class Legend(util.Decorator):
 
     def _calc_bounds(self, n_entries):
         par = self.dec_par
-        x_pos   = par['x_pos']
-        y_pos   = par['y_pos']
-        width   = par['label_width']
-        height  = par['label_height'] * n_entries
-        if y_pos + height/2. > 1.:
-             y_pos = 1 - height/2. # do not go outside canvas
-        return x_pos - width/2., \
-               y_pos - height/2., \
-               x_pos + width/2., \
-               y_pos + height/2.
+        if 'xy_coords' in par:
+            xy = par['xy_coords']
+            assert len(xy) == 4 and all(type(z) == float for z in xy)
+            return xy
+        else:
+            x_pos   = par['x_pos']
+            y_pos   = par['y_pos']
+            width   = par['label_width']
+            height  = par['label_height'] * n_entries
+            if y_pos + height/2. > 1.:
+                 y_pos = 1 - height/2. # do not go outside canvas
+            return x_pos - width/2., \
+                   y_pos - height/2., \
+                   x_pos + width/2., \
+                   y_pos + height/2.
 
     def do_final_cosmetics(self):
         """
@@ -483,7 +497,10 @@ class Legend(util.Decorator):
         bounds = self._calc_bounds(len(entries))
         legend = TLegend(*bounds)
         legend.SetBorderSize(0)
-        legend.SetTextSize(settings.box_text_size)
+        legend.SetTextSize(
+            self.dec_par.get('text_size', settings.box_text_size))
+        if 'text_font' in self.dec_par:
+            legend.SetTextFont(self.dec_par['text_font'])
         par = self.dec_par
         if par['reverse']:
             entries.reverse()
@@ -496,7 +513,7 @@ class Legend(util.Decorator):
 
 class BottomPlot(util.Decorator):
     """Base class for all plot business at the bottom of the canvas."""
-    def __init__(self, inner, dd = True, **kws):
+    def __init__(self, inner=None, dd = True, **kws):
         super(BottomPlot, self).__init__(inner, dd, **kws)
         self.dec_par.update(settings.defaults_BottomPlot)
         self.dec_par.update(kws)
@@ -664,3 +681,4 @@ class BottomPlotRatioSplitErr(BottomPlot):
 # TODO use WrapperWrapper
 # TODO make a setting for choosing the default bottom plot
 # TODO BottomPlotSignificance
+# TODO redesign all canvas-making. Abandon Decorators. Use generators.
