@@ -358,6 +358,8 @@ class WebCreator(toolinterface.Tool):
             'varial_webcreator'
             '</a>.'
             '</p>',
+            '<!-- some empty space (donot block scrolling for a bit) -->',
+        ] + list('&nbsp </br>' for _ in xrange(50)) + [
             '</body>',
             '</html>',
         ]
