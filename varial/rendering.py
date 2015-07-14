@@ -460,16 +460,21 @@ class Legend(util.Decorator):
 
     def _calc_bounds(self, n_entries):
         par = self.dec_par
-        x_pos   = par['x_pos']
-        y_pos   = par['y_pos']
-        width   = par['label_width']
-        height  = par['label_height'] * n_entries
-        if y_pos + height/2. > 1.:
-             y_pos = 1 - height/2. # do not go outside canvas
-        return x_pos - width/2., \
-               y_pos - height/2., \
-               x_pos + width/2., \
-               y_pos + height/2.
+        if 'xy_coords' in par:
+            xy = par['xy_coords']
+            assert len(xy) == 4 and all(type(z) == float for z in xy)
+            return xy
+        else:
+            x_pos   = par['x_pos']
+            y_pos   = par['y_pos']
+            width   = par['label_width']
+            height  = par['label_height'] * n_entries
+            if y_pos + height/2. > 1.:
+                 y_pos = 1 - height/2. # do not go outside canvas
+            return x_pos - width/2., \
+                   y_pos - height/2., \
+                   x_pos + width/2., \
+                   y_pos + height/2.
 
     def do_final_cosmetics(self):
         """
@@ -492,7 +497,10 @@ class Legend(util.Decorator):
         bounds = self._calc_bounds(len(entries))
         legend = TLegend(*bounds)
         legend.SetBorderSize(0)
-        legend.SetTextSize(settings.box_text_size)
+        legend.SetTextSize(
+            self.dec_par.get('text_size', settings.box_text_size))
+        if 'text_font' in self.dec_par:
+            legend.SetTextFont(self.dec_par['text_font'])
         par = self.dec_par
         if par['reverse']:
             entries.reverse()

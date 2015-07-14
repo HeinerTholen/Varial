@@ -55,7 +55,9 @@ defaults_Legend = {
     'label_height': 0.04,
     'opt': 'f',
     'opt_data': 'p',
-    'reverse': True
+    'reverse': True,
+    # 'text_size': 0.03,
+    # 'text_font': 42,
 }
 defaults_BottomPlot = {
     'y_title': '#frac{Data-MC}{MC}',
