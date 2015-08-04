@@ -15,14 +15,14 @@ from varial import toolinterface
 from varial import wrappers
 
 
-class FwliteProxy(toolinterface.Tool):
+class Fwlite(toolinterface.Tool):
     """
     This class hosts a series of fwlite processes.
     """
     def __init__(self,
                  fwlite_exe,
                  name=None):
-        super(FwliteProxy, self).__init__(name)
+        super(Fwlite, self).__init__(name)
         self.fwlite_exe = fwlite_exe
         self._proxy = None
         self._not_ask_execute = False
@@ -66,7 +66,7 @@ class FwliteProxy(toolinterface.Tool):
         return True
 
     def reuse(self):
-        super(FwliteProxy, self).reuse()
+        super(Fwlite, self).reuse()
         self._finalize()
 
     def run(self):

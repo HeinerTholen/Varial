@@ -8,7 +8,7 @@ assert ROOT.TMVA
 from varial import toolinterface
 
 
-class TmvaProxy(toolinterface.Tool):
+class Tmva(toolinterface.Tool):
     def __init__(
             self,
             name=None,
@@ -18,7 +18,7 @@ class TmvaProxy(toolinterface.Tool):
             spectators=(),
             variables=(),
     ):
-        super(TmvaProxy, self).__init__(name)
+        super(Tmva, self).__init__(name)
         self.sig_filenames  = sig_filenames
         self.bkg_filenames  = bkg_filenames
         self.removed_vars   = removed_vars

@@ -212,7 +212,7 @@ class CmsRunProcess(object):
         self.subprocess.terminate()
 
 
-class CmsRunProxy(toolinterface.Tool):
+class CmsRun(toolinterface.Tool):
     """
     Tool to embed cmsRun execution into varial toolchains.
 
@@ -236,7 +236,7 @@ class CmsRunProxy(toolinterface.Tool):
                  output_module_name="out",
                  common_builtins=None,
                  name=None):
-        super(CmsRunProxy, self).__init__(name)
+        super(CmsRun, self).__init__(name)
         self.waiting_pros = []
         self.running_pros = []
         self.finished_pros = []
@@ -256,7 +256,7 @@ class CmsRunProxy(toolinterface.Tool):
         return not bool(self.waiting_pros)
 
     def reuse(self):
-        super(CmsRunProxy, self).reuse()
+        super(CmsRun, self).reuse()
         self._finalize()
 
     def run(self):
