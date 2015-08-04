@@ -105,6 +105,8 @@ class SFrame(toolinterface.Tool):
         else:
             self.message('WARNING ' + err_msg)
 
+        os.system('rm -r %s/jobTempOutput_*' % self.cwd)
+
     def reuse(self):
         super(SFrame, self).reuse()
         self._push_aliases_to_analysis()
