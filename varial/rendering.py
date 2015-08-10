@@ -522,6 +522,11 @@ class BottomPlot(util.Decorator):
         self.decoratee.configure()
         n_data_hists = len(filter(lambda r: r.is_data or r.is_pseudo_data,
                                   self.renderers))
+
+        if 'TH2' in self.renderers[0].type:
+            self.__dict__['no_bottomplot'] = True
+            return
+
         if n_data_hists > 1:
             raise RuntimeError('ERROR BottomPlots can only be created '
                                'with exactly one data histogram')
