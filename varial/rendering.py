@@ -520,7 +520,8 @@ class BottomPlot(util.Decorator):
 
     def configure(self):
         self.decoratee.configure()
-        n_data_hists = len(filter(lambda r: r.is_data, self.renderers))
+        n_data_hists = len(filter(lambda r: r.is_data or r.is_pseudo_data,
+                                  self.renderers))
         if n_data_hists > 1:
             raise RuntimeError('ERROR BottomPlots can only be created '
                                'with exactly one data histogram')
@@ -632,7 +633,8 @@ class BottomPlotRatio(BottomPlot):
     """Ratio of first and second histogram in canvas."""
     def define_bottom_hist(self):
         rnds = self.renderers
-        wrp = op.div([rnds[0]] + filter(lambda r: r.is_data, rnds))
+        wrp = op.div([rnds[0]] + filter(
+            lambda r: r.is_data or r.is_pseudo_data, rnds))
         for i in xrange(1, wrp.histo.GetNbins() + 1):
             cont = wrp.histo.GetBinContent(i)
             wrp.histo.SetBinContent(i, cont - 1.)
@@ -645,7 +647,8 @@ class BottomPlotRatioSplitErr(BottomPlot):
     def define_bottom_hist(self):
         rnds = self.renderers
         mc_histo = rnds[0].histo.Clone()
-        da_histo = filter(lambda r: r.is_data, rnds)[0].histo.Clone()
+        da_histo = filter(lambda r: r.is_data or r.is_pseudo_data,
+                          rnds)[0].histo.Clone()
         div_hist = da_histo.Clone()
         div_hist.Divide(mc_histo)
         for i in xrange(1, mc_histo.GetNbinsX() + 1):
