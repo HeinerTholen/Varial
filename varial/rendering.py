@@ -513,14 +513,18 @@ class Legend(util.Decorator):
 
 class BottomPlot(util.Decorator):
     """Base class for all plot business at the bottom of the canvas."""
-    def __init__(self, inner=None, dd = True, **kws):
+    def __init__(self, inner=None, dd=True, **kws):
         super(BottomPlot, self).__init__(inner, dd, **kws)
         self.dec_par.update(settings.defaults_BottomPlot)
         self.dec_par.update(kws)
 
     def configure(self):
         self.decoratee.configure()
-        self.__dict__['no_second_histo'] = len(self.renderers) < 2
+        n_data_hists = len(filter(lambda r: r.is_data, self.renderers))
+        if n_data_hists > 1:
+            raise RuntimeError('ERROR BottomPlots can only be created '
+                               'with exactly one data histogram')
+        self.__dict__['no_bottomplot'] = not n_data_hists
 
     def define_bottom_hist(self):
         """Overwrite this method and give a histo-ref to self.bottom_hist."""
@@ -530,7 +534,7 @@ class BottomPlot(util.Decorator):
         """Instanciate canvas with two pads."""
         # canvas
         self.decoratee.make_empty_canvas()
-        if self.no_second_histo:
+        if self.no_bottomplot:
             return
         name = self.name
         self.main_pad = TPad(
@@ -542,8 +546,8 @@ class BottomPlot(util.Decorator):
         main_pad = self.main_pad
         main_pad.SetTopMargin(0.1)
         main_pad.SetBottomMargin(0.)
-        main_pad.SetRightMargin(0.04)
-        main_pad.SetLeftMargin(0.16)
+        #main_pad.SetRightMargin(0.04)
+        #main_pad.SetLeftMargin(0.16)
         main_pad.Draw()
         # bottom pad
         self.canvas.cd()
@@ -555,8 +559,10 @@ class BottomPlot(util.Decorator):
         second_pad = self.second_pad
         second_pad.SetTopMargin(0.)
         second_pad.SetBottomMargin(0.375)
-        second_pad.SetRightMargin(0.04)
-        second_pad.SetLeftMargin(0.16)
+        #second_pad.SetRightMargin(0.04)
+        #second_pad.SetLeftMargin(0.16)
+        second_pad.SetRightMargin(main_pad.GetRightMargin())
+        second_pad.SetLeftMargin(main_pad.GetLeftMargin())
         second_pad.SetGridy()
         second_pad.Draw()
 
@@ -565,7 +571,7 @@ class BottomPlot(util.Decorator):
         # draw main histogram
         self.main_pad.cd()
         self.decoratee.draw_full_plot()
-        if self.no_second_histo:
+        if self.no_bottomplot:
             return
         first_drawn = self.first_drawn
         first_drawn.GetYaxis().CenterTitle(1)
@@ -626,7 +632,7 @@ class BottomPlotRatio(BottomPlot):
     """Ratio of first and second histogram in canvas."""
     def define_bottom_hist(self):
         rnds = self.renderers
-        wrp = op.div(iter(rnds))
+        wrp = op.div([rnds[0]] + filter(lambda r: r.is_data, rnds))
         for i in xrange(1, wrp.histo.GetNbins() + 1):
             cont = wrp.histo.GetBinContent(i)
             wrp.histo.SetBinContent(i, cont - 1.)
@@ -639,7 +645,7 @@ class BottomPlotRatioSplitErr(BottomPlot):
     def define_bottom_hist(self):
         rnds = self.renderers
         mc_histo = rnds[0].histo.Clone()
-        da_histo = rnds[1].histo.Clone()
+        da_histo = filter(lambda r: r.is_data, rnds)[0].histo.Clone()
         div_hist = da_histo.Clone()
         div_hist.Divide(mc_histo)
         for i in xrange(1, mc_histo.GetNbinsX() + 1):
@@ -668,9 +674,9 @@ class BottomPlotRatioSplitErr(BottomPlot):
         self.bottom_hist_mc_err = mc_histo
 
     def draw_full_plot(self):
-        """Draw mc error histo underneat data ratio."""
+        """Draw mc error histo below data ratio."""
         super(BottomPlotRatioSplitErr, self).draw_full_plot()
-        if self.no_second_histo:
+        if self.no_bottomplot:
             return
         self.second_pad.cd()
         self.bottom_hist_mc_err.Draw('sameE2')
@@ -678,7 +684,7 @@ class BottomPlotRatioSplitErr(BottomPlot):
         self.main_pad.cd()
 
 
-# TODO use WrapperWrapper
+# TODO use WrapperWrapper info on construction
 # TODO make a setting for choosing the default bottom plot
 # TODO BottomPlotSignificance
 # TODO redesign all canvas-making. Abandon Decorators. Use generators.
