@@ -349,7 +349,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                     ws, lambda w: '', True),
                 save_name_func=lambda w:
                     w._renderers[0].in_file_path.replace('/', '_'),
-                canvas_decorators=[rendering.Legend],
+                canvas_decorators=default_canvas_decorators,
             )
 
         # ...or resemble root file dirs
@@ -384,12 +384,12 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                         return loader
 
                     rfp._private_plotter = plotter_factory(
-                        name=self.name,
+                        name=rfp.name,
                         filter_keyfunc=lambda _: True,
                         plot_grouper=plot_grouper_by_in_file_path,
                         set_canvas_name=set_canvas_name_to_plot_name,
                         load_func=_mk_private_loader(path[:-1]),
-                        canvas_decorators=[rendering.Legend],
+                        canvas_decorators=default_canvas_decorators,
                     )
 
     def run(self):
