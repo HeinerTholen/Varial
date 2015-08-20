@@ -142,7 +142,9 @@ def sum(wrps):
     >>> w4.lumi
     5.0
     """
-    wrps = iterableize(wrps)
+    wrps = list(iterableize(wrps))
+    if len(wrps) == 1 and isinstance(wrps[0], wrappers.HistoWrapper):
+        return wrps[0]
     histo = None
     lumi = 0.
     info = None
@@ -232,7 +234,12 @@ def merge(wrps):
     >>> w3.lumi
     1.0
     """
-    wrps = iterableize(wrps)
+    wrps = list(iterableize(wrps))
+    if (len(wrps) == 1 
+        and isinstance(wrps[0], wrappers.HistoWrapper) 
+        and wrps[0].lumi == 1.
+    ):
+        return wrps[0]
     histo = None
     info = None
     for wrp in wrps:
@@ -281,7 +288,9 @@ def prod(wrps):
     >>> w5.histo.Integral()
     2.0
     """
-    wrps = iterableize(wrps)
+    wrps = list(iterableize(wrps))
+    if len(wrps) == 1 and isinstance(wrps[0], wrappers.HistoWrapper):
+        return wrps[0]
     histo = None
     info = None
     lumi = 1.
@@ -418,6 +427,9 @@ def norm_to_lumi(wrp):
             "norm_to_lumi needs argument of type HistoWrapper. histo: "
             + str(wrp)
         )
+    if wrp.lumi == 1.:
+        return wrp
+
     histo = wrp.histo.Clone()
     histo.Scale(1. / wrp.lumi)
     info = wrp.all_info()
@@ -446,9 +458,12 @@ def norm_to_integral(wrp, use_bin_width=False):
             "norm_to_integral needs argument of type HistoWrapper. histo: "
             + str(wrp)
         )
-    histo = wrp.histo.Clone()
     option = "width" if use_bin_width else ""
     integr = wrp.histo.Integral(option) or 1.
+    if integr == 1.:
+        return wrp
+
+    histo = wrp.histo.Clone()
     histo.Scale(1. / integr)
     info = wrp.all_info()
     info["lumi"] /= integr
@@ -478,8 +493,11 @@ def norm_to_max_val(wrp):
             "norm_to_max_val needs argument of type HistoWrapper. histo: "
             + str(wrp)
         )
+    max_val = wrp.histo.GetBinContent(wrp.histo.GetMaximumBin()) or 1.
+    if max_val == 1.:
+        return wrp
+
     histo = wrp.histo.Clone()
-    max_val = histo.GetBinContent(histo.GetMaximumBin()) or 1.
     histo.Scale(1. / max_val)
     info = wrp.all_info()
     info["lumi"] /= max_val
