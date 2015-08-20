@@ -441,20 +441,24 @@ class Legend(util.Decorator):
         for entry in legend.GetListOfPrimitives():
             obj = entry.GetObject()
             label = entry.GetLabel()
-            is_data = ('Data' in label) or ('data' in label)
             draw_opt = self.dec_par['opt']
-            if is_data:
-                draw_opt = self.dec_par['opt_data']
             for rnd in rnds:
                 if isinstance(rnd, StackRenderer):
                     continue
-                if rnd.primary_object() is obj:
-                    if hasattr(rnd, 'legend'):
-                        label = rnd.legend
-                    if hasattr(rnd, 'draw_option_legend'):
-                        draw_opt = rnd.draw_option_legend
-                    break
-            if draw_opt:
+
+                if rnd.obj is not obj:
+                    continue
+
+                if rnd.is_data:
+                    draw_opt = self.dec_par['opt_data']
+
+                if hasattr(rnd, 'legend'):
+                    label = rnd.legend
+                if hasattr(rnd, 'draw_option_legend'):
+                    draw_opt = rnd.draw_option_legend
+                break
+
+            if draw_opt:  # empty string -> no legend entry
                 entries.append((obj, label, draw_opt))
         return entries
 
