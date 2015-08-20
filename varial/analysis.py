@@ -80,9 +80,15 @@ def get_color(sample_or_legend_name, default=0):
         return settings.colors[name]
     if default:
         return default
-    new_color = settings.default_colors[
-        len(settings.colors) % len(settings.default_colors)
-    ]
+    new_color = None
+    for col in settings.default_colors:
+        if col not in settings.colors.values():
+            new_color = col
+            break
+    if not new_color:
+        new_color = settings.default_colors[
+            len(settings.colors) % len(settings.default_colors)
+        ]
     settings.colors[name] = new_color
     return new_color
 
