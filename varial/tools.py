@@ -400,6 +400,7 @@ def mk_rootfile_plotter(name="RootFilePlots",
                         plotter_factory=None,
                         combine_files=False,
                         filter_keyfunc=None,
+                        auto_legend=True,
                         legendnames=None,
                         **kws):
     """
@@ -440,6 +441,7 @@ def mk_rootfile_plotter(name="RootFilePlots",
             flat,
             name,
             filter_keyfunc,
+            auto_legend,
             legendnames
         )
     else:
@@ -450,6 +452,7 @@ def mk_rootfile_plotter(name="RootFilePlots",
                 flat,
                 f[:-5].split('/')[-1],
                 filter_keyfunc,
+                auto_legend,
                 legendnames
             )
             for f in glob.iglob(pattern)

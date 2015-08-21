@@ -81,8 +81,9 @@ def get_color(sample_or_legend_name, default=0):
     if default:
         return default
     new_color = None
+    used_colors = settings.colors.values()
     for col in settings.default_colors:
-        if col not in settings.colors.values():
+        if col not in used_colors:
             new_color = col
             break
     if not new_color:
