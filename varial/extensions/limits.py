@@ -22,6 +22,7 @@ class ThetaLimits(varial.tools.Tool):
         dat_key=lambda w: w.is_data or w.is_pseudo_data,
         sig_key=lambda w: w.is_signal,
         bkg_key=lambda w: not any((w.is_signal, w.is_data, w.is_pseudo_data)),
+        options=None,
         name=None,
     ):
         super(ThetaLimits, self).__init__(name)
@@ -33,6 +34,11 @@ class ThetaLimits(varial.tools.Tool):
         self.dat_key = dat_key
         self.sig_key = sig_key
         self.bkg_key = bkg_key
+        if options:
+            self.theta_options = options 
+        else:
+            self.theta_options = theta_auto.Options()
+            options.set('minimizer', 'strategy', 'robust')
 
     def _store_histos_for_theta(self, dats, sigs, bkgs, name="ThetaHistos"):
         # create wrp
@@ -92,25 +98,8 @@ class ThetaLimits(varial.tools.Tool):
         if not os.path.exists(plt_dir):
             os.mkdir(plt_dir)
         self.model = self.model_func(theta_wrp.file_path)
-        # self.model = theta_auto.build_model_from_rootfile(
-        #     os.path.join(self.cwd, 'ThetaHistos.root'),
-        #     include_mc_uncertainties=True
-        # )
-        # self.model.fill_histogram_zerobins()
-        # self.model.set_signal_processes(list(
-        #     k.split('__')[-1]
-        #     for k in theta_wrp.__dict__
-        #     if 'TpTp' in k
-        # ))
-        # # self.model.add_lognormal_uncertainty('ttbar_rate', math.log(1.15), 'TTJets')
-        # # self.model.add_lognormal_uncertainty('qcd_rate', math.log(1.30), 'QCD')
-        # # self.model.add_lognormal_uncertainty('wjets_rate', math.log(1.25), 'WJets')
-        # # self.model.add_lognormal_uncertainty('zjets_rate', math.log(1.50), 'ZJets')
-        # # self.model.add_lognormal_uncertainty('signal_rate', math.log(1.15), 'TpTp_M1000')
 
         # let the fit run
-        options = theta_auto.Options()
-        options.set('minimizer', 'strategy', 'robust')
         theta_auto.model_summary(self.model)
         if self.asymptotic:
             limit_func = lambda w: theta_auto.asymptotic_cls_limits(w)
@@ -120,8 +109,8 @@ class ThetaLimits(varial.tools.Tool):
         # shout it out loud
         self.result = varial.wrappers.Wrapper(
             name=self.name,
-            _res_exp=res_exp,  # TODO only TObjects or native python objects (list, dict, int, str ...) allowed
-            _res_obs=res_obs,  # TODO only TObjects or native python objects (list, dict, int, str ...) allowed
+            _res_exp=res_exp,
+            _res_obs=res_obs,
         )
         self.message(
             'INFO theta result: expected limit:\n' + str(self.result._res_exp))
@@ -129,52 +118,3 @@ class ThetaLimits(varial.tools.Tool):
             'INFO theta result: observerd limit:\n' + str(self.result._res_obs))
         theta_auto.config.report.write_html(
             os.path.join(self.cwd, 'result'))
-
-
-class TpTpThetaLimits(ThetaLimits):
-    def __init__(self,
-        brs = None,
-        *args,**kws
-    ):
-        super(TpTpThetaLimits, self).__init__(*args, **kws)
-        self.brs = brs
-
-    def run(self):
-        super(TpTpThetaLimits, self).run()
-        self.result = varial.wrappers.Wrapper(
-            name=self.result.name,
-            _res_exp=self.result._res_exp,
-            _res_obs=self.result._res_obs,
-            brs=self.brs
-        )
-
-
-class TriangleLimitPlots(varial.tools.Tool):
-    def __init__(self,
-        name=None
-    ):
-        super(TriangleLimitPlots, self).__init__(name)
-
-
-    def run(self):
-        # parent = varial.analysis.lookup_tool('../.')
-        # varial.analysis.print_tool_tree()
-        parents = os.listdir(self.cwd+'/..')
-        # print parents
-        theta_tools = list(k for k in parents if k.startswith("ThetaLimit"))
-        # print theta_tools
-        wrps = list(self.lookup_result('../' + k) for k in theta_tools)
-        filename = os.path.join(varial.analysis.cwd, self.name + ".root")
-        f = ROOT.TFile.Open(filename, "RECREATE")
-        f.cd()
-        tri_hist = ROOT.TH2F("triangular_limits", ";br to th;br to tz", 10, 0., 1., 10, 0., 1.)
-        for w in wrps:
-            br_th = float(w.brs['th'])
-            br_tz = float(w.brs['tz'])
-            # limit_f = float(w.res_exp.y[0])
-            tri_hist.Fill(br_th, br_tz, w.res_exp.y[0])
-        tri_hist.Write()
-        f.Close()
-
-
-
