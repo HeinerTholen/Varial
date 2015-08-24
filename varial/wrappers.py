@@ -12,6 +12,7 @@ module.
 """
 
 from ROOT import TH1, TH1D, TH2D, TH3D, THStack, TGraph, TCanvas, TObject
+from ast import literal_eval
 
 
 class WrapperBase(object):
@@ -54,6 +55,20 @@ class WrapperBase(object):
                     + repr(getattr(self, k))
                     for k in keys
                 ) + ',\n}'
+
+    def __setattr__(self, name, value):
+        if not (name[0] == '_'
+                or name == 'history'
+                or isinstance(value, TObject)):
+            try:
+                literal_eval(repr(value))
+            except (ValueError, SyntaxError):
+                raise RuntimeError(
+                    'ERROR Wrapper members of non-literal values or '
+                    'non-TObject-instances must start with an underscore.'
+                    '\nName and value: ("%s", %s)' % (name, value)
+                )
+        return super(WrapperBase, self).__setattr__(name, value)
 
 
 class Alias(WrapperBase):
@@ -169,6 +184,21 @@ class WrapperWrapper(Wrapper):
 
     def primary_object(self):
         return self.wrps
+
+    def __setattr__(self, name, value):
+        if (value
+            and type(value) == list
+            and any(isinstance(w, WrapperBase)for w in value)
+        ):
+            if not all(isinstance(w, WrapperBase) for w in value):
+                raise TypeError(
+                    ('List of wrappers must only contain wrappers! Something'
+                     'else is in the list: \n')
+                    + str(value)
+                )
+            return super(WrapperBase, self).__setattr__(name, value)
+        else:
+            return super(WrapperWrapper, self).__setattr__(name, value)
 
 
 class FloatWrapper(Wrapper):
