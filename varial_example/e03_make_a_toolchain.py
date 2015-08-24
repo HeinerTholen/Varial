@@ -8,10 +8,10 @@ import os
 import varial.diskio
 import varial.tools
 import e02_make_a_tool
-from varial.extensions.fwliteproxy import FwliteProxy
+from varial.extensions.fwlite import Fwlite
 
 # You can make a fwlite job like this:
-fwlite = FwliteProxy('path/to/script.py'),
+fwlite = Fwlite('path/to/script.py'),
 
 # Load the files in the test fileservice directory
 loader = varial.tools.HistoLoader(
