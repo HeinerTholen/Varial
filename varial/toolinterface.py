@@ -432,3 +432,8 @@ class ToolChainParallel(ToolChain):
         #cleanup
         pool.close()
         pool.join()
+
+
+#TODO profiling in ToolChain._run_tool
+#TODO cProfile.runctx('varial.tools.Runner(tc)', globals(), locals(), 'prof_plotting.out')
+
