@@ -327,11 +327,10 @@ class SampleNormalizer(Tool):
 
 class GitTagger(Tool):
     """
-    A tool to automatically commit when running new tools (or amending a commit if tools are
-    re-run) and keeping track of your tools and git history.
+    A tool to automatically commit when running new tools in git. 
 
-    In order to use this correctly, insert at the end of your main ToolChain that comprises 
-    your analysis.
+    Amending a commit if tools are re-run is also possible. In order to use 
+    this correctly, insert this tool at the end of your main ToolChain.
     """
     can_reuse = False
 
@@ -340,25 +339,27 @@ class GitTagger(Tool):
         self.logfilename = logfilename
         self.log_data = {}
 
-
-    def print_tool_tree(self, toollist, res):
+    def log_tool_tree(self, toollist, res):
         if not len(res.children):
             toollist[res.name] = 0
         else:
             toollist[res.name] = {}
             for rname in sorted(res.children):
-                self.print_tool_tree(toollist[res.name], res.children[rname])
+                self.log_tool_tree(toollist[res.name], res.children[rname])
 
     def compare_tool_tree(self, dict1, dict2):
+        is_dict = lambda obj: isinstance(obj, dict) 
         new_tool = 0
         for tool1 in dict1:
             if tool1 in dict2.keys():
-                if isinstance(dict1[tool1], dict) and isinstance(dict2[tool1], dict):
-                    new_tool = self.compare_tool_tree(dict1[tool1], dict2[tool1])
+                if (
+                    and is_dict(dict2[tool1])
+                ):
+                    new_tool = self.compare_tool_tree(dict1[tool1], 
+                                                      dict2[tool1])
                     if new_tool == -1:
                         return new_tool
-                elif (isinstance(dict1[tool1], dict) and not isinstance(dict2[tool1], dict))\
-                    or (not isinstance(dict1[tool1], dict) and isinstance(dict2[tool1], dict)):
+                elif is_dict(dict1[tool1]) != is_dict(dict2[tool1]):  # xor
                     new_tool = -1
                     return new_tool
             else:
@@ -370,7 +371,8 @@ class GitTagger(Tool):
     def set_commit_hash(self, tool_dict, commit_hash=0, old_commit_hash=0):
         for tool in tool_dict:
             if isinstance(tool_dict[tool], dict):
-                self.set_commit_hash(tool_dict[tool], commit_hash, old_commit_hash)
+                self.set_commit_hash(
+                    tool_dict[tool], commit_hash, old_commit_hash)
             else:
                 if not old_commit_hash:
                     if tool_dict[tool] == 0:
@@ -379,22 +381,28 @@ class GitTagger(Tool):
                     if tool_dict[tool] == old_commit_hash:
                         tool_dict[tool] = commit_hash
 
-
     def new_commit(self, message=''):
         commit_msg = raw_input(message)
         if commit_msg == '':
-            print "Not committed."
+            self.message('Not committed.')
             return -1
         elif commit_msg == 'amend':
-            previous_commit_msg = subprocess.check_output('git log -1 --pretty=%B', shell=True)
-            previous_commit_hash = subprocess.check_output('git rev-parse --verify HEAD', shell=True)[:-2]
-            os.system('git commit --amend -am "{0}"'.format(previous_commit_msg))
-            new_commit_hash = subprocess.check_output('git rev-parse --verify HEAD', shell=True)[:-2]
-            self.set_commit_hash(self.log_data, new_commit_hash, previous_commit_hash)
+            previous_commit_msg = subprocess.check_output(
+                'git log -1 --pretty=%B', shell=True)
+            previous_commit_hash = subprocess.check_output(
+                'git rev-parse --verify HEAD', shell=True)[:-2]
+            os.system(
+                'git commit --amend -am "{0}"'.format(previous_commit_msg))
+            new_commit_hash = subprocess.check_output(
+                'git rev-parse --verify HEAD', shell=True)[:-2]
+            self.set_commit_hash(
+                self.log_data, new_commit_hash, previous_commit_hash)
             return new_commit_hash
         else:
-            os.system('git commit -am "From GitTagger: {0}"'.format(commit_msg))
-            return subprocess.check_output('git rev-parse --verify HEAD', shell=True)[:-2]
+            os.system(
+                'git commit -am "From GitTagger: {0}"'.format(commit_msg))
+            return subprocess.check_output(
+                'git rev-parse --verify HEAD', shell=True)[:-2]
 
     def update_logfile(self, logfilepath, log_data, commit_hash=-1):
         if isinstance(commit_hash, str):
@@ -402,53 +410,77 @@ class GitTagger(Tool):
         else:
             self.set_commit_hash(log_data, -1)
         with open(logfilepath, 'w') as logfile:
-            json.dump(log_data, logfile, sort_keys=True, indent=4, separators=(',', ': '))
-
-
+            json.dump(
+                log_data, logfile, 
+                sort_keys=True, indent=4, separators=(',', ': '))
 
     def run(self):
         toollist = {}
         toollist[analysis.results_base.name] = {}
         for rname in sorted(analysis.results_base.children):
-            self.print_tool_tree(toollist[analysis.results_base.name], analysis.results_base.children[rname])
+            self.log_tool_tree(
+                toollist[analysis.results_base.name], 
+                analysis.results_base.children[rname]
+            )
 
         files_changed = False
-        if os.path.isfile(analysis.cwd+self.logfilename):
-            with open(analysis.cwd+self.logfilename, 'r') as logfile:
+        if os.path.isfile(self.cwd+self.logfilename):
+            with open(self.cwd+self.logfilename, 'r') as logfile:
                 self.log_data = json.load(logfile)
                 new_tool = self.compare_tool_tree(toollist, self.log_data)
             if new_tool > 0:
-                commit_hash = self.new_commit("New tool found, if you want to make new commit type a commit message; "\
-                      "If you want to amend the latest commit, type 'amend'; "\
-                      "If you don't want to commit, just press enter: ")
-                self.update_logfile(analysis.cwd+self.logfilename, self.log_data, commit_hash)
+                commit_hash = self.new_commit(
+                    'New tool found, if you want to make new commit type a '
+                    'commit message; '
+                    'If you want to amend the latest commit, type "amend"; '
+                    'If you do not want to commit, just press enter: ')
+                self.update_logfile(
+                    self.cwd+self.logfilename, self.log_data, commit_hash)
             elif new_tool < 0:
-                print "WARNING: two tools with same name but not of same class (i.e. Tool "\
-                    "or ToolChain) found!"
+                self.message(
+                    'WARNING: two tools with same name but not of same class '
+                    '(i.e. Tool or ToolChain) found!')
                 return
             else:
-                commit_msg = raw_input("No new Tool found, want to amend commit? "\
-                    "Press Enter if you don't want to amend; type 'y' or 'yes' to amend and keep the old commit message;"\
-                    "to amend with a new message, type a new message: ")
+                commit_msg = raw_input(
+                    'No new Tool found, want to amend commit? '
+                    'Press Enter if you do not want to amend; '
+                    'type "y" or "yes" to amend and keep the old commit '
+                    'message; '
+                    'to amend with a new message, type a new message: ')
                 if commit_msg == '':
-                    print "Not committed."
-                elif any((commit_msg == i) for i in ['y', 'Y', 'yes', 'Yes', 'YES']):
-                    previous_commit_msg = subprocess.check_output('git log -1 --pretty=%B', shell=True)
-                    previous_commit_hash = subprocess.check_output('git rev-parse --verify HEAD', shell=True)[:-2]
-                    os.system('git commit --amend -am "{0}"'.format(previous_commit_msg))
-                    new_commit_hash = subprocess.check_output('git rev-parse --verify HEAD', shell=True)[:-2]
-                    self.set_commit_hash(self.log_data, new_commit_hash, previous_commit_hash)
+                    self.message('Not committed.')
+                elif any((commit_msg.lower() == i) for i in ['y', 'yes']):
+                    previous_commit_msg = subprocess.check_output(
+                        'git log -1 --pretty=%B', shell=True)
+                    previous_commit_hash = subprocess.check_output(
+                        'git rev-parse --verify HEAD', shell=True)[:-2]
+                    os.system(
+                        'git commit --amend -am "{0}"'.format(
+                            previous_commit_msg))
+                    new_commit_hash = subprocess.check_output(
+                        'git rev-parse --verify HEAD', shell=True)[:-2]
+                    self.set_commit_hash(
+                        self.log_data, new_commit_hash, previous_commit_hash)
                 else:
-                    previous_commit_hash = subprocess.check_output('git rev-parse --verify HEAD', shell=True)[:-2]
-                    os.system('git commit -a --amend -m "From GitTagger: {0}"'.format(commit_msg))
-                    new_commit_hash = subprocess.check_output('git rev-parse --verify HEAD', shell=True)[:-2]
-                    self.set_commit_hash(self.log_data, new_commit_hash, previous_commit_hash)
+                    previous_commit_hash = subprocess.check_output(
+                        'git rev-parse --verify HEAD', shell=True)[:-2]
+                    os.system(
+                        'git commit -a --amend -m "From GitTagger: {0}"'.format(
+                            commit_msg))
+                    new_commit_hash = subprocess.check_output(
+                        'git rev-parse --verify HEAD', shell=True)[:-2]
+                    self.set_commit_hash(
+                        self.log_data, new_commit_hash, previous_commit_hash)
         else:
             self.log_data = toollist
-            commit_msg = self.new_commit("No logfile found, if you want to make new commit type a commit message; "\
-                      "If you want to amend the latest commit, type 'amend'; "\
-                      "If you don't want to commit, just press enter: ")
-            self.update_logfile(analysis.cwd+self.logfilename, self.log_data, commit_msg)
+            commit_msg = self.new_commit(
+                'No logfile found, if you want to make new commit type a '
+                'commit message; '
+                'If you want to amend the latest commit, type "amend"; '
+                'If you do not want to commit, just press enter: ')
+            self.update_logfile(
+                self.cwd+self.logfilename, self.log_data, commit_msg)
 
 
 class TexContent(Tool):
