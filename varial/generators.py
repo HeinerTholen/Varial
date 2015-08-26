@@ -666,18 +666,26 @@ def switch_log_scale(cnvs, x_axis=False, y_axis=True):
     """
     for cnv in cnvs:
         assert isinstance(cnv, rnd.wrappers.CanvasWrapper)
+
         if x_axis:
             cnv.main_pad.SetLogx(1)
         else:
             cnv.main_pad.SetLogx(0)
+
         if y_axis:
-            min_val = cnv.y_min_gr_0 * 0.5
-            min_val = max(min_val, 1e-9)
-            cnv.first_drawn.SetMinimum(min_val)
-            cnv.main_pad.SetLogy(1)
+            # if the cnv.first_drawn has a member called 'Integral', the 
+            # integral should be greater then zero...
+            if ((not hasattr(cnv.first_drawn, 'Integral'))
+                or cnv.first_drawn.Integral() > 1e-9
+            ):
+                min_val = cnv.y_min_gr_0 * 0.5
+                min_val = max(min_val, 1e-9)
+                cnv.first_drawn.SetMinimum(min_val)
+                cnv.main_pad.SetLogy(1)
         else:
             cnv.first_drawn.SetMinimum(cnv.y_min)
             cnv.main_pad.SetLogy(0)
+
         yield cnv
 
 

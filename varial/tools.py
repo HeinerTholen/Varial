@@ -352,9 +352,7 @@ class GitTagger(Tool):
         new_tool = 0
         for tool1 in dict1:
             if tool1 in dict2.keys():
-                if (
-                    and is_dict(dict2[tool1])
-                ):
+                if is_dict(dict1[tool1]) and is_dict(dict2[tool1]):
                     new_tool = self.compare_tool_tree(dict1[tool1], 
                                                       dict2[tool1])
                     if new_tool == -1:
