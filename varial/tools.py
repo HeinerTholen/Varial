@@ -428,11 +428,11 @@ class GitTagger(Tool):
                 return
             else:
                 commit_msg = raw_input("No new Tool found, want to amend commit? "\
-                    "Type 'no' if you don't want to amend; press Enter to amend and keep the old commit message;"\
+                    "Press Enter if you don't want to amend; type 'y' or 'yes' to amend and keep the old commit message;"\
                     "to amend with a new message, type a new message: ")
-                if any((commit_msg == i) for i in ['n', 'N', 'no', 'No', 'NO']):
+                if commit_msg == '':
                     print "Not committed."
-                elif commit_msg == '':
+                elif any((commit_msg == i) for i in ['y', 'Y', 'yes', 'Yes', 'YES']):
                     previous_commit_msg = subprocess.check_output('git log -1 --pretty=%B', shell=True)
                     previous_commit_hash = subprocess.check_output('git rev-parse --verify HEAD', shell=True)[:-2]
                     os.system('git commit --amend -am "{0}"'.format(previous_commit_msg))
