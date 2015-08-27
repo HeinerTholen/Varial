@@ -358,11 +358,19 @@ class GitTagger(Tool):
                     if new_tool == -1:
                         return new_tool
                 elif is_dict(dict1[tool1]) != is_dict(dict2[tool1]):  # xor
-                    new_tool = -1
-                    return new_tool
+                    replace_tool = raw_input(
+                        'WARNING: two tools with same name but not of same class '
+                        '(i.e. Tool or ToolChain) found! To replace old tool, '
+                        'type "yes", to abort press Enter: ')
+                    if any((replace_tool.lower() == i) for i in ['y', 'yes']):
+                        dict2[tool1] = dict1[tool1]
+                        new_tool = 1
+                    else:
+                        self.message('Not committed, abort GitTagger.')
+                        new_tool = -1
+                        return new_tool
             else:
-                new_tool_tmp = dict1[tool1]
-                dict2[tool1] = new_tool_tmp
+                dict2[tool1] = dict1[tool1]
                 new_tool = 1
         return new_tool
 
@@ -416,11 +424,12 @@ class GitTagger(Tool):
                 log_data, logfile, 
                 sort_keys=True, indent=4, separators=(',', ': '))
 
-    def show_git_stat(self):
-        self.message(
-            'Found the following changes in the code: ')
+    def show_git_stat_and_log(self):
+        self.message('Found the following changes in the code:\n')
         os.system('git diff --stat')
         os.system('git diff --cached --stat')
+        self.message('\nLast 5 commits:\n')
+        os.system('git log --oneline -5')
 
     def run(self):
         toollist = {}
@@ -436,7 +445,7 @@ class GitTagger(Tool):
                 self.log_data = json.load(logfile)
                 new_tool = self.compare_tool_tree(toollist, self.log_data)
             if new_tool > 0:
-                self.show_git_stat()
+                self.show_git_stat_and_log()
                 commit_hash = self.new_commit(
                     'New tool found, if you want to make new commit type a '
                     'commit message; '
@@ -445,12 +454,9 @@ class GitTagger(Tool):
                 self.update_logfile(
                     self.cwd+self.logfilename, self.log_data, commit_hash)
             elif new_tool < 0:
-                self.message(
-                    'WARNING: two tools with same name but not of same class '
-                    '(i.e. Tool or ToolChain) found!')
                 return
             else:
-                self.show_git_stat()
+                self.show_git_stat_and_log()
                 commit_msg = raw_input(
                     'No new Tool found, want to amend commit? '
                     'Press Enter if you do not want to amend; '
@@ -473,7 +479,7 @@ class GitTagger(Tool):
                         self.log_data, new_commit_hash, previous_commit_hash)
         else:
             self.log_data = toollist
-            self.show_git_stat()
+            self.show_git_stat_and_log()
             commit_msg = self.new_commit(
                 'No logfile found, if you want to make new commit type a '
                 'commit message; '
