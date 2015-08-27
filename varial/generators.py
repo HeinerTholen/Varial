@@ -673,10 +673,10 @@ def switch_log_scale(cnvs, x_axis=False, y_axis=True):
             cnv.main_pad.SetLogx(0)
 
         if y_axis:
-            # if the cnv.first_drawn has a member called 'Integral', the 
-            # integral should be greater then zero...
-            if ((not hasattr(cnv.first_drawn, 'Integral'))
-                or cnv.first_drawn.Integral() > 1e-9
+            # if the cnv.first_drawn has a member called 'GetMaximum', the 
+            # maximum should be greater then zero...
+            if ((not hasattr(cnv.first_drawn, 'GetMaximum'))
+                or cnv.first_drawn.GetMaximum() > 1e-9
             ):
                 min_val = cnv.y_min_gr_0 * 0.5
                 min_val = max(min_val, 1e-9)
