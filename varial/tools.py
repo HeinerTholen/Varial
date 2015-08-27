@@ -379,22 +379,26 @@ class GitTagger(Tool):
                     if tool_dict[tool] == old_commit_hash:
                         tool_dict[tool] = commit_hash
 
+    def amend_commit(self):
+        previous_commit_msg = subprocess.check_output(
+            'git log -1 --pretty=%B', shell=True)
+        previous_commit_hash = subprocess.check_output(
+            'git rev-parse --verify HEAD', shell=True)[:-2]
+        os.system(
+            'git commit --amend -am "{0}"'.format(previous_commit_msg))
+        new_commit_hash = subprocess.check_output(
+            'git rev-parse --verify HEAD', shell=True)[:-2]
+        self.set_commit_hash(
+            self.log_data, new_commit_hash, previous_commit_hash)
+        return new_commit_hash
+
     def new_commit(self, message=''):
         commit_msg = raw_input(message)
         if commit_msg == '':
             self.message('Not committed.')
             return -1
         elif commit_msg == 'amend':
-            previous_commit_msg = subprocess.check_output(
-                'git log -1 --pretty=%B', shell=True)
-            previous_commit_hash = subprocess.check_output(
-                'git rev-parse --verify HEAD', shell=True)[:-2]
-            os.system(
-                'git commit --amend -am "{0}"'.format(previous_commit_msg))
-            new_commit_hash = subprocess.check_output(
-                'git rev-parse --verify HEAD', shell=True)[:-2]
-            self.set_commit_hash(
-                self.log_data, new_commit_hash, previous_commit_hash)
+            new_commit_hash = self.amend_commit()
             return new_commit_hash
         else:
             os.system(
@@ -412,6 +416,12 @@ class GitTagger(Tool):
                 log_data, logfile, 
                 sort_keys=True, indent=4, separators=(',', ': '))
 
+    def show_git_stat(self):
+        self.message(
+            'Found the following changes in the code: ')
+        os.system('git diff --stat')
+        os.system('git diff --cached --stat')
+
     def run(self):
         toollist = {}
         toollist[analysis.results_base.name] = {}
@@ -421,12 +431,12 @@ class GitTagger(Tool):
                 analysis.results_base.children[rname]
             )
 
-        files_changed = False
         if os.path.isfile(self.cwd+self.logfilename):
             with open(self.cwd+self.logfilename, 'r') as logfile:
                 self.log_data = json.load(logfile)
                 new_tool = self.compare_tool_tree(toollist, self.log_data)
             if new_tool > 0:
+                self.show_git_stat()
                 commit_hash = self.new_commit(
                     'New tool found, if you want to make new commit type a '
                     'commit message; '
@@ -440,6 +450,7 @@ class GitTagger(Tool):
                     '(i.e. Tool or ToolChain) found!')
                 return
             else:
+                self.show_git_stat()
                 commit_msg = raw_input(
                     'No new Tool found, want to amend commit? '
                     'Press Enter if you do not want to amend; '
@@ -449,17 +460,7 @@ class GitTagger(Tool):
                 if commit_msg == '':
                     self.message('Not committed.')
                 elif any((commit_msg.lower() == i) for i in ['y', 'yes']):
-                    previous_commit_msg = subprocess.check_output(
-                        'git log -1 --pretty=%B', shell=True)
-                    previous_commit_hash = subprocess.check_output(
-                        'git rev-parse --verify HEAD', shell=True)[:-2]
-                    os.system(
-                        'git commit --amend -am "{0}"'.format(
-                            previous_commit_msg))
-                    new_commit_hash = subprocess.check_output(
-                        'git rev-parse --verify HEAD', shell=True)[:-2]
-                    self.set_commit_hash(
-                        self.log_data, new_commit_hash, previous_commit_hash)
+                    self.amend_commit()
                 else:
                     previous_commit_hash = subprocess.check_output(
                         'git rev-parse --verify HEAD', shell=True)[:-2]
@@ -472,6 +473,7 @@ class GitTagger(Tool):
                         self.log_data, new_commit_hash, previous_commit_hash)
         else:
             self.log_data = toollist
+            self.show_git_stat()
             commit_msg = self.new_commit(
                 'No logfile found, if you want to make new commit type a '
                 'commit message; '
