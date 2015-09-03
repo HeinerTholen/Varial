@@ -174,8 +174,9 @@ class CopyTool(Tool):
         if self.use_rsync:
             self.wipe_dest_dir = False
             self.ignore = list('--exclude='+w for w in self.ignore)
-            cp_func = lambda w, x, y: os.system('rsync -avz --delete {0} {1} {2}'.format(
-                ' '.join(w), x, ' '.join(y)))
+            cp_func = lambda w, x, y: os.system(
+                'rsync -avz --delete {0} {1} {2}'.format(
+                    ' '.join(w), x, ' '.join(y)))
         else:
             cp_func = lambda w, x, y: self.def_copy(w, x, y)
 
@@ -359,9 +360,9 @@ class GitTagger(Tool):
                         return new_tool
                 elif is_dict(dict1[tool1]) != is_dict(dict2[tool1]):  # xor
                     replace_tool = raw_input(
-                        'WARNING: two tools with same name but not of same class '
-                        '(i.e. Tool or ToolChain) found! To replace old tool, '
-                        'type "yes", to abort press Enter: ')
+                        'WARNING: two tools with same name but not of same '
+                        'class (i.e. Tool or ToolChain) found! To replace old '
+                        'tool, type "yes", to abort press Enter: ')
                     if any((replace_tool.lower() == i) for i in ['y', 'yes']):
                         dict2[tool1] = dict1[tool1]
                         new_tool = 1
