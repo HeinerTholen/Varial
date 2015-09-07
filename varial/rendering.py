@@ -76,7 +76,8 @@ class HistoRenderer(Renderer, wrappers.HistoWrapper):
         return self.val_x_max or self.histo.GetXaxis().GetXmax()
 
     def y_min(self):
-        return self.val_y_min or self.histo.GetMinimum() + 1e-23  # > 0 cuts away half numbers
+        # > 0 cuts away half numbers
+        return self.val_y_min or self.histo.GetMinimum() + 1e-23
 
     def y_max(self):
         return self.val_y_max or self.histo.GetMaximum()
@@ -520,31 +521,26 @@ class BottomPlot(util.Decorator):
     def __init__(self, inner=None, dd=True, **kws):
         super(BottomPlot, self).__init__(inner, dd, **kws)
         self.dec_par.update(settings.defaults_BottomPlot)
+        self.dec_par['renderers_check_ok'] = False
         self.dec_par.update(kws)
+
+    def check_renderers(self):
+        """Overwrite and return bool!"""
+        return False
+
+    def define_bottom_hist(self):
+        """Overwrite this method and give a histo-ref to self.bottom_hist!"""
+        pass
 
     def configure(self):
         self.decoratee.configure()
-        n_data_hists = len(filter(lambda r: r.is_data or r.is_pseudo_data,
-                                  self.renderers))
-
-        if 'TH2' in self.renderers[0].type:
-            self.__dict__['no_bottomplot'] = True
-            return
-
-        if n_data_hists > 1:
-            raise RuntimeError('ERROR BottomPlots can only be created '
-                               'with exactly one data histogram')
-        self.__dict__['no_bottomplot'] = not n_data_hists
-
-    def define_bottom_hist(self):
-        """Overwrite this method and give a histo-ref to self.bottom_hist."""
-        pass
+        self.dec_par['renderers_check_ok'] = self.check_renderers()
 
     def make_empty_canvas(self):
         """Instanciate canvas with two pads."""
         # canvas
         self.decoratee.make_empty_canvas()
-        if self.no_bottomplot:
+        if not self.dec_par['renderers_check_ok']:
             return
         name = self.name
         self.main_pad = TPad(
@@ -581,7 +577,7 @@ class BottomPlot(util.Decorator):
         # draw main histogram
         self.main_pad.cd()
         self.decoratee.draw_full_plot()
-        if self.no_bottomplot:
+        if not self.dec_par['renderers_check_ok']:
             return
         first_drawn = self.first_drawn
         first_drawn.GetYaxis().CenterTitle(1)
@@ -640,6 +636,19 @@ class BottomPlot(util.Decorator):
 
 class BottomPlotRatio(BottomPlot):
     """Ratio of first and second histogram in canvas."""
+
+    def check_renderers(self):
+        n_data_hists = len(filter(lambda r: r.is_data or r.is_pseudo_data,
+                                  self.renderers))
+
+        if 'TH2' in self.renderers[0].type:
+            return False
+
+        if n_data_hists > 1:
+            raise RuntimeError('ERROR BottomPlots can only be created '
+                               'with exactly one data histogram')
+        return n_data_hists == 1
+
     def define_bottom_hist(self):
         rnds = self.renderers
         wrp = op.div([rnds[0]] + filter(
@@ -651,7 +660,7 @@ class BottomPlotRatio(BottomPlot):
         self.bottom_hist = wrp.histo
 
 
-class BottomPlotRatioSplitErr(BottomPlot):
+class BottomPlotRatioSplitErr(BottomPlotRatio):
     """Same as BottomPlotRatio, but split MC and data uncertainties."""
     def define_bottom_hist(self):
         rnds = self.renderers
@@ -688,7 +697,7 @@ class BottomPlotRatioSplitErr(BottomPlot):
     def draw_full_plot(self):
         """Draw mc error histo below data ratio."""
         super(BottomPlotRatioSplitErr, self).draw_full_plot()
-        if self.no_bottomplot:
+        if not self.dec_par['renderers_check_ok']:
             return
         self.second_pad.cd()
         self.bottom_hist_mc_err.Draw('sameE2')

@@ -59,7 +59,7 @@ def attribute_printer(iterable, attr):
     :yields:            same as input
     """
     for obj in iterable:
-        monitor.message('generators.in_file_path_printer',
+        monitor.message('generators.attribute_printer',
                         'INFO: %s: %s'
                         % (attr, getattr(obj, attr, '<not defined>')))
         yield obj
