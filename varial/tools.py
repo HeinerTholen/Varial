@@ -345,19 +345,19 @@ class GitAdder(Tool):
         super(GitAdder, self).__init__()
 
     def run(self):
-        unstaged_changes = subprocess.check_output('git diff --stat',
-            shell=True)
-        staged_changes = subprocess.check_output('git diff --cached --stat',
-            shell=True)
-        last_commit_hash =
-            subprocess.check_output('git rev-parse --verify HEAD', shell=True)
+        unstaged_changes = subprocess.check_output(
+            'git diff --stat', shell=True)
+        staged_changes = subprocess.check_output(
+            'git diff --cached --stat', shell=True)
+        last_commit_hash = subprocess.check_output(
+            'git rev-parse --verify HEAD', shell=True)
         show_git_stat_and_log()
         if not unstaged_changes and not staged_changes:
             self.message('NOTE: no changes in working directory and no staged '
                 'changes in index!')
             last_commit_hash = '-2'
         if staged_changes:
-            run_gittagger = raw_input('WARNING: Staged changes in working '
+            run_gittagger = raw_input('WARNING Staged changes in working '
                 'directory found! To continue without staging, press Enter, '
                 'to continue and stage new changes type "y" or "yes" '
                 '(To abort kill process): ')
@@ -482,7 +482,8 @@ class GitTagger(Tool):
             return new_commit_hash
         else:
             os.system(
-                'git commit -m "{0}: {1}"'.format(self.commit_prefix, commit_msg))
+                'git commit -m "{0}: {1}"'.format(
+                    self.commit_prefix, commit_msg))
             new_hash =subprocess.check_output(
                 'git rev-parse --verify HEAD', shell=True)[:-2]
             self.log_data['LatestCommit'] = new_hash
@@ -500,13 +501,19 @@ class GitTagger(Tool):
 
     def run(self):
         last_stored_commit = self.lookup_result('../GitAdder')
-        latest_commit_hash = subprocess.check_output('git rev-parse --verify HEAD',
-            shell=True)
-        if last_stored_commit.commit_hash != latest_commit_hash and
-            last_stored_commit.commit_hash != '-1':
-            want_continue = raw_input('WARNING: discrepancy in staging area before '
-                'and after running the analysis found! It is highly encouraged not '
-                'to commit in order not to mess up your GitTagger log file!')
+
+        if not last_stored_commit:
+            self.message('ERROR I could not find "../GitAdder". Returning.')
+            return
+
+        latest_commit_hash = subprocess.check_output(
+            'git rev-parse --verify HEAD', shell=True)
+        if (last_stored_commit.commit_hash != latest_commit_hash and
+            last_stored_commit.commit_hash != '-1'):
+            want_continue = raw_input(
+                'WARNING discrepancy in staging area before and after running '
+                'the analysis found! It is highly encouraged not to commit in '
+                'order not to mess up your GitTagger log file!')
         toollist = {}
         toollist[analysis.results_base.name] = {}
         for rname in sorted(analysis.results_base.children):
@@ -535,19 +542,20 @@ class GitTagger(Tool):
                 commit_msg = raw_input(
                     'No new Tool found, want to amend commit? '
                     'Press Enter if you do not want to amend; '
-                    'type "amend", "y" or "yes" to amend and keep the old commit '
-                    'message; '
+                    'type "amend", "y" or "yes" to amend and keep the old '
+                    'commit message; '
                     'to amend with a new message, type a new message: ')
                 if commit_msg == '':
                     self.message('Not committed.')
-                elif any((commit_msg.lower() == i) for i in ['y', 'yes', 'amend']):
+                elif any((commit_msg.lower() == i) 
+                    for i in ['y', 'yes', 'amend']):
                     self.amend_commit()
                 else:
                     previous_commit_hash = subprocess.check_output(
                         'git rev-parse --verify HEAD', shell=True)[:-2]
                     os.system(
-                        'git commit --amend -m "{0}: {1}"'.format(self.commit_prefix, 
-                            commit_msg))
+                        'git commit --amend -m "{0}: {1}"'.format(
+                            self.commit_prefix, commit_msg))
                     new_commit_hash = subprocess.check_output(
                         'git rev-parse --verify HEAD', shell=True)[:-2]
                     self.set_commit_hash(
