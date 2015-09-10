@@ -203,7 +203,8 @@ def load_histogram(alias):
     histo = load_bare_object(alias)
     if not isinstance(histo, TH1):
         raise NoHistogramError(
-            'Loaded object is not of type TH1: %s' % str(histo)
+            'Loaded object is not of type TH1.\n'
+            'Alias: %s\nObject: %s\n' % (alias, histo)
         )
     if not histo.GetSumw2().GetSize():
         histo.Sumw2()
