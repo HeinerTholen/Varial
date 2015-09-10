@@ -13,7 +13,7 @@ op = operations
 rnd = rendering
 wrp = wrappers
 
+import ROOT
 
 def raise_root_error_level():
-    import ROOT
     ROOT.gROOT.ProcessLine('gErrorIgnoreLevel = kError;')
