@@ -60,6 +60,10 @@ def default_plot_colorizer(grps, colors=None):
     return grps
 
 
+def save_name_with_hash(wrp):
+    return wrp.name + '_' + str(hash(str(wrp.history)))[-6:]
+
+
 default_canvas_decorators = [
     rendering.BottomPlotRatioSplitErr,
     rendering.Legend
@@ -88,7 +92,7 @@ class Plotter(toolinterface.Tool):
     ...    'save_lin_log_scale': False,
     ...    'keep_content_as_result': False,
     ...    'set_canvas_name': set_canvas_name_to_infilepath,
-    ...    'save_name_func': lambda wrp: wrp.name,
+    ...    'save_name_func': save_name_with_hash,
     ...    'canvas_decorators': default_canvas_decorators,
     ...}
     """
@@ -107,7 +111,7 @@ class Plotter(toolinterface.Tool):
         'save_lin_log_scale': False,
         'keep_content_as_result': False,
         'set_canvas_name': set_canvas_name_to_infilepath,
-        'save_name_func': lambda wrp: wrp.name,
+        'save_name_func': save_name_with_hash,
         'canvas_decorators': default_canvas_decorators,
     }
 
@@ -394,6 +398,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                         set_canvas_name=set_canvas_name_to_plot_name,
                         load_func=_mk_private_loader(path[:-1]),
                         canvas_decorators=default_canvas_decorators,
+                        save_name_func=lambda w: w.name,
                     )
 
     def run(self):
