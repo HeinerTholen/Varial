@@ -61,7 +61,7 @@ def default_plot_colorizer(grps, colors=None):
 
 
 def save_name_with_hash(wrp):
-    return wrp.name + '_' + str(hash(str(wrp.history)))[-6:]
+    return wrp.name + '_' + hex(hash(str(wrp.history)))[-6:]
 
 
 default_canvas_decorators = [
