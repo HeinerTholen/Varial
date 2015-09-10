@@ -30,6 +30,11 @@ def set_canvas_name_to_plot_name(grps):
         yield grp
 
 
+def plot_grouper_single_plots(wrps):
+    for w in wrps:
+        yield (w,)
+
+
 def plot_grouper_by_in_file_path(wrps, separate_th2=True):
     if separate_th2:
         wrps = rename_th2(wrps)
@@ -60,7 +65,11 @@ def default_plot_colorizer(grps, colors=None):
     return grps
 
 
-def save_name_with_hash(wrp):
+def save_by_name(wrp):
+    return wrp.name
+
+
+def save_by_name_with_hash(wrp):
     return wrp.name + '_' + hex(hash(str(wrp.history)))[-6:]
 
 
@@ -77,13 +86,16 @@ class Plotter(toolinterface.Tool):
     Overriding set_up_content and setting self.stream_content lets
     Default attributes, that can be overwritten by init keywords:
 
+    If both defaults for ``plot_grouper`` and ``save_name_func`` are kept, the
+    latter is replaced with ``save_by_name_with_hash``.
+
     >>> defaults = {
     ...    'input_result_path': None,
     ...    'filter_keyfunc': None,
     ...    'load_func': gen.fs_filter_active_sort_load,
     ...    'hook_loaded_histos': None,
     ...    'stack_grouper': plot_grouper_by_in_file_path,
-    ...    'plot_grouper': lambda wrps: ((w,) for w in wrps),
+    ...    'plot_grouper': plot_grouper_single_plots,
     ...    'stack_setup': lambda w: gen.mc_stack_n_data_sum(w, None, True),
     ...    'plot_setup': default_plot_colorizer,
     ...    'hook_canvas_pre_build': None,
@@ -92,7 +104,7 @@ class Plotter(toolinterface.Tool):
     ...    'save_lin_log_scale': False,
     ...    'keep_content_as_result': False,
     ...    'set_canvas_name': set_canvas_name_to_infilepath,
-    ...    'save_name_func': save_name_with_hash,
+    ...    'save_name_func': save_by_name,
     ...    'canvas_decorators': default_canvas_decorators,
     ...}
     """
@@ -102,7 +114,7 @@ class Plotter(toolinterface.Tool):
         'load_func': gen.fs_filter_active_sort_load,
         'hook_loaded_histos': None,
         'stack_grouper': plot_grouper_by_in_file_path,
-        'plot_grouper': lambda wrps: ((w,) for w in wrps),
+        'plot_grouper': plot_grouper_single_plots,
         'stack_setup': lambda w: gen.mc_stack_n_data_sum(w, None, True),
         'plot_setup': default_plot_colorizer,
         'hook_canvas_pre_build': None,
@@ -111,7 +123,7 @@ class Plotter(toolinterface.Tool):
         'save_lin_log_scale': False,
         'keep_content_as_result': False,
         'set_canvas_name': set_canvas_name_to_infilepath,
-        'save_name_func': save_name_with_hash,
+        'save_name_func': save_by_name,
         'canvas_decorators': default_canvas_decorators,
     }
 
@@ -125,9 +137,14 @@ class Plotter(toolinterface.Tool):
         defaults.update(kws)            # add keywords
         self.__dict__.update(defaults)  # set attributes in place
         self.stream_content = None
+
         if stack:
             self.plot_setup = self.stack_setup
             self.plot_grouper = self.stack_grouper
+            
+        if (self.plot_grouper == plot_grouper_single_plots 
+            and self.save_name_func == save_by_name):
+            self.save_name_func = save_by_name_with_hash
 
     def configure(self):
         pass
