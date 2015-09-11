@@ -200,10 +200,3 @@ class CopyTool(Tool):
 
         # copy
         cp_func(src_objs, dest, self.ignore)
-
-
-
-
-
-
-

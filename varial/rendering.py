@@ -115,7 +115,7 @@ class StackRenderer(HistoRenderer, wrappers.StackWrapper):
         self.histo.SetFillStyle(3008)
         self.histo.SetLineColor(1)
         self.histo.SetTitle('Stat. uncert. MC')
-        self.draw_option_sum = 'sameE2'
+        self.draw_option_sum = wrp.all_info().get('draw_option_sum', 'sameE2')
 
     def y_min_gr_zero(self, histo=None):
         return super(StackRenderer, self).y_min_gr_zero(
