@@ -15,6 +15,9 @@ class TestHistoToolsBase(unittest.TestCase):
         super(TestHistoToolsBase, self).setUp()
 
         test_fs = "fileservice/"
+        if not os.path.exists(test_fs):
+            test_fs = "varial/test/" + test_fs
+
         settings.DIR_FILESERVICE = test_fs
         if (not os.path.exists(test_fs + "tt.root")) \
         or (not os.path.exists(test_fs + "ttgamma.root")) \

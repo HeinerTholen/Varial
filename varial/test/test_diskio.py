@@ -6,6 +6,7 @@ from test_histotoolsbase import TestHistoToolsBase
 from varial.wrappers import FileServiceAlias, HistoWrapper, WrapperWrapper
 from varial import diskio
 from varial import analysis
+from varial import settings
 
 class TestDiskio(TestHistoToolsBase):
 
@@ -18,7 +19,7 @@ class TestDiskio(TestHistoToolsBase):
         for name, smp in analysis.all_samples.items():
             analysis.fs_aliases += list(
                 alias for alias in diskio.generate_fs_aliases(
-                    'fileservice/%s.root' % name,
+                    settings.DIR_FILESERVICE + '%s.root' % name,
                     smp
                 )
             )
@@ -45,7 +46,7 @@ class TestDiskio(TestHistoToolsBase):
 
     def test_load_histogram(self):
         test_alias = FileServiceAlias(
-            'fileservice/ttgamma.root',
+            settings.DIR_FILESERVICE + 'ttgamma.root',
             'analyzeSelection/cutflow',
             'TH1D',
             analysis.all_samples['ttgamma']
