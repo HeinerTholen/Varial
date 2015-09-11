@@ -549,7 +549,7 @@ class GitTagger(Tool):
                     self.message('Not committed.')
                 elif any((commit_msg.lower() == i) 
                     for i in ['y', 'yes', 'amend']):
-                    self.amend_commit()
+                    new_commit_hash = self.amend_commit()
                 else:
                     previous_commit_hash = subprocess.check_output(
                         'git rev-parse --verify HEAD', shell=True)[:-2]
@@ -561,7 +561,7 @@ class GitTagger(Tool):
                     self.set_commit_hash(
                         self.log_data, new_commit_hash, previous_commit_hash)
                 self.update_logfile(
-                    self.cwd+self.logfilename, self.log_data)
+                    self.cwd+self.logfilename, self.log_data, new_commit_hash)
         else:
             self.log_data = toollist
             self.log_data['LatestCommit'] = 0
