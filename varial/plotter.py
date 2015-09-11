@@ -1,7 +1,8 @@
 import itertools
-import os
-import time
 import ROOT
+import glob
+import time
+import os
 
 import analysis
 import generators as gen
@@ -438,3 +439,71 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                     f.write('plotter done.\n')
         if self._is_base_instance:
             analysis.fs_aliases = old_aliases
+
+
+def mk_rootfile_plotter(name="RootFilePlots",
+                        pattern='*.root',
+                        flat=False,
+                        plotter_factory=None,
+                        combine_files=False,
+                        filter_keyfunc=None,
+                        auto_legend=True,
+                        legendnames=None,
+                        **kws):
+    """
+    Make a plotter chain that plots all content of all rootfiles in cwd.
+
+    Additional keywords are forwarded to the plotter instanciation.
+    For running the plotter(s), use a Runner.
+
+    :param name:                str, name of the folder in which the output is
+                                stored
+    :param pattern:             str, search pattern for rootfiles,
+                                default: ``*.root``
+    :param flat:                bool, flatten the rootfile structure
+                                default: ``False``
+    :param plotter_factory:     factory function for RootFilePlotter
+                                default: ``None``
+    :param combine_files:       bool, plot same histograms across rootfiles
+                                into the same canvas. Does not work together
+                                with ``flat`` option,
+                                default: ``False``
+    """
+    def plotter_factory_kws(**kws_fctry):
+        kws_fctry.update(kws)
+        if plotter_factory:
+            return plotter_factory(**kws_fctry)
+        else:
+            return Plotter(**kws_fctry)
+
+    if kws:
+        new_plotter_factory = plotter_factory_kws
+    else:
+        new_plotter_factory = plotter_factory
+
+    if combine_files:
+        tc = RootFilePlotter(
+            pattern,
+            new_plotter_factory,
+            flat,
+            name,
+            filter_keyfunc,
+            auto_legend,
+            legendnames
+        )
+    else:
+        plotters = list(
+            RootFilePlotter(
+                f,
+                new_plotter_factory,
+                flat,
+                f[:-5].split('/')[-1],
+                filter_keyfunc,
+                auto_legend,
+                legendnames
+            )
+            for f in glob.iglob(pattern)
+        )
+        tc = toolinterface.ToolChainParallel(name, plotters)
+    return tc
+

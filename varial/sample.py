@@ -142,3 +142,64 @@ def generate_samples_glob(glob_path, out_path):
         out_path
     )
 
+
+########################################################## SampleNormalizer ###
+import analysis
+import generators as gen
+
+from varial.toolinterface import Tool
+from varial.plotter import default_canvas_decorators
+
+
+class SampleNormalizer(Tool):
+    """
+    Normalize MC cross sections.
+
+    With this tool all MC cross-section can be normalized to data, using one
+    specific distribution. *Before* and *after* plots are stored as plots. The
+    resulting factor is stored as result of this tool.
+
+    :param filter_keyfunc:  lambda, keyfunction with one argument
+    :param x_range_tuple:
+    :param name:            str, tool name
+    """
+    can_reuse = False
+
+    def __init__(self, filter_keyfunc, x_range_tuple, name=None):
+        super(SampleNormalizer, self).__init__(name)
+        self.filter_keyfunc = filter_keyfunc
+        self.x_range = x_range_tuple
+
+    def get_histos_n_factor(self):
+        mcee, data = next(gen.fs_mc_stack_n_data_sum(
+            self.filter_keyfunc
+        ))
+        dh, mh = data.histo, mcee.histo
+        bins = tuple(dh.FindBin(x) for x in self.x_range)
+        factor = dh.Integral(*bins) / mh.Integral(*bins)
+        canv = next(gen.canvas(
+            ((mcee, data),),
+            default_canvas_decorators
+        ))
+        return factor, canv
+
+    def run(self):
+        # before
+        factor, canv = self.get_histos_n_factor()
+        next(gen.save_canvas_lin_log([canv], lambda _: 'before'))
+
+        # alter samples
+        for s in analysis.mc_samples().itervalues():
+            s.lumi /= factor
+            s.x_sec /= factor
+        for a in analysis.fs_aliases:
+            a.lumi /= factor
+
+        # after
+        _, canv = self.get_histos_n_factor()
+        next(gen.save_canvas_lin_log([canv], lambda _: 'after'))
+
+        self.result = wrappers.FloatWrapper(
+            factor,
+            name='Lumi factor'
+        )
