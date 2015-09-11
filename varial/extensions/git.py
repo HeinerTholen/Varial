@@ -26,9 +26,6 @@ class GitAdder(Tool):
     """
     can_reuse = False
 
-    def __init__(self):
-        super(GitAdder, self).__init__()
-
     def run(self):
         unstaged_changes = subprocess.check_output(
             'git diff --stat', shell=True)
@@ -65,8 +62,9 @@ class GitTagger(Tool):
     """
     can_reuse = False
 
-    def __init__(self, logfilename="GITTAGGER_LOG.txt",
-                       commit_prefix = "From GitTagger"):
+    def __init__(self, 
+                 logfilename="GITTAGGER_LOG.txt",
+                 commit_prefix="From GitTagger"):
         super(GitTagger, self).__init__()
         self.logfilename = logfilename
         self.commit_prefix = commit_prefix
