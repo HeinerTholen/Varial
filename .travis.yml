@@ -1,0 +1,12 @@
+before_install:
+  - wget http://sourceforge.net/projects/cernrootdebs/files/latest/download
+  - mv download cern_root.deb
+  - sudo dpkg -i cern_root.deb
+  - export ROOTSYS=/opt/root/
+  - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ROOTSYS/lib/root:
+
+language: python
+python:
+  - "2.7"
+
+script: python setup.py test
