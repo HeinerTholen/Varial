@@ -2,6 +2,11 @@
 Varial
 ======
 
+
+.. image:: https://travis-ci.org/HeinAtCERN/Varial.svg?branch=master
+    :target: https://travis-ci.org/HeinAtCERN/Varial
+
+
 Toolkit for analysis with ROOT. No gui, just library.
 
 Documentation can be found at:
