@@ -10,6 +10,7 @@ if len(sys.argv) < 2:
     print "Usage:"
     print "varial_gittagtool.py <logfile_path> [<commit_msg_prefix>]"
     print ""
+    exit(-1)
 
 git.GitAdder().run()
 if len (sys.argv) == 2:
