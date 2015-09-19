@@ -1,4 +1,5 @@
-# copy this to .git/hooks to store the varial version in each commit
+# copy or softlink this to .git/hooks/ in any project depending
+# on varial to store the varial version in each commit
 
 # where is your varial installation?
 varial_dir=~/dev/Varial
