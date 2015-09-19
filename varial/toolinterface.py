@@ -287,7 +287,6 @@ class ToolChainVanilla(ToolChain):
 ######################################################### ToolChainParallel ###
 _n_parallel_workers = None
 _n_parallel_workers_lock = None
-_exception_lock = None  # exception printing should not be mingled
 _kill_request = None  # initialized to 0, if > 0, the process group is killed
 
 
@@ -300,8 +299,11 @@ def _run_tool_in_worker(arg):
     except KeyboardInterrupt:  # these will be handled from main process
         return tool.name, False, None
     except:  # print exception and request termination
-        _exception_lock.acquire()
-        if _kill_request.value == 0:
+        with(_n_parallel_workers_lock):
+            kill_req_val = _kill_request.value
+            _kill_request.value = 1
+
+        if kill_req_val == 0:
             print '='*80
             print 'EXCEPTION IN PARALLEL EXECUTION START'
             print '='*80
@@ -310,8 +312,7 @@ def _run_tool_in_worker(arg):
             print '='*80
             print 'EXCEPTION IN PARALLEL EXECUTION END'
             print '='*80
-            _kill_request.value = 1
-        _exception_lock.release()
+
         return tool.name, False
     return tool.name, chain._reuse
 
@@ -355,9 +356,8 @@ class ToolChainParallel(ToolChain):
 
         while _n_parallel_workers.value >= settings.max_num_processes:
             time.sleep(0.5)
-        _n_parallel_workers_lock.acquire()
-        _n_parallel_workers.value += 1
-        _n_parallel_workers_lock.release()
+        with(_n_parallel_workers_lock):
+            _n_parallel_workers.value += 1
 
     @staticmethod
     def _parallel_worker_done():
@@ -365,9 +365,8 @@ class ToolChainParallel(ToolChain):
             return
 
         diskio.close_open_root_files()
-        _n_parallel_workers_lock.acquire()
-        _n_parallel_workers.value -= 1
-        _n_parallel_workers_lock.release()
+        with(_n_parallel_workers_lock):
+            _n_parallel_workers.value -= 1
 
     def _run_tool(self, tool):
         if isinstance(tool, ToolChainParallel):
