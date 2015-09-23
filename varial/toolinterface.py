@@ -286,24 +286,25 @@ class ToolChainVanilla(ToolChain):
 
 ######################################################### ToolChainParallel ###
 _n_parallel_workers = None
-_n_parallel_workers_lock = None
 _kill_request = None  # initialized to 0, if > 0, the process group is killed
+_manager_lock = None  # used w/o blocking for _kill_request
 
 
 def _run_tool_in_worker(arg):
     chain_path, tool_index = arg
     chain = analysis.lookup_tool(chain_path)
     tool = chain.tool_chain[tool_index]
+    name, reused, print_ex = tool.name, False, False
     try:
         chain._run_tool(tool)
+        reused = chain._reuse
     except KeyboardInterrupt:  # these will be handled from main process
-        return tool.name, False, None
+        pass
     except:  # print exception and request termination
-        with(_n_parallel_workers_lock):
-            kill_req_val = _kill_request.value
+        if (not _kill_request.value) and _manager_lock.acquire(blocking=False):
             _kill_request.value = 1
+            _kill_request.get_lock.release()
 
-        if kill_req_val == 0:
             print '='*80
             print 'EXCEPTION IN PARALLEL EXECUTION START'
             print '='*80
@@ -313,8 +314,7 @@ def _run_tool_in_worker(arg):
             print 'EXCEPTION IN PARALLEL EXECUTION END'
             print '='*80
 
-        return tool.name, False
-    return tool.name, chain._reuse
+    return tool.name, reused
 
 
 class _NoDaemonProcess(multiprocessing.Process):
@@ -356,7 +356,7 @@ class ToolChainParallel(ToolChain):
 
         while _n_parallel_workers.value >= settings.max_num_processes:
             time.sleep(0.5)
-        with(_n_parallel_workers_lock):
+        with(_manager_lock):
             _n_parallel_workers.value += 1
 
     @staticmethod
@@ -365,7 +365,7 @@ class ToolChainParallel(ToolChain):
             return
 
         diskio.close_open_root_files()
-        with(_n_parallel_workers_lock):
+        with(_manager_lock):
             _n_parallel_workers.value -= 1
 
     def _run_tool(self, tool):
@@ -377,10 +377,7 @@ class ToolChainParallel(ToolChain):
             self._parallel_worker_done()
 
     def run(self):
-        global _n_parallel_workers, \
-            _n_parallel_workers_lock, \
-            _exception_lock, \
-            _kill_request
+        global _n_parallel_workers, _kill_request, _manager_lock
 
         if not settings.use_parallel_chains or settings.max_num_processes == 1:
             return super(ToolChainParallel, self).run()
@@ -395,9 +392,8 @@ class ToolChainParallel(ToolChain):
         if not _n_parallel_workers:
             manager = multiprocessing.Manager()
             _n_parallel_workers = manager.Value('i', 0)
-            _n_parallel_workers_lock = manager.Lock()
-            _exception_lock = manager.Lock()
             _kill_request = manager.Value('i', 0)
+            _manager_lock = manager.RLock()
 
         # prepare multiprocessing
         diskio.close_open_root_files()
