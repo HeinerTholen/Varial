@@ -22,7 +22,6 @@ class ThetaLimits(varial.tools.Tool):
         dat_key=lambda w: w.is_data or w.is_pseudo_data,
         sig_key=lambda w: w.is_signal,
         bkg_key=lambda w: not any((w.is_signal, w.is_data, w.is_pseudo_data)),
-        options=None,
         name=None,
     ):
         super(ThetaLimits, self).__init__(name)
@@ -34,11 +33,6 @@ class ThetaLimits(varial.tools.Tool):
         self.dat_key = dat_key
         self.sig_key = sig_key
         self.bkg_key = bkg_key
-        if options:
-            self.theta_options = options 
-        else:
-            self.theta_options = theta_auto.Options()
-            options.set('minimizer', 'strategy', 'robust')
 
     def _store_histos_for_theta(self, dats, sigs, bkgs, name="ThetaHistos"):
         # create wrp
@@ -100,6 +94,8 @@ class ThetaLimits(varial.tools.Tool):
         self.model = self.model_func(theta_wrp.file_path)
 
         # let the fit run
+        options = theta_auto.Options()
+        options.set('minimizer', 'strategy', 'robust')
         theta_auto.model_summary(self.model)
         if self.asymptotic:
             limit_func = lambda w: theta_auto.asymptotic_cls_limits(w)
@@ -111,10 +107,10 @@ class ThetaLimits(varial.tools.Tool):
             name=self.name,
             _res_exp=res_exp,
             _res_obs=res_obs,
+            res_exp_x=res_exp.x,
+            res_exp_y=res_exp.y,
+            res_exp_xerrors=res_exp.xerrors,
+            res_exp_yerrors=res_exp.yerrors,
         )
-        self.message(
-            'INFO theta result: expected limit:\n' + str(self.result._res_exp))
-        self.message(
-            'INFO theta result: observerd limit:\n' + str(self.result._res_obs))
         theta_auto.config.report.write_html(
             os.path.join(self.cwd, 'result'))
