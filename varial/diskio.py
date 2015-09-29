@@ -89,9 +89,6 @@ def close_root_file(filename):
 
 
 ##################################################### read / write wrappers ###
-# TODO read and write should only call utility methods (see ugly wrpwrp writing)
-
-
 def exists(filename):
     """Checks for existance."""
     filename = prepare_basename(filename)
@@ -126,7 +123,7 @@ def write(wrp, filename=None, suffices=(), mode='RECREATE'):
         _check_readability(wrp)
     # save with suffices
     for suffix in suffices:
-        wrp.primary_object().SaveAs(filename + suffix)
+        wrp.obj.SaveAs(filename + suffix)
     # WrapperWrapper: store others first
     if isinstance(wrp, wrappers.WrapperWrapper):
         _write_wrapperwrapper(wrp, filename)
@@ -150,7 +147,7 @@ def small_write(wrp, filename, suffices=()):
     with open(filename+'.info', 'w') as f:
         _write_wrapper_info(wrp, f)
     for suffix in suffices:
-        wrp.primary_object().SaveAs(filename + suffix)
+        wrp.obj.SaveAs(filename + suffix)
 
 
 def get(filename, default=None):
@@ -403,3 +400,8 @@ def write_fileservice():
 
 atexit.register(write_fileservice)
 atexit.register(close_open_root_files)
+
+
+# TODO read and write should only call utility methods (see ugly wrpwrp writing)
+# TODO block_common_root_file
+# TODO synchronized/buffered write with multiprocessing.Manager object
