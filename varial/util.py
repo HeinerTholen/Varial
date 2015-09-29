@@ -1,8 +1,15 @@
 from ROOT import TH1D
 import functools
+import itertools
 import inspect
 import copy
 import math
+
+
+def project_items(keyfunc, items):
+    positive = list(itertools.ifilter(keyfunc, items))
+    negative = list(itertools.ifilterfalse(keyfunc, items))
+    return positive, negative
 
 
 def list2histogram(values, name='histo', title=None, n_bins=0):
