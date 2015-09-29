@@ -13,6 +13,7 @@ import analysis
 _current_path = ''
 _current_pack = {}
 _changed = False
+use_analysis_cwd = True
 
 
 def _write_out():
@@ -27,14 +28,18 @@ def _write_out():
     _changed = False
 
 
-def _sync():
+def _sync(path):
     global _current_path, _current_pack, _changed
-    if analysis.cwd == _current_path:
+
+    if use_analysis_cwd:
+        path = os.path.join(analysis.cwd, path)
+
+    if path == _current_path:
         return
 
     # write out and load if possible
     _write_out()
-    _current_path = analysis.cwd
+    _current_path = path
     data_path = os.path.join(_current_path, 'data.pkl')
     if not os.path.exists(data_path):
         _current_pack = {}
@@ -58,21 +63,21 @@ block_of_files = _BlockMaker()
 ##################################################### read / write wrappers ###
 def exists(name):
     """Check if data exists."""
-    _sync()
+    _sync(os.path.dirname(name))
     return name in _current_pack
 
 
 def write(wrp, name=None):
     """Write a wrapper."""
     global _current_pack, _changed
-    _sync()
+    _sync(os.path.dirname(name or '_'))
     _changed = True
     _current_pack[name or wrp.name] = wrp
 
 
 def read(name):
     """Read a wrapper."""
-    _sync()
+    _sync(os.path.dirname(name))
     wrp = _current_pack.get(name)
     if wrp:
         return wrp

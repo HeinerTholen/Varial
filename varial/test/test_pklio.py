@@ -36,7 +36,7 @@ class TestPklio(TestHistoToolsBase):
 
         # distract pklio a little and load
         analysis.cwd = 'blob'
-        pklio._sync()
+        pklio._sync('')
         analysis.cwd = 'test_data'
         loaded = pklio.read(self.test_wrp.name)
 

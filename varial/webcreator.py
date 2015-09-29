@@ -165,11 +165,8 @@ class WebCreator(toolinterface.Tool):
             self.plain_info += res
 
             # images
-            imgs, files = util.project_items(
-                lambda f: f.endswith(pf) and f[:-len(pf)] + '.info' in img_info,
-                files
-            )
-            imgs = map(lambda f: f[:-len(pf)], imgs)
+            imgs, files = util.project_items(lambda f: f.endswith(pf), files)
+            imgs = map(lambda f: f[:-len(pf)], imgs)  # remove postfixes
             self.image_names += imgs
 
             break
@@ -245,7 +242,7 @@ class WebCreator(toolinterface.Tool):
         for nfo in self.plain_info:
             p_nfo = os.path.join(self.working_dir, nfo)
             try:
-                wrp = self.io.read(p_nfo)
+                wrp = diskio.read(p_nfo)
                 self.web_lines += (
                     '<div>',
                     '<p>',
@@ -323,11 +320,16 @@ class WebCreator(toolinterface.Tool):
         # images
         crosslink_set = set()
         for img, img_log in image_name_tuples:
-            with open(os.path.join(self.working_dir, img + '.info')) as f:
-                wrp = wrappers.Wrapper(**diskio._read_wrapper_info(f))
-                del wrp.history
-                info_lines = wrp.pretty_writeable_lines()
-                history_lines = ''.join(f)
+            img_path = os.path.join(self.working_dir, img)
+            wrp = None
+            if (not wrp) and os.path.exists(img_path + '.info'):
+                with open(img_path + '.info') as f:
+                    wrp = wrappers.Wrapper(**diskio._read_wrapper_info(f))
+            if not wrp:
+                continue
+            info_lines = wrp.pretty_writeable_lines()
+            history_lines = str(wrp.history)
+
             i_id = 'info_' + img
             h_id = 'history_' + img
             self.web_lines += (
@@ -463,8 +465,8 @@ class WebCreator(toolinterface.Tool):
                 write_code_for_page(path, img_menu_items)
 
     def run(self):
-        use_ana_cwd = self.io.use_analysis_cwd
-        self.io.use_analysis_cwd = False
+        use_ana_cwd_dsk = diskio.use_analysis_cwd
+        diskio.use_analysis_cwd = False
         self.configure()
         self.go4subdirs()
 
@@ -487,4 +489,4 @@ class WebCreator(toolinterface.Tool):
         if self.is_base:
             self.message('INFO Making cross-link menus.')
             self.make_cross_link_menus()
-            self.io.use_analysis_cwd = use_ana_cwd
+            diskio.use_analysis_cwd = use_ana_cwd_dsk
