@@ -8,6 +8,7 @@ import analysis
 import settings
 import wrappers
 import diskio
+import util
 
 
 class WebCreator(toolinterface.Tool):
@@ -143,18 +144,34 @@ class WebCreator(toolinterface.Tool):
                 if (self.no_tool_check
                     or analysis.lookup_path(os.path.join(self.working_dir, d)))
             )
-            for f in files:
-                if f.endswith('.info'):
-                    if f[:-5] + self.image_postfix in files:
-                        self.image_names.append(f[:-5])
-                    else:
-                        self.plain_info.append(f)
-                if f.endswith('.tex'):
-                    self.plain_tex.append(f)
-                if f.endswith('.html') \
-                        or f.endswith('.htm') \
-                        and f != 'index.html':
-                    self.html_files.append(f)
+
+            # tex files
+            res, files = util.project_items(lambda f: f.endswith('.tex'), files)
+            self.plain_tex += res
+
+            # websites
+            res, files = util.project_items(lambda f: (f.endswith('.html')
+                                                        or f.endswith('.htm'))
+                                                       and f != 'index.html',
+                                       files)
+            self.html_files += res
+
+            # plain info
+            pf = self.image_postfix
+            info, files = util.project_items(
+                lambda f: f.endswith('.info'), files)
+            res, img_info = util.project_items(
+                lambda f: f[:-5] + pf not in files, info)
+            self.plain_info += res
+
+            # images
+            imgs, files = util.project_items(
+                lambda f: f.endswith(pf) and f[:-len(pf)] + '.info' in img_info,
+                files
+            )
+            imgs = map(lambda f: f[:-len(pf)], imgs)
+            self.image_names += imgs
+
             break
 
     def go4subdirs(self):

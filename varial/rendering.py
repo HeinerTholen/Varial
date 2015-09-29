@@ -301,7 +301,7 @@ class CanvasBuilder(object):
         """The renderers draw method is called."""
         for i, rnd in enumerate(self.renderers):
             if not i:
-                self.first_drawn = rnd.primary_object()
+                self.first_drawn = rnd.obj
                 self.first_drawn.SetTitle('')
                 rnd.draw('')
             else:

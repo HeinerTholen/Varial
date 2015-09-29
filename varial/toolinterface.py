@@ -285,23 +285,26 @@ class ToolChainVanilla(ToolChain):
 
 
 ######################################################### ToolChainParallel ###
-_n_parallel_workers = None
-_n_parallel_workers_lock = None
-_exception_lock = None  # exception printing should not be mingled
+_cpu_sema = None
 _kill_request = None  # initialized to 0, if > 0, the process group is killed
+_manager_lock = None  # used w/o blocking for _kill_request
 
 
 def _run_tool_in_worker(arg):
     chain_path, tool_index = arg
     chain = analysis.lookup_tool(chain_path)
     tool = chain.tool_chain[tool_index]
+    name, reused, print_ex = tool.name, False, False
     try:
         chain._run_tool(tool)
+        reused = chain._reuse
     except KeyboardInterrupt:  # these will be handled from main process
-        return tool.name, False, None
+        pass
     except:  # print exception and request termination
-        _exception_lock.acquire()
-        if _kill_request.value == 0:
+        if (not _kill_request.value) and _manager_lock.acquire(blocking=False):
+            _kill_request.value = 1
+            _manager_lock.release()
+
             print '='*80
             print 'EXCEPTION IN PARALLEL EXECUTION START'
             print '='*80
@@ -310,10 +313,8 @@ def _run_tool_in_worker(arg):
             print '='*80
             print 'EXCEPTION IN PARALLEL EXECUTION END'
             print '='*80
-            _kill_request.value = 1
-        _exception_lock.release()
-        return tool.name, False
-    return tool.name, chain._reuse
+
+    return tool.name, reused
 
 
 class _NoDaemonProcess(multiprocessing.Process):
@@ -350,24 +351,18 @@ class ToolChainParallel(ToolChain):
 
     @staticmethod
     def _parallel_worker_start():
-        if not _n_parallel_workers:
+        if not _cpu_sema:
             return
 
-        while _n_parallel_workers.value >= settings.max_num_processes:
-            time.sleep(0.5)
-        _n_parallel_workers_lock.acquire()
-        _n_parallel_workers.value += 1
-        _n_parallel_workers_lock.release()
+        _cpu_sema.acquire()
 
     @staticmethod
     def _parallel_worker_done():
-        if not _n_parallel_workers:
+        if not _cpu_sema:
             return
 
         diskio.close_open_root_files()
-        _n_parallel_workers_lock.acquire()
-        _n_parallel_workers.value -= 1
-        _n_parallel_workers_lock.release()
+        _cpu_sema.release()
 
     def _run_tool(self, tool):
         if isinstance(tool, ToolChainParallel):
@@ -378,10 +373,7 @@ class ToolChainParallel(ToolChain):
             self._parallel_worker_done()
 
     def run(self):
-        global _n_parallel_workers, \
-            _n_parallel_workers_lock, \
-            _exception_lock, \
-            _kill_request
+        global _cpu_sema, _kill_request, _manager_lock
 
         if not settings.use_parallel_chains or settings.max_num_processes == 1:
             return super(ToolChainParallel, self).run()
@@ -393,12 +385,13 @@ class ToolChainParallel(ToolChain):
             return
 
         # prepare parallelism (only once for the all processes)
-        if not _n_parallel_workers:
+        if not _cpu_sema:
             manager = multiprocessing.Manager()
-            _n_parallel_workers = manager.Value('i', 0)
-            _n_parallel_workers_lock = manager.Lock()
-            _exception_lock = manager.Lock()
+            _cpu_sema = manager.BoundedSemaphore(settings.max_num_processes)
             _kill_request = manager.Value('i', 0)
+            _manager_lock = manager.RLock()
+        else:
+            manager = None
 
         # prepare multiprocessing
         diskio.close_open_root_files()
@@ -418,6 +411,7 @@ class ToolChainParallel(ToolChain):
                 if not reused:
                     self._reuse = False
 
+                # TODO build context manager into monitor
                 err_level = monitor.current_error_level
                 try:
                     monitor.current_error_level = 2
@@ -427,7 +421,10 @@ class ToolChainParallel(ToolChain):
         except KeyboardInterrupt:
             os.killpg(os.getpid(), signal.SIGTERM)  # again!
 
-        # TODO: return results for ParallelToolChains in ParallelToolChains
+        _cpu_sema = None
+        _kill_request = None
+        _manager_lock= None
+        del manager
 
         #cleanup
         pool.close()

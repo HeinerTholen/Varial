@@ -143,15 +143,13 @@ class Wrapper(WrapperBase):
             self.type = str(typ)
 
     def primary_object(self):
-        """Overwrite! Should returned wrapped object."""
+        """Deprecated."""
+        return self.obj
 
     @property
     def obj(self):
-        """Getter property for primary object."""
-        return self.primary_object()
-
-    # TODO: setattr and check for objects without leading underscore that
-    # they are either ROOT or generic python objects.
+        """Getter property for primary object. Overwrite!"""
+        pass
 
 
 class WrapperWrapper(Wrapper):
@@ -182,7 +180,9 @@ class WrapperWrapper(Wrapper):
     def __iter__(self):
         return iter(self.wrps)
 
-    def primary_object(self):
+    @property
+    def obj(self):
+        """Getter property for primary object. Overwrite!"""
         return self.wrps
 
     def __setattr__(self, name, value):
@@ -221,7 +221,9 @@ class FloatWrapper(Wrapper):
         super(FloatWrapper, self).__init__(**kws)
         self.float = float
 
-    def primary_object(self):
+    @property
+    def obj(self):
+        """Getter property for primary object. Overwrite!"""
         return self.float
 
 
@@ -255,7 +257,9 @@ class HistoWrapper(Wrapper):
         del info['histo']
         return info
 
-    def primary_object(self):
+    @property
+    def obj(self):
+        """Getter property for primary object. Overwrite!"""
         return self.histo
 
     @property
@@ -295,7 +299,9 @@ class StackWrapper(HistoWrapper):
         del info['stack']
         return info
 
-    def primary_object(self):
+    @property
+    def obj(self):
+        """Getter property for primary object. Overwrite!"""
         return self.stack
 
 
@@ -338,7 +344,9 @@ class GraphWrapper(Wrapper):
         del info['graph']
         return info
 
-    def primary_object(self):
+    @property
+    def obj(self):
+        """Getter property for primary object. Overwrite!"""
         return self.graph
 
     @property
@@ -369,7 +377,9 @@ class CanvasWrapper(Wrapper):
         self.y_min_gr_0 = kws.get('y_min_gr_0')
         self.lumi       = kws.get('lumi', 1.)
 
-    def primary_object(self):
+    @property
+    def obj(self):
+        """Getter property for primary object. Overwrite!"""
         self.canvas.Modified()
         self.canvas.Update()
         return self.canvas
