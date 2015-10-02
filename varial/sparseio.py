@@ -15,11 +15,12 @@ import os
 
 import analysis
 import settings
+import wrappers
 import monitor
 
 
-_rootfile = 'varial_sparseio.root'
-_infofile = 'varial_sparseio.info'
+_rootfile = '_varial_sparseio.root'
+_infofile = '_varial_sparseio.pkl'
 use_analysis_cwd = True
 
 
@@ -34,6 +35,8 @@ def bulk_read_info_dict(dir_path=None):
     with open(infofile) as f:
         res = cPickle.load(f)
     assert(type(res) == dict)
+    for key in res:
+        res[key] = wrappers.Wrapper(**res[key])
     return res
 
 
@@ -74,6 +77,9 @@ def bulk_write(wrps, name_func, dir_path='', suffices=None, linlog=False):
         dirfile.Close()
     f_root.Close()
     for suffix in suffices:
+        if suffix == '.root':
+            continue
+
         for name, w in wrps_dict.iteritems():
 
             # if the cnv.first_drawn has a member called 'GetMaximum', the
@@ -92,4 +98,4 @@ def bulk_write(wrps, name_func, dir_path='', suffices=None, linlog=False):
             else:
                 w.obj.SaveAs(os.path.join(dir_path, name) + suffix)
 
-    return wrps
+    return wrps_dict.values()

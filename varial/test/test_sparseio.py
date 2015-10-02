@@ -34,8 +34,6 @@ class TestSparseio(TestHistoToolsBase):
         sparseio.bulk_write(
             self.test_wrps, self.name_func, 'test_data', ('.png', '.pdf'))
         read_in = sparseio.bulk_read_info_dict('test_data')
-        read_in = dict((k, wrappers.Wrapper(**v))
-                       for k, v in read_in.iteritems())
 
         # verify filenames
         for name, wrp in read_in.iteritems():
