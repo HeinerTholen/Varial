@@ -113,7 +113,7 @@ class StackRenderer(HistoRenderer, wrappers.StackWrapper):
         self.histo.SetFillColor(922)
         self.histo.SetMarkerColor(1)
         self.histo.SetMarkerSize(0)
-        self.histo.SetFillStyle(3008)
+        self.histo.SetFillStyle(3013)  # 3008)
         self.histo.SetLineColor(1)
         self.histo.SetTitle('Stat. uncert. MC')
         self.draw_option_sum = wrp.all_info().get('draw_option_sum', 'sameE2')
@@ -446,14 +446,18 @@ class Legend(util.Decorator):
             label = entry.GetLabel()
             draw_opt = self.dec_par['opt']
             for rnd in rnds:
-                if isinstance(rnd, StackRenderer):
+
+                # match legend entries to renderers
+                if rnd.obj is not obj:
                     continue
 
-                if rnd.obj is not obj:
+                if isinstance(rnd, StackRenderer):
                     continue
 
                 if rnd.is_data:
                     draw_opt = self.dec_par['opt_data']
+                else:
+                    draw_opt = 'l'
 
                 if hasattr(rnd, 'legend'):
                     label = rnd.legend
