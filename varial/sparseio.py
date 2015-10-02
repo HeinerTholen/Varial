@@ -37,7 +37,7 @@ def bulk_read_info_dict(dir_path=None):
     return res
 
 
-def bulk_write(wrps, dir_path, name_func, suffices=None, linlog=False):
+def bulk_write(wrps, name_func, dir_path='', suffices=None, linlog=False):
     """Writes wrps en block."""
 
     # prepare
@@ -75,7 +75,7 @@ def bulk_write(wrps, dir_path, name_func, suffices=None, linlog=False):
     f_root.Close()
     for suffix in suffices:
         for name, w in wrps_dict.iteritems():
-            
+
             # if the cnv.first_drawn has a member called 'GetMaximum', the
             # maximum should be greater then zero...
             if (linlog

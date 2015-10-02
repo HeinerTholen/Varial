@@ -20,7 +20,7 @@ class TestSparseio(TestHistoToolsBase):
 
     def test_bulk_write(self):
         sparseio.bulk_write(
-            self.test_wrps, 'test_data', self.name_func, ('.png', '.pdf'))
+            self.test_wrps, self.name_func, 'test_data', ('.png', '.pdf'))
 
         # files should exist
         self.assertTrue(os.path.exists('test_data/' + sparseio._infofile))
@@ -32,7 +32,7 @@ class TestSparseio(TestHistoToolsBase):
 
     def test_bulk_read_info_dict(self):
         sparseio.bulk_write(
-            self.test_wrps, 'test_data', self.name_func, ('.png', '.pdf'))
+            self.test_wrps, self.name_func, 'test_data', ('.png', '.pdf'))
         read_in = sparseio.bulk_read_info_dict('test_data')
         read_in = dict((k, wrappers.Wrapper(**v))
                        for k, v in read_in.iteritems())
