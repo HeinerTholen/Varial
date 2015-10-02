@@ -177,3 +177,11 @@ class StyleClass(TStyle):
         gStyle.SetNumberContours(ncontours)
 
 root_style = StyleClass()  
+
+
+def apply_error_hist_style(histo):
+    histo.SetFillColor(921)
+    histo.SetMarkerColor(1)
+    histo.SetMarkerSize(0)
+    histo.SetFillStyle(3013)
+    histo.SetLineColor(1)

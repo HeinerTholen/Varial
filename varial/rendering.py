@@ -109,13 +109,8 @@ class StackRenderer(HistoRenderer, wrappers.StackWrapper):
     """
     def __init__(self, wrp):
         super(StackRenderer, self).__init__(wrp)
-        # prepare the sum histo
-        self.histo.SetFillColor(922)
-        self.histo.SetMarkerColor(1)
-        self.histo.SetMarkerSize(0)
-        self.histo.SetFillStyle(3013)  # 3008)
-        self.histo.SetLineColor(1)
         self.histo.SetTitle('Stat. uncert. MC')
+        settings.apply_error_hist_style(self.histo)
         self.draw_option_sum = wrp.all_info().get('draw_option_sum', 'sameE2')
 
     def y_min_gr_zero(self, histo=None):
@@ -692,11 +687,7 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
         div_hist.SetYTitle(self.dec_par['y_title'])
         div_hist.SetMarkerSize(0)
         mc_histo.SetYTitle(self.dec_par['y_title'])
-        mc_histo.SetFillColor(921)
-        mc_histo.SetMarkerColor(1)
-        mc_histo.SetMarkerSize(0)
-        mc_histo.SetFillStyle(3013)  # 3008)
-        mc_histo.SetLineColor(1)
+        settings.apply_error_hist_style(mc_histo)
         self.bottom_hist = div_hist
         self.bottom_hist_mc_err = mc_histo
 
