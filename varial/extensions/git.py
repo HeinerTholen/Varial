@@ -230,6 +230,7 @@ class GitTagger(Tool):
                     'to amend with a new message, type a new message: ')
                 if commit_msg == '':
                     self.message('Not committed.')
+                    new_commit_hash = ''
                 elif any((commit_msg.lower() == i)
                     for i in ['y', 'yes', 'amend']):
                     new_commit_hash = self.amend_commit()
