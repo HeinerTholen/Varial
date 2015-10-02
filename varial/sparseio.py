@@ -1,0 +1,35 @@
+"""
+Read/Write wrappers on disk. Directory based.
+
+This io module is specialized for faster writing to disk while plotting. Instead
+of producing individual .info and .root files for every plot, the info and root
+content accumulated in single files and written at once.
+
+Only generator modules are provided.
+"""
+
+
+from ROOT import TFile, TDirectory, TH1, TObject, TTree
+from os.path import basename, dirname, join
+from itertools import takewhile
+from ast import literal_eval
+import resource
+import glob
+import os
+
+import pklio
+
+
+import history
+import monitor
+import sample
+import settings
+import wrappers
+
+
+def bulk_read_info(dir_path):
+    pass
+
+
+def bulk_write(wrps, dir_path, filename_func, suffices=None):
+    pass
