@@ -405,3 +405,4 @@ atexit.register(close_open_root_files)
 # TODO read and write should only call utility methods (see ugly wrpwrp writing)
 # TODO synchronized/buffered write with multiprocessing.Manager object
 # TODO bulk_read(aliases) function => all reading en block, with possible lock
+# TODO context manager for use_analysis_cwd (maybe general util)

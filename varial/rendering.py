@@ -20,8 +20,9 @@ Decorator)::
 
 ################################################################# renderers ###
 import collections
-import ROOT
 import wrappers
+import util
+import ROOT
 
 
 class Renderer(object):
@@ -290,11 +291,12 @@ class CanvasBuilder(object):
     def make_empty_canvas(self):
         """Instanciate ``self.canvas`` ."""
         self.canvas = TCanvas(
-            self.name,
+            self.name + '_' + util.random_hex_str(),
             self.title,
             settings.canvas_size_x,
             settings.canvas_size_y,
         )
+        self.canvas.name = self.name
         self.main_pad = self.canvas
 
     def draw_full_plot(self):
