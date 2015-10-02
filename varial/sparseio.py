@@ -14,6 +14,7 @@ import cPickle
 import os
 
 import analysis
+import settings
 import monitor
 
 
@@ -36,13 +37,17 @@ def bulk_read_info_dict(dir_path=None):
     return res
 
 
-def bulk_write(wrps, dir_path, name_func, suffices=None):
+def bulk_write(wrps, dir_path, name_func, suffices=None, linlog=False):
     """Writes wrps en block."""
+
     # prepare
     if use_analysis_cwd:
         dir_path = os.path.join(analysis.cwd, dir_path)
+    if not suffices:
+        suffices = settings.rootfile_postfixes
     infofile = os.path.join(dir_path, _infofile)
     rootfile = os.path.join(dir_path, _rootfile)
+
     wrps_dict = dict()
     for w in wrps:
         name = name_func(w)
@@ -53,6 +58,7 @@ def bulk_write(wrps, dir_path, name_func, suffices=None):
                 (name, dir_path)
             )
         wrps_dict[name] = w
+
     info = dict((name, w.all_writeable_info())
                 for name, w in wrps_dict.iteritems())
 
@@ -69,6 +75,21 @@ def bulk_write(wrps, dir_path, name_func, suffices=None):
     f_root.Close()
     for suffix in suffices:
         for name, w in wrps_dict.iteritems():
-            w.obj.SaveAs(os.path.join(dir_path, name) + suffix)
+            
+            # if the cnv.first_drawn has a member called 'GetMaximum', the
+            # maximum should be greater then zero...
+            if (linlog
+                and hasattr(w, 'first_drawn')
+                and (not hasattr(w.first_drawn, 'GetMaximum')
+                     or w.first_drawn.GetMaximum() > 1e-9)
+            ):
+                w.obj.SaveAs(os.path.join(dir_path, name) + '_lin' + suffix)
+                min_val = w.y_min_gr_0 * 0.5
+                min_val = max(min_val, 1e-9)
+                w.first_drawn.SetMinimum(min_val)
+                w.main_pad.SetLogy(1)
+                w.obj.SaveAs(os.path.join(dir_path, name) + '_log' + suffix)
+            else:
+                w.obj.SaveAs(os.path.join(dir_path, name) + suffix)
 
     return wrps
