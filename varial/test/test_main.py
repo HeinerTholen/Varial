@@ -6,7 +6,8 @@ ROOT.gROOT.SetBatch()
 ROOT.gROOT.ProcessLine('gErrorIgnoreLevel = kError;')
 ROOT.TH1.AddDirectory(False)
 
-from test_diskio import suite as dip_suite
+from test_diskio import suite as dio_suite
+from test_sparseio import suite as sio_suite
 from test_dbio import suite as dbi_suite
 from test_pklio import suite as pki_suite
 from test_generators import suite as gen_suite
@@ -16,7 +17,7 @@ from test_tools import suite as tls_suite
 
 import doctest
 import varial.generators as gen
-import varial.diskio as dsp
+import varial.diskio as dio
 import varial.history as hst
 import varial.operations as ops
 import varial.rendering as rnd
@@ -27,12 +28,13 @@ suite = unittest.TestSuite((
     doctest.DocTestSuite(wrp),
     doctest.DocTestSuite(hst),
     doctest.DocTestSuite(ops),
-    doctest.DocTestSuite(dsp),
+    doctest.DocTestSuite(dio),
     doctest.DocTestSuite(rnd),
     doctest.DocTestSuite(gen),
     doctest.DocTestSuite(uti),
     ops_suite,
-    dip_suite,
+    dio_suite,
+    sio_suite,
     dbi_suite,
     pki_suite,
     gen_suite,
