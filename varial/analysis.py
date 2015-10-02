@@ -314,3 +314,6 @@ def reset():
     current_result = None
     fs_aliases = []
     fs_wrappers = {}
+
+
+#TODO cwd as a property => function to register cwd_changed callbacks

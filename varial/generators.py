@@ -543,7 +543,7 @@ def apply_fillcolor(wrps, colors=None):
         else:
             color = analysis.get_color(wrp.legend or wrp.sample)
         if color:
-            wrp.primary_object().SetFillColor(color)
+            wrp.obj.SetFillColor(color)
         yield wrp
 
 
@@ -563,7 +563,7 @@ def apply_linecolor(wrps, colors=None):
         else:
             color = analysis.get_color(wrp.legend or wrp.sample)
         if color:
-            wrp.primary_object().SetLineColor(color)
+            wrp.obj.SetLineColor(color)
         yield wrp
 
 
@@ -576,7 +576,7 @@ def apply_linewidth(wrps, linewidth=2):
     :yields:            HistoWrapper
     """
     for wrp in wrps:
-        wrp.primary_object().SetLineWidth(linewidth)
+        wrp.obj.SetLineWidth(linewidth)
         yield wrp
 
 
@@ -589,7 +589,7 @@ def apply_fillstyle(wrps, fillstyle=3444):
     :yields:            HistoWrapper
     """
     for wrp in wrps:
-        wrp.primary_object().SetFillStyle(fillstyle)
+        wrp.obj.SetFillStyle(fillstyle)
         yield wrp
 
 
@@ -609,7 +609,7 @@ def apply_markercolor(wrps, colors=None):
         else:
             color = analysis.get_color(wrp.legend or wrp.sample)
         if color:
-            wrp.primary_object().SetMarkerColor(color)
+            wrp.obj.SetMarkerColor(color)
         yield wrp
 
 
@@ -891,4 +891,4 @@ if __name__ == '__main__':
     doctest.testmod()
 
 
-# TODO use WrapperWrapper
+# TODO sparse_canvas_save

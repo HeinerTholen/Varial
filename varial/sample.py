@@ -9,6 +9,9 @@ import settings
 import wrappers
 
 
+# TODO: move Sample class to extensions.cmsrun??
+
+
 class Sample(wrappers.WrapperBase):
     """
     Collect information about a sample.

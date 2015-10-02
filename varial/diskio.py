@@ -89,9 +89,6 @@ def close_root_file(filename):
 
 
 ##################################################### read / write wrappers ###
-# TODO read and write should only call utility methods (see ugly wrpwrp writing)
-
-
 def exists(filename):
     """Checks for existance."""
     filename = prepare_basename(filename)
@@ -126,7 +123,7 @@ def write(wrp, filename=None, suffices=(), mode='RECREATE'):
         _check_readability(wrp)
     # save with suffices
     for suffix in suffices:
-        wrp.primary_object().SaveAs(filename + suffix)
+        wrp.obj.SaveAs(filename + suffix)
     # WrapperWrapper: store others first
     if isinstance(wrp, wrappers.WrapperWrapper):
         _write_wrapperwrapper(wrp, filename)
@@ -150,7 +147,7 @@ def small_write(wrp, filename, suffices=()):
     with open(filename+'.info', 'w') as f:
         _write_wrapper_info(wrp, f)
     for suffix in suffices:
-        wrp.primary_object().SaveAs(filename + suffix)
+        wrp.obj.SaveAs(filename + suffix)
 
 
 def get(filename, default=None):
@@ -225,7 +222,7 @@ def load_histogram(alias):
 
 ########################################################## helper functions ###
 use_analysis_cwd = True
-_save_log = {}
+_save_log = set()
 
 
 def prepare_basename(filename):
@@ -243,7 +240,7 @@ def record_in_save_log(filename):
             'WARNING Overwriting file from this session: %s' % filename
         )
     else:
-        _save_log[filename] = True
+        _save_log.add(filename)
 
 
 def _write_wrapper_info(wrp, file_handle):
@@ -403,3 +400,10 @@ def write_fileservice():
 
 atexit.register(write_fileservice)
 atexit.register(close_open_root_files)
+
+
+# TODO read and write should only call utility methods (see ugly wrpwrp writing)
+# TODO synchronized/buffered write with multiprocessing.Manager object
+# TODO bulk_read(aliases) function => all reading en block, with possible lock
+# TODO context manager for use_analysis_cwd (maybe general util)
+# TODO get rid of use_analysis_cwd. It's bad design.

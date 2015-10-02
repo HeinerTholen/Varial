@@ -31,7 +31,7 @@ class SigintHandler(object):
         if signal_int is signal.SIGINT:
             if not ipython_mode:
                 if self.hits:
-                    if toolinterface._n_parallel_workers:
+                    if toolinterface._cpu_sema:
                         try:
                             os.killpg(os.getpid(), signal.SIGTERM)
                         except OSError:

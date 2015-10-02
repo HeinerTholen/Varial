@@ -1,8 +1,20 @@
 from ROOT import TH1D
 import functools
+import itertools
 import inspect
+import random
 import copy
 import math
+
+
+def random_hex_str():
+    return hex(random.randint(0, 1e10))[-7:]
+
+
+def project_items(keyfunc, items):
+    positive = list(itertools.ifilter(keyfunc, items))
+    negative = list(itertools.ifilterfalse(keyfunc, items))
+    return positive, negative
 
 
 def list2histogram(values, name='histo', title=None, n_bins=0):
