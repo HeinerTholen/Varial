@@ -222,7 +222,7 @@ def load_histogram(alias):
 
 ########################################################## helper functions ###
 use_analysis_cwd = True
-_save_log = {}
+_save_log = set()
 
 
 def prepare_basename(filename):
@@ -240,7 +240,7 @@ def record_in_save_log(filename):
             'WARNING Overwriting file from this session: %s' % filename
         )
     else:
-        _save_log[filename] = True
+        _save_log.add(filename)
 
 
 def _write_wrapper_info(wrp, file_handle):
