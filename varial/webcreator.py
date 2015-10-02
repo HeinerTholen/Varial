@@ -7,6 +7,7 @@ import toolinterface
 import analysis
 import settings
 import wrappers
+import sparseio
 import diskio
 import util
 
@@ -319,14 +320,21 @@ class WebCreator(toolinterface.Tool):
 
         # images
         crosslink_set = set()
+        sparse_dict = sparseio.bulk_read_info_dict(self.working_dir)
         for img, img_log in image_name_tuples:
+
+            # try to get from sparseio
+            wrp = sparse_dict.get(img[:-4] if img.endswith('_lin') else img)
+
+            # else look for info file on disk
             img_path = os.path.join(self.working_dir, img)
-            wrp = None
             if (not wrp) and os.path.exists(img_path + '.info'):
                 with open(img_path + '.info') as f:
                     wrp = wrappers.Wrapper(**diskio._read_wrapper_info(f))
+
             if not wrp:
                 continue
+
             info_lines = wrp.pretty_writeable_lines()
             history_lines = str(wrp.history)
 
@@ -466,7 +474,9 @@ class WebCreator(toolinterface.Tool):
 
     def run(self):
         use_ana_cwd_dsk = diskio.use_analysis_cwd
+        use_ana_cwd_spr = sparseio.use_analysis_cwd
         diskio.use_analysis_cwd = False
+        sparseio.use_analysis_cwd = False
         self.configure()
         self.go4subdirs()
 
@@ -490,3 +500,4 @@ class WebCreator(toolinterface.Tool):
             self.message('INFO Making cross-link menus.')
             self.make_cross_link_menus()
             diskio.use_analysis_cwd = use_ana_cwd_dsk
+            sparseio.use_analysis_cwd = use_ana_cwd_spr

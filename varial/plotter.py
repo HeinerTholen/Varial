@@ -4,11 +4,12 @@ import glob
 import time
 import os
 
-import analysis
 import generators as gen
-import rendering
-import settings
 import toolinterface
+import rendering
+import analysis
+import settings
+import sparseio
 
 
 def rename_th2(wrps):
@@ -222,18 +223,13 @@ class Plotter(toolinterface.Tool):
         self.stream_content = gen.build_canvas(bldr)
 
     def save_canvases(self):
-        if self.save_lin_log_scale:
-            self.stream_content = gen.save_canvas_lin_log(
-                self.stream_content,
-                self.save_name_func,
-            )
-        else:
-            if self.save_log_scale:
-                self.stream_content = gen.switch_log_scale(self.stream_content)
-            self.stream_content = gen.save(
-                self.stream_content,
-                self.save_name_func,
-            )
+        if self.save_log_scale and not self.save_lin_log_scale:
+            self.stream_content = gen.switch_log_scale(self.stream_content)
+        self.stream_content = sparseio.bulk_write(
+            self.stream_content,
+            self.save_name_func,
+            linlog=self.save_lin_log_scale
+        )
         count = gen.consume_n_count(self.stream_content)
         level = "INFO" if count else "WARNING"
         self.message("%s %s produced %d canvases." % (level, self.name, count))
