@@ -287,7 +287,7 @@ class ToolChainVanilla(ToolChain):
 ######################################################### ToolChainParallel ###
 _cpu_sema = None
 _kill_request = None  # initialized to 0, if > 0, the process group is killed
-_manager_lock = None  # used w/o blocking for _kill_request
+_xcptn_lock = None  # used w/o blocking for _kill_request
 
 
 def _run_tool_in_worker(arg):
@@ -301,9 +301,9 @@ def _run_tool_in_worker(arg):
     except KeyboardInterrupt:  # these will be handled from main process
         pass
     except:  # print exception and request termination
-        if (not _kill_request.value) and _manager_lock.acquire(blocking=False):
+        if (not _kill_request.value) and _xcptn_lock.acquire(blocking=False):
             _kill_request.value = 1
-            _manager_lock.release()
+            _xcptn_lock.release()
 
             print '='*80
             print 'EXCEPTION IN PARALLEL EXECUTION START'
@@ -373,7 +373,7 @@ class ToolChainParallel(ToolChain):
             self._parallel_worker_done()
 
     def run(self):
-        global _cpu_sema, _kill_request, _manager_lock
+        global _cpu_sema, _kill_request, _xcptn_lock
 
         if not settings.use_parallel_chains or settings.max_num_processes == 1:
             return super(ToolChainParallel, self).run()
@@ -389,7 +389,7 @@ class ToolChainParallel(ToolChain):
             manager = multiprocessing.Manager()
             _cpu_sema = manager.BoundedSemaphore(settings.max_num_processes)
             _kill_request = manager.Value('i', 0)
-            _manager_lock = manager.RLock()
+            _xcptn_lock = manager.RLock()
         else:
             manager = None
 
@@ -423,7 +423,7 @@ class ToolChainParallel(ToolChain):
 
         _cpu_sema = None
         _kill_request = None
-        _manager_lock= None
+        _xcptn_lock = None
         del manager
 
         #cleanup
