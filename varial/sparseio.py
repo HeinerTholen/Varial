@@ -27,9 +27,13 @@ import settings
 import wrappers
 
 
-def bulk_read_info(dir_path):
-    pass
+_rootfile = 'sparseio.root'
+_infofile = 'sparseio.info'
+
+
+def bulk_read_info_dict(dir_path):
+    return {}
 
 
 def bulk_write(wrps, dir_path, filename_func, suffices=None):
-    pass
+    return wrps
