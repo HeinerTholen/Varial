@@ -95,6 +95,7 @@ def bulk_write(wrps, name_func, dir_path='', suffices=None, linlog=False):
                 w.first_drawn.SetMinimum(min_val)
                 w.main_pad.SetLogy(1)
                 w.obj.SaveAs(os.path.join(dir_path, name) + '_log' + suffix)
+                w.main_pad.SetLogy(0)
             else:
                 w.obj.SaveAs(os.path.join(dir_path, name) + suffix)
 
