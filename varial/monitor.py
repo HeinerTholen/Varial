@@ -146,3 +146,19 @@ def connect_object_with_messenger(obj):
 
 def reset():
     _info.indent = 0
+
+
+class ErrorLevelContext(object):
+    def __init__(self, new_error_level):
+        super(ErrorLevelContext, self).__init__()
+        self.old_error_level = current_error_level
+        self.new_error_level = new_error_level
+
+    def __enter__(self):
+        global current_error_level
+        current_error_level = self.new_error_level
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        global current_error_level
+        current_error_level = self.old_error_level
+        return exc_type, exc_val, exc_tb
