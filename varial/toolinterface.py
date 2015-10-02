@@ -411,13 +411,9 @@ class ToolChainParallel(ToolChain):
                 if not reused:
                     self._reuse = False
 
-                # TODO build context manager into monitor
-                err_level = monitor.current_error_level
-                try:
-                    monitor.current_error_level = 2
+                with monitor.ErrorLevelContext(2):
                     self._load_results(self.tool_names[name])
-                finally:
-                    monitor.current_error_level = err_level
+
         except KeyboardInterrupt:
             os.killpg(os.getpid(), signal.SIGTERM)  # again!
 
