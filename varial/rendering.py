@@ -695,7 +695,7 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
         mc_histo.SetFillColor(921)
         mc_histo.SetMarkerColor(1)
         mc_histo.SetMarkerSize(0)
-        mc_histo.SetFillStyle(3008)
+        mc_histo.SetFillStyle(3013)  # 3008)
         mc_histo.SetLineColor(1)
         self.bottom_hist = div_hist
         self.bottom_hist_mc_err = mc_histo
