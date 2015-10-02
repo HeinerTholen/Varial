@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 
 import os
-from ROOT import TH1F
 from test_histotoolsbase import TestHistoToolsBase
-from varial.wrappers import FileServiceAlias, HistoWrapper, WrapperWrapper
 from varial import diskio
 from varial import sparseio
-from varial import analysis
+from varial import wrappers
 from varial import settings
 
 class TestSparseio(TestHistoToolsBase):
@@ -36,13 +34,18 @@ class TestSparseio(TestHistoToolsBase):
         sparseio.bulk_write(
             self.test_wrps, 'test_data', self.name_func, ('.png', '.pdf'))
         read_in = sparseio.bulk_read_info_dict('test_data')
+        read_in = dict((k, wrappers.Wrapper(**v))
+                       for k, v in read_in.iteritems())
 
         # verify filenames
         for name, wrp in read_in.iteritems():
             self.assertEqual(name, self.name_func(wrp))
 
         # assert input info == output info
-        dict_out = dict((self.name_func(w), w.pretty_writeable_lines())
+        dict_out = dict((self.name_func(w),
+                         wrappers.Wrapper(  # need to harmonize 'klass' item
+                             **w.all_writeable_info()
+                         ).pretty_writeable_lines())
                         for w in self.test_wrps)
         dict_inp = dict((self.name_func(w), w.pretty_writeable_lines())
                         for w in read_in.itervalues())
