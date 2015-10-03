@@ -51,6 +51,7 @@ def bulk_write(wrps, name_func, dir_path='', suffices=None, linlog=False):
     infofile = os.path.join(dir_path, _infofile)
     rootfile = os.path.join(dir_path, _rootfile)
 
+    # make a dict name -> wrps
     wrps_dict = dict()
     for w in wrps:
         name = name_func(w)
@@ -62,12 +63,13 @@ def bulk_write(wrps, name_func, dir_path='', suffices=None, linlog=False):
             )
         wrps_dict[name] = w
 
+    # write out info
     info = dict((name, w.all_writeable_info())
                 for name, w in wrps_dict.iteritems())
-
-    # write out
     with open(infofile, 'w') as f_info:
         cPickle.dump(info, f_info)
+
+    # write out root file
     f_root = TFile.Open(rootfile, 'RECREATE')
     f_root.cd()
     for name, w in wrps_dict.iteritems():
@@ -76,6 +78,8 @@ def bulk_write(wrps, name_func, dir_path='', suffices=None, linlog=False):
         w.obj.Write()
         dirfile.Close()
     f_root.Close()
+
+    # write with suffices
     for suffix in suffices:
         if suffix == '.root':
             continue
@@ -89,13 +93,13 @@ def bulk_write(wrps, name_func, dir_path='', suffices=None, linlog=False):
                 and (not hasattr(w.first_drawn, 'GetMaximum')
                      or w.first_drawn.GetMaximum() > 1e-9)
             ):
+                w.main_pad.SetLogy(0)
                 w.obj.SaveAs(os.path.join(dir_path, name) + '_lin' + suffix)
                 min_val = w.y_min_gr_0 * 0.5
                 min_val = max(min_val, 1e-9)
                 w.first_drawn.SetMinimum(min_val)
                 w.main_pad.SetLogy(1)
                 w.obj.SaveAs(os.path.join(dir_path, name) + '_log' + suffix)
-                w.main_pad.SetLogy(0)
             else:
                 w.obj.SaveAs(os.path.join(dir_path, name) + suffix)
 
