@@ -171,10 +171,8 @@ def generate_fs_aliases(file_path, sample_inst):
 
 def generate_aliases(glob_path='./*.root'):
     """Looks for root files based on a pattern string and produces aliases."""
-    for file_path in glob.iglob(glob_path):
-        root_file = get_open_root_file(file_path)
-        for ifp, typ in _recursive_path_and_type(root_file, ''):
-            yield wrappers.Alias(file_path, ifp, typ)
+    file_paths = glob.glob(glob_path)
+    return generate_aliases_list(file_paths)
 
 
 def generate_aliases_list(list_of_files=('',)):
@@ -198,26 +196,15 @@ def load_bare_object(alias):
 def load_histogram(alias):
     """Returns a wrapper with a fileservice histogram."""
     histo = load_bare_object(alias)
-    if not isinstance(histo, TH1):
-        raise NoHistogramError(
-            'Loaded object is not of type TH1.\n'
-            'Alias: %s\nObject: %s\n' % (alias, histo)
-        )
-    if not histo.GetSumw2().GetSize():
-        histo.Sumw2()
-    wrp = wrappers.HistoWrapper(histo, **alias.all_info())
-    if isinstance(alias, wrappers.FileServiceAlias):
-        histo.SetTitle(alias.legend)
-        wrp.history = history.History(
-            'FileService(%s, %s)' % (
-                alias.in_file_path, alias.sample))
-    else:
-        info = alias.all_writeable_info()
-        del info['klass']
-        wrp.history = history.History(
-            'RootFile(%s)' % info
-        )
-    return wrp
+    return _wrapperize(histo, alias)
+
+
+def bulk_load_histograms(aliases):
+    """Returns a list of wrappers with fileservice histograms."""
+    # todo with(SyncReadIo(timeout)): for the next statement
+    histos = list((load_bare_object(a), a) for a in aliases)
+    histos = list(_wrapperize(h, a) for h, a in histos)
+    return histos
 
 
 ########################################################## helper functions ###
@@ -342,6 +329,7 @@ def _clean_wrapper(wrp):
         wrp.wrps = wrp._wrpwrp_wrps
         del wrp._wrpwrp_wrps
 
+
 def _check_readability(wrp):
     try:
         literal_eval(wrp.pretty_writeable_lines().replace('\n', ''))
@@ -382,6 +370,30 @@ def _recursive_path_and_type(root_dir, in_file_path):
                 yield info
         else:
             yield key_path, key.GetClassName()
+
+
+def _wrapperize(bare_histo, alias):
+    """Returns a wrapper with a fileservice histogram."""
+    if not isinstance(bare_histo, TH1):
+        raise NoHistogramError(
+            'Loaded object is not of type TH1.\n'
+            'Alias: %s\nObject: %s\n' % (alias, bare_histo)
+        )
+    if not bare_histo.GetSumw2().GetSize():
+        bare_histo.Sumw2()
+    wrp = wrappers.HistoWrapper(bare_histo, **alias.all_info())
+    if isinstance(alias, wrappers.FileServiceAlias):
+        bare_histo.SetTitle(alias.legend)
+        wrp.history = history.History(
+            'FileService(%s, %s)' % (
+                alias.in_file_path, alias.sample))
+    else:
+        info = alias.all_writeable_info()
+        del info['klass']
+        wrp.history = history.History(
+            'RootFile(%s)' % info
+        )
+    return wrp
 
 
 ################################################### write and close on exit ###
