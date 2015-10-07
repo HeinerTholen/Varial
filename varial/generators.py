@@ -491,8 +491,8 @@ def load(aliases):
     :param aliases: Alias iterable
     :yields:        HistoWrapper
     """
-    for alias in aliases:
-        yield diskio.load_histogram(alias)
+    for wrp in diskio.bulk_load_histograms(aliases):
+        yield wrp
 
 
 def save(wrps, filename_func, suffices=None, write_complete_wrp=False):

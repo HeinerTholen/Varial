@@ -51,6 +51,7 @@ def bulk_write(wrps, name_func, dir_path='', suffices=None, linlog=False):
     infofile = os.path.join(dir_path, _infofile)
     rootfile = os.path.join(dir_path, _rootfile)
 
+    # todo with(SyncWriteIo()): for all the next statements
     # make a dict name -> wrps
     wrps_dict = dict()
     for w in wrps:
