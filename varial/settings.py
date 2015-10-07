@@ -15,7 +15,9 @@ diskio_check_readability = False
 varial_working_dir = './'
 db_name = '.varial.db'
 default_data_lumi = 1.
-default_colors = [632, 814, 596, 870, 800, 840, 902, 797, 891, 401, 434, 838, 
+# TODO default_colors_light (for backgrounds)
+# TODO default_colors_strong (for signals)
+default_colors = [632, 814, 596, 870, 800, 840, 902, 797, 891, 401, 434, 838,
                   872, 420, 403, 893, 881, 804, 599, 615, 831, 403, 593, 810]
 wrp_sorting_keys = ['in_file_path', 'is_signal', 'is_data', 'sample']
 max_open_root_files = 998
@@ -175,3 +177,11 @@ class StyleClass(TStyle):
         gStyle.SetNumberContours(ncontours)
 
 root_style = StyleClass()  
+
+
+def apply_error_hist_style(histo):
+    histo.SetFillColor(921)
+    histo.SetMarkerColor(1)
+    histo.SetMarkerSize(0)
+    histo.SetFillStyle(3013)
+    histo.SetLineColor(1)
