@@ -171,10 +171,8 @@ def generate_fs_aliases(file_path, sample_inst):
 
 def generate_aliases(glob_path='./*.root'):
     """Looks for root files based on a pattern string and produces aliases."""
-    for file_path in glob.iglob(glob_path):
-        root_file = get_open_root_file(file_path)
-        for ifp, typ in _recursive_path_and_type(root_file, ''):
-            yield wrappers.Alias(file_path, ifp, typ)
+    file_paths = glob.glob(glob_path)
+    return generate_aliases_list(file_paths)
 
 
 def generate_aliases_list(list_of_files=('',)):
@@ -341,6 +339,7 @@ def _clean_wrapper(wrp):
     if hasattr(wrp, '_wrpwrp_wrps'):
         wrp.wrps = wrp._wrpwrp_wrps
         del wrp._wrpwrp_wrps
+
 
 def _check_readability(wrp):
     try:
