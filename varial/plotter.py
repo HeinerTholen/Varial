@@ -6,10 +6,12 @@ import os
 
 import generators as gen
 import toolinterface
+import multiproc
 import rendering
 import analysis
 import settings
 import sparseio
+import diskio
 
 
 def rename_th2(wrps):
@@ -428,9 +430,10 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
             else:
                 if os.path.exists(logfile):
                     os.remove(logfile)
-                self._parallel_worker_start()
+                multiproc.acquire_processing()
                 self._private_plotter.run()
-                self._parallel_worker_done()
+                diskio.close_open_root_files()
+                multiproc.release_processing()
                 with open(logfile, 'w') as f:
                     f.write('plotter done.\n')
         if self._is_base_instance:

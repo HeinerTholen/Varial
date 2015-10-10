@@ -2,19 +2,20 @@
 Baseclasses for tools and toolchains.
 """
 
-import multiprocessing.pool
 import inspect
 import signal
 import time
 import sys
 import os
 
+
+from util import ResettableType, deepish_copy
+import multiproc
 import analysis
-import diskio
-import monitor
 import settings
 import wrappers
-from util import ResettableType, deepish_copy
+import monitor
+import diskio
 
 
 class _ToolBase(object):
@@ -285,11 +286,6 @@ class ToolChainVanilla(ToolChain):
 
 
 ######################################################### ToolChainParallel ###
-_cpu_sema = None
-_kill_request = None  # initialized to 0, if > 0, the process group is killed
-_xcptn_lock = None  # used w/o blocking for _kill_request
-
-
 def _run_tool_in_worker(arg):
     chain_path, tool_index = arg
     chain = analysis.lookup_tool(chain_path)
@@ -301,10 +297,7 @@ def _run_tool_in_worker(arg):
     except KeyboardInterrupt:  # these will be handled from main process
         pass
     except:  # print exception and request termination
-        if (not _kill_request.value) and _xcptn_lock.acquire(blocking=False):
-            _kill_request.value = 1
-            _xcptn_lock.release()
-
+        if not multiproc.is_kill_requested(request_kill_now=True):
             print '='*80
             print 'EXCEPTION IN PARALLEL EXECUTION START'
             print '='*80
@@ -315,25 +308,6 @@ def _run_tool_in_worker(arg):
             print '='*80
 
     return tool.name, reused
-
-
-class _NoDaemonProcess(multiprocessing.Process):
-    # make 'daemon' attribute always return False
-    def _get_daemon(self):
-        return False
-    def _set_daemon(self, value):
-        pass
-    daemon = property(_get_daemon, _set_daemon)
-
-    def run(self):
-        try:
-            super(_NoDaemonProcess, self).run()
-        except (KeyboardInterrupt, IOError):
-            exit(-1)
-
-
-class _NoDeamonWorkersPool(multiprocessing.pool.Pool):
-    Process = _NoDaemonProcess
 
 
 class ToolChainParallel(ToolChain):
@@ -349,32 +323,16 @@ class ToolChainParallel(ToolChain):
                 self._load_results(t)
         analysis.pop_tool()
 
-    @staticmethod
-    def _parallel_worker_start():
-        if not _cpu_sema:
-            return
-
-        _cpu_sema.acquire()
-
-    @staticmethod
-    def _parallel_worker_done():
-        if not _cpu_sema:
-            return
-
-        diskio.close_open_root_files()
-        _cpu_sema.release()
-
     def _run_tool(self, tool):
         if isinstance(tool, ToolChainParallel):
             super(ToolChainParallel, self)._run_tool(tool)
         else:
-            self._parallel_worker_start()
+            multiproc.acquire_processing()
             super(ToolChainParallel, self)._run_tool(tool)
-            self._parallel_worker_done()
+            diskio.close_open_root_files()
+            multiproc.release_processing()
 
     def run(self):
-        global _cpu_sema, _kill_request, _xcptn_lock
-
         if not settings.use_parallel_chains or settings.max_num_processes == 1:
             return super(ToolChainParallel, self).run()
 
@@ -382,29 +340,22 @@ class ToolChainParallel(ToolChain):
             self.add_tools(self.lazy_eval_tools_func())
 
         if not self.tool_chain:
+            self.message('WARNING Nothing to do.')
             return
-
-        # prepare parallelism (only once for the all processes)
-        if not _cpu_sema:
-            manager = multiprocessing.Manager()
-            _cpu_sema = manager.BoundedSemaphore(settings.max_num_processes)
-            _kill_request = manager.Value('i', 0)
-            _xcptn_lock = manager.RLock()
-        else:
-            manager = None
 
         # prepare multiprocessing
         diskio.close_open_root_files()
         n_tools = len(self.tool_chain)
         my_path = "/".join(t.name for t in analysis._tool_stack)
         tool_index_list = list((my_path, i) for i in xrange(n_tools))
-        pool = _NoDeamonWorkersPool(min(n_tools, settings.max_num_processes))
+        pool = multiproc.NoDeamonWorkersPool(
+            min(n_tools, settings.max_num_processes))
         result_iter = pool.imap_unordered(_run_tool_in_worker, tool_index_list)
 
         # run processing
         try:
             for name, reused in result_iter:
-                if _kill_request.value > 0:
+                if multiproc.is_kill_requested():
                     pool.close()
                     os.killpg(os.getpid(), signal.SIGTERM)  # one evil line!
 
@@ -416,11 +367,6 @@ class ToolChainParallel(ToolChain):
 
         except KeyboardInterrupt:
             os.killpg(os.getpid(), signal.SIGTERM)  # again!
-
-        _cpu_sema = None
-        _kill_request = None
-        _xcptn_lock = None
-        del manager
 
         #cleanup
         pool.close()
