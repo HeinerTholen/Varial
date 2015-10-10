@@ -430,10 +430,9 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
             else:
                 if os.path.exists(logfile):
                     os.remove(logfile)
-                multiproc.acquire_processing()
-                self._private_plotter.run()
-                diskio.close_open_root_files()
-                multiproc.release_processing()
+                with multiproc.cpu_semaphore:
+                    self._private_plotter.run()
+                    diskio.close_open_root_files()
                 with open(logfile, 'w') as f:
                     f.write('plotter done.\n')
         if self._is_base_instance:

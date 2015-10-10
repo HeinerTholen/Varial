@@ -9,7 +9,7 @@ import settings
 
 
 _manager = None
-_cpu_sema = None
+cpu_semaphore = None
 _kill_request = None  # initialized to 0, if > 0, the process group is killed
 _xcptn_lock = None  # used w/o blocking for _kill_request
 
@@ -35,22 +35,24 @@ class NoDeamonWorkersPool(multiprocessing.pool.Pool):
     Process = _NoDaemonProcess
 
     def __init__(self, *args, **kws):
-        global _manager, _cpu_sema, _kill_request, _xcptn_lock
-        super(NoDeamonWorkersPool, self).__init__(*args, **kws)
+        global _manager, cpu_semaphore, _kill_request, _xcptn_lock
 
         # prepare parallelism (only once for the all processes)
-        if not _cpu_sema:
+        if not cpu_semaphore:
             _manager = multiprocessing.Manager()
-            _cpu_sema = _manager.BoundedSemaphore(settings.max_num_processes)
+            cpu_semaphore = _manager.BoundedSemaphore(settings.max_num_processes)
             _kill_request = _manager.Value('i', 0)
             _xcptn_lock = _manager.RLock()
         else:
             _manager = None
 
+        # go parallel
+        super(NoDeamonWorkersPool, self).__init__(*args, **kws)
+
     def __del__(self):
-        global _manager, _cpu_sema, _kill_request, _xcptn_lock
+        global _manager, cpu_semaphore, _kill_request, _xcptn_lock
         _manager = None
-        _cpu_sema = None
+        cpu_semaphore = None
         _kill_request = None
         _xcptn_lock = None
 
@@ -66,14 +68,14 @@ def is_kill_requested(request_kill_now=False):
 
 
 def acquire_processing():
-    if not _cpu_sema:
-        return
-    _cpu_sema.acquire()
+    if not cpu_semaphore:
+        raise RuntimeError('Should only be called in parallel mode!')
+    cpu_semaphore.acquire()
 
 
 def release_processing():
-    if not _cpu_sema:
-        return
-    _cpu_sema.release()
+    if not cpu_semaphore:
+        raise RuntimeError('Should only be called in parallel mode!')
+    cpu_semaphore.release()
 
 

@@ -327,10 +327,9 @@ class ToolChainParallel(ToolChain):
         if isinstance(tool, ToolChainParallel):
             super(ToolChainParallel, self)._run_tool(tool)
         else:
-            multiproc.acquire_processing()
-            super(ToolChainParallel, self)._run_tool(tool)
-            diskio.close_open_root_files()
-            multiproc.release_processing()
+            with multiproc.cpu_semaphore:
+                super(ToolChainParallel, self)._run_tool(tool)
+                diskio.close_open_root_files()
 
     def run(self):
         if not settings.use_parallel_chains or settings.max_num_processes == 1:
