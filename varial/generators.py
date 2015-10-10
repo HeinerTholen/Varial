@@ -17,10 +17,10 @@ import collections
 import itertools
 
 import analysis
-import diskio
-import monitor
 import wrappers
 import operator
+import monitor
+import diskio
 
 
 def _iterableize(obj_or_iterable):

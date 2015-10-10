@@ -68,14 +68,12 @@ def is_kill_requested(request_kill_now=False):
 def acquire_processing():
     if not _cpu_sema:
         return
-
     _cpu_sema.acquire()
 
 
 def release_processing():
     if not _cpu_sema:
         return
-
     _cpu_sema.release()
 
 
