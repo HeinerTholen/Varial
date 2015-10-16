@@ -432,6 +432,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
             if self._reuse and os.path.exists(logfile):
                 self.message('INFO reusing...')
             else:
+                self._reuse = False
                 if os.path.exists(logfile):
                     os.remove(logfile)
                 self._parallel_worker_start()
