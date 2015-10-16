@@ -4,11 +4,13 @@ import glob
 import time
 import os
 
-import analysis
 import generators as gen
-import rendering
-import settings
 import toolinterface
+import rendering
+import analysis
+import settings
+import sparseio
+import monitor
 
 
 def rename_th2(wrps):
@@ -504,6 +506,10 @@ def mk_rootfile_plotter(name="RootFilePlots",
             )
             for f in glob.iglob(pattern)
         )
+        if not plotters:
+            monitor.message('plotter.mk_rootfile_plotter',
+                            'WARNING no plotters generated for pattern: %s' 
+                            % pattern)
         tc = toolinterface.ToolChainParallel(name, plotters)
     return tc
 
