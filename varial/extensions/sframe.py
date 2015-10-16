@@ -4,6 +4,7 @@ Host sframe processes in a toolchain.
 
 import xml.etree.cElementTree as ElementTree
 import subprocess
+import StringIO
 import time
 import os
 join = os.path.join
@@ -15,6 +16,12 @@ from varial import pklio
 from varial import settings
 from varial import toolinterface
 from varial import wrappers
+
+
+_xml_doctype = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE JobConfiguration PUBLIC "" "JobConfig.dtd" []>
+"""
 
 
 class SFrame(toolinterface.Tool):
@@ -49,12 +56,14 @@ class SFrame(toolinterface.Tool):
 
     def prepare_run_conf(self):
         if self.xml_tree_callback:
-            tree = ElementTree.parse(self.cfg_filename)
+            # get all entities resolved with xmllint
+            proc = subprocess.Popen(
+                ['xmllint','--noent',self.cfg_filename],stdout=subprocess.PIPE)
+            output = proc.communicate()[0]
+            tree = ElementTree.parse(StringIO.StringIO(output))
             self.xml_tree_callback(tree)
-            with open(self.cfg_filename) as inp:
-                dtd_header = inp.readline() + inp.readline()
             with open(os.path.join(self.cwd, self.private_conf), "w") as f:
-                f.write(dtd_header + '\n')
+                f.write(_xml_doctype)
                 tree.write(f)
             # TODO make that nicer sometime...
             os.system('cp %s %s' % (
@@ -112,7 +121,15 @@ class SFrame(toolinterface.Tool):
         self._push_aliases_to_analysis()
 
     def run(self):
-        self.prepare_run_conf()
+        try:
+            self.prepare_run_conf()
+        except RuntimeError, e:
+            self.message(
+                'WARNING caught RuntimeError from making conf:\n'
+                + e.message
+                + '\nNot starting SFrame.'
+            )
+            return
 
         log_path = os.path.join(self.cwd, self.log_filename)
         cmd = ['sframe_main', self.private_conf]
