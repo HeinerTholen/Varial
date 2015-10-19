@@ -227,6 +227,7 @@ class ToolChain(_ToolBase):
                 self.message('WARNING lazy_eval_tools_func didnot return tools')
             else:
                 self.add_tools(new_tools)
+
         for tool in self.tool_chain:
             self._run_tool(tool)
 
@@ -341,9 +342,13 @@ class ToolChainParallel(ToolChain):
 
         if self.lazy_eval_tools_func:
             self.add_tools(self.lazy_eval_tools_func())
+            new_tools = self.lazy_eval_tools_func()
+            if not new_tools:
+                self.message('WARNING lazy_eval_tools_func didnot return tools')
+            else:
+                self.add_tools(new_tools)
 
         if not self.tool_chain:
-            self.message('WARNING Nothing to do.')
             return
 
         # prepare multiprocessing
