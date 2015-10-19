@@ -11,6 +11,7 @@ import rendering
 import analysis
 import settings
 import sparseio
+import monitor
 import diskio
 
 
@@ -428,6 +429,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
             if self._reuse and os.path.exists(logfile):
                 self.message('INFO reusing...')
             else:
+                self._reuse = False
                 if os.path.exists(logfile):
                     os.remove(logfile)
                 with multiproc.cpu_semaphore:
@@ -502,6 +504,10 @@ def mk_rootfile_plotter(name="RootFilePlots",
             )
             for f in glob.iglob(pattern)
         )
+        if not plotters:
+            monitor.message('plotter.mk_rootfile_plotter',
+                            'WARNING no plotters generated for pattern: %s' 
+                            % pattern)
         tc = toolinterface.ToolChainParallel(name, plotters)
     return tc
 
