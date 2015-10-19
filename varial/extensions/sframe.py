@@ -24,6 +24,9 @@ _xml_doctype = """\
 """
 
 
+sframe_samplename_func = lambda w: basename(w.file_path).split('.')[3]
+
+
 class SFrame(toolinterface.Tool):
     """
     This class hosts a sframe process.
@@ -37,7 +40,7 @@ class SFrame(toolinterface.Tool):
                  xml_tree_callback=None,
                  add_aliases_to_analysis=True,
                  halt_on_exception=True,
-                 samplename_func=lambda w: basename(w.file_path).split('.')[3],
+                 samplename_func=sframe_samplename_func,
                  name=None):
         super(SFrame, self).__init__(name)
         self.cfg_filename           = cfg_filename
