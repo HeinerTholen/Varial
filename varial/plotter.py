@@ -12,7 +12,6 @@ import analysis
 import settings
 import sparseio
 import monitor
-import diskio
 
 
 def rename_th2(wrps):
@@ -419,7 +418,6 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                     )
 
     def run(self):
-        time.sleep(1)  # weird bug in root...
         old_aliases = analysis.fs_aliases
         if self._is_base_instance:
             analysis.fs_aliases = self.aliases
@@ -434,7 +432,6 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                     os.remove(logfile)
                 with multiproc.cpu_semaphore:
                     self._private_plotter.run()
-                    diskio.close_open_root_files()
                 with open(logfile, 'w') as f:
                     f.write('plotter done.\n')
         if self._is_base_instance:

@@ -397,8 +397,13 @@ def _wrapperize(bare_histo, alias):
 
 
 ################################################### write and close on exit ###
-import atexit
+import multiproc
 import analysis
+import atexit
+
+
+multiproc._pre_fork_cbs.append(close_open_root_files)
+multiproc._pre_join_cbs.append(close_open_root_files)
 
 
 def write_fileservice():

@@ -334,7 +334,6 @@ class ToolChainParallel(ToolChain):
         else:
             with multiproc.cpu_semaphore:
                 super(ToolChainParallel, self)._run_tool(tool)
-                diskio.close_open_root_files()
 
     def run(self):
         if not settings.use_parallel_chains or settings.max_num_processes == 1:
@@ -352,12 +351,11 @@ class ToolChainParallel(ToolChain):
             return
 
         # prepare multiprocessing
-        diskio.close_open_root_files()
         n_tools = len(self.tool_chain)
+        n_workers = min(n_tools, settings.max_num_processes)
         my_path = "/".join(t.name for t in analysis._tool_stack)
         tool_index_list = list((my_path, i) for i in xrange(n_tools))
-        pool = multiproc.NoDeamonWorkersPool(
-            min(n_tools, settings.max_num_processes))
+        pool = multiproc.NoDeamonWorkersPool(n_workers)
         result_iter = pool.imap_unordered(_run_tool_in_worker, tool_index_list)
 
         # run processing
