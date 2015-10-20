@@ -53,6 +53,8 @@ def _process_settings_kws(kws):
     for k, v in kws.iteritems():
         if hasattr(settings, k):
             setattr(settings, k, v)
+        else:
+            raise RuntimeError('ERROR No such setting: %s' % k)
 
 
 def tear_down(*args):
