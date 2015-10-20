@@ -329,14 +329,15 @@ class ToolChainParallel(ToolChain):
         analysis.pop_tool()
 
     def _run_tool(self, tool):
-        if isinstance(tool, ToolChainParallel):
+        if (isinstance(tool, ToolChainParallel)
+            or not settings.can_go_parallel()):
             super(ToolChainParallel, self)._run_tool(tool)
         else:
             with multiproc.cpu_semaphore:
                 super(ToolChainParallel, self)._run_tool(tool)
 
     def run(self):
-        if not settings.use_parallel_chains or settings.max_num_processes == 1:
+        if not settings.can_go_parallel():
             return super(ToolChainParallel, self).run()
 
         if self.lazy_eval_tools_func:
