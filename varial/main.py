@@ -9,11 +9,12 @@ import sys
 import os
 import time
 
+import multiproc
 import analysis
 import settings
 import monitor
 import tools
-import toolinterface
+
 
 ipython_mode = False
 try:
@@ -31,7 +32,7 @@ class SigintHandler(object):
         if signal_int is signal.SIGINT:
             if not ipython_mode:
                 if self.hits:
-                    if toolinterface._cpu_sema:
+                    if multiproc.cpu_semaphore:
                         try:
                             os.killpg(os.getpid(), signal.SIGTERM)
                         except OSError:
