@@ -21,7 +21,6 @@ default_colors = [632, 814, 596, 870, 800, 840, 902, 797, 891, 401, 434, 838,
                   872, 420, 403, 893, 881, 804, 599, 615, 831, 403, 593, 810]
 wrp_sorting_keys = ['in_file_path', 'is_signal', 'is_data', 'sample']
 max_open_root_files = 998
-use_parallel_chains = True
 
 
 def logfilename():
@@ -36,6 +35,7 @@ def logfilename():
 ############################################## cmsRun and fwlite processing ###
 import multiprocessing
 max_num_processes = multiprocessing.cpu_count()
+use_parallel_chains = True
 not_ask_execute = False
 suppress_eventloop_exec = False
 try_reuse_results = True
@@ -43,6 +43,10 @@ default_enable_sample = True
 fwlite_force_reuse = False
 fwlite_profiling = False
 fileservice_filename = 'fileservice'
+
+
+def can_go_parallel():
+    return max_num_processes > 1 and use_parallel_chains
 
 
 ########################################################### style constants ###
