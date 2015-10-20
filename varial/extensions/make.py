@@ -52,3 +52,6 @@ class Make(Tool):
 
     def run(self):
         pass
+
+
+# TODO: use 'make -n' in wanna_reuse and run compilation in 'run' method.
