@@ -20,7 +20,6 @@ import os
 import generators as gen
 import analysis
 import wrappers
-import diskio
 import pklio
 
 from toolinterface import \

@@ -341,7 +341,6 @@ class ToolChainParallel(ToolChain):
             return super(ToolChainParallel, self).run()
 
         if self.lazy_eval_tools_func:
-            self.add_tools(self.lazy_eval_tools_func())
             new_tools = self.lazy_eval_tools_func()
             if not new_tools:
                 self.message('WARNING lazy_eval_tools_func didnot return tools')
