@@ -213,7 +213,8 @@ class Hadd(Tool):
     :param src_path:            str, *relative* path to input dir
     :param basenames:           list of str, basenames for files to be merged
                                 (e.g. 'QCD' for 'QCD_XtoY', 'QCD_YtoZ'...)
-    :param remake_aliases:      bool, if true, anaylsis.fs_aliases are replaced
+    :param add_aliases_to_analysis:
+                                bool, if true, analysis.fs_aliases are appended
                                 with all output of this tool.
     :param name:                str, tool name
     """
@@ -222,14 +223,16 @@ class Hadd(Tool):
     def __init__(self,
                  src_glob_path,
                  basenames,
-                 remake_aliases=True,
+                 add_aliases_to_analysis=True,
+                 merge_trees=False,
                  samplename_func=lambda w: os.path.basename(w.file_path),
                  name=None):
         super(Hadd, self).__init__(name)
         self.src_glob_path = src_glob_path
         self.src_path = os.path.dirname(src_glob_path)
         self.basenames = basenames
-        self.remake_aliases = remake_aliases
+        self.add_aliases_to_analysis = add_aliases_to_analysis
+        self.merge_trees = merge_trees
         self.samplename_func = samplename_func
         assert(type(basenames) in (list, tuple))
 
@@ -241,8 +244,8 @@ class Hadd(Tool):
 
     def reuse(self):
         super(Hadd, self).reuse()
-        if self.remake_aliases:
-            analysis.fs_aliases = self.result.wrps
+        if self.add_aliases_to_analysis:
+            analysis.fs_aliases += self.result.wrps
 
     def run(self):
         super(Hadd, self).run()
@@ -268,8 +271,12 @@ class Hadd(Tool):
                 self.message('WARNING No files for basename: %s' % basename)
                 continue
 
-            cmd = 'hadd -f -v 1 %s.root ' % join(self.cwd, basename)
-            os.system(cmd + ' '.join(files))
+            cmd = 'nice hadd -f -v 1 '
+            if not self.merge_trees:
+                cmd += '-T '
+            cmd += join(self.cwd, basename) + '.root '
+            cmd += ' '.join(files)
+            os.system(cmd)
 
         # link others
         for f in other_inputs:
@@ -277,6 +284,5 @@ class Hadd(Tool):
 
         # aliases
         self.produce_aliases()
-        if self.remake_aliases:
-            analysis.fs_aliases = self.result.wrps
-
+        if self.add_aliases_to_analysis:
+            analysis.fs_aliases += self.result.wrps
