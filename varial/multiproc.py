@@ -5,8 +5,6 @@ Management for multiprocessing in varial.
 
 import multiprocessing.pool
 
-import settings
-
 
 cpu_semaphore = None
 _kill_request = None  # initialized to 0, if > 0, the process group is killed
@@ -65,8 +63,6 @@ class NoDeamonWorkersPool(multiprocessing.pool.Pool):
             # must re-acquire before leaving
             cpu_semaphore.acquire()
 
-
-
     def close(self):
         for func in _pre_join_cbs:
             func()
@@ -78,7 +74,6 @@ class NoDeamonWorkersPool(multiprocessing.pool.Pool):
 def is_kill_requested(request_kill_now=False):
     if request_kill_now:
         if not _xcptn_lock.acquire(block=False):
-            _xcptn_lock.release()
             return True
         if not _kill_request.value:
             _kill_request.value = 1

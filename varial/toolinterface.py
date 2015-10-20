@@ -329,11 +329,8 @@ class ToolChainParallel(ToolChain):
         analysis.pop_tool()
 
     def _run_tool(self, tool):
-        if (not settings.can_go_parallel()):
+        with multiproc.cpu_semaphore:
             super(ToolChainParallel, self)._run_tool(tool)
-        else:
-            with multiproc.cpu_semaphore:
-                super(ToolChainParallel, self)._run_tool(tool)
 
     def run(self):
         if not settings.can_go_parallel():
@@ -373,7 +370,7 @@ class ToolChainParallel(ToolChain):
         except KeyboardInterrupt:
             os.killpg(os.getpid(), signal.SIGTERM)  # again!
 
-        #cleanup
+        # cleanup
         pool.close()
         pool.join()
 
