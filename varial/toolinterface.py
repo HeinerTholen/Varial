@@ -329,8 +329,7 @@ class ToolChainParallel(ToolChain):
         analysis.pop_tool()
 
     def _run_tool(self, tool):
-        if (isinstance(tool, ToolChainParallel)
-            or not settings.can_go_parallel()):
+        if (not settings.can_go_parallel()):
             super(ToolChainParallel, self)._run_tool(tool)
         else:
             with multiproc.cpu_semaphore:

@@ -46,7 +46,7 @@ fileservice_filename = 'fileservice'
 
 
 def can_go_parallel():
-    return max_num_processes > 1 and use_parallel_chains
+    return use_parallel_chains and max_num_processes > 1
 
 
 ########################################################### style constants ###

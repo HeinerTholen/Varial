@@ -430,11 +430,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                 self._reuse = False
                 if os.path.exists(logfile):
                     os.remove(logfile)
-                if settings.can_go_parallel():
-                    with multiproc.cpu_semaphore:
-                        self._private_plotter.run()
-                else:
-                    self._private_plotter.run()
+                self._private_plotter.run()
                 with open(logfile, 'w') as f:
                     f.write('plotter done.\n')
         if self._is_base_instance:

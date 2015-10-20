@@ -39,7 +39,12 @@ class NoDeamonWorkersPool(multiprocessing.pool.Pool):
         global cpu_semaphore, _kill_request, _xcptn_lock
 
         # prepare parallelism (only once for the all processes)
-        if not cpu_semaphore:
+        self.me_created_semaphore = False
+        if cpu_semaphore:
+            # process with pool is supposed to be waiting a lot
+            cpu_semaphore.release()
+        else:
+            self.me_created_semaphore = True
             cpu_semaphore = multiprocessing.BoundedSemaphore(processes)
             _kill_request = multiprocessing.Value('i', 0)
             _xcptn_lock = multiprocessing.RLock()
@@ -52,9 +57,15 @@ class NoDeamonWorkersPool(multiprocessing.pool.Pool):
 
     def __del__(self):
         global cpu_semaphore, _kill_request, _xcptn_lock
-        cpu_semaphore = None
-        _kill_request = None
-        _xcptn_lock = None
+        if self.me_created_semaphore:
+            cpu_semaphore = None
+            _kill_request = None
+            _xcptn_lock = None
+        else:
+            # must re-acquire before leaving
+            cpu_semaphore.acquire()
+
+
 
     def close(self):
         for func in _pre_join_cbs:
@@ -66,10 +77,15 @@ class NoDeamonWorkersPool(multiprocessing.pool.Pool):
 ###################################################### task synchronization ###
 def is_kill_requested(request_kill_now=False):
     if request_kill_now:
-        if (not _kill_request.value) and _xcptn_lock.acquire(blocking=False):
+        if not _xcptn_lock.acquire(block=False):
+            _xcptn_lock.release()
+            return True
+        if not _kill_request.value:
             _kill_request.value = 1
             _xcptn_lock.release()
             return False
+        _xcptn_lock.release()
+        return True
     return bool(_kill_request.value)
 
 
