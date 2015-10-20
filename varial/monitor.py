@@ -15,6 +15,13 @@ error_levels = {
     'ERRO': 2,
     'FATA': 3
 }
+color_levels = {
+    'INFO': '\x1B[33m',
+    'WARN': '\x1B[31m',
+    'ERRO': '\x1B[41m',
+    'FATA': '\x1B[41m',
+}
+reset_col = '\x1B[0m'
 
 
 class Messenger(object):
@@ -66,9 +73,10 @@ class StdOutTee(object):
 
 def write_out(*args):
     message = ' '.join(str(a) for a in args)
-    if error_levels.get(
-            message.replace(' ', '')[:4], 0) >= current_error_level:
-        _info.outstream.write(message)
+    token = message.replace(' ', '')[:4]
+    if error_levels.get(token, 0) >= current_error_level:
+        col = color_levels.get(token, '')
+        _info.outstream.write(col + message + reset_col)
         _info.outstream.write('\n')
 
 
