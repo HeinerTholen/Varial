@@ -54,7 +54,10 @@ def _process_settings_kws(kws):
         if hasattr(settings, k):
             setattr(settings, k, v)
         else:
-            raise RuntimeError('ERROR No such setting: %s' % k)
+            monitor.message(
+                'main._process_settings_kws',
+                'WARNING No such setting: %s' % k
+            )
 
 
 def tear_down(*args):
