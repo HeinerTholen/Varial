@@ -8,7 +8,6 @@ import multiprocessing.pool
 import settings
 
 
-_manager = None
 cpu_semaphore = None
 _kill_request = None  # initialized to 0, if > 0, the process group is killed
 _xcptn_lock = None  # used w/o blocking for _kill_request
@@ -37,16 +36,13 @@ class NoDeamonWorkersPool(multiprocessing.pool.Pool):
     Process = _NoDaemonProcess
 
     def __init__(self, processes=None, *args, **kws):
-        global _manager, cpu_semaphore, _kill_request, _xcptn_lock
+        global cpu_semaphore, _kill_request, _xcptn_lock
 
         # prepare parallelism (only once for the all processes)
         if not cpu_semaphore:
-            _manager = multiprocessing.Manager()
-            cpu_semaphore = _manager.BoundedSemaphore(processes)
-            _kill_request = _manager.Value('i', 0)
-            _xcptn_lock = _manager.RLock()
-        else:
-            _manager = None
+            cpu_semaphore = multiprocessing.BoundedSemaphore(processes)
+            _kill_request = multiprocessing.Value('i', 0)
+            _xcptn_lock = multiprocessing.RLock()
 
         for func in _pre_fork_cbs:
             func()
@@ -55,8 +51,7 @@ class NoDeamonWorkersPool(multiprocessing.pool.Pool):
         super(NoDeamonWorkersPool, self).__init__(processes, *args, **kws)
 
     def __del__(self):
-        global _manager, cpu_semaphore, _kill_request, _xcptn_lock
-        _manager = None
+        global cpu_semaphore, _kill_request, _xcptn_lock
         cpu_semaphore = None
         _kill_request = None
         _xcptn_lock = None
