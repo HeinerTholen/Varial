@@ -295,11 +295,13 @@ class ToolChainVanilla(ToolChain):
 def _run_tool_in_worker(arg):
     chain_path, tool_index = arg
     chain = analysis.lookup_tool(chain_path)
+    reuse_status = chain._reuse
     tool = chain.tool_chain[tool_index]
     name, reused, print_ex = tool.name, False, False
     try:
         chain._run_tool(tool)
         reused = chain._reuse
+        chain._reuse = reuse_status  # reset on worker for next tool
     except KeyboardInterrupt:  # these will be handled from main process
         pass
     except:  # print exception and request termination
