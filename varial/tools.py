@@ -1,14 +1,31 @@
 """
-All concrete tools and toolschains that are predefined in varial are here.
+All standard tools and toolschains accessible from this module.
 
-The tool-baseclass and toolschains are defined in :ref:`toolinterface-module`.
-More concrete tools that are defined in seperate modules are:
+Here's a breakdown of tools and utility methods:
 
-=================== ==========================
-Plotter             :ref:`plotter-module`
-RootFilePlotter     :ref:`plotter-module`
-Webcreator          :ref:`webcreator-module`
-=================== ==========================
+=========================== =================================================
+:ref:`toolinterface-module`
+Tool                        baseclass for tools
+ToolChain                   simple chain of Tool
+ToolChainIndie              as ToolChain, will always reuse tools if possible
+ToolChainVanilla            reset state of :ref:`analysis-module` at end
+ToolChainParallel           parallel execution of independent tools
+=========================== =================================================
+:ref:`plotter-module`
+Plotter                     generic plotter
+RootFilePlotter             dump rootfile into plots (:ref:`plotter-module`)
+mk_rootfile_plotter         function to create RootFilePlotter from path
+=========================== =================================================
+:ref:`webcreator-module`
+Webcreator                  generate websites
+=========================== =================================================
+:ref:`tools-module`
+Runner                      run a tool or toolchain ad-hoc.
+PrintToolTree               print the tree of tools that has been run so far
+UserInteraction             halt execution / get user input
+HistoLoader                 load histograms from rootfiles or analysis
+CopyTool                    copy/rsync disk content
+=========================== =================================================
 """
 
 from ast import literal_eval
