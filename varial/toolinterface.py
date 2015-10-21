@@ -350,9 +350,6 @@ class ToolChainParallel(ToolChain):
             super(ToolChainParallel, self)._run_tool(tool)
 
     def run(self):
-        if not settings.can_go_parallel():
-            return super(ToolChainParallel, self).run()
-
         if self.lazy_eval_tools_func:
             new_tools = self.lazy_eval_tools_func()
             if not new_tools:
