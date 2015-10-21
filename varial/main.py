@@ -39,9 +39,12 @@ class SigintHandler(object):
                             time.sleep(1)
                     exit(-1)
                 else:
-                    print "WARNING: SIGINT caught. " \
-                          "Aborting processes if any. " \
-                          "Crtl-C again to kill immediately!"
+                    monitor.message(
+                        'main.SigintHandler.handle',
+                        'WARNING: SIGINT caught. ' \
+                        'Aborting processes if any. ' \
+                        'Crtl-C again to kill immediately!'
+                    )
             sys.__stdout__.flush()
             self.hits += 1
             settings.recieved_sigint = True
@@ -143,6 +146,12 @@ def main(**main_kwargs):
     toolchain._reuse = settings.try_reuse_results
 
     # GO!
+    if settings.can_go_parallel():
+        monitor.message(
+            'main.main',
+            'INFO running with %i parallel workers at max.'
+            % settings.max_num_processes
+        )
     try:
         toolchain.run()
     except RuntimeError as e:
