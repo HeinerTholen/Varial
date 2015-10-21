@@ -107,13 +107,18 @@ class HistoLoader(Tool):
     """
     def __init__(self,
                  pattern=None,
+                 input_result_path=None,
                  filter_keyfunc=None,
                  hook_loaded_histos=None,
                  raise_on_empty_result=True,
                  io=pklio,
                  name=None):
         super(HistoLoader, self).__init__(name)
+        if pattern and input_result_path:
+            raise RuntimeError(
+                'ERROR either "pattern" or "input_result_path" must be None.')
         self.pattern = pattern
+        self.input_result_path = input_result_path
         self.filter_keyfunc = filter_keyfunc
         self.hook_loaded_histos = hook_loaded_histos
         self.raise_on_empty_result = raise_on_empty_result
@@ -124,13 +129,17 @@ class HistoLoader(Tool):
             wrps = gen.dir_content(self.pattern)
             wrps = itertools.ifilter(self.filter_keyfunc, wrps)
             wrps = gen.load(wrps)
-            if self.hook_loaded_histos:
-                wrps = self.hook_loaded_histos(wrps)
-            wrps = gen.sort(wrps)
+        elif self.input_result_path:
+            wrps = self.lookup_result(self.input_result_path, [])
+            if not wrps:
+                raise RuntimeError(
+                    'ERROR no histograms on path: ' + self.input_result_path)
+            wrps = itertools.ifilter(self.filter_keyfunc, wrps)
         else:
             wrps = gen.fs_filter_active_sort_load(self.filter_keyfunc)
-            if self.hook_loaded_histos:
-                wrps = self.hook_loaded_histos(wrps)
+
+        if self.hook_loaded_histos:
+            wrps = self.hook_loaded_histos(wrps)
         self.result = list(wrps)
 
         if not self.result:
