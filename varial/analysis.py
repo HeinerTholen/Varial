@@ -71,13 +71,15 @@ def get_pretty_name(key):
     return settings.pretty_names.get(key, key)
 
 
-def get_color(sample_or_legend_name, default=0):
+def get_color(sample_or_legend_name, samplename=None, default=0):
     """Returns a ROOT color value for sample or legend name."""
     name = sample_or_legend_name
     if name in all_samples:
         name = all_samples[name].legend
     if name in settings.colors:
         return settings.colors[name]
+    if samplename in settings.colors:
+        return settings.colors[samplename]
     if default:
         return default
     new_color = None

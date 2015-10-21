@@ -541,7 +541,7 @@ def apply_fillcolor(wrps, colors=None):
             color = colors[n % len(colors)]
             n += 1
         else:
-            color = analysis.get_color(wrp.legend or wrp.sample)
+            color = analysis.get_color(wrp.legend, wrp.sample)
         if color:
             wrp.obj.SetFillColor(color)
         yield wrp
@@ -561,7 +561,7 @@ def apply_linecolor(wrps, colors=None):
             color = colors[n % len(colors)]
             n += 1
         else:
-            color = analysis.get_color(wrp.legend or wrp.sample)
+            color = analysis.get_color(wrp.legend, wrp.sample)
         if color:
             wrp.obj.SetLineColor(color)
         yield wrp
@@ -607,7 +607,7 @@ def apply_markercolor(wrps, colors=None):
             color = colors[n % len(colors)]
             n += 1
         else:
-            color = analysis.get_color(wrp.legend or wrp.sample)
+            color = analysis.get_color(wrp.legend, wrp.sample)
         if color:
             wrp.obj.SetMarkerColor(color)
         yield wrp
