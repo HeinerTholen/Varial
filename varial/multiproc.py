@@ -4,6 +4,7 @@ Management for multiprocessing in varial.
 
 
 import multiprocessing.pool
+import settings
 
 
 cpu_semaphore = None
@@ -33,7 +34,7 @@ class _NoDaemonProcess(multiprocessing.Process):
 class NoDeamonWorkersPool(multiprocessing.pool.Pool):
     Process = _NoDaemonProcess
 
-    def __init__(self, processes=None, *args, **kws):
+    def __init__(self, *args, **kws):
         global cpu_semaphore, _kill_request, _xcptn_lock
 
         # prepare parallelism (only once for the all processes)
@@ -43,7 +44,8 @@ class NoDeamonWorkersPool(multiprocessing.pool.Pool):
             cpu_semaphore.release()
         else:
             self.me_created_semaphore = True
-            cpu_semaphore = multiprocessing.BoundedSemaphore(processes)
+            cpu_semaphore = multiprocessing.BoundedSemaphore(
+                                                    settings.max_num_processes)
             _kill_request = multiprocessing.Value('i', 0)
             _xcptn_lock = multiprocessing.RLock()
 
@@ -51,7 +53,7 @@ class NoDeamonWorkersPool(multiprocessing.pool.Pool):
             func()
 
         # go parallel
-        super(NoDeamonWorkersPool, self).__init__(processes, *args, **kws)
+        super(NoDeamonWorkersPool, self).__init__(*args, **kws)
 
     def __del__(self):
         global cpu_semaphore, _kill_request, _xcptn_lock
