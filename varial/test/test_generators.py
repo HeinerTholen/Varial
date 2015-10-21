@@ -14,11 +14,6 @@ from varial.wrappers import \
 
 
 class TestGenerators(TestHistoToolsBase):
-    def setUp(self):
-        super(TestGenerators, self).setUp()
-        if not os.path.exists('test_data'):
-            os.mkdir('test_data')
-
     def tearDown(self):
         super(TestGenerators, self).tearDown()
         if hasattr(self, 'tfile'):
@@ -46,16 +41,16 @@ class TestGenerators(TestHistoToolsBase):
         gen.consume_n_count(
             gen.save(
                 wrps,
-                lambda w: 'test_data/'+w.name+'_'+w.sample
+                lambda w: self.test_dir + '/'+w.name+'_'+w.sample
             )
         )
 
         # check the new files
-        self.assertTrue(os.path.exists('test_data/cutflow_ttgamma.root'))
-        self.assertTrue(os.path.exists('test_data/cutflow_ttgamma.info'))
-        self.assertTrue(os.path.exists('test_data/cutflow_zjets.root'))
-        self.assertTrue(os.path.exists('test_data/cutflow_zjets.info'))
-        self.tfile = TFile.Open('test_data/cutflow_ttgamma.root')
+        self.assertTrue(os.path.exists(self.test_dir + '/cutflow_ttgamma.root'))
+        self.assertTrue(os.path.exists(self.test_dir + '/cutflow_ttgamma.info'))
+        self.assertTrue(os.path.exists(self.test_dir + '/cutflow_zjets.root'))
+        self.assertTrue(os.path.exists(self.test_dir + '/cutflow_zjets.info'))
+        self.tfile = TFile.Open(self.test_dir + '/cutflow_ttgamma.root')
         self.assertTrue(self.tfile.GetKey('cutflow'))
 
     def test_gen_filter(self):
@@ -149,5 +144,3 @@ import unittest
 suite = unittest.TestLoader().loadTestsFromTestCase(TestGenerators)
 if __name__ == '__main__':
     unittest.main()
-
-# TODO test_data with tmpdir

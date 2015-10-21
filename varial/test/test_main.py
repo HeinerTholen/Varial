@@ -47,4 +47,3 @@ if __name__ == '__main__':
     res = unittest.TextTestRunner(verbosity=2).run(suite)
     if res.failures:
         sys.exit(-1)
-

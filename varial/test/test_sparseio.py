@@ -20,20 +20,20 @@ class TestSparseio(TestHistoToolsBase):
 
     def test_bulk_write(self):
         sparseio.bulk_write(
-            self.test_wrps, self.name_func, 'test_data', ('.png', '.pdf'))
+            self.test_wrps, self.name_func, self.test_dir, ('.png', '.pdf'))
 
         # files should exist
-        self.assertTrue(os.path.exists('test_data/' + sparseio._infofile))
-        self.assertTrue(os.path.exists('test_data/' + sparseio._rootfile))
+        self.assertTrue(os.path.exists(self.test_dir+'/'+sparseio._infofile))
+        self.assertTrue(os.path.exists(self.test_dir+'/'+sparseio._rootfile))
         for w in self.test_wrps:
             tok = self.name_func(w)
-            self.assertTrue(os.path.exists('test_data/%s.png' % tok))
-            self.assertTrue(os.path.exists('test_data/%s.pdf' % tok))
+            self.assertTrue(os.path.exists(self.test_dir+'/%s.png' % tok))
+            self.assertTrue(os.path.exists(self.test_dir+'/%s.pdf' % tok))
 
     def test_bulk_read_info_dict(self):
         sparseio.bulk_write(
-            self.test_wrps, self.name_func, 'test_data', ('.png', '.pdf'))
-        read_in = sparseio.bulk_read_info_dict('test_data')
+            self.test_wrps, self.name_func, self.test_dir, ('.png', '.pdf'))
+        read_in = sparseio.bulk_read_info_dict(self.test_dir)
 
         # verify filenames
         for name, wrp in read_in.iteritems():

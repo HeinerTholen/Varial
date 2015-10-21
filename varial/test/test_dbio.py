@@ -9,9 +9,7 @@ from varial import analysis
 class TestDbio(TestHistoToolsBase):
     def setUp(self):
         super(TestDbio, self).setUp()
-        if not os.path.exists('test_data'):
-            os.mkdir('test_data')
-        dbio._init('test_data/test.db')
+        dbio._init(self.test_dir + '/test.db')
 
     def tearDown(self):
         dbio._close()

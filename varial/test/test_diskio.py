@@ -9,12 +9,6 @@ from varial import analysis
 from varial import settings
 
 class TestDiskio(TestHistoToolsBase):
-
-    def setUp(self):
-        super(TestDiskio, self).setUp()
-        if not os.path.exists('test_data'):
-            os.mkdir('test_data')
-
     def test_fileservice_aliases(self):
         for name, smp in analysis.all_samples.items():
             analysis.fs_aliases += list(
@@ -59,7 +53,7 @@ class TestDiskio(TestHistoToolsBase):
         self.assertAlmostEqual(wrp.histo.Integral(), 280555.0)
 
     def test_write(self):
-        fname = 'test_data/wrp_save.info'
+        fname = self.test_dir + '/wrp_save.info'
         diskio.write(self.test_wrp, fname)
 
         # file should exist
@@ -73,7 +67,7 @@ class TestDiskio(TestHistoToolsBase):
             self.assertGreater(n_lines, 10)
 
     def test_read(self):
-        fname = 'test_data/wrp_load.info'
+        fname = self.test_dir + '/wrp_load.info'
         diskio.write(self.test_wrp, fname)
         loaded = diskio.read(fname)
         self.test_wrp.history = str(self.test_wrp.history)
@@ -89,7 +83,7 @@ class TestDiskio(TestHistoToolsBase):
         self.assertNotEqual(str(self.test_wrp.histo), str(loaded.histo))
 
     def test_write_wrpwrp(self):
-        fname = 'test_data/wrpwrp_save.info'
+        fname = self.test_dir + '/wrpwrp_save.info'
         wrpwrp1 = WrapperWrapper([
             HistoWrapper(TH1F('h1', 'h1', 2, 0, 2)),
             HistoWrapper(TH1F('h2', 'h2', 2, 0, 2)),
@@ -105,7 +99,7 @@ class TestDiskio(TestHistoToolsBase):
         self.assertTrue(isinstance(wrpwrp1.wrps[0], HistoWrapper))
 
     def test_read_wrpwrp(self):
-        fname = 'test_data/wrpwrp_load'
+        fname = self.test_dir + '/wrpwrp_load'
         wrpwrp1 = WrapperWrapper([
             HistoWrapper(TH1F('h3', 'h3', 2, 0, 2)),
             HistoWrapper(TH1F('h4', 'h4', 2, 0, 2)),

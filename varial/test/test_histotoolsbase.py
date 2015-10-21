@@ -1,14 +1,16 @@
-import unittest
-import os
-import shutil
 from ROOT import TH1I, gROOT, kRed, kBlue
+import unittest
+import tempfile
+import shutil
+import os
 
+from varial.wrappers import HistoWrapper
+from varial.history import History
 from varial import analysis
 from varial import settings
 from varial import diskio
 from varial import sample
-from varial.history import History
-from varial.wrappers import HistoWrapper
+
 
 class TestHistoToolsBase(unittest.TestCase):
     def setUp(self):
@@ -68,14 +70,15 @@ class TestHistoToolsBase(unittest.TestCase):
             history=hist
         )
 
+        self.test_dir = tempfile.mkdtemp()
+
     def tearDown(self):
         super(TestHistoToolsBase, self).tearDown()
-
-        if os.path.exists("test_data"):
-            os.system('rm -r test_data')
 
         del self.test_wrp
 
         diskio.close_open_root_files()
         gROOT.Reset()
 
+        if os.path.exists(self.test_dir):
+            os.system('rm -r %s' % self.test_dir)

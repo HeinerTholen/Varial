@@ -10,9 +10,7 @@ from varial import analysis
 class TestPklio(TestHistoToolsBase):
     def setUp(self):
         super(TestPklio, self).setUp()
-        if not os.path.exists('test_data'):
-            os.mkdir('test_data')
-        analysis.cwd = 'test_data'
+        analysis.cwd = self.test_dir
 
     def tearDown(self):
         analysis.cwd = ''
@@ -23,9 +21,9 @@ class TestPklio(TestHistoToolsBase):
         pklio._write_out()
 
         # check existance
-        self.assertTrue(os.path.exists('test_data/data.pkl'))
-        if os.path.exists('test_data/data.pkl'):
-            with open('test_data/data.pkl') as f:
+        self.assertTrue(os.path.exists(self.test_dir + '/data.pkl'))
+        if os.path.exists(self.test_dir + '/data.pkl'):
+            with open(self.test_dir + '/data.pkl') as f:
                 obj = cPickle.load(f)
             self.assertTrue(type(obj) == dict)
             self.assertIn(self.test_wrp.name, obj)
@@ -35,9 +33,9 @@ class TestPklio(TestHistoToolsBase):
         pklio.write(self.test_wrp)
 
         # distract pklio a little and load
-        analysis.cwd = 'blob'
+        analysis.cwd = self.test_dir + '/blob'
         pklio._sync('')
-        analysis.cwd = 'test_data'
+        analysis.cwd = self.test_dir
         loaded = pklio.read(self.test_wrp.name)
 
         # check names

@@ -47,4 +47,3 @@ class TestOps(unittest.TestCase):
 suite = unittest.TestLoader().loadTestsFromTestCase(TestOps)
 if __name__ == '__main__':
     unittest.main()
-

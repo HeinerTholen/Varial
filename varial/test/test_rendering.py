@@ -8,11 +8,6 @@ from varial.wrappers import HistoWrapper
 import varial.diskio as diskio
 
 class TestRendering(TestHistoToolsBase):
-    def setUp(self):
-        super(TestRendering, self).setUp()
-        if not os.path.exists("test_data"):
-            os.mkdir("test_data")
-
     def test_canvasBuilder_make(self):
         wrp1 = self.test_wrp
         wrp2 = HistoWrapper(wrp1.histo, history="Fake history")
@@ -27,7 +22,7 @@ class TestRendering(TestHistoToolsBase):
         self.test_wrp = wrp
 
     def test_canvas_info_file(self):
-        fname = "test_data/cnv_save.info"
+        fname = self.test_dir + '/cnv_save.info'
         self.test_canvasBuilder_make()
         diskio.write(self.test_wrp, fname)
 
