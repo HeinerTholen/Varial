@@ -211,7 +211,8 @@ class ToolChain(_ToolBase):
                 t.run()
             except:
                 etype, evalue, etb = sys.exc_info()
-                if not 'exception occured at path (class): ' in evalue.message:
+                msg = evalue.message
+                if not 'exception occured at path (class): ' in str(msg):
                     evalue = etype(
                         '%s\nexception occured at path (class): %s (%s)' % (
                             evalue, analysis.cwd[:-1], t.__class__.__name__)
@@ -316,7 +317,21 @@ def _run_tool_in_worker(arg):
 
 
 class ToolChainParallel(ToolChain):
-    """Parallel execution of tools. Tools must not depend on each other."""
+    """
+    Parallel execution of tools. 
+
+    Tools must not depend on each other an are executed independently.
+    """
+    def __init__(self,
+                 name=None,
+                 tools=None,
+                 default_reuse=False,
+                 lazy_eval_tools_func=None,
+                 n_workers=None):
+        super(ToolChainParallel, self).__init__(
+            name, tools, default_reuse, lazy_eval_tools_func)
+        self.n_workers = n_workers
+
     def _load_results(self, tool):
         analysis.push_tool(tool)
         if isinstance(tool, Tool):
@@ -348,7 +363,7 @@ class ToolChainParallel(ToolChain):
 
         # prepare multiprocessing
         n_tools = len(self.tool_chain)
-        n_workers = min(n_tools, settings.max_num_processes)
+        n_workers = self.n_workers or min(n_tools, settings.max_num_processes)
         my_path = "/".join(t.name for t in analysis._tool_stack)
         tool_index_list = list((my_path, i) for i in xrange(n_tools))
         pool = multiproc.NoDeamonWorkersPool(n_workers)
