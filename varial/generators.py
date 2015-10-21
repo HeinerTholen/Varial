@@ -527,6 +527,13 @@ def save(wrps, filename_func, suffices=None, write_complete_wrp=False):
 import rendering as rnd
 
 
+def touch_legend_color(wrps):
+    """Make sure a color exists for every legend."""
+    for wrp in wrps:
+        analysis.get_color(wrp.legend)
+        yield wrp
+
+
 def apply_fillcolor(wrps, colors=None):
     """
     Uses ``histo.SetFillColor``. Colors from analysis module, if not given.
