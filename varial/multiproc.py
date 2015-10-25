@@ -5,6 +5,9 @@ Management for multiprocessing in varial.
 
 import multiprocessing.pool
 import settings
+import signal
+import sys
+import os
 
 
 cpu_semaphore = None
@@ -98,3 +101,25 @@ def release_processing():
     cpu_semaphore.release()
 
 
+def exec_in_worker(func, *args, **kws):
+    """parallel execution with cpu control and exception catching."""
+
+    with cpu_semaphore:
+        try:
+            return func(*args, **kws)
+        except KeyboardInterrupt:  # these will be handled from main process
+            pass
+        except:  # print exception and request termination
+            if not is_kill_requested(request_kill_now=True):
+                print '='*80
+                print 'EXCEPTION IN PARALLEL EXECUTION START'
+                print '='*80
+                import traceback
+                traceback.print_exception(*sys.exc_info())
+                print '='*80
+                print 'EXCEPTION IN PARALLEL EXECUTION END'
+                print '='*80
+
+
+def do_kill_now():
+    os.killpg(os.getpid(), signal.SIGTERM)  # one evil line!

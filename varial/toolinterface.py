@@ -300,25 +300,9 @@ def _run_tool_in_worker(arg):
     chain = analysis.lookup_tool(chain_path)
     reuse_status = chain._reuse
     tool = chain.tool_chain[tool_index]
-    name, reused, print_ex = tool.name, False, False
-    try:
-        with multiproc.cpu_semaphore:
-            chain._run_tool(tool)
-        reused = chain._reuse
-        chain._reuse = reuse_status  # reset on worker for next tool
-    except KeyboardInterrupt:  # these will be handled from main process
-        pass
-    except:  # print exception and request termination
-        if not multiproc.is_kill_requested(request_kill_now=True):
-            print '='*80
-            print 'EXCEPTION IN PARALLEL EXECUTION START'
-            print '='*80
-            import traceback
-            traceback.print_exception(*sys.exc_info())
-            print '='*80
-            print 'EXCEPTION IN PARALLEL EXECUTION END'
-            print '='*80
-
+    multiproc.exec_in_worker(lambda: chain._run_tool(tool))
+    reused = chain._reuse
+    chain._reuse = reuse_status  # reset for next job on worker
     return tool.name, reused
 
 
@@ -367,7 +351,7 @@ class ToolChainParallel(ToolChain):
             for name, reused in result_iter:
                 if multiproc.is_kill_requested():
                     pool.close()
-                    os.killpg(os.getpid(), signal.SIGTERM)  # one evil line!
+                    multiproc.do_kill_now()
 
                 if not reused:
                     self._reuse = False
@@ -376,7 +360,7 @@ class ToolChainParallel(ToolChain):
                     self._load_results(self.tool_names[name])
 
         except KeyboardInterrupt:
-            os.killpg(os.getpid(), signal.SIGTERM)  # again!
+            multiproc.do_kill_now()
 
         # cleanup
         pool.close()
