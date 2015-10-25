@@ -221,13 +221,16 @@ class ToolChain(_ToolBase):
             t.finished()
             self._reuse = t._reuse
 
-    def run(self):
+    def _fetch_lazy_eval_tools(self):
         if self.lazy_eval_tools_func:
             new_tools = self.lazy_eval_tools_func()
             if not new_tools:
                 self.message('WARNING lazy_eval_tools_func didnot return tools')
             else:
                 self.add_tools(new_tools)
+
+    def run(self):
+        self._fetch_lazy_eval_tools()
 
         for tool in self.tool_chain:
             self._run_tool(tool)
@@ -299,7 +302,8 @@ def _run_tool_in_worker(arg):
     tool = chain.tool_chain[tool_index]
     name, reused, print_ex = tool.name, False, False
     try:
-        chain._run_tool(tool)
+        with multiproc.cpu_semaphore:
+            chain._run_tool(tool)
         reused = chain._reuse
         chain._reuse = reuse_status  # reset on worker for next tool
     except KeyboardInterrupt:  # these will be handled from main process
@@ -345,18 +349,8 @@ class ToolChainParallel(ToolChain):
                 self._load_results(t)
         analysis.pop_tool()
 
-    def _run_tool(self, tool):
-        with multiproc.cpu_semaphore:
-            super(ToolChainParallel, self)._run_tool(tool)
-
     def run(self):
-        if self.lazy_eval_tools_func:
-            new_tools = self.lazy_eval_tools_func()
-            if not new_tools:
-                self.message('WARNING lazy_eval_tools_func didnot return tools')
-            else:
-                self.add_tools(new_tools)
-
+        self._fetch_lazy_eval_tools()
         if not self.tool_chain:
             return
 
