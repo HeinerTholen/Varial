@@ -56,16 +56,8 @@ class TreeProjector(varial.tools.Tool):
             for h in self.params['histos']
         )
 
-        def kill_hook(iterable):
-            for i in iterable:
-                if varial.multiproc.is_kill_requested():
-                    pool.close()
-                    varial.multiproc.do_kill_now()
-                yield i
-
-        res = list(reduce_projection(kill_hook(
-            pool.imap_unordered(map_fwd, iterable)
-        ), self.params))
+        res = list(reduce_projection(
+            pool.imap_unordered(map_fwd, iterable), self.params))
 
         pool.close()
         pool.join()

@@ -6,6 +6,7 @@ Management for multiprocessing in varial.
 import multiprocessing.pool
 import settings
 import signal
+import time
 import sys
 import os
 
@@ -67,6 +68,19 @@ class NoDeamonWorkersPool(multiprocessing.pool.Pool):
         else:
             # must re-acquire before leaving
             cpu_semaphore.acquire()
+
+    def imap_unordered(self, func, iterable, chunksize=1):
+        def kill_hook(iterable):
+            for i in iterable:
+                if is_kill_requested():
+                    self.close()
+                    time.sleep(.1)
+                    do_kill_now()
+                yield i
+
+        return kill_hook(super(NoDeamonWorkersPool, self).imap_unordered(
+            func, iterable, chunksize
+        ))
 
     def close(self):
         for func in _pre_join_cbs:

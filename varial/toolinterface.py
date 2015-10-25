@@ -3,7 +3,6 @@ Baseclasses for tools and toolchains.
 """
 
 import inspect
-import signal
 import time
 import sys
 import os
@@ -349,10 +348,6 @@ class ToolChainParallel(ToolChain):
         # run processing
         try:
             for name, reused in result_iter:
-                if multiproc.is_kill_requested():
-                    pool.close()
-                    multiproc.do_kill_now()
-
                 if not reused:
                     self._reuse = False
 
