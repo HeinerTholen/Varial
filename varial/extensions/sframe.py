@@ -5,6 +5,7 @@ Host sframe processes in a toolchain.
 import xml.etree.cElementTree as ElementTree
 import subprocess
 import StringIO
+import glob
 import time
 import os
 join = os.path.join
@@ -117,7 +118,9 @@ class SFrame(toolinterface.Tool):
         else:
             self.message('WARNING ' + err_msg)
 
-        os.system('rm -r %s/jobTempOutput_*' % self.cwd)
+        tmp_out = '%s/jobTempOutput_*' % self.cwd
+        if glob.glob(tmp_out):
+            os.system('rm -r ' + tmp_out)
 
     def reuse(self):
         super(SFrame, self).reuse()
