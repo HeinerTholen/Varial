@@ -119,6 +119,8 @@ class StackRenderer(HistoRenderer, wrappers.StackWrapper):
         )
 
     def draw(self, option=''):
+        for h in self.stack.GetHists():
+            h.SetLineColor(ROOT.kGray)
         self.stack.Draw(self.draw_option + option)
         self.stack.GetXaxis().SetTitle(self.histo.GetXaxis().GetTitle())
         self.stack.GetYaxis().SetTitle(self.histo.GetYaxis().GetTitle())
