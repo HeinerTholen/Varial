@@ -14,6 +14,7 @@ rnd = rendering
 wrp = wrappers
 
 import ROOT
+ROOT.TH1.AddDirectory(False)
 
 def raise_root_error_level():
     ROOT.gROOT.ProcessLine('gErrorIgnoreLevel = kError;')
