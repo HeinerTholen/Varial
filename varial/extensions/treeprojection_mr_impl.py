@@ -40,12 +40,9 @@ def map_projection(sample_histo_filename, params):
 def reduce_projection(iter, params):
     """Reduce by sample and add containers."""
 
-    def _key(k_v):  # need function, no lambdas allowed
-        return k_v[0]
-
     def _kvgroup(it):  # returns iterator over (key, [val1, val2, ...])
         from itertools import groupby
-        for k, kvs in groupby(it, _key):
+        for k, kvs in groupby(it, lambda kv: kv[0]):
             yield k, (v for _, v in kvs)
 
     def _histo_sum(h_iter):  # returns single histogram
@@ -56,6 +53,3 @@ def reduce_projection(iter, params):
 
     for sample_histo, histos in _kvgroup(sorted(iter)):
         yield sample_histo, _histo_sum(histos)
-
-
-################################################################### utility ###
