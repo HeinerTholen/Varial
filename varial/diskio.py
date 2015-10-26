@@ -117,7 +117,8 @@ def read(filename):
 def write(wrp, filename=None, suffices=(), mode='RECREATE'):
     """Writes wrapper to disk, including root objects."""
     filename = prepare_basename(filename or wrp.name)
-    record_in_save_log(filename)
+    if mode is not 'UPDATE':
+        record_in_save_log(filename)
 
     if settings.diskio_check_readability:
         _check_readability(wrp)
@@ -406,14 +407,18 @@ multiproc._pre_fork_cbs.append(close_open_root_files)
 multiproc._pre_join_cbs.append(close_open_root_files)
 
 
-def write_fileservice():
+def write_fileservice(filename=''):
     if not analysis.fs_wrappers:
         return
 
+    filename = filename or settings.fileservice_filename
     fs_wrappers = analysis.fs_wrappers.values()
-    write(fs_wrappers[0], filename=settings.fileservice_filename)
+    write(fs_wrappers[0], filename=filename)
     for wrp in fs_wrappers[1:]:
-        write(wrp, filename=settings.fileservice_filename, mode='UPDATE')
+        write(wrp, filename=filename, mode='UPDATE')
+
+    analysis.fs_wrappers = {}
+
 
 atexit.register(write_fileservice)
 atexit.register(close_open_root_files)
