@@ -704,9 +704,9 @@ def fs_filter_sort_load(filter_keyfunc=None, sort_keys=None):
     """
     Packaging of filtering, sorting and loading.
 
-    :param filter_dict: see function filter(...) above
-    :param sort_keys:   see function sort(...) above
-    :yields:            HistoWrapper
+    :param filter_keyfunc:  key for filter(...)
+    :param sort_keys:       see function sort(...) above
+    :yields:                HistoWrapper
 
     **Implementation:** ::
 
@@ -760,7 +760,7 @@ def fs_mc_stack(filter_keyfunc=None, merge_mc_key_func=None):
     """
     Delivers only MC stacks, no data, from fileservice.
 
-    :param filter_dict:         see function filter(...) above
+    :param filter_keyfunc:      key for filter(...)
     :param merge_mc_key_func:   key function for python sorted(...), default
                                 tries to sort after stack position
     :yields:                    StackWrapper
