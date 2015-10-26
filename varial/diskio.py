@@ -403,8 +403,8 @@ import analysis
 import atexit
 
 
-multiproc._pre_fork_cbs.append(close_open_root_files)
-multiproc._pre_join_cbs.append(close_open_root_files)
+multiproc.pre_fork_cbs.append(close_open_root_files)
+multiproc.pre_join_cbs.append(close_open_root_files)
 
 
 def write_fileservice(filename=''):

@@ -14,8 +14,8 @@ import os
 cpu_semaphore = None
 _kill_request = None  # initialized to 0, if > 0, the process group is killed
 _xcptn_lock = None  # used w/o blocking for _kill_request
-_pre_fork_cbs = []
-_pre_join_cbs = []
+pre_fork_cbs = []
+pre_join_cbs = []
 
 
 ################################### special worker-pool to allows recursion ###
@@ -53,7 +53,7 @@ class NoDeamonWorkersPool(multiprocessing.pool.Pool):
             _kill_request = multiprocessing.Value('i', 0)
             _xcptn_lock = multiprocessing.RLock()
 
-        for func in _pre_fork_cbs:
+        for func in pre_fork_cbs:
             func()
 
         # go parallel
@@ -82,7 +82,7 @@ class NoDeamonWorkersPool(multiprocessing.pool.Pool):
         ))
 
     def close(self):
-        for func in _pre_join_cbs:
+        for func in pre_join_cbs:
             func()
 
         super(NoDeamonWorkersPool, self).close()
