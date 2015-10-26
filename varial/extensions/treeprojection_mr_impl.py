@@ -7,10 +7,9 @@ Implementation ready for disco map/reduce framework.
 
 def map_projection(sample_histo_filename, params):
     """Map histogram projections to a root file"""
-    sample, histoname, filename = sample_histo_filename.split()
 
     import ROOT
-    ROOT.gROOT.SetBatch(True)
+    sample, histoname, filename = sample_histo_filename.split()
     input_file = ROOT.TFile(filename)
 
     try:
@@ -18,8 +17,8 @@ def map_projection(sample_histo_filename, params):
         tree = input_file.Get(params['treename'])
 
         nm1 = params.get('nm1', True)
-        selection = params.get('selection', '')
-        weight = params.get('weight', '1.')
+        selection = params.get('selection') or '1'
+        weight = params.get('weight') or '1'
         if nm1 and histoname in selection:  # N-1 instruction
             sel = weight
         else:
@@ -27,7 +26,11 @@ def map_projection(sample_histo_filename, params):
 
         histoargs = params['histos'][histoname]
         histo = ROOT.TH1F(histoname, *histoargs)
-        tree.Project(histoname, histoname, sel)
+        n_sel = tree.Project(histoname, histoname, sel)
+        if n_sel < 0:
+            raise RuntimeError('Error in TTree::Project. Are variables, '
+                               'selections and weights are properly defined? '
+                               'Please check logs.')
         histo.SetDirectory(0)
 
     finally:
@@ -37,7 +40,7 @@ def map_projection(sample_histo_filename, params):
     yield sample+' '+histoname, histo
 
 
-def reduce_projection(iter, params):
+def reduce_projection(iterator, params):
     """Reduce by sample and add containers."""
 
     def _kvgroup(it):  # returns iterator over (key, [val1, val2, ...])
@@ -51,5 +54,5 @@ def reduce_projection(iter, params):
             h_sum.Add(h)
         return h_sum
 
-    for sample_histo, histos in _kvgroup(sorted(iter)):
+    for sample_histo, histos in _kvgroup(sorted(iterator)):
         yield sample_histo, _histo_sum(histos)
