@@ -74,7 +74,6 @@ class NoDeamonWorkersPool(multiprocessing.pool.Pool):
             for i in iterable:
                 if is_kill_requested():
                     self.close()
-                    time.sleep(.1)
                     do_kill_now()
                 yield i
 
@@ -136,4 +135,5 @@ def exec_in_worker(func, *args, **kws):
 
 
 def do_kill_now():
+    time.sleep(.005)  # 5 millis for not cutting the printout
     os.killpg(os.getpid(), signal.SIGTERM)  # one evil line!
