@@ -71,6 +71,7 @@ class TestHistoToolsBase(unittest.TestCase):
         )
 
         self.test_dir = tempfile.mkdtemp()
+        analysis.cwd = self.test_dir
 
     def tearDown(self):
         super(TestHistoToolsBase, self).tearDown()
