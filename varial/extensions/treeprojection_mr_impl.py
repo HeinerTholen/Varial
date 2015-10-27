@@ -1,7 +1,7 @@
 """
 Project histograms from trees in the style of map/reduce.
 
-Implementation ready for disco map/reduce framework.
+Implementation ready for disco map/reduce framework as well as jug.
 """
 
 
@@ -56,3 +56,20 @@ def reduce_projection(iterator, params):
 
     for sample_histo, histos in _kvgroup(sorted(iterator)):
         yield sample_histo, _histo_sum(histos)
+
+
+####################################################################### jug ###
+def jug_map_projection_per_file(args):
+    sample, histos, filename, params = args
+
+    map_iter = (res
+                for h in histos
+                for res in map_projection(
+                    '%s %s %s'%(sample, h, filename), params))
+    result = reduce_projection(map_iter, params)
+
+    return list(result)
+
+
+def jug_reduce_projection(one, two):
+    return list(reduce_projection(one+two, None))
