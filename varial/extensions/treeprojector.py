@@ -5,18 +5,20 @@ Simple splitting by sample and file.
 """
 
 from varial.extensions.treeprojection_mr_impl import \
-    map_projection, \
+    jug_map_projection_per_file, \
     reduce_projection
 import varial.multiproc
 import varial.diskio
 import varial.pklio
 import varial.tools
 import varial.util
+
+import itertools
 import glob
 
 
 def map_fwd(args):
-    return varial.multiproc.exec_in_worker(lambda: next(map_projection(*args)))
+    return varial.multiproc.exec_in_worker(jug_map_projection_per_file, args)
 
 
 class TreeProjector(varial.tools.Tool):
@@ -61,7 +63,6 @@ class TreeProjector(varial.tools.Tool):
             setattr(fs_wrp, name, histo)
 
     def handle_sample(self, sample):
-        filenames = filter(lambda f: sample in f, self.filenames)
         pool = varial.multiproc.NoDeamonWorkersPool(
             varial.settings.max_num_processes)
 
@@ -72,15 +73,14 @@ class TreeProjector(varial.tools.Tool):
             params['selection'] = selection
 
             iterable = (
-                ('%s %s %s' % (sample, h, f), params)
-                for f in filenames
-                for h in self.params['histos']
+                (sample, f, params)
+                for f in self.filenames
+                if sample in f
             )
 
-            res = list(reduce_projection(
-                pool.imap_unordered(map_fwd, iterable),
-                params
-            ))
+            res = list(reduce_projection(itertools.chain.from_iterable(
+                pool.imap_unordered(map_fwd, iterable)
+            ), params))
             self.store_sample(sample, section, res)
 
         pool.close()

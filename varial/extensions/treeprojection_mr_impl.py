@@ -5,29 +5,32 @@ Implementation ready for disco map/reduce framework as well as jug.
 """
 
 
-def map_projection(sample_histo_filename, params):
+def map_projection(sample_histo_filename, params, open_file=None):
     """Map histogram projections to a root file"""
 
     import ROOT
     sample, histoname, filename = sample_histo_filename.split()
-    input_file = ROOT.TFile(filename)
+    input_file = open_file or ROOT.TFile(filename)
 
     try:
         ROOT.TH1.AddDirectory(True)
         tree = input_file.Get(params['treename'])
 
         nm1 = params.get('nm1', True)
-        selection = params.get('selection') or '1'
         weight = params.get('weight') or '1'
-        if nm1 and histoname in selection:  # N-1 instruction
-            sel = weight
-        else:
-            sel = '%s*(%s)' % (weight, selection)
+        selection = params.get('selection') or '1'
+
+        if any(isinstance(selection, t) for t in (list, tuple)):
+            if nm1:  # N-1 instruction: don't cut the plotted variable
+                selection = filter(lambda s: histoname not in s, selection)
+            selection = ' && '.join(selection)
+
+        selection = '%s*(%s)' % (weight, selection)
 
         histoargs = params['histos'][histoname]
         histo = ROOT.TH1F(histoname, *histoargs)
-        n_sel = tree.Project(histoname, histoname, sel)
-        if n_sel < 0:
+        n_selected = tree.Project(histoname, histoname, selection)
+        if n_selected < 0:
             raise RuntimeError('Error in TTree::Project. Are variables, '
                                'selections and weights are properly defined? '
                                'Please check logs.')
@@ -35,7 +38,8 @@ def map_projection(sample_histo_filename, params):
 
     finally:
         ROOT.TH1.AddDirectory(False)
-        input_file.Close()
+        if not open_file:
+            input_file.Close()
 
     yield sample+' '+histoname, histo
 
@@ -60,15 +64,21 @@ def reduce_projection(iterator, params):
 
 ####################################################################### jug ###
 def jug_map_projection_per_file(args):
-    sample, histos, filename, params = args
+    sample, filename, params = args
+    histos = params['histos'].keys()
 
-    map_iter = (res
-                for h in histos
-                for res in map_projection(
-                    '%s %s %s'%(sample, h, filename), params))
-    result = reduce_projection(map_iter, params)
+    import ROOT
+    open_file = ROOT.TFile(filename)
+    try:
+        map_iter = (res
+                    for h in histos
+                    for res in map_projection(
+                        '%s %s %s'%(sample, h, filename), params, open_file))
+        result = list(reduce_projection(map_iter, params))
+    finally:
+        open_file.Close()
 
-    return list(result)
+    return result
 
 
 def jug_reduce_projection(one, two):
