@@ -8,6 +8,7 @@ from varial.extensions.treeprojection_mr_impl import \
     jug_map_projection_per_file, \
     reduce_projection
 import varial.multiproc
+import varial.analysis
 import varial.diskio
 import varial.pklio
 import varial.tools
@@ -23,6 +24,7 @@ def _map_fwd(args):
 
 def _handle_sample(args):
     instance, sample = args
+    instance = varial.analysis.lookup_tool(instance)
     varial.multiproc.exec_in_worker(lambda: instance.handle_sample(sample))
 
 
@@ -103,7 +105,8 @@ class TreeProjector(varial.tools.Tool):
 
         pool = varial.multiproc.NoDeamonWorkersPool(
             min(varial.settings.max_num_processes, len(self.samples)))
-        iterable = ((self, s) for s in self.samples)
+        iterable = ((varial.analysis.get_current_tool_path(), s)
+                    for s in self.samples)
 
         for _ in pool.imap_unordered(_handle_sample, iterable):
             pass

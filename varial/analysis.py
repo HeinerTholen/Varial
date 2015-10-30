@@ -166,6 +166,10 @@ def pop_tool():
     current_result = current_result.parent
 
 
+def get_current_tool_path():
+    return "/".join(t.name for t in _tool_stack)
+
+
 def _lookup(key):
     keys = key.split('/')
     if keys[0] in ('', '.'):

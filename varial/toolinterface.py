@@ -340,7 +340,7 @@ class ToolChainParallel(ToolChain):
         # prepare multiprocessing
         n_tools = len(self.tool_chain)
         n_workers = self.n_workers or min(n_tools, settings.max_num_processes)
-        my_path = "/".join(t.name for t in analysis._tool_stack)
+        my_path = analysis.get_current_tool_path()
         tool_index_list = list((my_path, i) for i in xrange(n_tools))
         pool = multiproc.NoDeamonWorkersPool(n_workers)
         result_iter = pool.imap_unordered(_run_tool_in_worker, tool_index_list)
