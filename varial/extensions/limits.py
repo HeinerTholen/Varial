@@ -8,7 +8,7 @@ import ROOT
 import varial.tools
 import varial.analysis
 import theta_auto
-theta_auto.config.theta_dir = os.environ["CMSSW_BASE"] + "/theta"
+theta_auto.config.theta_dir = os.environ["CMSSW_BASE"] + "/../theta"
 
 
 class ThetaLimits(varial.tools.Tool):
