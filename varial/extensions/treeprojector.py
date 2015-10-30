@@ -17,8 +17,13 @@ import itertools
 import glob
 
 
-def map_fwd(args):
+def _map_fwd(args):
     return varial.multiproc.exec_in_worker(jug_map_projection_per_file, args)
+
+
+def _handle_sample(args):
+    instance, sample = args
+    varial.multiproc.exec_in_worker(lambda: instance.handle_sample(sample))
 
 
 class TreeProjector(varial.tools.Tool):
@@ -63,6 +68,7 @@ class TreeProjector(varial.tools.Tool):
             setattr(fs_wrp, name, histo)
 
     def handle_sample(self, sample):
+        self.message('INFO starting sample: ' + sample)
         pool = varial.multiproc.NoDeamonWorkersPool(
             varial.settings.max_num_processes)
 
@@ -79,12 +85,14 @@ class TreeProjector(varial.tools.Tool):
             )
 
             res = list(reduce_projection(itertools.chain.from_iterable(
-                pool.imap_unordered(map_fwd, iterable)
+                pool.imap_unordered(_map_fwd, iterable)
             ), params))
             self.store_sample(sample, section, res)
 
         pool.close()
         pool.join()
+        varial.diskio.write_fileservice(sample)
+        self.message('INFO sample done: ' + sample)
 
     def reuse(self):
         super(TreeProjector, self).reuse()
@@ -93,11 +101,15 @@ class TreeProjector(varial.tools.Tool):
     def run(self):
         self.filenames = glob.glob(self.file_pattern)
 
-        for s in self.samples:
-            self.message('INFO starting sample: ' + s)
-            self.handle_sample(s)
-            varial.diskio.write_fileservice(s)
-            self.message('INFO sample done: ' + s)
+        pool = varial.multiproc.NoDeamonWorkersPool(
+            min(varial.settings.max_num_processes, len(self.samples)))
+        iterable = ((self, s) for s in self.samples)
+
+        for _ in pool.imap_unordered(_handle_sample, iterable):
+            pass
+
+        pool.close()
+        pool.join()
 
         self.result = varial.wrappers.WrapperWrapper(
             list(varial.diskio.generate_aliases(self.cwd + '*.root'))
