@@ -1,5 +1,5 @@
-.. image:: https://travis-ci.org/HeinAtCERN/Varial.svg?branch=master
-    :target: https://travis-ci.org/HeinAtCERN/Varial
+.. image:: https://travis-ci.org/HeinerTholen/Varial.svg?branch=master
+    :target: https://travis-ci.org/HeinerTholen/Varial
 
 
 ======
