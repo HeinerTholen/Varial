@@ -77,8 +77,6 @@ class ThetaLimits(varial.tools.Tool):
             raise RuntimeError('No background histograms present.')
         if not sig:
             raise RuntimeError('No signal histograms present.')
-        if len(dat) > 1:
-            raise RuntimeError('Too many data histograms present (>1).')
         if not dat:
             self.message('INFO No data histogram, only expected limits.')
 
