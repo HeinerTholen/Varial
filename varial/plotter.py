@@ -39,6 +39,14 @@ def plot_grouper_single_plots(wrps):
         yield (w,)
 
 
+def plot_grouper_by_name(wrps, separate_th2=True):
+    if separate_th2:
+        wrps = rename_th2(wrps)
+    key = lambda w: w.name
+    wrps = sorted(wrps, key=key)
+    return gen.group(wrps, key_func=key)
+
+
 def plot_grouper_by_in_file_path(wrps, separate_th2=True):
     if separate_th2:
         wrps = rename_th2(wrps)
