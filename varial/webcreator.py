@@ -1,5 +1,6 @@
 import traceback
 import itertools
+import datetime
 import sys
 import os
 
@@ -380,7 +381,9 @@ class WebCreator(toolinterface.Tool):
     def finalize_page(self):
         self.web_lines += [
             '',
-            '<p>Created with '
+            '<p>Created on '
+            + datetime.datetime.now().strftime('%Y-%m-%d %H:%M') +
+            ' with '
             '<a href="https://github.com/HeinAtCERN/Varial" target="new">'
             'varial_webcreator'
             '</a>.'
