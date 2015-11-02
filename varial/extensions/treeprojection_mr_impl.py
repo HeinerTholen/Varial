@@ -15,6 +15,10 @@ def map_projection(sample_histo_filename, params, open_file=None):
     try:
         ROOT.TH1.AddDirectory(True)
         tree = input_file.Get(params['treename'])
+        if not isinstance(tree, ROOT.TTree):
+            raise RuntimeError(
+                'There seems to be no tree named "%s" in file "%s"'%(
+                    params['treename'], input_file))
 
         nm1 = params.get('nm1', True)
         weight = params.get('weight') or '1'
