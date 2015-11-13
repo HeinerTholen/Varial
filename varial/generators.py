@@ -700,6 +700,13 @@ def switch_log_scale(cnvs, x_axis=False, y_axis=True):
 ################################################### application & packaging ###
 
 
+def open_filter_load(pattern='*.root', filter_keyfunc=None):
+    wrps = dir_content(pattern)
+    wrps = itertools.ifilter(filter_keyfunc, wrps)
+    wrps = load(wrps)
+    return wrps
+
+
 def fs_filter_sort_load(filter_keyfunc=None, sort_keys=None):
     """
     Packaging of filtering, sorting and loading.
@@ -730,6 +737,18 @@ def fs_filter_active_sort_load(filter_keyfunc=None, sort_keys=None):
     wrps = itertools.ifilter(filter_keyfunc, wrps)
     wrps = sort(wrps, sort_keys)
     return load(wrps)
+
+
+def sort_group_merge(wrps, keyfunc):
+    """
+    Apply sorting and grouping according to keyfunc. Then merge groups.
+
+    :param keyfunc:  common key for sorted and group
+    """
+    wrps = sorted(wrps, key=keyfunc)
+    wrps = group(wrps, keyfunc)
+    wrps = gen_merge(wrps)
+    return wrps
 
 
 def mc_stack(wrps, merge_mc_key_func=None):
