@@ -12,32 +12,37 @@ def map_projection(sample_histo_filename, params, open_file=None):
     sample, histoname, filename = sample_histo_filename.split()
     input_file = open_file or ROOT.TFile(filename)
 
+    nm1 = params.get('nm1', True)
+    weight = params.get('weight') or '1'
+    selection = params.get('selection') or '1'
+
+    if any(isinstance(selection, t) for t in (list, tuple)):
+        if nm1:  # N-1 instruction: don't cut the plotted variable
+            selection = filter(lambda s: histoname not in s, selection)
+        selection = ' && '.join(selection)
+
+    selection = '%s*(%s)' % (weight, selection)
+    histoargs = params['histos'][histoname]
+
     try:
         ROOT.TH1.AddDirectory(True)
-        tree = input_file.Get(params['treename'])
-        if not isinstance(tree, ROOT.TTree):
-            raise RuntimeError(
-                'There seems to be no tree named "%s" in file "%s"'%(
-                    params['treename'], input_file))
-
-        nm1 = params.get('nm1', True)
-        weight = params.get('weight') or '1'
-        selection = params.get('selection') or '1'
-
-        if any(isinstance(selection, t) for t in (list, tuple)):
-            if nm1:  # N-1 instruction: don't cut the plotted variable
-                selection = filter(lambda s: histoname not in s, selection)
-            selection = ' && '.join(selection)
-
-        selection = '%s*(%s)' % (weight, selection)
-
-        histoargs = params['histos'][histoname]
         histo = ROOT.TH1F(histoname, *histoargs)
-        n_selected = tree.Project(histoname, histoname, selection)
-        if n_selected < 0:
-            raise RuntimeError('Error in TTree::Project. Are variables, '
-                               'selections and weights are properly defined? '
-                               'Please check logs.')
+        tree_keys = filter(lambda k: k.GetName() == params['treename'],
+                           input_file.GetListOfKeys())
+
+        for tree in (k.ReadObj() for k in tree_keys):
+            if not isinstance(tree, ROOT.TTree):
+                raise RuntimeError(
+                    'There seems to be no tree named "%s" in file "%s"'%(
+                        params['treename'], input_file))
+
+            n_selected = tree.Draw('%s>>+%s'%(histoname, histoname), selection)
+            if n_selected < 0:
+                raise RuntimeError(
+                    'Error in TTree::Project. Are variables, selections and '
+                    'weights are properly defined? Please check logs.'
+                )
+
         histo.SetDirectory(0)
 
     finally:
