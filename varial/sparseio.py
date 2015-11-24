@@ -19,8 +19,8 @@ import wrappers
 import monitor
 
 
-_rootfile = '_varial_sparseio.root'
-_infofile = '_varial_sparseio.pkl'
+_rootfile = '_varial_rootobjects.root'
+_infofile = '_varial_infodata.pkl'
 use_analysis_cwd = True
 
 
