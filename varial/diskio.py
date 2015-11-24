@@ -407,13 +407,13 @@ multiproc.pre_fork_cbs.append(close_open_root_files)
 multiproc.pre_join_cbs.append(close_open_root_files)
 
 
-def write_fileservice(filename=''):
+def write_fileservice(filename='', initial_mode='RECREATE'):
     if not analysis.fs_wrappers:
         return
 
     filename = filename or settings.fileservice_filename
     fs_wrappers = analysis.fs_wrappers.values()
-    write(fs_wrappers[0], filename=filename)
+    write(fs_wrappers[0], filename=filename, mode=initial_mode)
     for wrp in fs_wrappers[1:]:
         write(wrp, filename=filename, mode='UPDATE')
 
