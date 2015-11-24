@@ -56,7 +56,7 @@ class TestHistoToolsBase(unittest.TestCase):
         ]
         analysis.active_samples = analysis.all_samples.keys()
 
-        #create a test wrapper
+        # create a test wrapper
         h1 = TH1I("h1", "H1", 2, .5, 4.5)
         h1.Fill(1)
         h1.Fill(3,2)
