@@ -23,6 +23,7 @@ def map_projection(sample_histo_filename, params, open_file=None):
 
     selection = '%s*(%s)' % (weight, selection)
     histoargs = params['histos'][histoname]
+    histo_draw_cmd = '%s>>+%s' % (histoname, histoname)
 
     try:
         ROOT.TH1.AddDirectory(True)
@@ -36,7 +37,7 @@ def map_projection(sample_histo_filename, params, open_file=None):
                     'There seems to be no tree named "%s" in file "%s"'%(
                         params['treename'], input_file))
 
-            n_selected = tree.Draw('%s>>+%s'%(histoname, histoname), selection)
+            n_selected = tree.Draw(histo_draw_cmd, selection, 'goff')
             if n_selected < 0:
                 raise RuntimeError(
                     'Error in TTree::Project. Are variables, selections and '
