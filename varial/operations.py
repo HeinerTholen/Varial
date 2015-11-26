@@ -52,10 +52,11 @@ def add_wrp_info(wrp, **kw_funcs):
         setattr(wrp, k, val)
 
     # (need to track history manually)
-    h = history.History('add_wrp_info')
-    h.add_args([wrp.history])
-    h.add_kws(kw_args)
-    wrp.history = h
+    if isinstance(wrp, wrappers.Wrapper):
+        h = history.History('add_wrp_info')
+        h.add_args([wrp.history])
+        h.add_kws(kw_args)
+        wrp.history = h
 
     return wrp
 
