@@ -59,6 +59,7 @@ class Hadd(varial.tools.Tool):
         for w in wrps:
             w.sample = self.samplename_func(w)
         self.result = varial.wrappers.WrapperWrapper(wrps)
+        os.system('touch %s/aliases.in.result' % self.cwd)
 
     def reuse(self):
         super(Hadd, self).reuse()

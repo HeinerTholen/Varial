@@ -442,6 +442,7 @@ def gen_make_th2_projections(wrps, keep_th2=True):
 
 ############################################################### load / save ###
 import settings
+import pklio
 import glob
 import os
 
@@ -477,11 +478,22 @@ def fs_content():
 
 def dir_content(pattern='./*.root'):
     """
-    Proxy of diskio.generate_aliases(directory)
+    Proxy of diskio.generate_aliases(directory) / tries to load aliases first
 
     :yields:   Alias
     """
-    return diskio.generate_aliases_list(resolve_file_pattern(pattern))
+    wrps = None
+    if type(pattern) is str:
+        dirname = os.path.dirname(pattern)
+        res = glob.glob(os.path.join(dirname, 'aliases.in.*'))
+        if len(res) == 1:
+            tok = res[0].split('.')[-1]
+            info_file = os.path.join(dirname, tok)
+            wrps = pklio.get(info_file)
+            if not wrps:
+                wrps = diskio.get(info_file)
+    if not wrps:
+        return diskio.generate_aliases_list(resolve_file_pattern(pattern))
 
 
 def load(aliases):
