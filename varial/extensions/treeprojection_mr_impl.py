@@ -93,3 +93,13 @@ def jug_map_projection_per_file(args):
 
 def jug_reduce_projection(one, two):
     return list(reduce_projection(one+two, None))
+
+
+###################################################################### util ###
+def store_sample(sample, section, result):
+    import varial
+    fs_wrp = varial.analysis.fileservice(section)
+    fs_wrp.sample = sample
+    for sample_histoname, histo in result:
+        _, name = sample_histoname.split()
+        setattr(fs_wrp, name, histo)

@@ -1,39 +1,64 @@
-import subprocess
+import random
+import glob
 import time
+import jug
 import os
 
 
 class SGEWorker(object):
-    def __init__(self, task_id, jug_file_path, jug_file_path_pat):
+    def __init__(self, task_id, username, jug_file_path_pat):
         self.task_id = task_id
-        self.jug_file_path = jug_file_path
+        self.username = username
         self.jug_file_path_pat = jug_file_path_pat
 
-    def start(self):
-        print 'SGEWorker started! task_id:', self.task_id
+    def do_work(self, work_path):
+        try:
+            print 'INFO trying to start jugfile:', work_path
+            if os.path.exists(work_path):
+                jug.jug.main(['', 'execute', work_path])
 
-        proc = None
+        # happens when the jugfile is removed before reading
+        except IOError:
+            pass
+
+        # real errors from map/reduce
+        except RuntimeError as e:
+            try:
+                os.remove(work_path)
+
+            except OSError:
+                return # if jugfile is already removed, someone else prints e
+
+            err_path = work_path.replace('.py', '.err.txt')
+            with os.open(err_path, 'w') as f:
+                f.write(repr(e))
+
+        # (Errors other then IOError and RuntimeError let the worker crash.)
+
+    def find_work_forever(self):
+        search_path = self.jug_file_path_pat.format(user='*')
+        user = '/%s/' % self.username
+
         while True:
-            if proc:
-                # wait here until proc is finished
-                while None == proc.returncode:
-                    time.sleep(0.5)
-                    proc.poll()
+            # look for work (all users)
+            work_paths = glob.glob(search_path)
 
-                # raise on returncode else we're done.
-                if proc.returncode:
-                    raise RuntimeError(
-                        'jug execute returncode != 0: %d' % proc.returncode)
+            # look for own stuff first  (_or_'d with all work)
+            work_paths = filter(lambda p: user in p, work_paths) or work_paths
 
-                proc = None
+            if work_paths:
+                work = random.choice(work_paths)
+                self.do_work(work)
+            else:
+                time.sleep(1.)
 
-            elif os.path.exists(self.jug_file_path):
-                proc = subprocess.Popen(
-                    'jug execute %s' % self.jug_file_path, shell=True)
+    def start(self):
+        print 'SGEWorker started!'
+        print 'SGEWorker task_id:           ', self.task_id
+        print 'SGEWorker username:          ', self.username
+        print 'SGEWorker jug_file_path_pat: ', self.jug_file_path_pat
 
-            # nothing to do...
-            time.sleep(0.5)
+        self.find_work_forever()
 
 
-# TODO be social. work for others, when there's no work for you.
-
+# python -c "from varial.extensions.sgeworker import SGEWorker; SGEWorker(3, 'tholenhe', '/nfs/dust/cms/user/{user}/varial_sge_exec/jug_file.py').start(); "
