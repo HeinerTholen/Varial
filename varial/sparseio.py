@@ -13,8 +13,8 @@ from ROOT import TFile
 import cPickle
 import os
 
+import settings  # init ROOT first
 import analysis
-import settings
 import wrappers
 import monitor
 

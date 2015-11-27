@@ -4,11 +4,15 @@ This module contains project wide settings.
 Everything can be set from the outside. Checkout the source code for further
 reference.
 """
+import ROOT
+ROOT.TH1.AddDirectory(False)
 
 
 ################################################################### general ###
-import os
 import time
+import os
+
+
 recieved_sigint = False
 only_reload_results = False
 diskio_check_readability = False

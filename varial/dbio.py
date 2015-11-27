@@ -7,8 +7,8 @@ Please checkout the :ref:`diskio-module` documentation for more information.
 import cPickle
 import sqlite3
 
-import analysis
 import settings
+import analysis
 
 
 _db_conn = None

@@ -1,3 +1,4 @@
+import settings  # init ROOT first
 from ROOT import TH1D
 import functools
 import itertools

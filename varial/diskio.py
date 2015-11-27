@@ -5,6 +5,7 @@ On disk, a wrapper is represented by a .info file. If it contains root objects,
 there's a .root file with the same name in the same directory.
 """
 
+import settings  #  init ROOT first
 
 from ROOT import TFile, TDirectory, TH1, TObject, TTree
 from os.path import basename, dirname, join
@@ -14,11 +15,10 @@ import resource
 import glob
 import os
 
+import wrappers
 import history
 import monitor
 import sample
-import settings
-import wrappers
 
 
 _n_file_limit = resource.getrlimit(resource.RLIMIT_NOFILE)[1]

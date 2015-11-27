@@ -21,7 +21,6 @@ Decorator)::
 ################################################################# renderers ###
 import collections
 import wrappers
-import util
 import ROOT
 
 

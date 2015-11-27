@@ -2,9 +2,9 @@
 Interface for system outputs.
 """
 
-import sys
-import time
 import settings
+import time
+import sys
 
 
 current_error_level = 0

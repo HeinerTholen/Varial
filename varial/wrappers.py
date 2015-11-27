@@ -11,6 +11,7 @@ and sorting these, the histogram objects can be loaded with the ``diskio``
 module.
 """
 
+import settings  # init ROOT first
 from ROOT import TH1, TH1D, TH2D, TH3D, THStack, TGraph, TCanvas, TObject
 from ast import literal_eval
 

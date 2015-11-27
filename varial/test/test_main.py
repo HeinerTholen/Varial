@@ -17,7 +17,6 @@ from test_tools import suite as tls_suite
 
 import doctest
 import varial.generators as gen
-import varial.diskio as dio
 import varial.history as hst
 import varial.operations as ops
 import varial.rendering as rnd
@@ -28,7 +27,6 @@ suite = unittest.TestSuite((
     doctest.DocTestSuite(wrp),
     doctest.DocTestSuite(hst),
     doctest.DocTestSuite(ops),
-    doctest.DocTestSuite(dio),
     doctest.DocTestSuite(rnd),
     doctest.DocTestSuite(gen),
     doctest.DocTestSuite(uti),

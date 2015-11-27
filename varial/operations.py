@@ -7,11 +7,12 @@ Furthermore, all operations are present in the form of a generator in the
 generator module. Below, an example is given for every operation.
 """
 
+import settings  # init ROOT first
+
 import array
 import __builtin__
 import ctypes
 import collections
-import functools
 from ROOT import THStack, TGraphAsymmErrors
 
 import history

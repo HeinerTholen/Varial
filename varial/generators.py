@@ -16,6 +16,7 @@ http://www.dabeaz.com/generators/index.html
 import collections
 import itertools
 
+import settings  # init ROOT first
 import analysis
 import wrappers
 import operator
@@ -441,7 +442,6 @@ def gen_make_th2_projections(wrps, keep_th2=True):
 
 
 ############################################################### load / save ###
-import settings
 import pklio
 import glob
 import os

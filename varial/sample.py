@@ -4,10 +4,9 @@ import collections
 import os.path
 import glob
 
-import monitor
 import settings
 import wrappers
-
+import monitor
 
 # TODO: move Sample class to extensions.cmsrun??
 

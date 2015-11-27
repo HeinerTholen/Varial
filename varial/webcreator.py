@@ -6,7 +6,6 @@ import os
 
 import toolinterface
 import analysis
-import settings
 import wrappers
 import sparseio
 import diskio

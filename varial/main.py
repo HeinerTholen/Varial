@@ -10,8 +10,8 @@ import os
 import time
 
 import multiproc
-import analysis
 import settings
+import analysis
 import monitor
 import tools
 
