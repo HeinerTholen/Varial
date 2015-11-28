@@ -63,7 +63,8 @@ def data_lumi_sum():
 
 def data_lumi_sum_wrp():
     """Returns the sum of data luminosity in as a FloatWrapper."""
-    return wrappers.FloatWrapper(data_lumi_sum(), history="DataLumiSum")
+    lumi = data_lumi_sum()
+    return wrappers.FloatWrapper(lumi, history='DataLumiSum(%g)' % lumi)
 
 
 def get_pretty_name(key):
