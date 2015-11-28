@@ -5,6 +5,7 @@ import sys
 import os
 
 import toolinterface
+import settings
 import analysis
 import wrappers
 import sparseio
