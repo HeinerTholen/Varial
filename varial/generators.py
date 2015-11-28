@@ -801,7 +801,7 @@ def fs_mc_stack(filter_keyfunc=None, merge_mc_key_func=None):
     return mc_stack(grouped, merge_mc_key_func)
 
 
-def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=False):
+def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=True):
     """
     Stacks MC histos and merges data, input needs to be sorted and grouped.
 
