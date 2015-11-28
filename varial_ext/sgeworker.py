@@ -27,10 +27,10 @@ class SGEWorker(object):
                 os.remove(work_path)
 
             except OSError:
-                return # if jugfile is already removed, someone else prints e
+                return  # if jugfile is already removed, someone else prints e
 
             err_path = work_path.replace('.py', '.err.txt')
-            with os.open(err_path, 'w') as f:
+            with open(err_path, 'w') as f:
                 f.write(repr(e))
 
         # (Errors other then IOError and RuntimeError let the worker crash.)

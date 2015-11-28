@@ -4,7 +4,7 @@ Parallel tree projection using map/reduce.
 Simple splitting by sample and file.
 """
 
-from varial.extensions.treeprojection_mr_impl import \
+from varial_ext.treeprojection_mr_impl import \
     jug_map_projection_per_file, \
     reduce_projection, \
     store_sample
@@ -17,7 +17,6 @@ import varial.util
 
 import subprocess
 import itertools
-import cPickle
 import glob
 import time
 import os
@@ -187,7 +186,7 @@ inputs = list(
     for f in files
 )
 
-import varial.extensions.treeprojection_mr_impl as mr
+import varial_ext.treeprojection_mr_impl as mr
 from jug.compound import CompoundTask
 from jug import TaskGenerator
 import jug.mapreduce
@@ -200,7 +199,9 @@ def finalize(result):
     import varial
     mr.store_sample(sample, section, result)
     varial.diskio.write_fileservice(
-        __file__.replace('.py', ''), initial_mode='UPDATE')
+        __file__.replace('.py', ''),
+        initial_mode='UPDATE'
+    )
 
 result = CompoundTask(
     jug.mapreduce.mapreduce,
@@ -320,7 +321,7 @@ class SGETreeProjector(TreeProjectorBase):
             )
             n_done_prev, n_done = n_done, sum(items_done)
 
-            time.sleep(0.3)  # wait for file write    # TODO check file lock?
+            time.sleep(0.3)  # wait for write  # TODO can open file exclusively?
             if n_done_prev != n_done:
                 for d, (s, p) in itertools.izip(items_due, self.jug_tasks):
                     if d:
@@ -336,12 +337,14 @@ class SGETreeProjector(TreeProjectorBase):
         self.iteration += 1
 
         # clear last round of running (and the ones of 3 iterations ago)
-        glob_pat = jug_file_search_pat.format(user=username)
-        glob_pat = glob_pat.replace('*.py', '%d.*' % (self.iteration - 4))
-        for f in glob.glob(glob_pat):
-            os.system('rm %s' % f)
-        for f in glob.glob('%s/*.root' % self.cwd):
-            os.system('rm %s' % f)
+        wd_junk = jug_file_search_pat.format(user=username)
+        wd_junk = wd_junk.replace('*.py', '%d.*' % (self.iteration - 4))
+        wd_junk = glob.glob(wd_junk)
+        if wd_junk:
+            os.system('rm ' + ' '.join(wd_junk))
+        tooldir_junk = glob.glob('%s/*.root' % self.cwd)
+        if tooldir_junk:
+            os.system('rm ' + ' '.join(tooldir_junk))
 
         for section, selection, weight in self.sec_sel_weight:
             self.launch_workers()
@@ -356,5 +359,8 @@ class SGETreeProjector(TreeProjectorBase):
             self._push_aliases_to_analysis()
 
 
-# TODO #1: for all that provide aliases: add sample
-# TODO #2: make diskio look for aliases info file
+# TODO make class SGEJobLauncher and call it in separate process
+# TODO clear directory stuff in separate process (on init only)
+# TODO option for _not_ copying result back (softlink?)
+# TODO option for launching all sections at once
+# TODO pass list of files done into progress_callback
