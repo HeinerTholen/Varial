@@ -128,6 +128,7 @@ class WebCreator(toolinterface.Tool):
        </body>
     </html>
     """
+    rootjs_dir_level = 0  # number of directories above wd
 
     def __init__(self, name=None, working_dir='', no_tool_check=False,
                  is_base=True):
@@ -163,6 +164,7 @@ class WebCreator(toolinterface.Tool):
                 self.working_dir = analysis.cwd.replace('//', '/')
 
         # write rootjs file
+        self.__class__.rootjs_dir_level = self.working_dir.count('/')
         with open(os.path.join(self.working_dir, 'rootjs.html'), 'w') as f:
             f.write(self.rootjs_cont)
 
@@ -350,9 +352,13 @@ class WebCreator(toolinterface.Tool):
         )
 
         # build rootjs base link (without item yet)
-        rootjs_base_link = '../'*self.working_dir.count('/')
+        rootjs_base_link = '../' * (self.working_dir.count('/') 
+                                    - self.rootjs_dir_level)
         rootjs_base_link += 'rootjs.html?file='
-        rootjs_base_link += os.path.join(self.working_dir, sparseio._rootfile)
+        rootjs_base_link += os.path.normpath(
+            ('../' * self.rootjs_dir_level) +
+            os.path.join(self.working_dir, sparseio._rootfile)
+        )
 
         # images
         crosslink_set = set()
