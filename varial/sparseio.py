@@ -19,7 +19,7 @@ import wrappers
 import monitor
 
 
-_rootfile = '_varial_rootobjects.root'
+_rootfile = '_varial_rootobjects.root.rt'
 _infofile = '_varial_infodata.pkl'
 use_analysis_cwd = True
 
@@ -76,7 +76,7 @@ def bulk_write(wrps, name_func, dir_path='', suffices=None, linlog=False):
     for name, w in wrps_dict.iteritems():
         dirfile = f_root.mkdir(name, name)
         dirfile.cd()
-        w.obj.Write()
+        w.obj.Write(name)
         dirfile.Close()
     f_root.Close()
 

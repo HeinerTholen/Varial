@@ -24,6 +24,8 @@ class WebCreator(toolinterface.Tool):
     :param no_tool_check:   bool, only run in dirs that ran as a tool before
     :param is_base:         bool, **Do not touch! =)**
     """
+    image_postfix = ''
+
     cross_link_images = {}  # { pathlen: {
                             #         'path/one': {'imagename1', 'imagename2'},
                             #         'path/two': {'imagename1', 'imagename2'},
@@ -107,6 +109,26 @@ class WebCreator(toolinterface.Tool):
     }
     """
 
+    rootjs_cont = """
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
+    <html lang="en">
+       <head>
+          <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+          <title>Read a ROOT file</title>
+          <link rel="shortcut icon" href="img/RootIcon.ico">
+          <script
+            type="text/javascript"
+            src="https://root.cern.ch/js/latest/scripts/JSRootCore.js?gui">
+          </script>
+       </head>
+       <body>
+          <div id="simpleGUI" path="" files="">
+             loading scripts ...
+          </div>
+       </body>
+    </html>
+    """
+
     def __init__(self, name=None, working_dir='', no_tool_check=False,
                  is_base=True):
         super(WebCreator, self).__init__(name)
@@ -117,15 +139,14 @@ class WebCreator(toolinterface.Tool):
         self.plain_info = []
         self.plain_tex = []
         self.html_files = []
-        self.image_postfix = None
         self.no_tool_check = no_tool_check
         self.is_base = is_base
 
-    def configure(self):
+    def base_configure(self):
         # get image format
         for pf in ['.png', '.jpg', '.jpeg']:
             if pf in settings.rootfile_postfixes:
-                self.image_postfix = pf
+                self.__class__.image_postfix = pf
                 break
         if not self.image_postfix:
             self.message('ERROR No image formats for web available!')
@@ -134,12 +155,22 @@ class WebCreator(toolinterface.Tool):
             self.message('ERROR html production aborted')
             raise RuntimeError('No image postfixes')
 
-        # collect folders and images
+        # get base directory
         if not self.working_dir:
             if self.cwd:
                 self.working_dir = os.path.join(*self.cwd.split('/')[:-2])
             else:
                 self.working_dir = analysis.cwd.replace('//', '/')
+
+        # write rootjs file
+        with open(os.path.join(self.working_dir, 'rootjs.html'), 'w') as f:
+            f.write(self.rootjs_cont)
+
+    def configure(self):
+        if self.is_base:
+            self.base_configure()
+
+        # collect folders and images
         for wd, dirs, files in os.walk(self.working_dir):
             self.subfolders += list(  # check that tools have worked there..
                 d for d in dirs
@@ -176,8 +207,7 @@ class WebCreator(toolinterface.Tool):
     def go4subdirs(self):
         for sf in self.subfolders[:]:
             path = os.path.join(self.working_dir, sf)
-            inst = self.__class__(self.name, path, self.no_tool_check,
-                                  False)
+            inst = self.__class__(self.name, path, self.no_tool_check, False)
             inst.run()
             if not os.path.exists(os.path.join(path, 'index.html')):
                 self.subfolders.remove(sf)
@@ -319,6 +349,11 @@ class WebCreator(toolinterface.Tool):
             '</p></div>',
         )
 
+        # build rootjs base link (without item yet)
+        rootjs_base_link = '../'*self.working_dir.count('/')
+        rootjs_base_link += 'rootjs.html?file='
+        rootjs_base_link += os.path.join(self.working_dir, sparseio._rootfile)
+
         # images
         crosslink_set = set()
         sparse_dict = sparseio.bulk_read_info_dict(self.working_dir)
@@ -336,6 +371,7 @@ class WebCreator(toolinterface.Tool):
             if not wrp:
                 continue
 
+            rootjs_link = rootjs_base_link + '&item={0}/{0}'.format(wrp.name)
             info_lines = wrp.pretty_writeable_lines()
             history_lines = str(wrp.history)
 
@@ -352,6 +388,7 @@ class WebCreator(toolinterface.Tool):
                 + '\')">(toggle history)</a>',
                 '<a href="javascript:ToggleDiv(\'' + i_id   # toggle info
                 + '\')">(toggle info)</a>',
+                '<a href="%s" target="new">(open in rootjs)</a>' % rootjs_link,
                 '<a href="#toc">(back to top)</a>',
                 '</p>',
                 '<div id="' + h_id                          # history div
@@ -422,7 +459,7 @@ class WebCreator(toolinterface.Tool):
             for other_path, other_img_set in paths_with_same_len.iteritems():
                 if path == other_path:
                     continue
-                if not img in other_img_set:
+                if img not in other_img_set:
                     continue
                 op = other_path.split('/')
                 if n_path_elements_different(p, op) != 1:
