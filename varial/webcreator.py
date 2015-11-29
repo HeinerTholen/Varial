@@ -34,9 +34,9 @@ class WebCreator(toolinterface.Tool):
 
     css_block = """
     body {
-        font-family: 'Lucida Grande', 'Helvetica Neue', Helvetica, sans-serif;
-        font-size: 10pt;
-        background: #FFF;
+      font-family: 'Lucida Grande', 'Helvetica Neue', Helvetica, sans-serif;
+      font-size: 10pt;
+      background: #FFF;
     }
     h3 {
       background: darkred;
@@ -96,6 +96,9 @@ class WebCreator(toolinterface.Tool):
       display: block;
       opacity: 1;
       visibility: visible;
+    }
+    div.img a {
+      font: 12px/18px sans-serif;
     }
     """
 
@@ -161,7 +164,7 @@ class WebCreator(toolinterface.Tool):
             if self.cwd:
                 self.working_dir = os.path.join(*self.cwd.split('/')[:-2])
             else:
-                self.working_dir = analysis.cwd.replace('//', '/')
+                self.working_dir = os.path.normpath(analysis.cwd)
 
         # write rootjs file
         self.__class__.rootjs_dir_level = self.working_dir.count('/')
@@ -385,7 +388,7 @@ class WebCreator(toolinterface.Tool):
             h_id = 'history_' + img
             self.web_lines += (
                 '<hr width="99%">',
-                '<div>',
+                '<div class="img">',
                 ('<a name="%s"></a>' % img),                    # anchor
                 '<!-- CROSSLINK MENU:%s:-->' % img,
                 '<p>',                                      # image headline
