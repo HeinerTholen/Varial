@@ -163,7 +163,7 @@ class CopyTool(Tool):
     :param name:            str, tool name
     """
     def __init__(self, dest, src='',
-                 ignore=("*.root", "*.pdf", "*.eps", "*.log", "*.info"),
+                 ignore=("*.root", "*.pdf", "*.eps", "*.log", "*.info", "*.pkl"),
                  wipe_dest_dir=True,
                  name=None,
                  use_rsync=False):
