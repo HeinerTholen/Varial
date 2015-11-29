@@ -118,6 +118,7 @@ class TreeProjector(TreeProjectorBase):
                 pool.imap_unordered(_map_fwd, iterable)
             ), self.params))
             store_sample(sample, section, res)
+            self.progress_callback(1, 1)
 
         pool.close()
         pool.join()
@@ -130,15 +131,18 @@ class TreeProjector(TreeProjectorBase):
         iterable = ((varial.analysis.get_current_tool_path(), s)
                     for s in self.samples)
 
+        # work
         for _ in pool.imap_unordered(_handle_sample, iterable):
             pass
 
         pool.close()
         pool.join()
 
-        self.result = varial.wrappers.WrapperWrapper(
-            list(varial.diskio.generate_aliases(self.cwd + '*.root'))
-        )
+        # finalize
+        wrps = varial.diskio.generate_aliases(self.cwd + '*.root')
+        wrps = varial.gen.gen_add_wrp_info(
+            wrps, sample=lambda w: os.path.basename(w.file_path).split('.')[-2])
+        self.result = varial.wrappers.WrapperWrapper(list(wrps))
         self._push_aliases_to_analysis()
 
 
@@ -346,17 +350,21 @@ class SGETreeProjector(TreeProjectorBase):
         if tooldir_junk:
             os.system('rm ' + ' '.join(tooldir_junk))
 
+        # do the work
         for section, selection, weight in self.sec_sel_weight:
-            self.launch_workers()
             self.launch_tasks(section, selection, weight)
             self.monitor_tasks(section)
 
+        # finalzing...
         if self.add_aliases_to_analysis:
             wrps = varial.diskio.generate_aliases(self.cwd + '*.root')
             wrps = varial.gen.gen_add_wrp_info(
                 wrps, sample=lambda w: w.file_path.split('.')[-2])
             self.result = varial.wrappers.WrapperWrapper(list(wrps))
             self._push_aliases_to_analysis()
+
+        # prepare for next round...
+        self.launch_workers()
 
 
 # TODO make class SGEJobLauncher and call it in separate process
