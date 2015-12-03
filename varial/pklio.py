@@ -78,7 +78,7 @@ def write(wrp, name=None):
 def read(name):
     """Read a wrapper."""
     _sync(os.path.dirname(name))
-    wrp = _current_pack.get(name)
+    wrp = _current_pack.get(os.path.basename(name))
     if wrp:
         return wrp
     else:

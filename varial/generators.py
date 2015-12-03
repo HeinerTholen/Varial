@@ -485,7 +485,7 @@ def dir_content(pattern='./*.root'):
     wrps = None
     if type(pattern) is str:
         dirname = os.path.dirname(pattern)
-        res = glob.glob(os.path.join(dirname, 'aliases.in.*'))
+        res = glob.glob(os.path.join(analysis.cwd, dirname, 'aliases.in.*'))
         if len(res) == 1:
             tok = res[0].split('.')[-1]
             info_file = os.path.join(dirname, tok)
@@ -494,6 +494,8 @@ def dir_content(pattern='./*.root'):
                 wrps = diskio.get(info_file)
     if not wrps:
         return diskio.generate_aliases_list(resolve_file_pattern(pattern))
+    else:
+        return wrps
 
 
 def load(aliases):
