@@ -338,7 +338,8 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
         return gen_apply_legend
 
     def __init__(self,
-                 pattern,
+                 pattern=None,
+                 input_result_path=None,
                  plotter_factory=None,
                  flat=False,
                  name=None,
@@ -349,20 +350,24 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
 
         # initialization for all instances
         self._private_plotter = None
-        self._is_base_instance = bool(pattern)
+        self._is_base_instance = bool(pattern or input_result_path)
         if not self._is_base_instance:
             return
 
         # initialization for base instance only
-        if settings.use_parallel_chains and settings.max_num_processes > 1:
-            self.message('INFO Using parallel plotting. Disable with '
-                         '"varial.settings.use_parallel_chains = False"')
+        assert(bool(pattern) != bool(input_result_path)), 'only one possible!'
         ROOT.gROOT.SetBatch()
         if not plotter_factory:
             plotter_factory = Plotter
 
-        self._setup_aliases(pattern, filter_keyfunc)
-        if auto_legend:
+        if input_result_path:
+            self.aliases = self.lookup_result(input_result_path)
+            load_func = lambda wrps: wrps  # histograms are already loaded
+        else:
+            self._setup_aliases(pattern, filter_keyfunc)
+            load_func = gen.load  # will load histogram for given alias
+
+        if auto_legend and pattern:
             gen_apply_legend = self._setup_gen_legend(pattern, legendnames)
         else:
             gen_apply_legend = lambda wrps: wrps
@@ -373,7 +378,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                 name=self.name,
                 filter_keyfunc=lambda _: True,
                 load_func=lambda _: gen_apply_legend(
-                    gen.load(gen.fs_content())),
+                    load_func(gen.fs_content())),
                 plot_grouper=plot_grouper_by_in_file_path,
                 plot_setup=lambda ws: gen.mc_stack_n_data_sum(
                     ws, lambda w: '', True),
@@ -384,44 +389,45 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
 
         # ...or resemble root file dirs
         else:
-            for path in (a.in_file_path for a in self.aliases):
-                rfp = self
+            all_in_file_paths = set(a.in_file_path for a in self.aliases)
+            for path in all_in_file_paths:
+                rfp = self  # start for basedir
                 path = path.split('/')
 
-                # make RootFilePlotters for dirs if not in basedir
-                if len(path) > 1:
-                    for folder in path[:-1]:
-                        if not folder in rfp.tool_names:
-                            rfp.add_tool(RootFilePlotter(
-                                None, plotter_factory, name=folder))
-                        rfp = rfp.tool_names[folder]
+                # walk over path elements and create RootFilePlotter instances
+                for folder in path[:-1]:
+                    if not folder in rfp.tool_names:
+                        rfp.add_tool(RootFilePlotter(
+                            None, None, plotter_factory, name=folder))
+                    rfp = rfp.tool_names[folder]
 
-                # make plotter instance if not done already
-                if not rfp._private_plotter:
-                    def _mk_private_loader(p):
-                        # This function creates a separate namespace for p
-                        # (the last reference to p would be lost otherwise)
-                        def loader(filter_keyfunc):
-                            wrps = analysis.fs_aliases
-                            wrps = itertools.ifilter(
-                                lambda w: w.in_file_path.split('/')[:-1] == p
-                                          and filter_keyfunc(w),
-                                wrps
-                            )
-                            wrps = gen.load(wrps)
-                            wrps = gen_apply_legend(wrps)
-                            return wrps
-                        return loader
+                # This function creates a separate namespace for p
+                # (the last reference to p would be lost otherwise)
+                def _mk_private_loader(p):
+                    def loader(filter_keyfunc):
+                        wrps = analysis.fs_aliases
+                        wrps = itertools.ifilter(
+                            lambda w: w.in_file_path.split('/')[:-1] == p
+                                      and filter_keyfunc(w),
+                            wrps
+                        )
+                        wrps = load_func(wrps)
+                        wrps = gen_apply_legend(wrps)
+                        return wrps
+                    return loader
 
-                    rfp._private_plotter = plotter_factory(
-                        name=rfp.name,
-                        filter_keyfunc=lambda _: True,
-                        plot_grouper=plot_grouper_by_in_file_path,
-                        set_canvas_name=set_canvas_name_to_plot_name,
-                        load_func=_mk_private_loader(path[:-1]),
-                        canvas_decorators=default_canvas_decorators,
-                        save_name_func=lambda w: w.name,
-                    )
+                # make private plotter instance if not done already
+                # private plotters are needed, as RootFilePlotter is a subclass
+                # of ToolChain, not Tool itself.
+                rfp._private_plotter = plotter_factory(
+                    name=rfp.name,
+                    filter_keyfunc=lambda _: True,
+                    plot_grouper=plot_grouper_by_in_file_path,
+                    set_canvas_name=set_canvas_name_to_plot_name,
+                    load_func=_mk_private_loader(path[:-1]),
+                    canvas_decorators=default_canvas_decorators,
+                    save_name_func=lambda w: w.name,
+                )
 
     def run(self):
         old_aliases = analysis.fs_aliases
@@ -486,6 +492,7 @@ def mk_rootfile_plotter(name="RootFilePlots",
     if combine_files:
         tc = RootFilePlotter(
             pattern,
+            None,
             new_plotter_factory,
             flat,
             name,
@@ -497,6 +504,7 @@ def mk_rootfile_plotter(name="RootFilePlots",
         plotters = list(
             RootFilePlotter(
                 f,
+                None,
                 new_plotter_factory,
                 flat,
                 f[:-5].split('/')[-1],
