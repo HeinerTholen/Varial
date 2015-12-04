@@ -44,8 +44,8 @@ class TexContent(Tool):
 
     @staticmethod
     def _hashified_filename(path):
-        bname, ext = os.path.splitext(os.path.basename(path))
-        hash_str = '_' + hex(hash(path))[-7:]
+        bname, _ = os.path.splitext(os.path.basename(path))
+        hash_str = '_' + hex(hash(os.path.dirname(path)))[-7:]
         return bname + hash_str
 
     def initialize(self):
