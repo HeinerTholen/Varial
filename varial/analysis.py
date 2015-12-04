@@ -23,7 +23,7 @@ import settings
 import wrappers
 active_samples = []  # list of samplenames
 all_samples = {}
-
+data_lumi_sum_value = None
 
 def samples():
     """Returns a dict of all MC samples."""
@@ -54,11 +54,14 @@ def data_samples():
 
 def data_lumi_sum():
     """Returns the sum of luminosity in data samples."""
-    return float(sum(
-        v.lumi
-        for k, v in data_samples().iteritems()
-        if k in active_samples
-    )) or settings.default_data_lumi
+    global data_lumi_sum_value
+    if data_lumi_sum_value == None:
+        data_lumi_sum_value = float(sum(
+            v.lumi
+            for k, v in data_samples().iteritems()
+            if k in active_samples
+        ))
+    return data_lumi_sum_value or settings.default_data_lumi
 
 
 def data_lumi_sum_wrp():
