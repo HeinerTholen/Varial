@@ -110,8 +110,7 @@ class Plotter(toolinterface.Tool):
     ...    'plot_setup': default_plot_colorizer,
     ...    'hook_canvas_pre_build': None,
     ...    'hook_canvas_post_build': None,
-    ...    'save_log_scale': False,
-    ...    'save_lin_log_scale': False,
+    ...    'y_axis_scale': 'linlog',  # can be 'lin', 'log', or 'linlog'
     ...    'keep_content_as_result': False,
     ...    'set_canvas_name': set_canvas_name_to_infilepath,
     ...    'save_name_func': save_by_name,
@@ -129,8 +128,7 @@ class Plotter(toolinterface.Tool):
         'plot_setup': default_plot_colorizer,
         'hook_canvas_pre_build': None,
         'hook_canvas_post_build': None,
-        'save_log_scale': False,
-        'save_lin_log_scale': False,
+        'y_axis_scale': 'linlog',  # can be 'lin', 'log', or 'linlog'
         'keep_content_as_result': False,
         'set_canvas_name': set_canvas_name_to_infilepath,
         'save_name_func': save_by_name,
@@ -147,6 +145,8 @@ class Plotter(toolinterface.Tool):
         defaults.update(kws)            # add keywords
         self.__dict__.update(defaults)  # set attributes in place
         self.stream_content = None
+
+        assert(self.y_axis_scale in ('lin', 'log', 'linlog'))
 
         if stack:
             self.plot_setup = self.stack_setup
@@ -231,12 +231,12 @@ class Plotter(toolinterface.Tool):
         self.stream_content = gen.build_canvas(bldr)
 
     def save_canvases(self):
-        if self.save_log_scale and not self.save_lin_log_scale:
+        if self.y_axis_scale == 'log':
             self.stream_content = gen.switch_log_scale(self.stream_content)
         self.stream_content = sparseio.bulk_write(
             self.stream_content,
             self.save_name_func,
-            linlog=self.save_lin_log_scale
+            linlog=(self.y_axis_scale == 'linlog')
         )
         count = gen.consume_n_count(self.stream_content)
         level = "INFO" if count else "WARNING"
