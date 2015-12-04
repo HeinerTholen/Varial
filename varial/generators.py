@@ -483,8 +483,12 @@ def dir_content(pattern='./*.root'):
     :yields:   Alias
     """
     wrps = None
+
+    # try to lookup aliases
     if type(pattern) is str:
         dirname = os.path.dirname(pattern)
+        if not dirname.startswith('../'):
+            dirname = os.path.relpath(dirname, analysis.cwd)
         res = glob.glob(os.path.join(analysis.cwd, dirname, 'aliases.in.*'))
         if len(res) == 1:
             tok = res[0].split('.')[-1]
@@ -492,10 +496,12 @@ def dir_content(pattern='./*.root'):
             wrps = pklio.get(info_file)
             if not wrps:
                 wrps = diskio.get(info_file)
+
+    # else generate then
     if not wrps:
-        return diskio.generate_aliases_list(resolve_file_pattern(pattern))
-    else:
-        return wrps
+        wrps = diskio.generate_aliases_list(resolve_file_pattern(pattern))
+
+    return wrps
 
 
 def load(aliases):
