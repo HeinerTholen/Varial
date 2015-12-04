@@ -181,6 +181,9 @@ class WrapperWrapper(Wrapper):
     def __iter__(self):
         return iter(self.wrps)
 
+    def __nonzero__(self):
+        return bool(self.wrps)
+
     @property
     def obj(self):
         """Getter property for primary object. Overwrite!"""
