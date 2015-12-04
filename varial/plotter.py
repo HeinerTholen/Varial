@@ -15,8 +15,8 @@ import monitor
 def rename_th2(wrps):
     for wrp in wrps:
         if 'TH2' in wrp.type:
-            wrp.name += '_' + wrp.legend
-            wrp.in_file_path += '_' + wrp.legend
+            wrp.name += '_' + wrp.sample
+            wrp.in_file_path += '_' + wrp.sample
         yield wrp
 
 
