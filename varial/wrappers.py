@@ -181,8 +181,8 @@ class WrapperWrapper(Wrapper):
     def __iter__(self):
         return iter(self.wrps)
 
-    def __nonzero__(self):
-        return bool(self.wrps)
+    def __len__(self):
+        return len(self.wrps)
 
     @property
     def obj(self):
