@@ -16,40 +16,76 @@ class ThetaLimits(varial.tools.Tool):
         self,
         model_func,
         input_path='../HistoLoader',
+        input_path_sys='../HistoLoaderSys',
         filter_keyfunc=None,
         asymptotic=True,
         cat_key=lambda _: 'histo',  # lambda w: w.category,
         dat_key=lambda w: w.is_data or w.is_pseudo_data,
         sig_key=lambda w: w.is_signal,
-        bkg_key=lambda w: not any((w.is_signal, w.is_data, w.is_pseudo_data)),
+        bkg_key=lambda w: w.is_background,
+        sys_key=None,
         name=None,
     ):
         super(ThetaLimits, self).__init__(name)
         self.model_func = model_func
         self.input_path = input_path
+        self.input_path_sys = input_path_sys
         self.filter_keyfunc = filter_keyfunc
         self.asymptotic = asymptotic
         self.cat_key = cat_key
         self.dat_key = dat_key
         self.sig_key = sig_key
         self.bkg_key = bkg_key
+        self.sys_key = sys_key
+        self.model = None
 
-    def _store_histos_for_theta(self, dats, sigs, bkgs, name="ThetaHistos"):
-        # create wrp
-        wrp = varial.wrappers.Wrapper(
-            name=name,
-            file_path=os.path.join(self.cwd, name + ".root"),
-        )
+    def prepare_dat_sig_bkg(self, wrps):
+        if self.filter_keyfunc:
+            wrps = list(w for w in wrps if self.filter_keyfunc(w))
+
+        dats = list(w for w in wrps if self.dat_key(w))
+        sigs = list(w for w in wrps if self.sig_key(w))
+        bkgs = list(w for w in wrps if self.bkg_key(w))
+
+        # do some basic input check
+        assert bkgs, 'no background histograms present.'
+        assert sigs, 'no signal histograms present.'
+        if not dats:
+            self.message('WARNING No data histogram, only expected limits.')
+
+        return dats, sigs, bkgs
+
+    def add_nominal_hists(self, wrp):
+        wrps = self.lookup_result(self.input_path)
+        assert wrps, 'no input for path: %s' % self.input_path
+        dats, sigs, bkgs = self.prepare_dat_sig_bkg(wrps)
+
         for w in dats:
-            category = self.cat_key(w)
-            setattr(wrp, category + '__DATA', w.histo)
+            setattr(wrp, self.cat_key(w) + '__DATA', w.histo)
         for w in bkgs:
-            category = self.cat_key(w)
-            setattr(wrp, category + '__' + w.sample, w.histo)
+            setattr(wrp, self.cat_key(w) + '__' + w.sample, w.histo)
         for w in sigs:
-            category = self.cat_key(w)
-            setattr(wrp, category + '__' + w.sample, w.histo)
+            setattr(wrp, self.cat_key(w) + '__' + w.sample, w.histo)
 
+    def add_sys_hists(self, wrp):
+        wrps = self.lookup_result(self.input_path_sys)
+        if not wrps:
+            return
+        assert self.sys_key, 'sys_key is required. e.g. lambda w: w.sys_type'
+        _, sigs, bkgs = self.prepare_dat_sig_bkg(wrps)
+
+        def mk_name(w, sample=''):
+            category = self.cat_key(w)
+            sys = self.sys_key(w)
+            return category + '__' + (sample or w.sample) + '__' + sys
+
+        for w in bkgs:
+            setattr(wrp, mk_name(w), w.histo)
+        for w in sigs:
+            setattr(wrp, mk_name(w), w.histo)
+
+    @staticmethod
+    def store_histos_for_theta(wrp):
         # write manually
         f = ROOT.TFile.Open(wrp.file_path, "RECREATE")
         f.cd()
@@ -61,35 +97,26 @@ class ThetaLimits(varial.tools.Tool):
         return wrp
 
     def run(self):
-        wrps = self.lookup_result(self.input_path)
-        if not wrps:
-            raise RuntimeError('No histograms present.')
+        # create wrp
+        wrp = varial.wrappers.Wrapper(
+            name='ThetaHistos',
+            file_path=os.path.join(self.cwd, 'ThetaHistos.root'),
+        )
 
-        if self.filter_keyfunc:
-            wrps = filter(self.filter_keyfunc, wrps)
-
-        dat = filter(self.dat_key, wrps)
-        sig = filter(self.sig_key, wrps)
-        bkg = filter(self.bkg_key, wrps)
-
-        # do some basic input check
-        if not bkg:
-            raise RuntimeError('No background histograms present.')
-        if not sig:
-            raise RuntimeError('No signal histograms present.')
-        if not dat:
-            self.message('INFO No data histogram, only expected limits.')
-
+        # add histograms and store for theta
+        self.add_nominal_hists(wrp)
+        self.add_sys_hists(wrp)
+        self.store_histos_for_theta(wrp)
+        
         # setup theta
-        theta_wrp = self._store_histos_for_theta(dat, sig, bkg)
         theta_auto.config.workdir = self.cwd
-        theta_auto.config.report = theta_auto.html_report(os.path.join(
-            self.cwd, 'report.html'
-        ))
+        theta_auto.config.report = theta_auto.html_report(
+            os.path.join(self.cwd, 'report.html')
+        )
         plt_dir = os.path.join(self.cwd, 'plots')
         if not os.path.exists(plt_dir):
             os.mkdir(plt_dir)
-        self.model = self.model_func(theta_wrp.file_path)
+        self.model = self.model_func(wrp.file_path)
 
         # let the fit run
         options = theta_auto.Options()
@@ -97,7 +124,8 @@ class ThetaLimits(varial.tools.Tool):
         theta_auto.model_summary(self.model)
         if self.asymptotic:
             limit_func = lambda w: theta_auto.asymptotic_cls_limits(w)
-        else: limit_func = lambda w: theta_auto.bayesian_limits(w, what='expected')
+        else:
+            limit_func = lambda w: theta_auto.bayesian_limits(w, what='expected')
         res_exp, res_obs = limit_func(self.model)
 
         # shout it out loud
