@@ -454,7 +454,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
 
 
 def mk_rootfile_plotter(name="RootFilePlots",
-                        pattern='*.root',
+                        pattern=None,
                         flat=False,
                         plotter_factory=None,
                         combine_files=False,
