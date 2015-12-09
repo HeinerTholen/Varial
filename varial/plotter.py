@@ -361,7 +361,8 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
             plotter_factory = Plotter
 
         if input_result_path:
-            self.aliases = filter_keyfunc(self.lookup_result(input_result_path))
+            wrps = self.lookup_result(input_result_path)
+            self.aliases = list(w for w in wrps if filter_keyfunc(w))
             load_func = lambda wrps: wrps  # histograms are already loaded
         else:
             self._setup_aliases(pattern, filter_keyfunc)
