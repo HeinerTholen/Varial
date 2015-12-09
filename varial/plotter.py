@@ -260,7 +260,7 @@ def setup_legendnames_from_files(pattern):
         return {filenames[0]: filenames[0]}
 
     # try the sframe way:
-    lns = list(n.split('.') for n in filenames if type(n) is str)
+    lns = list(n.split('.') for n in filenames if isinstance(n, str))
     if all(len(l) == 5 for l in lns):
         res = dict((f, l[3]) for f, l in itertools.izip(filenames, lns))
 
@@ -302,7 +302,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
             self.message('WARNING Could not create aliases for plotting.')
         else:
             aliases = itertools.ifilter(
-                lambda a: type(a.type) == str and (
+                lambda a: isinstance(a.type, str) and (
                     a.type.startswith('TH') or a.type == 'TProfile'
                 ),
                 aliases
@@ -327,7 +327,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                            for p, l in legendnames.iteritems())
         self.message(
             'INFO  Legend names that I will use if not overwritten:\n'
-            + '\n'.join('%32s: %s' % (v,k) for k,v in legendnames.iteritems())
+            + '\n'.join('%32s: %s' % (v, k) for k, v in legendnames.iteritems())
         )
 
         def gen_apply_legend(wrps):
@@ -389,14 +389,17 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
 
         # ...or resemble root file dirs
         else:
-            all_in_file_paths = set(a.in_file_path for a in self.aliases)
+            all_in_file_paths = set(
+                '/'.join(a.in_file_path.split('/')[:-1])  # drop histo name
+                for a in self.aliases
+            )
             for path in all_in_file_paths:
                 rfp = self  # start for basedir
                 path = path.split('/')
 
                 # walk over path elements and create RootFilePlotter instances
-                for folder in path[:-1]:
-                    if not folder in rfp.tool_names:
+                for folder in path:
+                    if folder not in rfp.tool_names:
                         rfp.add_tool(RootFilePlotter(
                             None, None, plotter_factory, name=folder))
                     rfp = rfp.tool_names[folder]
@@ -404,10 +407,11 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                 # This function creates a separate namespace for p
                 # (the last reference to p would be lost otherwise)
                 def _mk_private_loader(p):
+                    p = '/'.join(p)
                     def loader(filter_keyfunc):
                         wrps = analysis.fs_aliases
                         wrps = itertools.ifilter(
-                            lambda w: w.in_file_path.split('/')[:-1] == p
+                            lambda w: w.in_file_path.startswith(p)
                                       and filter_keyfunc(w),
                             wrps
                         )
@@ -424,7 +428,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                     filter_keyfunc=lambda _: True,
                     plot_grouper=plot_grouper_by_in_file_path,
                     set_canvas_name=set_canvas_name_to_plot_name,
-                    load_func=_mk_private_loader(path[:-1]),
+                    load_func=_mk_private_loader(path),
                     canvas_decorators=default_canvas_decorators,
                     save_name_func=lambda w: w.name,
                 )
