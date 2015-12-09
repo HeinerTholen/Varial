@@ -8,6 +8,7 @@ import cPickle
 import os
 
 import analysis
+import monitor
 
 
 _current_path = ''
@@ -45,8 +46,12 @@ def _sync(path):
         _current_pack = {}
     else:
         with open(data_path) as f:
-            _current_pack = cPickle.load(f)
-            assert(type(_current_pack) == dict)
+            try:
+                _current_pack = cPickle.load(f)
+            except ValueError:
+                monitor.message('pklio', 'ERROR with file: %s' % data_path)
+                raise
+            assert isinstance(_current_pack, dict), 'path: %s' % data_path
 
 
 class _BlockMaker(dict):
