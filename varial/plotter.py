@@ -343,7 +343,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                  plotter_factory=None,
                  flat=False,
                  name=None,
-                 filter_keyfunc=None,
+                 filter_keyfunc=lambda w: w,
                  auto_legend=True,
                  legendnames=None):
         super(RootFilePlotter, self).__init__(name)
@@ -361,7 +361,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
             plotter_factory = Plotter
 
         if input_result_path:
-            self.aliases = self.lookup_result(input_result_path)
+            self.aliases = filter_keyfunc(self.lookup_result(input_result_path))
             load_func = lambda wrps: wrps  # histograms are already loaded
         else:
             self._setup_aliases(pattern, filter_keyfunc)
