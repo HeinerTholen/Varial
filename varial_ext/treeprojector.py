@@ -57,15 +57,18 @@ class TreeProjectorBase(varial.tools.Tool):
         self.add_aliases_to_analysis = add_aliases_to_analysis
         self.filenames = filenames
 
-        # only for JugTreeProjector
+        for sample, fnames in filenames.iteritems():
+            assert fnames, 'no files for sample %s in %s' % (sample, self.name)
+
+        # only for SGETreeProjector
         self.progress_callback = progress_callback or (lambda a, b: None)
         self.suppress_job_submission = suppress_job_submission
         self.jug_tasks = None
         self.iteration = -1
 
-        self.initialize()
+        self._init2()
 
-    def initialize(self):
+    def _init2(self):
         pass
 
     def reuse(self):
@@ -73,7 +76,6 @@ class TreeProjectorBase(varial.tools.Tool):
         self._push_aliases_to_analysis()
 
     def _push_aliases_to_analysis(self):
-        os.system('touch %s/aliases.in.result' % self.cwd)
         if self.add_aliases_to_analysis:
             varial.analysis.fs_aliases += self.result.wrps
 
@@ -117,6 +119,7 @@ class TreeProjector(TreeProjectorBase):
             res = list(reduce_projection(itertools.chain.from_iterable(
                 pool.imap_unordered(_map_fwd, iterable)
             ), self.params))
+            assert res, 'tree_projection did not yield any histograms'
             store_sample(sample, section, res)
             self.progress_callback(1, 1)
 
@@ -143,6 +146,7 @@ class TreeProjector(TreeProjectorBase):
         wrps = varial.gen.gen_add_wrp_info(
             wrps, sample=lambda w: os.path.basename(w.file_path).split('.')[-2])
         self.result = varial.wrappers.WrapperWrapper(list(wrps))
+        os.system('touch %s/aliases.in.result' % self.cwd)
         self._push_aliases_to_analysis()
 
 
@@ -223,7 +227,7 @@ jug.options.default_options.execute_nr_wait_cycles = 1
 
 
 class SGETreeProjector(TreeProjectorBase):
-    def initialize(self):
+    def _init2(self):
         if not jug:
             raise ImportError('"Jug" is needed for SGETreeProjector')
 
@@ -361,6 +365,7 @@ class SGETreeProjector(TreeProjectorBase):
             wrps = varial.gen.gen_add_wrp_info(
                 wrps, sample=lambda w: w.file_path.split('.')[-2])
             self.result = varial.wrappers.WrapperWrapper(list(wrps))
+            os.system('touch %s/aliases.in.result' % self.cwd)
             self._push_aliases_to_analysis()
 
         # prepare for next round...
