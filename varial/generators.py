@@ -484,20 +484,26 @@ def dir_content(pattern='./*.root'):
     """
     wrps = None
 
+    def alias_reader(p):
+        info_name = p.split('.')[-1]
+        rel_path = os.path.relpath(os.path.dirname(p), analysis.cwd)
+        info_path = os.path.join(rel_path, info_name)
+        wrps = pklio.get(info_path)
+        if not wrps:
+            wrps = diskio.get(info_path)
+        assert wrps, 'Error: nothing found at %s' % p
+        return wrps
+
     # try to lookup aliases
-    if type(pattern) is str:
+    if isinstance(pattern, str):
         dirname = os.path.dirname(pattern)
         if not dirname.startswith('../'):
             dirname = os.path.relpath(dirname, analysis.cwd)
-        res = glob.glob(os.path.join(analysis.cwd, dirname, 'aliases.in.*'))
-        if len(res) == 1:
-            tok = res[0].split('.')[-1]
-            info_file = os.path.join(dirname, tok)
-            wrps = pklio.get(info_file)
-            if not wrps:
-                wrps = diskio.get(info_file)
+        paths = glob.glob(os.path.join(analysis.cwd, dirname, 'aliases.in.*'))
+        if paths:
+            wrps = (w for p in paths for w in alias_reader(p))
 
-    # else generate then
+    # else generate them anew
     if not wrps:
         wrps = diskio.generate_aliases_list(resolve_file_pattern(pattern))
 
