@@ -19,13 +19,8 @@ from varial import toolinterface
 from varial import wrappers
 
 
-_xml_doctype = """\
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE JobConfiguration PUBLIC "" "JobConfig.dtd" []>
-"""
-
-
-sframe_samplename_func = lambda w: basename(w.file_path).split('.')[3]
+def sframe_samplename_func(w):
+    return basename(w.file_path).split('.')[3]
 
 
 class SFrame(toolinterface.Tool):
@@ -35,6 +30,10 @@ class SFrame(toolinterface.Tool):
     sframe output is streamed into a logfile.
     """
     io = pklio
+    xml_doctype = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE JobConfiguration PUBLIC "" "JobConfig.dtd" []>
+"""
 
     def __init__(self,
                  cfg_filename,
@@ -42,6 +41,7 @@ class SFrame(toolinterface.Tool):
                  add_aliases_to_analysis=True,
                  halt_on_exception=True,
                  samplename_func=sframe_samplename_func,
+                 exe='sframe_main',
                  name=None):
         super(SFrame, self).__init__(name)
         self.cfg_filename           = cfg_filename
@@ -52,27 +52,33 @@ class SFrame(toolinterface.Tool):
         self.log_file               = None
         self.log_filename           = 'sframe_output.log'
         self.private_conf           = 'conf.xml'
+        self.exe                    = exe
         self.subprocess             = None
 
     def _push_aliases_to_analysis(self):
         if self.add_aliases_to_analysis:
             analysis.fs_aliases += self.result.wrps
 
+    def configure(self):
+        pass
+
     def prepare_run_conf(self):
         if self.xml_tree_callback:
             # get all entities resolved with xmllint
             proc = subprocess.Popen(
-                ['xmllint','--noent',self.cfg_filename],stdout=subprocess.PIPE)
+                ['xmllint', '--noent', self.cfg_filename],
+                stdout=subprocess.PIPE
+            )
             output = proc.communicate()[0]
             tree = ElementTree.parse(StringIO.StringIO(output))
             self.xml_tree_callback(tree)
             with open(os.path.join(self.cwd, self.private_conf), "w") as f:
-                f.write(_xml_doctype)
+                f.write(self.xml_doctype)
                 tree.write(f)
             # TODO make that nicer sometime...
             os.system('cp %s %s' % (
-                os.path.dirname(self.cfg_filename) + '/JobConfig.dtd',
-                self.cwd + '/JobConfig.dtd'
+                join(os.path.dirname(self.cfg_filename), 'JobConfig.dtd'),
+                self.cwd + 'JobConfig.dtd'
             ))
         else:
             self.private_conf = self.cfg_filename
@@ -127,6 +133,8 @@ class SFrame(toolinterface.Tool):
         self._push_aliases_to_analysis()
 
     def run(self):
+        self.configure()
+
         try:
             self.prepare_run_conf()
         except RuntimeError, e:
@@ -135,10 +143,12 @@ class SFrame(toolinterface.Tool):
                 + e.message
                 + '\nNot starting SFrame.'
             )
+            if self.halt_on_exception:
+                raise e
             return
 
         log_path = os.path.join(self.cwd, self.log_filename)
-        cmd = ['sframe_main', self.private_conf]
+        cmd = [self.exe + ' ' + self.private_conf]
         self.log_file = open(log_path, "w")
         self.message('INFO Starting SFrame with command:')
         self.message('INFO `%s`' % " ".join(cmd))
@@ -151,8 +161,9 @@ class SFrame(toolinterface.Tool):
             stdout=self.log_file,
             stderr=subprocess.STDOUT,
             cwd=self.cwd,
+            shell=True,
         )
-        while self.subprocess.returncode == None:
+        while self.subprocess.returncode is None:
             self.subprocess.poll()
             time.sleep(1)
 
