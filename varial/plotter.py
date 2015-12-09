@@ -399,6 +399,8 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
 
                 # walk over path elements and create RootFilePlotter instances
                 for folder in path:
+                    if not folder:
+                        continue
                     if folder not in rfp.tool_names:
                         rfp.add_tool(RootFilePlotter(
                             None, None, plotter_factory, name=folder))
@@ -407,11 +409,10 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                 # This function creates a separate namespace for p
                 # (the last reference to p would be lost otherwise)
                 def _mk_private_loader(p):
-                    p = '/'.join(p)
                     def loader(filter_keyfunc):
                         wrps = analysis.fs_aliases
                         wrps = itertools.ifilter(
-                            lambda w: w.in_file_path.startswith(p)
+                            lambda w: w.in_file_path.split('/')[:-1] == p
                                       and filter_keyfunc(w),
                             wrps
                         )
