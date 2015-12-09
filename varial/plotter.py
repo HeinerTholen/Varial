@@ -455,6 +455,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
 
 def mk_rootfile_plotter(name="RootFilePlots",
                         pattern=None,
+                        input_result_path=None,
                         flat=False,
                         plotter_factory=None,
                         combine_files=False,
@@ -496,7 +497,7 @@ def mk_rootfile_plotter(name="RootFilePlots",
     if combine_files:
         tc = RootFilePlotter(
             pattern,
-            None,
+            input_result_path,
             new_plotter_factory,
             flat,
             name,
@@ -508,7 +509,7 @@ def mk_rootfile_plotter(name="RootFilePlots",
         plotters = list(
             RootFilePlotter(
                 f,
-                None,
+                input_result_path,
                 new_plotter_factory,
                 flat,
                 f[:-5].split('/')[-1],
