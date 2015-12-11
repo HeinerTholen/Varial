@@ -328,6 +328,7 @@ gen_norm_to_max_val     = _generate_op(op.norm_to_max_val)
 gen_copy                = _generate_op(op.copy)
 gen_mv_in               = _generate_op(op.mv_in)
 gen_rebin               = _generate_op(op.rebin)
+gen_rebin_nbins_max     = _generate_op(op.rebin_nbins_max)
 gen_trim                = _generate_op(op.trim)
 gen_integral            = _generate_op(op.integral)
 gen_int_l               = _generate_op(op.int_l)
@@ -340,7 +341,7 @@ gen_noex_norm_to_lumi       = _generate_op_noex(op.norm_to_lumi)
 gen_noex_norm_to_integral   = _generate_op_noex(op.norm_to_integral)
 gen_noex_th2_projection_x   = _generate_op_noex(op.th2_projection_x)
 gen_noex_th2_projection_y   = _generate_op_noex(op.th2_projection_y)
-
+gen_noex_rebin_nbins_max    = _generate_op_noex(op.rebin_nbins_max)
 
 def gen_norm_to_data_lumi(wrps):
     return gen_prod(

@@ -9,14 +9,15 @@ generator module. Below, an example is given for every operation.
 
 import settings  # init ROOT first
 
-import array
-import __builtin__
-import ctypes
-import collections
 from ROOT import THStack, TGraphAsymmErrors
-
-import history
+import collections
+import __builtin__
 import wrappers
+import history
+import ctypes
+import array
+import ROOT
+import math
 
 
 class OperationError(Exception): pass
@@ -584,6 +585,49 @@ def rebin(wrp, bin_bounds, norm_by_bin_width=False):
 
 
 @history.track_history
+def rebin_nbins_max(wrp, nbins_max):
+    """
+    Applies to HistoWrapper. Returns Histowrapper.
+
+    >>> from ROOT import TH1I
+    >>> h1 = TH1I("h1", "", 4, .5, 4.5)
+    >>> h1.Fill(1)
+    1
+    >>> h1.Fill(2)
+    2
+    >>> w1 = wrappers.HistoWrapper(h1, lumi=2.)
+    >>> w2=rebin_nbins_max(w1, 2)
+    >>> w1.histo.GetNbinsX()
+    4
+    >>> w2.histo.GetNbinsX()
+    2
+    >>> w2.histo.GetBinContent(1)
+    2.0
+    >>> w2.histo.GetBinContent(2)
+    0.0
+    """
+    if not isinstance(wrp, wrappers.HistoWrapper):
+        raise WrongInputError(
+            "rebin_nbins_max needs argument of type HistoWrapper. histo: "
+            + str(wrp)
+        )
+    if isinstance(wrp.histo, ROOT.TH2) or isinstance(wrp.histo, ROOT.TH3):
+        raise WrongInputError(
+            "rebin_nbins_max needs histograms of type TH1. histo: "
+            + str(wrp)
+        )
+
+    nbins = wrp.obj.GetNbinsX()
+    if nbins <= nbins_max:
+        return wrp
+
+    n_bins_to_one = math.ceil(float(nbins) / nbins_max)
+    histo = wrp.histo.Rebin(int(n_bins_to_one), wrp.name)
+    info = wrp.all_info()
+    return wrappers.HistoWrapper(histo, **info)
+
+
+@history.track_history
 def trim(wrp, left=True, right=True):
     """
     Applies to HistoWrapper. Returns Histowrapper.
@@ -684,15 +728,15 @@ def mv_in(wrp, overflow=True, underflow=True):
             + str(wrp)
         )
     histo = wrp.histo.Clone()
-    nbins     = histo.GetNbinsX()
+    nbins = histo.GetNbinsX()
     if underflow:
-        firstbin  = histo.GetBinContent(0)
+        firstbin = histo.GetBinContent(0)
         firstbin += histo.GetBinContent(1)
         histo.SetBinContent(1, firstbin)
         histo.SetBinContent(0, 0.)
     if overflow:
-        lastbin   = histo.GetBinContent(nbins + 1)
-        lastbin  += histo.GetBinContent(nbins)
+        lastbin = histo.GetBinContent(nbins + 1)
+        lastbin += histo.GetBinContent(nbins)
         histo.SetBinContent(nbins, lastbin)
         histo.SetBinContent(histo.GetNbinsX() + 1, 0.)
     return wrappers.HistoWrapper(histo, **wrp.all_info())
@@ -828,7 +872,7 @@ def chi2(wrps, x_min=0, x_max=0):
                 "chi2 needs type HistoWrapper. w: "
                 + str(w)
             )
-    if not first.histo.GetNbinsX() == second.histo.GetNbinsX():
+    if first.histo.GetNbinsX() != second.histo.GetNbinsX():
         raise WrongInputError(
             "chi2 needs histos with same number of bins."
         )
@@ -907,7 +951,7 @@ def eff(wrps, option='cl=0.683 b(1,1) mode'):
             "eff needs nominator to be of type HistoWrapper. nominator: "
             + str(nominator)
         )
-    if not (isinstance(denominator, wrappers.HistoWrapper)):
+    if not isinstance(denominator, wrappers.HistoWrapper):
         raise WrongInputError(
             "eff needs denominator to be of type HistoWrapper. denominator: "
             + str(denominator)
@@ -988,4 +1032,5 @@ if __name__ == "__main__":
     doctest.testmod()
 
 
+# TODO remove all special errors and replace with simple assert statements
 # TODO def squash_info_data(list_of_info_dicts) => fix is_signal, ...
