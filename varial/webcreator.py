@@ -35,8 +35,11 @@ class WebCreator(toolinterface.Tool):
     css_block = """
     body {
       font-family: 'Lucida Grande', 'Helvetica Neue', Helvetica, sans-serif;
-      font-size: 10pt;
-      background: #FFF;
+      font-size: 9pt;
+      background: #fff;
+    }
+    a {
+      color: #666;
     }
     h3 {
       background: darkred;
@@ -48,17 +51,15 @@ class WebCreator(toolinterface.Tool):
       margin: 0;
       padding: 2px 2px 2px 0;
       list-style: none;
-      -webkit-box-shadow: 0 0 5px rgba(0, 0, 0, 0.15);
-      -moz-box-shadow: 0 0 5px rgba(0, 0, 0, 0.15);
-      box-shadow: 0 0 5px rgba(0, 0, 0, 0.15);
     }
     ul li {
+      background: #fff;
+      color: #888;
       font: 12px/18px sans-serif;
       display: inline-block;
       margin-right: 0px;
       position: relative;
       padding: 0px 2px;
-      background: #fff;
       cursor: pointer;
       -webkit-transition: all 0.2s;
       -moz-transition: all 0.2s;
@@ -91,14 +92,34 @@ class WebCreator(toolinterface.Tool):
       background: #eee;
       display: block;
     }
-    ul li ul li:hover { background: #DDD; }
+    ul li ul li:hover { 
+      background: #555;
+    }
+    ul li ul li:hover a {
+      color: #fff;
+    }
     ul li:hover ul {
       display: block;
       opacity: 1;
       visibility: visible;
     }
+    div.img {
+      background: #fff;
+      margin-bottom: 35px;
+    }
     div.img a {
+      color: #888;
       font: 12px/18px sans-serif;
+    }
+    div.img p {
+      margin-top: 3px;
+    }
+    div.img img {
+      margin: 0px;
+      margin-right: 7px;
+      -webkit-box-shadow: 0 0 7px rgba(0, 0, 0, 0.15);
+      -moz-box-shadow: 0 0 7px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 0 7px rgba(0, 0, 0, 0.15);
     }
     """
 
@@ -121,7 +142,7 @@ class WebCreator(toolinterface.Tool):
           <link rel="shortcut icon" href="img/RootIcon.ico">
           <script
             type="text/javascript"
-            src="https://root.cern.ch/js/latest/scripts/JSRootCore.js?gui">
+            src="https://root.cern.ch/js/latest/scripts/JSRootCore.js?gui&mathjax">
           </script>
        </head>
        <body>
@@ -247,8 +268,7 @@ class WebCreator(toolinterface.Tool):
             '/'.join('<a href="%sindex.html">%s</a>' % ('../'*(n_folders-i), d)
             for i, d in enumerate(breadcrumb)),
             '</h2>',
-            '<hr width="60%">',
-            ''
+            '',
         )
 
     def make_subfolder_links(self):
@@ -260,7 +280,6 @@ class WebCreator(toolinterface.Tool):
                 '<p><a href="%s">%s</a></p>' % (
                     os.path.join(sf, 'index.html'), sf),
             )
-        self.web_lines += ('<hr width="60%">', '')
 
     def make_html_file_links(self):
         if not self.html_files:
@@ -270,7 +289,6 @@ class WebCreator(toolinterface.Tool):
             self.web_lines += (
                 '<p><a href="%s">%s</a></p>' % (hf, hf),
             )
-        self.web_lines += ('<hr width="60%">', '')
 
     def make_info_file_divs(self):
         if not self.plain_info:
@@ -289,7 +307,6 @@ class WebCreator(toolinterface.Tool):
                     str(wrp),
                     '</pre>',
                     '</div>',
-                    '<hr width="60%">',
                 )
             except (SyntaxError, ValueError, IOError):
                 self.message('WARNING Could not read info file at %s' % p_nfo)
@@ -313,7 +330,6 @@ class WebCreator(toolinterface.Tool):
                 self.web_lines += (
                     '</pre>',
                     '</div>',
-                    '<hr width="60%">',
                 )
 
     def make_image_divs(self):
@@ -387,7 +403,6 @@ class WebCreator(toolinterface.Tool):
             i_id = 'info_' + img
             h_id = 'history_' + img
             self.web_lines += (
-                '<hr width="99%">',
                 '<div class="img">',
                 ('<a name="%s"></a>' % img),                    # anchor
                 '<!-- CROSSLINK MENU:%s:-->' % img,
