@@ -87,9 +87,13 @@ class WebCreator(toolinterface.Tool):
       -ms-transition: opacity 0.2s;
       -o-transition: opacity 0.2s;
       -transition: opacity 0.2s;
+      -webkit-box-shadow: 0 0 7px rgba(0, 0, 0, 0.35);
+      -moz-box-shadow: 0 0 7px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 0 7px rgba(0, 0, 0, 0.35);
+      z-index: 500;
     }
     ul li ul li {
-      background: #eee;
+      background: #fafafa;
       display: block;
     }
     ul li ul li:hover { 
