@@ -41,10 +41,6 @@ class WebCreator(toolinterface.Tool):
     a {
       color: #666;
     }
-    h3 {
-      background: darkred;
-      color: #fff;
-    }
     ul {
       text-align: left;
       display: inline;
@@ -109,7 +105,8 @@ class WebCreator(toolinterface.Tool):
     }
     div.img {
       background: #fff;
-      margin-bottom: 35px;
+      margin-top: 25px;
+      margin-bottom: 45px;
     }
     div.img a {
       color: #888;
@@ -259,45 +256,58 @@ class WebCreator(toolinterface.Tool):
             '<META name="robots" content="NOINDEX, NOFOLLOW" />',
             '</head>',
             '<body>',
-            '<h3>',
-            'DISCLAIMER: This page contains an intermediate analysis-snapshot!',
-            '</h3>',
+            '',
         ]
 
     def make_headline(self):
         breadcrumb = list(d1 for d1 in self.working_dir.split('/') if d1)
         n_folders = len(breadcrumb) - 1
         self.web_lines += (
-            '<h2> Folder: ',
+            '<!-- headline -->',
+            '<h1> ' + self.name + '</h1>',
+            '<h2> Section: ',
             '/'.join('<a href="%sindex.html">%s</a>' % ('../'*(n_folders-i), d)
             for i, d in enumerate(breadcrumb)),
             '</h2>',
+            '<!-- SECTION CREATE FORM -->',
+            '<!-- SECTION UPDATE FORM -->',
             '',
         )
 
     def make_subfolder_links(self):
         if not self.subfolders:
             return
-        self.web_lines += ('<h2>Subfolders:</h2>',)
+        self.web_lines += (
+            '<!-- subdirectories -->',
+            '<h2>Subdirectories:</h2>',
+        )
         for sf in self.subfolders:
             self.web_lines += (
                 '<p><a href="%s">%s</a></p>' % (
                     os.path.join(sf, 'index.html'), sf),
             )
+        self.web_lines += ('',)
 
     def make_html_file_links(self):
         if not self.html_files:
             return
-        self.web_lines += ('<h2>HTML files:</h2>',)
+        self.web_lines += (
+            '<!-- html file links -->',
+            '<h2>HTML files:</h2>',
+        )
         for hf in self.html_files:
             self.web_lines += (
                 '<p><a href="%s">%s</a></p>' % (hf, hf),
             )
+        self.web_lines += ('',)
 
     def make_info_file_divs(self):
         if not self.plain_info:
             return
-        self.web_lines += ('<h2>Info files:</h2>',)
+        self.web_lines += (
+            '<!-- info files -->',
+            '<h2>Info files:</h2>',
+        )
         for nfo in self.plain_info:
             p_nfo = os.path.join(self.working_dir, nfo)
             try:
@@ -316,11 +326,15 @@ class WebCreator(toolinterface.Tool):
                 self.message('WARNING Could not read info file at %s' % p_nfo)
                 etype, evalue, _ = sys.exc_info()
                 traceback.print_exception(etype, evalue, None)
+        self.web_lines += ('',)
 
     def make_tex_file_divs(self):
         if not self.plain_tex:
             return
-        self.web_lines += ('<h2>Tex files:</h2>',)
+        self.web_lines += (
+            '<!-- tex files -->',
+            '<h2>Tex files:</h2>',
+        )
         for tex in self.plain_tex:
             with open(os.path.join(self.working_dir, tex), 'r') as f:
                 self.web_lines += (
@@ -335,6 +349,7 @@ class WebCreator(toolinterface.Tool):
                     '</pre>',
                     '</div>',
                 )
+        self.web_lines += ('',)
 
     def make_image_divs(self):
         if not self.image_names:
@@ -363,15 +378,19 @@ class WebCreator(toolinterface.Tool):
 
         # toc
         self.web_lines += (
+            '<!-- image files -->',
             '<a name="toc"></a>',
-            '<h2>Images:</h2>',
+            '<h2>Figures:</h2>',
+            '<!-- HISTO CREATE FORM -->',
             '<div><p>',
         ) + tuple(
-            '<a href="#%s">%s%s</a><br />' % (img, img,
-                                            ' (+ log)' if img_log else '')
+            '<a href="#%s">%s%s</a><br />' % (
+                img, img, ' (+ log)' if img_log else ''
+            )
             for img, img_log in image_name_tuples
         ) + (
             '</p></div>',
+            '',
         )
 
         # build rootjs base link (without item yet)
@@ -408,8 +427,8 @@ class WebCreator(toolinterface.Tool):
             h_id = 'history_' + img
             self.web_lines += (
                 '<div class="img">',
-                ('<a name="%s"></a>' % img),                    # anchor
-                '<!-- CROSSLINK MENU:%s:-->' % img,
+                ('<a name="%s"></a>' % img),                # anchor
+                '<!-- CROSSLINK MENU:%s: -->' % img,
                 '<p>',                                      # image headline
                 ('<b>%s%s</b><br />' % (img, ' (+ _log)' if img_log else '')),
                 '<a href="javascript:ToggleDiv(\'' + h_id   # toggle history
@@ -430,9 +449,10 @@ class WebCreator(toolinterface.Tool):
                 ('<img src="%s" />' % (img + self.image_postfix)),  # the images
                 ('<img src="%s" />' %
                     (img_log + self.image_postfix)) if img_log else '',
+                '<!-- HISTO UPDATE FORM:%s: -->' % img,
                 '</div>',
+                '',
             )
-
             crosslink_set.add(img)
 
         # store structured information for cross link menu
@@ -445,8 +465,7 @@ class WebCreator(toolinterface.Tool):
 
     def finalize_page(self):
         self.web_lines += [
-            '',
-            '<p>Created on '
+            '<p style="margin-top:50px;">Created on '
             + datetime.datetime.now().strftime('%Y-%m-%d %H:%M') +
             ' with '
             '<a href="https://github.com/HeinAtCERN/Varial" target="new">'
