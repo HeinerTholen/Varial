@@ -38,8 +38,24 @@ class WebCreator(toolinterface.Tool):
       font-size: 9pt;
       background: #fff;
     }
+    h2 {
+      margin-top:35px;
+      margin-bottom:10px;
+    }
     a {
-      color: #666;
+      color: #555;
+    }
+    p {
+      margin-top: 3px;
+    }
+    pre.msg {
+      margin: 0px;
+      padding: 10px;
+      background: #cfa;
+      color: #333;
+    }
+    form {
+      margin-top: 5px;
     }
     ul {
       text-align: left;
@@ -105,15 +121,12 @@ class WebCreator(toolinterface.Tool):
     }
     div.img {
       background: #fff;
-      margin-top: 25px;
+      margin-top: 15px;
       margin-bottom: 45px;
     }
     div.img a {
       color: #888;
       font: 12px/18px sans-serif;
-    }
-    div.img p {
-      margin-top: 3px;
     }
     div.img img {
       margin: 0px;
@@ -153,7 +166,7 @@ class WebCreator(toolinterface.Tool):
        </body>
     </html>
     """
-    rootjs_dir_level = 0  # number of directories above wd
+    rootjs_dir_level = 0  # number of directories above base wd
 
     def __init__(self, name=None, working_dir='', no_tool_check=False,
                  is_base=True):
@@ -263,12 +276,13 @@ class WebCreator(toolinterface.Tool):
         breadcrumb = list(d1 for d1 in self.working_dir.split('/') if d1)
         n_folders = len(breadcrumb) - 1
         self.web_lines += (
+            '<!-- MESSAGE -->',
             '<!-- headline -->',
             '<h1> ' + self.name + '</h1>',
-            '<h2> Section: ',
+            '<h2>Section</h2>',
+            'location: ',
             '/'.join('<a href="%sindex.html">%s</a>' % ('../'*(n_folders-i), d)
             for i, d in enumerate(breadcrumb)),
-            '</h2>',
             '<!-- SECTION CREATE FORM -->',
             '<!-- SECTION UPDATE FORM -->',
             '',
@@ -279,11 +293,11 @@ class WebCreator(toolinterface.Tool):
             return
         self.web_lines += (
             '<!-- subdirectories -->',
-            '<h2>Subdirectories:</h2>',
+            '<br />subdirectories: <br />',
         )
         for sf in self.subfolders:
             self.web_lines += (
-                '<p><a href="%s">%s</a></p>' % (
+                '<a href="%s">%s</a><br />' % (
                     os.path.join(sf, 'index.html'), sf),
             )
         self.web_lines += ('',)
@@ -293,7 +307,7 @@ class WebCreator(toolinterface.Tool):
             return
         self.web_lines += (
             '<!-- html file links -->',
-            '<h2>HTML files:</h2>',
+            '<h2>HTML files</h2>',
         )
         for hf in self.html_files:
             self.web_lines += (
@@ -306,7 +320,7 @@ class WebCreator(toolinterface.Tool):
             return
         self.web_lines += (
             '<!-- info files -->',
-            '<h2>Info files:</h2>',
+            '<h2>Info files</h2>',
         )
         for nfo in self.plain_info:
             p_nfo = os.path.join(self.working_dir, nfo)
@@ -333,7 +347,7 @@ class WebCreator(toolinterface.Tool):
             return
         self.web_lines += (
             '<!-- tex files -->',
-            '<h2>Tex files:</h2>',
+            '<h2>Tex files</h2>',
         )
         for tex in self.plain_tex:
             with open(os.path.join(self.working_dir, tex), 'r') as f:
@@ -353,6 +367,7 @@ class WebCreator(toolinterface.Tool):
 
     def make_image_divs(self):
         if not self.image_names:
+            self.web_lines += ('<!-- NO IMAGES -->', )
             return
 
         # lin/log pairs
@@ -380,12 +395,14 @@ class WebCreator(toolinterface.Tool):
         self.web_lines += (
             '<!-- image files -->',
             '<a name="toc"></a>',
-            '<h2>Figures:</h2>',
+            '<h2>Figures</h2>',
             '<!-- HISTO CREATE FORM -->',
             '<div><p>',
         ) + tuple(
             '<a href="#%s">%s%s</a><br />' % (
-                img, img, ' (+ log)' if img_log else ''
+                (img[:-4], img, ' (+ log)')
+                if img_log else
+                (img, img, '')
             )
             for img, img_log in image_name_tuples
         ) + (
@@ -405,13 +422,19 @@ class WebCreator(toolinterface.Tool):
         # images
         crosslink_set = set()
         sparse_dict = sparseio.bulk_read_info_dict(self.working_dir)
-        for img, img_log in image_name_tuples:
+        for img_lin, img_log in image_name_tuples:
+
+            if img_lin.endswith('_lin'):
+                img = img_lin[:-4]
+            else:
+                img = img_lin
+                img_lin = ''
 
             # try to get from sparseio
-            wrp = sparse_dict.get(img[:-4] if img.endswith('_lin') else img)
+            wrp = sparse_dict.get(img)
 
             # else look for info file on disk
-            img_path = os.path.join(self.working_dir, img)
+            img_path = os.path.join(self.working_dir, img_lin or img)
             if (not wrp) and os.path.exists(img_path + '.info'):
                 with open(img_path + '.info') as f:
                     wrp = wrappers.Wrapper(**diskio._read_wrapper_info(f))
@@ -419,37 +442,53 @@ class WebCreator(toolinterface.Tool):
             if not wrp:
                 continue
 
-            rootjs_link = rootjs_base_link + '&item={0}/{0}'.format(wrp.name)
-            info_lines = wrp.pretty_writeable_lines()
-            history_lines = str(wrp.history)
+            if not settings.no_toggles:
+                i_id = 'info_' + img
+                h_id = 'history_' + img
+                history_lines = str(wrp.history)
+                info_lines = wrp.pretty_writeable_lines()
+                toggles = (
+                    '<!-- TOGGLES -->',
+                    '<a href="javascript:ToggleDiv(\'' + h_id   # toggle history
+                    + '\')">(toggle history)</a>',
+                    '<a href="javascript:ToggleDiv(\'' + i_id   # toggle info
+                    + '\')">(toggle info)</a>',
+                )
+                toggled_divs = (
+                    '<!-- TOGGLE_DIVS -->',
+                    '<div id="' + h_id                          # history div
+                    + '" style="display:none;"><pre>',
+                    history_lines,
+                    '</pre></div>',
+                    '<div id="' + i_id                          # info div
+                    + '" style="display:none;"><pre>',
+                    info_lines,
+                    '</pre></div>',
+                )
+            else:
+                toggles = ('<!-- TOGGLES -->',)
+                toggled_divs = ('<!-- TOGGLE_DIVS -->',)
 
-            i_id = 'info_' + img
-            h_id = 'history_' + img
+            rootjs_link = rootjs_base_link + '&item={0}/{0}'.format(wrp.name)
+
             self.web_lines += (
+                '<!-- IMAGE:%s: -->' % img,
                 '<div class="img">',
-                ('<a name="%s"></a>' % img),                # anchor
+                ('<a name="%s"></a>' % img),                    # anchor
                 '<!-- CROSSLINK MENU:%s: -->' % img,
-                '<p>',                                      # image headline
-                ('<b>%s%s</b><br />' % (img, ' (+ _log)' if img_log else '')),
-                '<a href="javascript:ToggleDiv(\'' + h_id   # toggle history
-                + '\')">(toggle history)</a>',
-                '<a href="javascript:ToggleDiv(\'' + i_id   # toggle info
-                + '\')">(toggle info)</a>',
+                '<p>',                                          # image headline
+                ('<b>%s%s</b><br />' % (img, '_lin (+ _log)'
+                                             if img_log else '')),
+            ) + toggles + (
                 '<a href="%s" target="new">(open in rootjs)</a>' % rootjs_link,
                 '<a href="#toc">(back to top)</a>',
                 '</p>',
-                '<div id="' + h_id                          # history div
-                + '" style="display:none;"><pre>',
-                history_lines,
-                '</pre></div>',
-                '<div id="' + i_id                          # info div
-                + '" style="display:none;"><pre>',
-                info_lines,
-                '</pre></div>',
-                ('<img src="%s" />' % (img + self.image_postfix)),  # the images
+            ) + toggled_divs + (
+                ('<img src="%s" />' %                          # the images
+                    ((img_lin or img) + self.image_postfix)),
                 ('<img src="%s" />' %
                     (img_log + self.image_postfix)) if img_log else '',
-                '<!-- HISTO UPDATE FORM:%s: -->' % img,
+                '<!-- SELECTION FORM -->',
                 '</div>',
                 '',
             )
@@ -465,15 +504,13 @@ class WebCreator(toolinterface.Tool):
 
     def finalize_page(self):
         self.web_lines += [
-            '<p style="margin-top:50px;">Created on '
+            '<p style="margin-top:50px; margin-bottom:600px;">Created on '
             + datetime.datetime.now().strftime('%Y-%m-%d %H:%M') +
             ' with '
             '<a href="https://github.com/HeinAtCERN/Varial" target="new">'
             'varial_webcreator'
             '</a>.'
             '</p>',
-            '<!-- some empty space (donot block scrolling for a bit) -->',
-        ] + list('&nbsp </br>' for _ in xrange(50)) + [
             '</body>',
             '</html>',
         ]

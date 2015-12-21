@@ -77,6 +77,7 @@ defaults_BottomPlot = {
 }
 
 rootfile_postfixes = ['.root', '.png']
+no_toggles = False  # for webcreator
 colors = {}  # legend entries => fill colors
 pretty_names = {}
 stacking_order = []
