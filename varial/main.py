@@ -51,6 +51,17 @@ class SigintHandler(object):
 sig_handler = SigintHandler()
 
 
+def _get_cmd_arg_settings():
+    res = dict(
+        arg.split('=')
+        for arg in sys.argv
+        if 1 == arg.count('=')
+    )
+    for k, v in res.iteritems():
+        res[k], ast.literal_eval(v)
+    return res
+
+
 def _process_settings_kws(kws):
     # replace setting, if its name already exists.
     for k, v in kws.iteritems():
@@ -61,6 +72,10 @@ def _process_settings_kws(kws):
                 'main._process_settings_kws',
                 'WARNING No such setting: %s' % k
             )
+
+
+def process_cmd_args():
+    _process_settings_kws(_get_cmd_arg_settings())
 
 
 def tear_down(*args):
@@ -111,13 +126,8 @@ def main(**main_kwargs):
     global toolchain
     toolchain = main_kwargs.pop('toolchain')
 
-    # get more settings from sys.argv
-    for arg in sys.argv:
-        if 1 == arg.count('='):
-            k, v = arg.split('=')
-            main_kwargs[k] = ast.literal_eval(v)
-
     # process kwargs for settings
+    main_kwargs.update(_get_cmd_arg_settings())
     main_args.update(main_kwargs)
     _process_settings_kws(main_kwargs)
     logfile = settings.logfilename()
