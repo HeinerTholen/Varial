@@ -37,6 +37,7 @@ class WebCreator(toolinterface.Tool):
       font-family: 'Lucida Grande', 'Helvetica Neue', Helvetica, sans-serif;
       font-size: 9pt;
       background: #fff;
+      margin: 8px;
     }
     h2 {
       margin-top:35px;
@@ -48,8 +49,16 @@ class WebCreator(toolinterface.Tool):
     p {
       margin-top: 3px;
     }
-    pre.msg {
+    div.msg {
+      position: fixed;
+      margin-left: -8px;
+      bottom: 0px;
+      width: 100%;
+      z-index: 100;
+    }
+    div.msg pre {
       margin: 0px;
+      bottom: 0px;
       padding: 10px;
       background: #cfa;
       color: #333;
@@ -102,7 +111,7 @@ class WebCreator(toolinterface.Tool):
       -webkit-box-shadow: 0 0 7px rgba(0, 0, 0, 0.35);
       -moz-box-shadow: 0 0 7px rgba(0, 0, 0, 0.35);
       box-shadow: 0 0 7px rgba(0, 0, 0, 0.35);
-      z-index: 500;
+      z-index: 10;
     }
     ul li ul li {
       background: #fafafa;

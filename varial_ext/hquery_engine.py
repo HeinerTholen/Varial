@@ -1,7 +1,7 @@
 """hQuery rapidH"""
 
 section_form = """\
-<form method="post" accept-charset="ASCII">
+<form method="post" accept-charset="ASCII" autocomplete="off">
   <input type="text" name="section_name" value="new_section_name" required=true>
   <input type="submit" value="{button}">
 </form>
@@ -17,14 +17,15 @@ delete_form = """\
 
 
 histo_form = """\
-<form method="post" accept-charset="ASCII">
+<form method="post" accept-charset="ASCII" style="margin-bottom:12px;"\
+      autocomplete="off">
   <input type="hidden" name="hidden_name" value="{name}">
   <input type="text" name="histo_name" placeholder="new_histo_name" \
          required=true value="{name}" {disabled}>
   <input type="text" name="title" placeholder="histo-title; x-title; y-title" \
          value="{title}">
   <input type="number" name="nbins" placeholder="bins" style="width:40px;" \
-         value="{bins}">
+         value="{bins}" min="1">
   <input type="number" name="x_low" placeholder="low" style="width:40px;" \
          step="0.01" required=true value="{low}">
   <input type="number" name="x_high" placeholder="high" style="width:40px;" \
@@ -36,11 +37,13 @@ histo_form = """\
 
 selection_form = """\
 <form method="post">
+  <input type="hidden" name="cut_histo_name" value="{name}">
   <input type="number" name="cut_low" placeholder="low" style="width:40px;" \
          step="0.01" value="{low}">
   <input type="number" name="cut_high" placeholder="high" style="width:40px;" \
          step="0.01" value="{high}">
-  <input type="select events" value="{button}">
+  <input type="checkbox" name="nm1" {checked}> N-1
+  <input type="submit" value="select events">
 </form>
 """
 
@@ -84,10 +87,12 @@ class HQueryEngine(object):
     def add_histo_manipulate_forms(cont):
         sep = '<!-- IMAGE:'
         cont_parts = cont.split(sep)
-        begin, cont_parts = cont_parts[0], cont_parts[1:]
 
         def handle_histo_div(cont_part):
-            name = cont_part[:cont_part.find(':') - 1]
+            if '<div class="img">' not in cont_part:
+                return cont_part
+
+            name = cont_part[:cont_part.find(':')]
             div_name = 'opt_' + name
             form_args = histo_form_args.copy()  # TODO get more histo info
             form_args.update({
@@ -95,27 +100,29 @@ class HQueryEngine(object):
                 'disabled': 'disabled',
                 'button': 'update',
             })
-            sel_form = selection_form.format({'low': '', 'high': ''})
+            sel_form = selection_form.format(
+                low='', high='', name=name, checked='')
             toggle = '\n'.join((
                 '<a href="javascript:ToggleDiv(\'%s\')">(toggle options)</a>'
                 % div_name,
             ))
             div = '\n'.join((
-                '<div id="%s" style="display:none;"><pre>' % div_name,
+                '<div id="%s" style="display:none;">' % div_name,
                 histo_form.format(**form_args),
-                '</pre></div>',
+                '</div>',
             ))
             cont_part = cont_part.replace('<!-- TOGGLES -->', toggle)
             cont_part = cont_part.replace('<!-- TOGGLE_DIVS -->', div)
             cont_part = cont_part.replace('<!-- SELECTION FORM -->', sel_form)
             return cont_part
 
-        return begin + sep.join(handle_histo_div(cp) for cp in cont_parts)
+        return sep.join(handle_histo_div(cp) for cp in cont_parts)
 
     def add_messages(self, cont):
         placeholder = '<!-- MESSAGE -->'
-        message = '\n'.join('<pre class="msg">%s</pre>' % m
-                            for m in self.messages)
+        message = '<br />\n'.join('<pre>%s</pre>' % m
+                                  for m in self.messages)
+        message = '<div class="msg">\n' + message + '\n</div>'
         self.messages = []
         return cont.replace(placeholder, message)
 
