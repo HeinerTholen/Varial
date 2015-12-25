@@ -54,21 +54,22 @@ def can_go_parallel():
 
 
 ########################################################### style constants ###
-canvas_size_x = 500
-canvas_size_y = 500
+canvas_size_x = 550
+canvas_size_y = 400
 
-box_text_size = 0.037
+box_text_size = 0.05
 defaults_Legend = {
-    'x_pos': 0.77,  # left edge
-    'y_pos': 0.98,  # upper edge
-    'label_width': 0.24,
-    'label_height': 0.04,
+    'x_pos': 0.81,  # left edge
+    'y_pos': 0.5,   # upper edge
+    'label_width': 0.2,
+    'label_height': 0.07,
     'opt': 'f',
     'opt_data': 'p',
-    'reverse': True,
+    'reverse': True
     # 'text_size': 0.03,
     # 'text_font': 42,
 }
+
 defaults_BottomPlot = {
     'y_title': '#frac{Data-MC}{MC}',
     'draw_opt': 'E1',
@@ -112,7 +113,7 @@ class StyleClass(TStyle):
         self.SetPaperSize(20, 26)
         #self.SetPadTopMargin(0.08)
         #self.SetPadBottomMargin(0.14)
-        self.SetPadRightMargin(0.16)
+        self.SetPadRightMargin(0.3)
         self.SetPadLeftMargin(0.16)
         #self.SetCanvasDefH(800)
         #self.SetCanvasDefW(800)
