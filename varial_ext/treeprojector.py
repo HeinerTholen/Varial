@@ -15,7 +15,6 @@ import varial.pklio
 import varial.tools
 import varial.util
 
-import subprocess
 import itertools
 import glob
 import time
@@ -35,7 +34,6 @@ class TreeProjectorBase(varial.tools.Tool):
     :param progress_callback:       optional function for usage with jug, which
                                     is called with 2 arguments (n_jobs, n_done)
                                     when new results are available
-    :param suppress_job_submission: bool, for debugging
     :param name:                    tool name
     """
     io = varial.pklio
@@ -46,7 +44,6 @@ class TreeProjectorBase(varial.tools.Tool):
                  sec_sel_weight=(('Histograms', '', ''),),
                  add_aliases_to_analysis=True,
                  progress_callback=None,
-                 suppress_job_submission=False,
                  name=None,
                  ):
         super(TreeProjectorBase, self).__init__(name)
@@ -59,9 +56,8 @@ class TreeProjectorBase(varial.tools.Tool):
         for sample, fnames in filenames.iteritems():
             assert fnames, 'no files for sample %s in %s' % (sample, self.name)
 
-        # only for SGETreeProjector
+        # only for BatchTreeProjector
         self.progress_callback = progress_callback or (lambda a, b: None)
-        self.suppress_job_submission = suppress_job_submission
         self.jug_tasks = None
         self.iteration = -1
 
@@ -154,38 +150,16 @@ class TreeProjector(TreeProjectorBase):
         self._push_aliases_to_analysis()
 
 
-############################################## tree project on sge with jug ###
+############################################### batch tree project with jug ###
 try:
     import jug, imp
 except ImportError:
     jug, imp = None, None
 
-num_sge_jobs = 30
 username = os.getlogin()
 jug_work_dir_pat = '/nfs/dust/cms/user/{user}/varial_sge_exec'
 jug_file_search_pat = jug_work_dir_pat + '/jug_file_*.py'
 jug_file_path_pat = jug_work_dir_pat + '/jug_file_.{i}.{section}.{sample}.py'
-
-jug_work_dir = jug_work_dir_pat.format(user=username)
-jug_log_dir = jug_work_dir.replace('varial_sge_exec', 'varial_sge_log')
-
-sge_job_conf = """#!/bin/bash
-#$ -l os=sld6
-#$ -l site=hh
-#$ -cwd
-#$ -V
-#$ -l h_rt=01:00:00
-#$ -l h_vmem=2G
-#$ -l h_fsize=2G#
-#$ -o {jug_log_dir}/
-#$ -e {jug_log_dir}/
-#$ -t 1-{num_sge_jobs}
-cd /tmp/
-python -c "\
-from varial.extensions.sgeworker import SGEWorker; \
-SGEWorker(${SGE_TASK_ID}, '{user}', '{jug_file_path_pat}').start(); \
-"
-"""
 
 jugfile_content = """
 sample = {sample}
@@ -230,72 +204,10 @@ jug.options.default_options.execute_nr_wait_cycles = 1
 """
 
 
-class SGETreeProjector(TreeProjectorBase):
+class BatchTreeProjector(TreeProjectorBase):
     def _init2(self):
         if not jug:
-            raise ImportError('"Jug" is needed for SGETreeProjector')
-
-        # prepare dirs
-        if not os.path.exists(jug_log_dir):
-            os.mkdir(jug_log_dir)
-
-        if not os.path.exists(jug_work_dir):
-            os.mkdir(jug_work_dir)
-            os.system('chmod g+w %s' % jug_work_dir)
-            os.system('umask g+w %s' % jug_work_dir)  # let's collaborate! =)
-
-        # clear some dirs
-        exec_pat = jug_file_search_pat.format(user=username).replace('.py', '')
-        log_pat = jug_log_dir + '/jug_worker.sh.*'
-        if glob.glob(exec_pat):
-            os.system('rm -rf ' + exec_pat)
-        if glob.glob(log_pat):
-            os.system('rm -rf ' + log_pat)
-
-        self.launch_workers()
-
-    def launch_workers(self):
-        if self.suppress_job_submission:
-            return
-
-        # how many are needed?
-        def parse_num_jobs(qstat_line):
-            if not qstat_line.strip():  # empty line
-                return 0
-            token = qstat_line.split()[-1]  # get last column
-            if ':' in token:  #
-                running, tot = token.split(':')[0].split('-')
-                return int(tot) - int(running)
-            else:
-                return 1
-
-        qstat_cmd = ['qstat | grep jug_worker']
-        proc = subprocess.Popen(qstat_cmd, shell=True, stdout=subprocess.PIPE)
-        res = proc.communicate()[0]
-        res = (parse_num_jobs(line) for line in res.split('\n'))
-        n_workers = sum(res)
-        n_workers_needed = num_sge_jobs - n_workers
-
-        # only submit if at least 5 workers are needed
-        if n_workers_needed < 5:
-            return
-
-        # prepare sge config with paths
-        job_sh = os.path.join(jug_work_dir, 'jug_worker.sh')
-        with open(job_sh, 'w') as f:
-            f.write(sge_job_conf.format(
-                SGE_TASK_ID='{SGE_TASK_ID}',  # should stay
-                jug_log_dir=jug_log_dir,
-                num_sge_jobs=n_workers_needed,
-                user=username,
-                jug_file_path_pat=jug_file_search_pat,
-            ))
-
-        qsub_cmd = ['qsub ' + job_sh]
-        proc = subprocess.Popen(qsub_cmd, shell=True, stdout=subprocess.PIPE)
-        res = proc.communicate()[0]
-        if not res.strip():
-            raise RuntimeError('Job submission failed.')
+            raise ImportError('"Jug" is needed for BatchTreeProjector')
 
     def launch_tasks(self, section, selection, weight):
         self.jug_tasks = []
@@ -333,11 +245,11 @@ class SGETreeProjector(TreeProjectorBase):
             )
             n_done_prev, n_done = n_done, sum(items_done)
 
-            time.sleep(0.3)  # wait for write  # TODO can open file exclusively?
+            time.sleep(0.3)  # wait for write  # TODO wait for open exclusively
             if n_done_prev != n_done:
                 for d, (s, p) in itertools.izip(items_due, self.jug_tasks):
                     if d:
-                        os.system('cp %s %s' % (p, self.cwd))
+                        os.system('cp %s %s' % (p, self.cwd))  # TODO: rly copy?
 
                 self.message(
                     'INFO %d/%d done for section "%s"'
@@ -372,12 +284,8 @@ class SGETreeProjector(TreeProjectorBase):
             os.system('touch %s/aliases.in.result' % self.cwd)
             self._push_aliases_to_analysis()
 
-        # prepare for next round...
-        self.launch_workers()
 
-
-# TODO make class SGEJobLauncher and call it in separate process
-# TODO clear directory stuff in separate process (on init only)
 # TODO option for _not_ copying result back (softlink?)
 # TODO option for launching all sections at once
 # TODO pass list of files done into progress_callback
+# TODO: move jug_constants somewhere sensible
