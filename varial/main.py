@@ -84,20 +84,6 @@ def tear_down(*args):
     time.sleep(1)
 
 
-# iPython mode
-def ipython_warn():
-    print "WARNING =================================================="
-    print "WARNING Detected iPython, going to interactive mode...    "
-    print "WARNING =================================================="
-
-if ipython_mode:
-    ipython_warn()
-    atexit.register(tear_down)
-
-else:
-    signal.signal(signal.SIGINT, sig_handler.handle)
-
-
 ###################################################################### main ###
 main_args = {}
 toolchain = None
@@ -113,6 +99,18 @@ def main(**main_kwargs):
     :param samples:                 list of sample.Sample instances
     :param toolchain:               root toolchain (see tools.py)
     """
+    # iPython mode
+    def ipython_warn():
+        print "WARNING =================================================="
+        print "WARNING Detected iPython, going to interactive mode...    "
+        print "WARNING =================================================="
+
+    if ipython_mode:
+        ipython_warn()
+        atexit.register(tear_down)
+
+    else:
+        signal.signal(signal.SIGINT, sig_handler.handle)
 
     # setup samples
     if 'samples' in main_kwargs:
