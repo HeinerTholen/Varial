@@ -53,6 +53,8 @@ class TreeProjectorBase(varial.tools.Tool):
         self.sec_sel_weight = sec_sel_weight
         self.add_aliases_to_analysis = add_aliases_to_analysis
 
+        assert filenames, 'dict(sample -> list of files), must not be empty'
+        assert isinstance(filenames, dict), 'dict(sample -> list of files)'
         for sample, fnames in filenames.iteritems():
             assert fnames, 'no files for sample %s in %s' % (sample, self.name)
 
