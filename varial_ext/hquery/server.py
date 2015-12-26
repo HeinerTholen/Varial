@@ -1,6 +1,5 @@
 import os
 import cherrypy
-from hquery_engine import engine
 
 
 def load_html(args):
@@ -18,18 +17,21 @@ def load_html(args):
 class WebService(object):
     exposed = True
 
+    def __init__(self, engine):
+        self.engine = engine
+
     def GET(self, *args, **kws):
-        return engine.get(*load_html(args))
+        return self.engine.get(*load_html(args))
 
     def POST(self, *args, **kws):
-        engine.post(args, kws)
-        return engine.get(*load_html(args))
+        self.engine.post(args, kws)
+        return self.engine.get(*load_html(args))
 
     def PUT(self, *args, **kws):
-        pass  # using only html forms
+        pass  # using html forms only
 
     def DELETE(self, *args, **kws):
-        pass  # using only html forms
+        pass  # using html forms only
 
 
 conf = {
@@ -40,11 +42,11 @@ conf = {
 
         'tools.staticdir.on': True,
         'tools.staticdir.root': os.path.abspath(os.getcwd()),
-        'tools.staticdir.match': r'(\.png$)',  # TODO: *.rt rootjs.html
+        'tools.staticdir.match': r'(\S+\.png|\S+\.rt|rootjs\.html)$',
         'tools.staticdir.dir': '.',
     }
 }
 
 
-def start():
-    return cherrypy.quickstart(WebService(), '/', conf)
+def start(engine):
+    cherrypy.quickstart(WebService(engine), '/', conf)
