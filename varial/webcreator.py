@@ -130,7 +130,7 @@ class WebCreator(toolinterface.Tool):
     }
     div.img {
       background: #fff;
-      margin-top: 15px;
+      margin-top: 25px;
       margin-bottom: 45px;
     }
     div.img a {
@@ -405,7 +405,6 @@ class WebCreator(toolinterface.Tool):
             '<!-- image files -->',
             '<a name="toc"></a>',
             '<h2>Figures</h2>',
-            '<!-- HISTO CREATE FORM -->',
             '<div><p>',
         ) + tuple(
             '<a href="#%s">%s%s</a><br />' % (
@@ -416,6 +415,7 @@ class WebCreator(toolinterface.Tool):
             for img, img_log in image_name_tuples
         ) + (
             '</p></div>',
+            '<!-- HISTO CREATE FORM -->',
             '',
         )
 
