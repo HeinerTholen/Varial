@@ -1,7 +1,5 @@
 """
-Project histograms from trees in the style of map/reduce.
-
-Implementation ready for disco map/reduce framework as well as jug.
+Project histograms from trees with map/reduce.
 """
 
 
@@ -18,7 +16,7 @@ def map_projection(sample_histo_filename, params, open_file=None):
 
     if any(isinstance(selection, t) for t in (list, tuple)):
         if nm1:  # N-1 instruction: don't cut the plotted variable
-            selection = filter(lambda s: histoname not in s, selection)
+            selection = list(s for s in selection if histoname not in s)
         selection = ' && '.join(selection)
 
     selection = '%s*(%s)' % (weight, selection)
@@ -28,8 +26,11 @@ def map_projection(sample_histo_filename, params, open_file=None):
     try:
         ROOT.TH1.AddDirectory(True)
         histo = ROOT.TH1F(histoname, *histoargs)
-        tree_keys = filter(lambda k: k.GetName() == params['treename'],
-                           input_file.GetListOfKeys())
+
+        # catch all trees (may have many namecycles)
+        tree_keys = list(k
+                         for k in input_file.GetListOfKeys()
+                         if k.GetName() == params['treename'])
 
         for tree in (k.ReadObj() for k in tree_keys):
             if not isinstance(tree, ROOT.TTree):
