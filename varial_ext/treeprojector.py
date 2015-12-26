@@ -41,7 +41,6 @@ class TreeProjectorBase(varial.tools.Tool):
     io = varial.pklio
 
     def __init__(self,
-                 samples,
                  filenames,
                  params,
                  sec_sel_weight=(('Histograms', '', ''),),
@@ -51,11 +50,11 @@ class TreeProjectorBase(varial.tools.Tool):
                  name=None,
                  ):
         super(TreeProjectorBase, self).__init__(name)
-        self.samples = samples
+        self.filenames = filenames
+        self.samples = filenames.keys()
         self.params = params
         self.sec_sel_weight = sec_sel_weight
         self.add_aliases_to_analysis = add_aliases_to_analysis
-        self.filenames = filenames
 
         for sample, fnames in filenames.iteritems():
             assert fnames, 'no files for sample %s in %s' % (sample, self.name)
@@ -94,6 +93,11 @@ class TreeProjectorBase(varial.tools.Tool):
             for f in files
         )
         return iterable
+
+    def run_with_params(self, params, sec_sel_weight):
+        self.params = params
+        self.sec_sel_weight = sec_sel_weight
+        self.run()
 
 
 ######################################### tree project directly on the node ###
