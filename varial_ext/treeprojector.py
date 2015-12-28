@@ -92,21 +92,41 @@ class TreeProjectorBase(varial.tools.Tool):
         )
         return iterable
 
-    def run_with_params(self, params, sec_sel_weight):
-        self.params = params
-        self.sec_sel_weight = sec_sel_weight
-        self.run()
-
 
 ######################################### tree project directly on the node ###
+def runtime_error_catcher(func):
+    def catcher(args):
+        try:
+            res = func(args)
+        except RuntimeError, e:
+            res = 'RuntimeError', e.message
+        return res
+    return catcher
+
+
+def gen_raise_runtime_error(iterator):
+    for i in iterator:
+        if isinstance(i, tuple) and i and i[0] == 'RuntimeError':
+            print 'raising: ', i[1]
+            raise RuntimeError(i[1])
+        else:
+            yield i
+
+
 def _map_fwd(args):
-    return varial.multiproc.exec_in_worker(jug_map_projection_per_file, args)
+    return varial.multiproc.exec_in_worker(
+        runtime_error_catcher(jug_map_projection_per_file),
+        args
+    )
 
 
 def _handle_sample(args):
     instance, sample = args
     instance = varial.analysis.lookup_tool(instance)
-    varial.multiproc.exec_in_worker(lambda: instance.handle_sample(sample))
+    return varial.multiproc.exec_in_worker(
+        runtime_error_catcher(instance.handle_sample),
+        sample
+    )
 
 
 class TreeProjector(TreeProjectorBase):
@@ -116,11 +136,12 @@ class TreeProjector(TreeProjectorBase):
             varial.settings.max_num_processes)
 
         for section, selection, weight in self.sec_sel_weight:
-            iterable = self.prepare_mapiter(selection, weight, sample)
-
-            res = list(reduce_projection(itertools.chain.from_iterable(
-                pool.imap_unordered(_map_fwd, iterable)
-            ), self.params))
+            res = self.prepare_mapiter(selection, weight, sample)
+            res = pool.imap_unordered(_map_fwd, res)
+            res = gen_raise_runtime_error(res)
+            res = itertools.chain.from_iterable(res)
+            res = reduce_projection(res, self.params)
+            res = list(res)
             assert res, 'tree_projection did not yield any histograms'
             store_sample(sample, section, res)
             self.progress_callback(1, 1)
@@ -133,11 +154,13 @@ class TreeProjector(TreeProjectorBase):
     def run(self):
         pool = varial.multiproc.NoDeamonWorkersPool(
             min(varial.settings.max_num_processes, len(self.samples)))
-        iterable = ((varial.analysis.get_current_tool_path(), s)
-                    for s in self.samples)
+        res = ((varial.analysis.get_current_tool_path(), s)
+               for s in self.samples)
 
         # work
-        for _ in pool.imap_unordered(_handle_sample, iterable):
+        res = pool.imap_unordered(_handle_sample, res)
+        res = gen_raise_runtime_error(res)
+        for r in res:
             pass
 
         pool.close()
