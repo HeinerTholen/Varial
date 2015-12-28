@@ -1,6 +1,8 @@
 """hQuery"""
 
-from multiprocessing import Process, Queue
+import multiprocessing as mp
+import Queue
+import json
 import html
 
 
@@ -13,41 +15,112 @@ class HQueryEngine(object):
     def __init__(self, kws):
         self.messages = []
 
-        self.backend_q_in = Queue()
-        self.backend_q_out = Queue()
-        self.backend_proc = Process(
+        self.backend_q_in = mp.Queue()
+        self.backend_q_out = mp.Queue()
+        self.backend_proc = None
+        self.status = 'task pending'
+        self.redirect = ''
+        self.params = {}
+        self.sel_info = {}
+        self.start_backend(kws)
+
+    def start_backend(self, kws):
+        self.backend_proc = mp.Process(
             target=_start_backend,
             args=(kws, self.backend_q_in, self.backend_q_out)
         )
         self.backend_proc.start()
-        if self.backend_q_out.get() != 'backend ready':
+        try:
+            msg = self.backend_q_out.get(timeout=5)
+        except Queue.Empty:
+            msg = ''
+        if msg != 'backend alive':
             raise RuntimeError('backend could not be started')
+
+    def read_backend_q(self, timeout=None):
+        block = bool(timeout)
+        while True:
+            try:
+                item = self.backend_q_out.get(block, timeout)
+            except Queue.Empty:
+                break
+
+            if item == 'task done':
+                self.status = 'ready'
+                self.messages.append(item)
+                with open('params.json') as f:
+                    self.params, _, self.sel_info = json.load(f)
+            elif item.startswith('redirect:'):
+                self.redirect = item.split(':')[1]
+            else:
+                self.messages.append(item)
+
+    @staticmethod
+    def _format_message(m):
+        if m.startswith('WARN'):
+            cls = 'warn'
+        elif m.startswith('ERRO'):
+            cls = 'err'
+        else:
+            cls = 'info'
+        fmt = '<pre class="{cls}">{msg}</pre>'
+        return fmt.format(cls=cls, msg=m)
 
     def write_messages(self, cont):
         placeholder = '<!-- MESSAGE -->'
-        if self.messages:
-            self.messages.append(
-                '<a href="index.html">reload</a>'
-            )
-        message = '\n'.join('<pre>%s</pre>' % m
-                             for m in self.messages)
+        if 'task done' in self.messages:
+            messages = self.messages
+            while 'task done' in self.messages:
+                messages.remove('task done')
+            if html.msg_reload in messages:
+                messages.remove(html.msg_reload)
+            self.messages = []
+        else:
+            messages = self.messages
+        message = '\n'.join(self._format_message(m) for m in messages)
         message = '<div class="msg">\n' + message + '\n</div>'
-        self.messages = []
+
         return cont.replace(placeholder, message)
 
     def post(self, args, kws):
-        self.messages.append('POST %s %s' % (args, kws))
-        self.backend_q_in.put((args, kws))
+        self.read_backend_q()
+        if self.status != 'ready':
+            msg = 'WARNING: please wait for the last task to finish'
+            if msg not in self.messages:
+                self.messages.append(msg)
+            return
+
+        # submit task and wait for first answer
+        self.backend_q_in.put(('post', args, kws))
+        self.status = 'task pending'
+        self.read_backend_q(.5)
 
     def get(self, path, cont):
-        cont = self.write_messages(cont)
+        # check backend
+        self.read_backend_q()
+        if not self.backend_proc.is_alive() and self.status != 'error':
+            self.messages.append('ERROR: backend terminated.')
+            self.status = 'error'
+
+        # compile html site
         depth = path.count('/')
         if not depth:
             cont = html.add_section_create_form(cont)
         elif depth == 1:
-            cont = html.add_section_manipulate_forms(cont, path)
+            section = path.split('/')[0]
+            cont = html.add_section_manipulate_forms(cont, section)
             cont = html.add_histo_create_form(cont)
-            cont = html.add_histo_manipulate_forms(cont)
+            cont = html.add_histo_manipulate_forms(
+                cont, self.params, self.sel_info.get(section, {}))
+        if self.redirect:
+            cont = html.add_refresh(cont, 1, self.redirect)
+            self.redirect = ''
+        elif self.status == 'task pending':
+            if html.msg_reload not in self.messages:
+                self.messages.append(html.msg_reload)
+            cont = html.add_refresh(cont, 3)
+        cont = self.write_messages(cont)
+
         return cont
 
     def __del__(self):
