@@ -12,14 +12,14 @@ def map_projection(sample_histo_filename, params, open_file=None):
 
     nm1 = params.get('nm1', True)
     weight = params.get('weight') or '1'
-    selection = params.get('selection') or '1'
+    selection = params.get('selection')
 
     if any(isinstance(selection, t) for t in (list, tuple)):
         if nm1:  # N-1 instruction: don't cut the plotted variable
             selection = list(s for s in selection if histoname not in s)
         selection = ' && '.join(selection)
 
-    selection = '%s*(%s)' % (weight, selection)
+    selection = '%s*(%s)' % (weight, selection or '1')
     histoargs = params['histos'][histoname]
     histo_draw_cmd = '%s>>+%s' % (histoname, histoname)
 
@@ -42,7 +42,7 @@ def map_projection(sample_histo_filename, params, open_file=None):
             if n_selected < 0:
                 raise RuntimeError(
                     'Error in TTree::Project. Are variables, selections and '
-                    'weights are properly defined? Please check logs.'
+                    'weights are properly defined?'
                 )
 
         histo.SetDirectory(0)
