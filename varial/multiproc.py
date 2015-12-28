@@ -137,3 +137,7 @@ def exec_in_worker(func, *args, **kws):
 def do_kill_now():
     time.sleep(.005)  # 5 millis for not cutting the printout
     os.killpg(os.getpid(), signal.SIGTERM)  # one evil line!
+
+
+# TODO better error handling: return errors and raise them on the other end
+# TODO once more: try sane exit instead of killpg (keep the single error print)

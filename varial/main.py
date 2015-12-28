@@ -62,7 +62,7 @@ def _get_cmd_arg_settings():
     return res
 
 
-def _process_settings_kws(kws):
+def process_settings_kws(kws):
     # replace setting, if its name already exists.
     for k, v in kws.iteritems():
         if hasattr(settings, k):
@@ -75,7 +75,7 @@ def _process_settings_kws(kws):
 
 
 def process_cmd_args():
-    _process_settings_kws(_get_cmd_arg_settings())
+    process_settings_kws(_get_cmd_arg_settings())
 
 
 def tear_down(*args):
