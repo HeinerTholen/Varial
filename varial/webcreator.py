@@ -26,12 +26,6 @@ class WebCreator(toolinterface.Tool):
     """
     image_postfix = ''
 
-    cross_link_images = {}  # { pathlen: {
-                            #         'path/one': {'imagename1', 'imagename2'},
-                            #         'path/two': {'imagename1', 'imagename2'},
-                            #     }
-                            # }
-
     css_block = """
     body {
       font-family: 'Lucida Grande', 'Helvetica Neue', Helvetica, sans-serif;
@@ -59,12 +53,19 @@ class WebCreator(toolinterface.Tool):
     div.msg pre {
       margin: 0px;
       bottom: 0px;
-      padding: 10px;
+      padding: 4px;
       background: #cfa;
       color: #333;
     }
+    div.msg pre.warn {
+        background: #fb4;
+    }
+    div.msg pre.err {
+        background: #f22;
+    }
     form {
       margin-top: 5px;
+      margin-bottom:12px;
     }
     ul {
       text-align: left;
@@ -178,7 +179,7 @@ class WebCreator(toolinterface.Tool):
     rootjs_dir_level = 0  # number of directories above base wd
 
     def __init__(self, name=None, working_dir='', no_tool_check=False,
-                 is_base=True):
+                 is_base=True, cross_link_images=None):
         super(WebCreator, self).__init__(name)
         self.working_dir = working_dir
         self.web_lines = []
@@ -189,8 +190,19 @@ class WebCreator(toolinterface.Tool):
         self.html_files = []
         self.no_tool_check = no_tool_check
         self.is_base = is_base
+        self.webcreate_request = False
+        self.cross_link_images = cross_link_images
+
+        # structure of self.cross_link_images
+        # { pathlen: {
+        #         'path/one': {'imagename1', 'imagename2'},
+        #         'path/two': {'imagename1', 'imagename2'},
+        #     }
+        # }
 
     def base_configure(self):
+        self.cross_link_images = {}
+
         # get image format
         for pf in ['.png', '.jpg', '.jpeg']:
             if pf in settings.rootfile_postfixes:
@@ -218,6 +230,9 @@ class WebCreator(toolinterface.Tool):
     def configure(self):
         if self.is_base:
             self.base_configure()
+
+        if os.path.exists(os.path.join(self.working_dir, 'webcreate_request')):
+            self.webcreate_request = True
 
         # collect folders and images
         for wd, dirs, files in os.walk(self.working_dir):
@@ -256,7 +271,10 @@ class WebCreator(toolinterface.Tool):
     def go4subdirs(self):
         for sf in self.subfolders[:]:
             path = os.path.join(self.working_dir, sf)
-            inst = self.__class__(self.name, path, self.no_tool_check, False)
+            inst = self.__class__(
+                self.name, path, self.no_tool_check, False,
+                cross_link_images=self.cross_link_images
+            )
             inst.run()
             if not os.path.exists(os.path.join(path, 'index.html')):
                 self.subfolders.remove(sf)
@@ -287,7 +305,7 @@ class WebCreator(toolinterface.Tool):
         self.web_lines += (
             '<!-- MESSAGE -->',
             '<!-- headline -->',
-            '<h1> ' + self.name + '</h1>',
+            '<h1>' + self.name + '</h1>',
             '<h2>Section</h2>',
             'location: ',
             '/'.join('<a href="%sindex.html">%s</a>' % ('../'*(n_folders-i), d)
@@ -505,7 +523,7 @@ class WebCreator(toolinterface.Tool):
 
         # store structured information for cross link menu
         if crosslink_set:
-            path = self.working_dir[2:]
+            path = os.path.normpath(self.working_dir)
             path_depth = path.count('/')
             if not path_depth in self.cross_link_images:
                 self.cross_link_images[path_depth] = {}
@@ -617,7 +635,8 @@ class WebCreator(toolinterface.Tool):
                 self.image_names,
                 self.plain_info,
                 self.plain_tex,
-                self.html_files)):
+                self.html_files,
+                self.webcreate_request)):
             self.message('INFO Building page in ' + self.working_dir)
             self.make_html_head()
             self.make_headline()
@@ -634,3 +653,7 @@ class WebCreator(toolinterface.Tool):
             self.make_cross_link_menus()
             diskio.use_analysis_cwd = use_ana_cwd_dsk
             sparseio.use_analysis_cwd = use_ana_cwd_spr
+
+    def reset(self):
+        super(WebCreator, self).reset()
+        print "web resetted"
