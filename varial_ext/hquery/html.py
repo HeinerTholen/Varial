@@ -10,7 +10,6 @@ section_form = """\
 </form>
 """
 
-
 delete_form = """\
 <form method="post" action="{action_dir}index.html" \
       onsubmit="return confirm('Really {value}?');">
@@ -18,7 +17,6 @@ delete_form = """\
   <input type="hidden" name="{value}" value={name}>
 </form>
 """
-
 
 histo_form = """\
 <form method="post" accept-charset="ASCII" autocomplete="off">
@@ -38,7 +36,6 @@ histo_form = """\
 </form>
 """
 
-
 selection_form = """\
 <form method="post">
   <input type="hidden" name="cut_histo_name" value="{name}">
@@ -51,14 +48,12 @@ selection_form = """\
 </form>
 """
 
-
 histo_form_args = {
     'name': '', 'title': '', 'bins': '', 'low': '', 'high': '',
     'options': 'id="input-histo-quantity" list="branchnames" autocomplete="on"',
     'button': 'create new',
     'datalist': '<datalist id="branchnames"></datalist>',
 }
-
 
 branch_loading_code = """
     function loadBranchNames() {
@@ -95,7 +90,6 @@ branch_loading_code = """
     }
 """
 
-
 figure_table_in = '<td><a href="#{var}">'
 figure_table_out = '<td>{low}</td><td>{high}</td><td><a href="#{var}">'
 
@@ -130,6 +124,7 @@ def add_histo_create_form(cont):
 
 def add_histo_manipulate_forms(cont, params, section_sel_info):
     sep = '<!-- IMAGE:'
+    cont = cont.replace('rootjs.html?file=sections/', 'rootjs.html?file=')
     cont_parts = cont.split(sep)
     begin = [cont_parts.pop(0)]  # 'non-local' variable
     histos, nm1 = params['histos'], 'checked' if params['nm1'] else ''

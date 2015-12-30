@@ -2,11 +2,13 @@ import engine
 
 
 def main(**kws):
+    ssl_conf = kws.pop('ssl_conf', '')
     e = engine.HQueryEngine(kws)
 
     import server  # server should not be imported in backend process
-    server.start(e)
+    server.start(e, ssl_conf)
 
 
-# TODO SSL and security token/url
-# TODO https://stackoverflow.com/questions/24110568/cherrypy-access-restrictions-with-static-files
+# TODO test SSL
+# TODO check if 0 events are selected (problems with log) and raise error
+# TODO think about pulling everything through GET
