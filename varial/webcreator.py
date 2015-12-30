@@ -43,6 +43,12 @@ class WebCreator(toolinterface.Tool):
     p {
       margin-top: 3px;
     }
+    table {
+      border: 0px;
+    }
+    td {
+      padding: 0px;
+    }
     div.msg {
       position: fixed;
       margin-left: -8px;
@@ -247,10 +253,11 @@ class WebCreator(toolinterface.Tool):
             self.plain_tex += res
 
             # websites
-            res, files = util.project_items(lambda f: (f.endswith('.html')
-                                                        or f.endswith('.htm'))
-                                                       and f != 'index.html',
-                                       files)
+            res, files = util.project_items(
+                lambda f: (f.endswith('.html') or f.endswith('.htm'))
+                          and f != 'index.html',
+                files,
+            )
             self.html_files += res
 
             # plain info
@@ -291,6 +298,7 @@ class WebCreator(toolinterface.Tool):
             self.css_block,
             '</style>',
             '<script type="text/javascript" language="JavaScript"><!--',
+            '<!-- javascript -->',
             self.javascript_block,
             '//--></script>',
             '<META name="robots" content="NOINDEX, NOFOLLOW" />',
@@ -423,16 +431,16 @@ class WebCreator(toolinterface.Tool):
             '<!-- image files -->',
             '<a name="toc"></a>',
             '<h2>Figures</h2>',
-            '<div><p>',
+            '<div><table>',
         ) + tuple(
-            '<a href="#%s">%s%s</a><br />' % (
+            '<tr><td><a href="#%s">%s%s</a></td></tr>' % (
                 (img[:-4], img, ' (+ log)')
                 if img_log else
                 (img, img, '')
             )
             for img, img_log in image_name_tuples
         ) + (
-            '</p></div>',
+            '</table></div>',
             '<!-- HISTO CREATE FORM -->',
             '',
         )
@@ -469,7 +477,10 @@ class WebCreator(toolinterface.Tool):
             if not wrp:
                 continue
 
-            if not settings.no_toggles:
+            if settings.no_toggles:
+                toggles = ('<!-- TOGGLES -->',)
+                toggled_divs = ('<!-- TOGGLE_DIVS -->',)
+            else:
                 i_id = 'info_' + img
                 h_id = 'history_' + img
                 history_lines = str(wrp.history)
@@ -492,9 +503,6 @@ class WebCreator(toolinterface.Tool):
                     info_lines,
                     '</pre></div>',
                 )
-            else:
-                toggles = ('<!-- TOGGLES -->',)
-                toggled_divs = ('<!-- TOGGLE_DIVS -->',)
 
             rootjs_link = rootjs_base_link + '&item={0}/{0}'.format(wrp.name)
 

@@ -66,7 +66,7 @@ conf = {
         'tools.staticdir.on': True,
         'tools.staticdir.index': 'index.html',
         'tools.staticdir.root': os.path.abspath(os.getcwd()) + '/sections',
-        'tools.staticdir.match': r'(\S+\.png|\S+\.rt|rootjs\.html)$',
+        'tools.staticdir.match': r'^(\S+\.png|\S+\.json|\S+\.rt|rootjs\.html)$',
         'tools.staticdir.dir': '.',
     },
     'global': {

@@ -24,7 +24,7 @@ histo_form = """\
 <form method="post" accept-charset="ASCII" autocomplete="off">
   <input type="hidden" name="hidden_histo_name" value="{name}">
   <input type="text" name="histo_name" placeholder="quantity" \
-         required=true value="{name}" {disabled}>
+         required=true value="{name}" {options}>
   <input type="text" name="title" placeholder="histo-title; x-title; y-title" \
          value="{title}">
   <input type="number" name="bins" placeholder="bins" style="width:40px;" \
@@ -34,6 +34,7 @@ histo_form = """\
   <input type="number" name="high" placeholder="high" style="width:40px;" \
          step="0.01" value="{high}">
   <input type="submit" value="{button}">
+  {datalist}
 </form>
 """
 
@@ -53,8 +54,50 @@ selection_form = """\
 
 histo_form_args = {
     'name': '', 'title': '', 'bins': '', 'low': '', 'high': '',
-    'disabled': '', 'button': 'create new'
+    'options': 'id="input-histo-quantity" list="branchnames" autocomplete="on"',
+    'button': 'create new',
+    'datalist': '<datalist id="branchnames"></datalist>',
 }
+
+
+branch_loading_code = """
+    function loadBranchNames() {
+      // Get the <datalist> and <input> elements.
+      var dataList = document.getElementById('branchnames');
+      var input = document.getElementById('input-histo-quantity');
+      input.placeholder = "quantity ...";
+
+      // Create a new XMLHttpRequest.
+      var request = new XMLHttpRequest();
+
+      // Handle state changes for the request.
+      request.onreadystatechange = function(response) {
+        if (request.readyState === 4) {
+          if (request.status === 200) {
+            var jsonOptions = JSON.parse(request.responseText);
+
+            jsonOptions.forEach(function(item) {
+              var option = document.createElement('option');
+              option.value = item;
+              dataList.appendChild(option);
+            });
+
+            input.placeholder = "quantity";
+          } else {
+            input.placeholder = "quantity (no auto-comp.)";
+          }
+        }
+      };
+
+      // Set up and make the request.
+      request.open('GET', '/branch_names.json', true);
+      request.send();
+    }
+"""
+
+
+figure_table_in = '<td><a href="#{var}">'
+figure_table_out = '<td>{low}</td><td>{high}</td><td><a href="#{var}">'
 
 
 def add_section_create_form(cont):
@@ -74,7 +117,10 @@ def add_section_manipulate_forms(cont, section):
 def add_histo_create_form(cont):
     placeholder = '<!-- HISTO CREATE FORM -->'
     placeholder2 = '<!-- NO IMAGES -->'
+    placeholder_java = '<!-- javascript -->'
     form = histo_form.format(**histo_form_args)
+    cont = cont.replace('<body>', '<body onload="loadBranchNames()">',)
+    cont = cont.replace(placeholder_java, branch_loading_code)
     if placeholder2 in cont:
         form = '<h2>Figures</h2>\ncreate new:<br />\n' + form
         return cont.replace(placeholder2, form)
@@ -85,7 +131,16 @@ def add_histo_create_form(cont):
 def add_histo_manipulate_forms(cont, params, section_sel_info):
     sep = '<!-- IMAGE:'
     cont_parts = cont.split(sep)
+    begin = [cont_parts.pop(0)]  # 'non-local' variable
     histos, nm1 = params['histos'], 'checked' if params['nm1'] else ''
+
+    def add_selection_in_figure_tab(var, low, high):
+        low = '>= %s &nbsp; &nbsp; ' % low if low else ''
+        high = ' < %s &nbsp; &nbsp; ' % high if high else ''
+        begin[0] = begin[0].replace(
+            figure_table_in.format(var=var),
+            figure_table_out.format(var=var, low=low, high=high)
+        )
 
     def handle_histo_div(cont_part):
         if '<div class="img">' not in cont_part:
@@ -101,8 +156,9 @@ def add_histo_manipulate_forms(cont, params, section_sel_info):
             'bins': histo_params[1],
             'low': histo_params[2],
             'high': histo_params[3],
-            'disabled': 'disabled',
+            'options': 'disabled',
             'button': 'update',
+            'datalist': '',
         })
         his_form = histo_form.format(**form_args)
         low, high = section_sel_info.get(name, ('', ''))
@@ -122,9 +178,11 @@ def add_histo_manipulate_forms(cont, params, section_sel_info):
         cont_part = cont_part.replace('<!-- TOGGLES -->', toggle)
         cont_part = cont_part.replace('<!-- TOGGLE_DIVS -->', div)
         cont_part = cont_part.replace('<!-- SELECTION FORM -->', sel_form)
+        add_selection_in_figure_tab(name, low, high)
         return cont_part
 
-    return sep.join(handle_histo_div(cp) for cp in cont_parts)
+    cont = sep.join(handle_histo_div(cp) for cp in cont_parts)
+    return begin[0] + sep + cont
 
 
 def add_refresh(cont, timeout, url=''):

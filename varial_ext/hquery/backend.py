@@ -84,6 +84,19 @@ class HQueryBackend(object):
         with open('params.json', 'w') as f:
             json.dump((self.params, self.sec_sel_weight, self.sel_info), f)
 
+    def make_branch_name_json(self):
+        import ROOT
+        treename = self.params['treename']
+        if self.plotter_hook.data:
+            filename = self.tp.filenames[self.plotter_hook.data[0]][0]
+        else:
+            filename = next(self.tp.filenames.itervalues())[0]
+        f = ROOT.TFile(filename)
+        names = list(b.GetName() for b in f.Get(treename).GetListOfBranches())
+        f.Close()
+        with open('sections/branch_names.json', 'w') as f:
+            json.dump(names, f)
+
     def run_webcreator(self):
         self.wc.run()
         self.wc.reset()
@@ -172,7 +185,7 @@ class HQueryBackend(object):
         assert bool(low) == bool(high), assert_msg
         bins = int(kws['bins'] or 40)
         if not low:
-            low, high = -.5, bins - .5
+            bins, low, high = bins + 1, -.5, bins + .5
         params = (str(kws['title']), bins, float(low), float(high))
         self.check_histo_item(name, params)
 
@@ -202,11 +215,11 @@ class HQueryBackend(object):
         # compile selection string
         if low and high:
             if float(low) <= float(high):
-                sel = '({lo} < {var} && {var} < {hi})'
+                sel = '({lo} <= {var} && {var} < {hi})'
             else:
-                sel = '({lo} < {var} || {var} < {hi})'
+                sel = '({lo} <= {var} || {var} < {hi})'
         elif low:
-            sel = '{lo} < {var}'
+            sel = '{lo} <= {var}'
         elif high:
             sel = '{var} < {hi}'
         else:
@@ -274,6 +287,7 @@ class HQueryBackend(object):
 
     def start(self):
         self.q_out.put('backend alive')
+        self.make_branch_name_json()
         if not self.read_settings():
             self.run_treeprojection()
             self.run_webcreator()
@@ -298,6 +312,3 @@ class HQueryBackend(object):
                 varial.monitor.message('HQueryBackend.process_request', msg)
                 self.q_out.put(msg)
             self.q_out.put('task done')
-
-# TODO vanilla section: initial run webcreator only over one folder
-# TODO read inputfiles and provide variable names via json (directly to browser)
