@@ -58,8 +58,6 @@ class WebService(object):
 
     def GET(self, *args, **kws):
         if 'auth' not in cherrypy.session:
-            print kws.get('s', '')
-            print session_token
             if kws.get('s', '') == session_token:
                 cherrypy.session['auth'] = True
             else:
@@ -149,6 +147,6 @@ def start(engine, ssl_conf=None):
     print '='*80
     print 'hQuery is ready at:'
     print url.format(hostname)
-    print url.format('127.0.0.1')
+    print url.format('localhost')
     print '='*80
     cherrypy.quickstart(WebService(engine), '/', conf)
