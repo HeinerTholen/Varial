@@ -59,7 +59,9 @@ class HQueryBackend(object):
                            nm1=False)
         self.sel_info = {}
         self.sec_sel_weight = {}  # sec -> (sec, sel, weight)
-        self.weight = kws.pop('weight', '')
+        weight, msg = kws.pop('weight', ''), 'weight can be str or dict'
+        assert isinstance(weight, str) or isinstance(weight, dict), msg
+        self.weight = weight
 
         self.tp = TP(kws.pop('filenames'), self.params,
                      add_aliases_to_analysis=False, name='treeprojector')

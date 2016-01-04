@@ -25,7 +25,6 @@ class TreeProjectorBase(varial.tools.Tool):
     """
     Project histograms from files with TTrees.
 
-    :param samples:                 list of sample names
     :param filenames:               dict(sample -> list of files), e.g.   
                                     ``{'samplename': [file1, file2, ...], ...}``
     :param params:                  dict of params for ``map_projection``
@@ -136,6 +135,8 @@ class TreeProjector(TreeProjectorBase):
             varial.settings.max_num_processes)
 
         for section, selection, weight in self.sec_sel_weight:
+            if isinstance(weight, dict):
+                weight = weight[sample]
             res = self.prepare_mapiter(selection, weight, sample)
             res = pool.imap_unordered(_map_fwd, res)
             res = gen_raise_runtime_error(res)
@@ -238,6 +239,8 @@ class BatchTreeProjector(TreeProjectorBase):
         self.jug_tasks = []
         params = self.prepare_params(selection, weight)
         for sample in self.samples:
+            if isinstance(weight, dict):
+                params['weight'] = weight[sample]
             p_jugfile = jug_file_path_pat.format(
                 i=self.iteration, user=username, section=section, sample=sample)
             p_jugres = p_jugfile.replace('.py', '.root')
