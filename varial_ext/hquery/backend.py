@@ -73,6 +73,9 @@ class HQueryBackend(object):
         self.wc.update()
         varial.settings.no_toggles = True
         self.job_submitter = None  # TODO
+
+        self.dump_python_conf = kws.pop('dump_python_conf', False)
+
         process_settings_kws(kws)
 
     def read_settings(self):
@@ -85,16 +88,58 @@ class HQueryBackend(object):
     def write_settings(self):
         with open('params.json', 'w') as f:
             json.dump((self.params, self.sec_sel_weight, self.sel_info), f)
+        if self.dump_python_conf:
+            self.write_histos()
+            self.write_sec_sel_weight()
+
+    def write_histos(self):
+        with open('params_histos.py', 'w') as f:
+            f.write(repr(self.params['histos']))
+
+    def write_sec_sel_weight(self):
+        with open('params_sec_sel_weight.py', 'w') as f:
+            f.write(repr(self.sec_sel_weight))
 
     def make_branch_name_json(self):
         import ROOT
+
+        def handle_item(name, item):
+            item_typ = type(item)
+            if item_typ in (int, float):
+                return [name]
+            elif 'vector<' in str(item_typ):
+                data_typ = str(item_typ).split('vector<')[1].split('>')[0]
+                typ_inst = getattr(ROOT, data_typ)()
+                return ['@%s.size' % name] + list(
+                    name + '.' + res
+                    for res in handle_item('', typ_inst)
+                )
+            elif callable(item):
+                try:
+                    return handle_item(name, item())
+                except TypeError:
+                    return []
+            else:
+                name = name + '.' if name else ''
+                return list(
+                    name + res
+                    for funcname in dir(item)
+                    for res in handle_item(funcname, getattr(item, funcname))
+                    if not funcname.startswith('_')
+                )
+
         treename = self.params['treename']
         if self.plotter_hook.data:
             filename = self.tp.filenames[self.plotter_hook.data[0]][0]
         else:
             filename = next(self.tp.filenames.itervalues())[0]
         f = ROOT.TFile(filename)
-        names = list(b.GetName() for b in f.Get(treename).GetListOfBranches())
+        t = f.Get(treename)
+        names = list(
+            res
+            for b in t.GetListOfBranches()
+            for res in handle_item(b.GetName(), getattr(t, b.GetName()))
+        )
         f.Close()
         with open('sections/branch_names.json', 'w') as f:
             json.dump(names, f)
