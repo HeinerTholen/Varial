@@ -254,8 +254,10 @@ class WebCreator(toolinterface.Tool):
 
             # websites
             res, files = util.project_items(
-                lambda f: (f.endswith('.html') or f.endswith('.htm'))
-                          and f != 'index.html',
+                lambda f: (
+                    (f.endswith('.html') or f.endswith('.htm'))
+                    and f not in ('index.html', 'rootjs.html')
+                ),
                 files,
             )
             self.html_files += res

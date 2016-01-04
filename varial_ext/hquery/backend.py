@@ -50,6 +50,7 @@ class HQueryBackend(object):
 
         if not os.path.exists('sections'):
             os.mkdir('sections')
+            os.system('touch sections/webcreate_request')
 
         histos = kws.pop('histos', {})
         for name, tple in histos.iteritems():
