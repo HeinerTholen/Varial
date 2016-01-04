@@ -156,7 +156,7 @@ class HQueryBackend(object):
         else:
             ssw = list(self.sec_sel_weight.itervalues())
 
-        if not ssw:
+        if not (ssw and self.params['histos']):
             return
 
         self.q_out.put('Filling histograms in: ' + ', '.join(s[0] for s in ssw))
