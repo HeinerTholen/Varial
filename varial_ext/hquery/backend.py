@@ -43,11 +43,6 @@ class HQueryBackend(object):
         self.q_in = q_in
         self.q_out = q_out
 
-        if backend_type == 'local':
-            TP = TreeProjector
-        else:
-            TP = BatchTreeProjector
-
         if not os.path.exists('sections'):
             os.mkdir('sections')
             os.system('touch sections/webcreate_request')
@@ -64,6 +59,10 @@ class HQueryBackend(object):
         assert isinstance(weight, str) or isinstance(weight, dict), msg
         self.weight = weight
 
+        if backend_type == 'local':
+            TP = TreeProjector
+        else:
+            TP = BatchTreeProjector
         self.tp = TP(kws.pop('filenames'), self.params,
                      add_aliases_to_analysis=False, name='treeprojector')
         self.stack = kws.pop('stack', False)
@@ -73,10 +72,8 @@ class HQueryBackend(object):
         self.wc.working_dir = 'sections'
         self.wc.update()
         varial.settings.no_toggles = True
-        self.job_submitter = None  # TODO
 
         self.dump_python_conf = kws.pop('dump_python_conf', False)
-
         process_settings_kws(kws)
 
     def read_settings(self):

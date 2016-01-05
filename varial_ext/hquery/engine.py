@@ -11,6 +11,12 @@ def _start_backend(kws, q_in, q_out):
     HQueryBackend(kws, q_in, q_out).start()
 
 
+def _start_job_submitter():
+    from varial_ext.sgeworker import SGESubmitter
+    import varial_ext.treeprojector as tp
+    SGESubmitter(40, tp.jug_work_dir_pat, tp.jug_file_search_pat).start()
+
+
 class HQueryEngine(object):
     def __init__(self, kws):
         self.messages = []
@@ -18,11 +24,21 @@ class HQueryEngine(object):
         self.backend_q_in = mp.Queue()
         self.backend_q_out = mp.Queue()
         self.backend_proc = None
+        self.job_proc = None
         self.status = 'task pending'
         self.redirect = ''
         self.params = {}
         self.sel_info = {}
+
+        self.start_job_submitter(kws)
         self.start_backend(kws)
+
+    def start_job_submitter(self, kws):
+        if kws.get('backend') != 'sge':
+            return
+
+        self.job_proc = mp.Process(target=_start_job_submitter)
+        self.job_proc.start()
 
     def start_backend(self, kws):
         self.backend_proc = mp.Process(
@@ -37,6 +53,18 @@ class HQueryEngine(object):
         if msg != 'backend alive':
             raise RuntimeError('backend could not be started')
 
+    def check_procs(self):
+        if self.status == 'error':
+            return
+
+        if not self.backend_proc.is_alive():
+            self.messages.append('ERROR: backend terminated.')
+            self.status = 'error'
+
+        if self.job_proc and not self.job_proc.is_alive():
+            self.messages.append('ERROR: job submitter terminated.')
+            self.status = 'error'
+
     def read_backend_q(self, timeout=None):
         block = bool(timeout)
         while True:
@@ -45,7 +73,7 @@ class HQueryEngine(object):
             except Queue.Empty:
                 break
 
-            if item == 'task done':
+            if item == 'task done' and self.status == 'task pending':
                 self.status = 'ready'
                 self.messages.append(item)
                 with open('params.json') as f:
@@ -98,9 +126,7 @@ class HQueryEngine(object):
     def get(self, path, cont):
         # check backend
         self.read_backend_q()
-        if not self.backend_proc.is_alive() and self.status != 'error':
-            self.messages.append('ERROR: backend terminated.')
-            self.status = 'error'
+        self.check_procs()
 
         # compile html site
         depth = path.count('/')
@@ -126,3 +152,6 @@ class HQueryEngine(object):
     def __del__(self):
         self.backend_q_in.put('terminate')
         self.backend_proc.join()
+        if self.job_proc:
+            self.job_proc.terminate()
+            self.job_proc.join()
