@@ -2,11 +2,10 @@ import engine
 
 
 def main(**kws):
-    ssl_conf = kws.pop('ssl_conf', '')
     e = engine.HQueryEngine(kws)
 
     import server  # server should not be imported in backend process
-    server.start(e, ssl_conf)
+    server.start(e)
 
 
 # TODO test SSL

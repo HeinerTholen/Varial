@@ -5,7 +5,9 @@ import socket
 import random
 import os
 join = os.path.join
-
+_ssldir = join(os.environ['HOME'], '.hQuery')
+_sslcrt = join(_ssldir, 'hQuery.crt')
+_sslkey = join(_ssldir, 'hQuery.key')
 
 redirect = """\
 <!DOCTYPE HTML>
@@ -93,21 +95,33 @@ class WebService(object):
         pass  # using html forms only
 
 
-conf = {
-    '/': {
-        'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
-        'tools.response_headers.on': True,
-        'tools.response_headers.headers': [('Content-Type', 'text/html')],
+def _create_ssl_keys():
+    from OpenSSL import crypto
 
-        'tools.sessions.on': True,
-        'tools.sessions.storage_type': 'file',
-        'tools.sessions.storage_path': os.path.abspath(os.getcwd())
-    },
-    'global': {
-        'server.socket_host': '0.0.0.0',
-        'server.socket_port': 8080,
-    }
-}
+    if os.path.exists(_sslcrt) and os.path.exists(_sslkey):
+        return
+    else:
+        os.mkdir(_ssldir)
+        os.system('chmod 700 %s' % _ssldir)
+
+    # generate keypair
+    key = crypto.PKey()
+    key.generate_key(crypto.TYPE_RSA, 2048)
+    crt = crypto.X509()
+    crt.set_serial_number(0)
+    crt.gmtime_adj_notBefore(0)
+    crt.gmtime_adj_notAfter(10 * 365 * 24 * 60 * 60)  # valid for ten years
+    crt.set_issuer(crt.get_subject())
+    crt.set_pubkey(key)
+    crt.sign(key, 'sha1')
+
+    # write to disk
+    with open(_sslcrt, 'wt') as f:
+        f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, crt))
+    with open(_sslkey, 'wt') as f:
+        f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key))
+    os.system('chmod 600 %s' % _sslkey)
+    os.system('chmod 644 %s' % _sslcrt)
 
 
 def find_port(port):
@@ -127,26 +141,41 @@ def find_port(port):
     return port
 
 
-def start(engine, ssl_conf=None):
-    # find hostname and port
-    hostname = socket.gethostname()
-    port = find_port(8080)
-    conf['global']['server.socket_port'] = port
+conf = {
+    '/': {
+        'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+        'tools.response_headers.on': True,
+        'tools.response_headers.headers': [('Content-Type', 'text/html')],
 
-    # apply ssl config
-    if ssl_conf:
-        conf['global'].update(ssl_conf)
+        'tools.sessions.on': True,
+        'tools.sessions.storage_type': 'file',
+        'tools.sessions.storage_path': os.path.abspath(os.getcwd())
+    },
+    'global': {
+        'server.ssl_module': 'pyopenssl',
+        'server.ssl_certificate': _sslcrt,
+        'server.ssl_private_key': _sslkey,
+        'server.socket_host': '0.0.0.0',
+        'server.socket_port': find_port(8080),
+    }
+}
 
-    # print statement and go
-    url = '{}://{}:{}/?s={}'.format(
-        'https' if ssl_conf else 'http',
+
+def start(engine):
+    # check / create keys
+    _create_ssl_keys()
+
+    # print browser-links
+    url = 'https://{}:{}/?s={}'.format(
         '{}',
-        port,
+        conf['global']['server.socket_port'],
         session_token
     )
     print '='*80
     print 'hQuery is ready at:'
-    print url.format(hostname)
+    print url.format(socket.gethostname())
     print url.format('localhost')
     print '='*80
+
+    # start serving
     cherrypy.quickstart(WebService(engine), '/', conf)

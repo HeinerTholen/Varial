@@ -55,28 +55,21 @@ stacking_order=[
     'DYJets'
 ]
 
-# ssl_conf = {
-#     'server.ssl_module': 'pyopenssl',
-#     'server.ssl_certificate': '/home/ubuntu/my_cert.crt',
-#     'server.ssl_private_key': '/home/ubuntu/my_cert.key',
-#     'server.ssl_certificate_chain': # '/home/ubuntu/gd_bundle.crt',
-# }
-
 if __name__ == '__main__':
     from varial_ext.hquery import main
     main(
+        # required parameters
         filenames=filenames,
         treename=treename,
         backend='local',  # one of sge, local
 
-        # ssl_conf=ssl_conf,
+        # additional parameters
         weight=weight,
         signal_samples=['TpB_TH_700'],
         data_samples=['Run2015D'],
         stack=True,
         histos=histos,
         dump_python_conf=False,  # write histos and sections in python code
-
         colors=colors,
         stacking_order=stacking_order,
     )
