@@ -1,4 +1,3 @@
-
 from setuptools import setup
 
 setup(
@@ -7,7 +6,7 @@ setup(
     author="Heiner Tholen",
     author_email="heiner.tholen@cern.ch",
     packages=["varial", "varial_example"],
-    requires=[],
+    requires=['pyopenssl', 'cherrypy'],
     license="LICENSE.txt",
     description="Assist and manage an analysis with the CMS experiment.",
     long_description=open('README.rst').read(),
