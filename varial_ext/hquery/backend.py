@@ -118,10 +118,13 @@ class HQueryBackend(object):
                     return [name, '@%s.size()' % name]
                 else:
                     typ_inst = getattr(ROOT, data_typ)()
-                    return ['@%s.size()' % name] + list(
-                        name + '.' + res
-                        for res in handle_item('', typ_inst, depth)
+                    object_items = handle_item('', typ_inst, depth)
+                    object_items = list(
+                        name + conj + res
+                        for res in object_items
+                        for conj in ('.', '[0].')
                     )
+                    return ['@%s.size()' % name] + object_items
 
             elif callable(item):
                 func_doc = getattr(item, 'func_doc', '')
