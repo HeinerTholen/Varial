@@ -8,7 +8,7 @@ def map_projection(sample_histo_filename, params, open_file=None):
 
     import ROOT
     sample, quantity, filename = sample_histo_filename.split()
-    histoname = quantity.replace('(', '_').replace(')', '_')
+    histoname = 'new_histo'
     input_file = open_file or ROOT.TFile(filename)
 
     nm1 = params.get('nm1', True)
@@ -17,7 +17,7 @@ def map_projection(sample_histo_filename, params, open_file=None):
 
     if any(isinstance(selection, t) for t in (list, tuple)):
         if nm1:  # N-1 instruction: don't cut the plotted variable
-            selection = list(s for s in selection if histoname not in s)
+            selection = list(s for s in selection if quantity not in s)
         selection = ' && '.join(selection)
 
     selection = '%s*(%s)' % (weight, selection or '1')
