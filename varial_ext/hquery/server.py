@@ -3,6 +3,7 @@ import cherrypy
 import string
 import socket
 import random
+import time
 import os
 join = os.path.join
 _ssldir = join(os.environ['HOME'], '.hQuery')
@@ -101,14 +102,15 @@ def _create_ssl_keys():
     if os.path.exists(_sslcrt) and os.path.exists(_sslkey):
         return
     else:
-        os.mkdir(_ssldir)
-        os.system('chmod 700 %s' % _ssldir)
+        if not os.path.exists(_ssldir):
+            os.mkdir(_ssldir)
+            os.system('chmod 700 %s' % _ssldir)
 
     # generate keypair
     key = crypto.PKey()
     key.generate_key(crypto.TYPE_RSA, 2048)
     crt = crypto.X509()
-    crt.set_serial_number(0)
+    crt.set_serial_number(int(time.time()))
     crt.gmtime_adj_notBefore(0)
     crt.gmtime_adj_notAfter(10 * 365 * 24 * 60 * 60)  # valid for ten years
     crt.set_issuer(crt.get_subject())
