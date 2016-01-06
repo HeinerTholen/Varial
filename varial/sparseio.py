@@ -87,6 +87,11 @@ def bulk_write(wrps, name_func, dir_path='', suffices=None, linlog=False):
 
         for name, w in wrps_dict.iteritems():
 
+            # root will not store filenames with '[]' correctly. fix:
+            alt_name = name.replace('[', '(').replace(']', ')')
+            img_path = os.path.join(dir_path, alt_name)
+            good_path = os.path.join(dir_path, name)
+
             # if the cnv.first_drawn has a member called 'GetMaximum', the
             # maximum should be greater then zero...
             if (linlog
@@ -95,13 +100,18 @@ def bulk_write(wrps, name_func, dir_path='', suffices=None, linlog=False):
                      or w.first_drawn.GetMaximum() > 1e-9)
             ):
                 w.main_pad.SetLogy(0)
-                w.obj.SaveAs(os.path.join(dir_path, name) + '_lin' + suffix)
+                w.obj.SaveAs(img_path+'_lin'+suffix)
                 min_val = w.y_min_gr_0 * 0.5
                 min_val = max(min_val, 1e-9)
                 w.first_drawn.SetMinimum(min_val)
                 w.main_pad.SetLogy(1)
-                w.obj.SaveAs(os.path.join(dir_path, name) + '_log' + suffix)
+                w.obj.SaveAs(img_path+'_log'+suffix)
+                if alt_name != name:
+                    os.rename(img_path+'_lin'+suffix, good_path+'_lin'+suffix)
+                    os.rename(img_path+'_log'+suffix, good_path+'_log'+suffix)
             else:
-                w.obj.SaveAs(os.path.join(dir_path, name) + suffix)
+                w.obj.SaveAs(img_path+suffix)
+                if alt_name != name:
+                    os.rename(img_path+suffix, good_path+suffix)
 
     return wrps_dict.values()
