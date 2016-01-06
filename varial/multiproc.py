@@ -48,8 +48,8 @@ class NoDeamonWorkersPool(multiprocessing.pool.Pool):
             cpu_semaphore.release()
         else:
             self.me_created_semaphore = True
-            cpu_semaphore = multiprocessing.BoundedSemaphore(
-                                                    settings.max_num_processes)
+            n_procs = settings.max_num_processes
+            cpu_semaphore = multiprocessing.BoundedSemaphore(n_procs)
             _kill_request = multiprocessing.Value('i', 0)
             _xcptn_lock = multiprocessing.RLock()
 
@@ -59,15 +59,12 @@ class NoDeamonWorkersPool(multiprocessing.pool.Pool):
         # go parallel
         super(NoDeamonWorkersPool, self).__init__(*args, **kws)
 
-    def __del__(self):
-        global cpu_semaphore, _kill_request, _xcptn_lock
-        if self.me_created_semaphore:
-            cpu_semaphore = None
-            _kill_request = None
-            _xcptn_lock = None
-        else:
-            # must re-acquire before leaving
-            cpu_semaphore.acquire()
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+        self.join()
 
     def imap_unordered(self, func, iterable, chunksize=1):
         def kill_hook(iterable):
@@ -82,8 +79,18 @@ class NoDeamonWorkersPool(multiprocessing.pool.Pool):
         ))
 
     def close(self):
+        global cpu_semaphore, _kill_request, _xcptn_lock
+
         for func in pre_join_cbs:
             func()
+
+        if self.me_created_semaphore:
+            cpu_semaphore = None
+            _kill_request = None
+            _xcptn_lock = None
+        else:
+            # must re-acquire before leaving
+            cpu_semaphore.acquire()
 
         super(NoDeamonWorkersPool, self).close()
 

@@ -106,7 +106,6 @@ def runtime_error_catcher(func):
 def gen_raise_runtime_error(iterator):
     for i in iterator:
         if isinstance(i, tuple) and i and i[0] == 'RuntimeError':
-            print 'raising: ', i[1]
             raise RuntimeError(i[1])
         else:
             yield i
@@ -131,41 +130,36 @@ def _handle_sample(args):
 class TreeProjector(TreeProjectorBase):
     def handle_sample(self, sample):
         self.message('INFO starting sample: ' + sample)
-        pool = varial.multiproc.NoDeamonWorkersPool(
-            varial.settings.max_num_processes)
 
-        for section, selection, weight in self.sec_sel_weight:
-            if isinstance(weight, dict):
-                weight = weight[sample]
-            res = self.prepare_mapiter(selection, weight, sample)
-            res = pool.imap_unordered(_map_fwd, res)
-            res = gen_raise_runtime_error(res)
-            res = itertools.chain.from_iterable(res)
-            res = reduce_projection(res, self.params)
-            res = list(res)
-            assert res, 'tree_projection did not yield any histograms'
-            store_sample(sample, section, res)
-            self.progress_callback(1, 1)
+        n_procs = varial.settings.max_num_processes
+        with varial.multiproc.NoDeamonWorkersPool(n_procs) as pool:
+            for section, selection, weight in self.sec_sel_weight:
+                if isinstance(weight, dict):
+                    weight = weight[sample]
+                res = self.prepare_mapiter(selection, weight, sample)
+                res = pool.imap_unordered(_map_fwd, res)
+                res = gen_raise_runtime_error(res)
+                res = itertools.chain.from_iterable(res)
+                res = reduce_projection(res, self.params)
+                res = list(res)
+                assert res, 'tree_projection did not yield any histograms'
+                store_sample(sample, section, res)
+                self.progress_callback(1, 1)
 
-        pool.close()
-        pool.join()
         varial.diskio.write_fileservice(sample)
         self.message('INFO sample done: ' + sample)
 
     def run(self):
-        pool = varial.multiproc.NoDeamonWorkersPool(
-            min(varial.settings.max_num_processes, len(self.samples)))
-        res = ((varial.analysis.get_current_tool_path(), s)
-               for s in self.samples)
+        n_procs = min(varial.settings.max_num_processes, len(self.samples))
+        with varial.multiproc.NoDeamonWorkersPool(n_procs) as pool:
+            res = ((varial.analysis.get_current_tool_path(), s)
+                   for s in self.samples)
 
-        # work
-        res = pool.imap_unordered(_handle_sample, res)
-        res = gen_raise_runtime_error(res)
-        for r in res:
-            pass
-
-        pool.close()
-        pool.join()
+            # work
+            res = pool.imap_unordered(_handle_sample, res)
+            res = gen_raise_runtime_error(res)
+            for r in res:
+                pass
 
         # finalize
         wrps = varial.diskio.generate_aliases(self.cwd + '*.root')
