@@ -7,7 +7,8 @@ def map_projection(sample_histo_filename, params, open_file=None):
     """Map histogram projections to a root file"""
 
     import ROOT
-    sample, histoname, filename = sample_histo_filename.split()
+    sample, quantity, filename = sample_histo_filename.split()
+    histoname = quantity.replace('(', '_').replace(')', '_')
     input_file = open_file or ROOT.TFile(filename)
 
     nm1 = params.get('nm1', True)
@@ -20,8 +21,8 @@ def map_projection(sample_histo_filename, params, open_file=None):
         selection = ' && '.join(selection)
 
     selection = '%s*(%s)' % (weight, selection or '1')
-    histoargs = params['histos'][histoname]
-    histo_draw_cmd = '%s>>+%s' % (histoname, histoname)
+    histoargs = params['histos'][quantity]
+    histo_draw_cmd = '%s>>+%s' % (quantity, histoname)
 
     try:
         ROOT.TH1.AddDirectory(True)
@@ -46,13 +47,14 @@ def map_projection(sample_histo_filename, params, open_file=None):
                 )
 
         histo.SetDirectory(0)
+        histo.SetName(quantity)
 
     finally:
         ROOT.TH1.AddDirectory(False)
         if not open_file:
             input_file.Close()
 
-    yield sample+' '+histoname, histo
+    yield sample+' '+quantity, histo
 
 
 def reduce_projection(iterator, params):
