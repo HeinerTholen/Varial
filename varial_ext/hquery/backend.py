@@ -9,6 +9,7 @@ import string
 import shutil
 import json
 import glob
+import time
 import os
 
 
@@ -100,30 +101,45 @@ class HQueryBackend(object):
 
     def make_branch_name_json(self):
         import ROOT
+        plain_types = {'int': int, 'float': float, 'long': long, 'bool': bool}
+        plain_types_list = plain_types.values()
+        plain_c_types = plain_types.keys() + ['double', 'short']
 
-        def handle_item(name, item):
+        def handle_item(name, item, depth):
+            if item is None or depth > 1:
+                return []
+
             item_typ = type(item)
-            if item_typ in (int, float):
+            if item_typ in plain_types_list:
                 return [name]
             elif 'vector<' in str(item_typ):
                 data_typ = str(item_typ).split('vector<')[1].split('>')[0]
-                typ_inst = getattr(ROOT, data_typ)()
-                return ['@%s.size' % name] + list(
-                    name + '.' + res
-                    for res in handle_item('', typ_inst)
-                )
+                if data_typ in plain_types:
+                    return [name, '@%s.size' % name]
+                else:
+                    typ_inst = getattr(ROOT, data_typ)()
+                    return ['@%s.size' % name] + list(
+                        name + '.' + res
+                        for res in handle_item('', typ_inst, depth)
+                    )
+
             elif callable(item):
-                try:
-                    return handle_item(name, item())
-                except TypeError:
+                func_doc = getattr(item, 'func_doc', '')
+                if func_doc.startswith('void '):
                     return []
+                elif any(func_doc.startswith(t + ' ') for t in plain_c_types):
+                    return [name+'()']
+                else:
+                    return []
+
             else:
                 name = name + '.' if name else ''
                 return list(
                     name + res
                     for funcname in dir(item)
-                    for res in handle_item(funcname, getattr(item, funcname))
                     if not funcname.startswith('_')
+                    for res in handle_item(
+                        funcname, getattr(item, funcname), depth+1)
                 )
 
         treename = self.params['treename']
@@ -133,10 +149,12 @@ class HQueryBackend(object):
             filename = next(self.tp.filenames.itervalues())[0]
         f = ROOT.TFile(filename)
         t = f.Get(treename)
+        t = next(iter(t))
+        names = list(b.GetName() for b in t.GetListOfBranches())
         names = list(
             res
-            for b in t.GetListOfBranches()
-            for res in handle_item(b.GetName(), getattr(t, b.GetName()))
+            for bname in names
+            for res in handle_item(bname, getattr(t, bname), 0)
         )
         f.Close()
         with open('sections/branch_names.json', 'w') as f:
@@ -332,10 +350,11 @@ class HQueryBackend(object):
 
     def start(self):
         self.q_out.put('backend alive')
-        self.make_branch_name_json()
+        time.sleep(0.01)  # leave thread
         if not self.read_settings():
             self.run_treeprojection()
             self.run_webcreator()
+            self.make_branch_name_json()
             self.write_settings()
         self.q_out.put('task done')
         while True:
