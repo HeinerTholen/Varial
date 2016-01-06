@@ -56,7 +56,7 @@ class HQueryBackend(object):
                            nm1=False)
         self.sel_info = {}
         self.sec_sel_weight = {}  # sec -> (sec, sel, weight)
-        weight, msg = kws.pop('weight', '1'), 'weight can be str or dict'
+        weight, msg = kws.pop('weight', ''), 'weight can be str or dict'
         assert isinstance(weight, str) or isinstance(weight, dict), msg
         self.weight = weight
 
@@ -243,6 +243,9 @@ class HQueryBackend(object):
         bins, low, high = kws['bins'], kws['low'], kws['high']
 
         # checks
+        if name in self.params['histos']:
+            raise RuntimeError('Histogram exists: ' + name)
+
         assert_msg = 'Either "bins" or "low" *and* "high" needed. Or all.'
         assert bins or (low and high), assert_msg
         assert bool(low) == bool(high), assert_msg
