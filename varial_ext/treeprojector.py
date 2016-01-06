@@ -158,7 +158,7 @@ class TreeProjector(TreeProjectorBase):
             # work
             res = pool.imap_unordered(_handle_sample, res)
             res = gen_raise_runtime_error(res)
-            for r in res:
+            for _ in res:
                 pass
 
         # finalize
@@ -172,9 +172,9 @@ class TreeProjector(TreeProjectorBase):
 
 ############################################### batch tree project with jug ###
 try:
-    import jug, imp
+    import jug
 except ImportError:
-    jug, imp = None, None
+    jug = None
 
 username = os.getlogin()
 jug_work_dir_pat = '/nfs/dust/cms/user/{user}/varial_sge_exec'
@@ -201,7 +201,7 @@ import os
 
 @TaskGenerator
 def finalize(result):
-    os.remove(__file__)
+    os.remove(__file__)  # do not let other workers find the task anymore
     import varial
     mr.store_sample(sample, section, result)
     varial.diskio.write_fileservice(
@@ -217,7 +217,7 @@ result = CompoundTask(
     map_step=4,
     reduce_step=8,
 )
-copy_res = finalize(result)
+final_task = finalize(result)
 
 jug.options.default_options.execute_wait_cycle_time_secs = 1
 jug.options.default_options.execute_nr_wait_cycles = 1
@@ -282,12 +282,12 @@ class BatchTreeProjector(TreeProjectorBase):
         # clear last round of running (and the ones of 3 iterations ago)
         wd_junk = jug_file_search_pat.format(user=username)
         wd_junk = wd_junk.replace('*.py', '%d.*' % (self.iteration - 4))
-        wd_junk = glob.glob(wd_junk)
-        if wd_junk:
-            os.system('rm ' + ' '.join(wd_junk))
-        tooldir_junk = glob.glob('%s/*.root' % self.cwd)
-        if tooldir_junk:
-            os.system('rm ' + ' '.join(tooldir_junk))
+        wd_junk_files = glob.glob(wd_junk)
+        if wd_junk_files:
+            os.system('rm ' + ' '.join(wd_junk_files))
+        tooldir_junk_files = glob.glob('%s/*.root' % self.cwd)
+        if tooldir_junk_files:
+            os.system('rm ' + ' '.join(tooldir_junk_files))
 
         # do the work
         for section, selection, weight in self.sec_sel_weight:
@@ -305,6 +305,4 @@ class BatchTreeProjector(TreeProjectorBase):
 
 
 # TODO option for _not_ copying result back (softlink?)
-# TODO option for launching all sections at once
-# TODO pass list of files done into progress_callback
 # TODO: move jug_constants somewhere sensible

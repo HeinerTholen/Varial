@@ -22,7 +22,7 @@ histo_form = """\
 <form method="post" accept-charset="ASCII" autocomplete="off">
   <input type="hidden" name="hidden_histo_name" value="{name}">
   <input type="text" name="histo_name" placeholder="quantity" \
-         required=true value="{name}" {options}>
+         required=true value="{name}" style="width:300px;" {options}>
   <input type="text" name="title" placeholder="histo-title; x-title; y-title" \
          value="{title}">
   <input type="number" name="bins" placeholder="bins" style="width:40px;" \
@@ -38,7 +38,7 @@ histo_form = """\
 
 selection_form = """\
 <form method="post">
-  <input type="hidden" name="cut_histo_name" value="{name}">
+  <input type="hidden" name="selection_var" value="{name}">
   <input type="number" name="cut_low" placeholder="low" style="width:40px;" \
          step="0.01" value="{low}">
   <input type="number" name="cut_high" placeholder="high" style="width:40px;" \

@@ -281,7 +281,7 @@ class HQueryBackend(object):
 
     def apply_selection(self, section, kws):
         self.params['nm1'] = 'nm1' in kws
-        var, low, high = kws['cut_histo_name'], kws['cut_low'], kws['cut_high']
+        var, low, high = kws['selection_var'], kws['cut_low'], kws['cut_high']
 
         # compile selection string
         if low and high:
@@ -345,7 +345,7 @@ class HQueryBackend(object):
                 self.delete_histogram(kws['delete histogram'])
 
             # apply selection
-            elif 'cut_histo_name' in kws:
+            elif 'selection_var' in kws:
                 self.apply_selection(args[0], kws)
 
             else:
