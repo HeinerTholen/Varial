@@ -270,10 +270,12 @@ class HQueryBackend(object):
 
     def delete_histogram(self, name):
         del self.params['histos'][name]
+        names = list(name + tok +'.png' for tok in ('_lin', '_log', ''))
         for section in self.sec_sel_weight:
-            pat = os.path.join('sections', section, name+'*.png')
-            for f in glob.glob(pat):
-                os.remove(f)
+            p = os.path.join('sections', section)
+            for f in os.listdir(p):
+                if f in names:
+                    os.remove(os.path.join(p, f))
 
         self.q_out.put('Histogram deleted: ' + name)
 
