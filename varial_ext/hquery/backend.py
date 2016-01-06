@@ -56,7 +56,7 @@ class HQueryBackend(object):
                            nm1=False)
         self.sel_info = {}
         self.sec_sel_weight = {}  # sec -> (sec, sel, weight)
-        weight, msg = kws.pop('weight', ''), 'weight can be str or dict'
+        weight, msg = kws.pop('weight', '1'), 'weight can be str or dict'
         assert isinstance(weight, str) or isinstance(weight, dict), msg
         self.weight = weight
 
@@ -115,10 +115,10 @@ class HQueryBackend(object):
             elif 'vector<' in str(item_typ):
                 data_typ = str(item_typ).split('vector<')[1].split('>')[0]
                 if data_typ in plain_types:
-                    return [name, '@%s.size' % name]
+                    return [name, '@%s.size()' % name]
                 else:
                     typ_inst = getattr(ROOT, data_typ)()
-                    return ['@%s.size' % name] + list(
+                    return ['@%s.size()' % name] + list(
                         name + '.' + res
                         for res in handle_item('', typ_inst, depth)
                     )

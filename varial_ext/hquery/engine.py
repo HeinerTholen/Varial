@@ -47,7 +47,7 @@ class HQueryEngine(object):
         )
         self.backend_proc.start()
         try:
-            msg = self.backend_q_out.get(timeout=5)
+            msg = self.backend_q_out.get(timeout=10)
         except Queue.Empty:
             msg = ''
         if msg != 'backend alive':
