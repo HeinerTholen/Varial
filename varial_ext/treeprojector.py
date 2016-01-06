@@ -251,15 +251,15 @@ class BatchTreeProjector(TreeProjectorBase):
             # load new task
             self.jug_tasks.append((sample, p_jugres))
 
-    def monitor_tasks(self, section):
+    def monitor_tasks(self):
         n_jobs = len(self.jug_tasks)
         n_done_prev, n_done = 0, -1
         items_done = [False] * n_jobs
 
         while n_done < n_jobs:
-            items_due = map(
-                lambda (d, (_, p)): (not d) and os.path.exists(p),
-                itertools.izip(items_done, self.jug_tasks)
+            items_due = list(
+                (not d) and os.path.exists(p)
+                for (d, (_, p)) in itertools.izip(items_done, self.jug_tasks)
             )
             items_done = list(
                 a or b
@@ -269,14 +269,11 @@ class BatchTreeProjector(TreeProjectorBase):
 
             time.sleep(0.3)  # wait for write  # TODO wait for open exclusively
             if n_done_prev != n_done:
-                for d, (s, p) in itertools.izip(items_due, self.jug_tasks):
+                for d, (_, p) in itertools.izip(items_due, self.jug_tasks):
                     if d:
-                        os.system('cp %s %s' % (p, self.cwd))  # TODO: rly copy?
+                        os.system('cp %s %s' % (p, self.cwd))
 
-                self.message(
-                    'INFO %d/%d done for section "%s"'
-                    % (n_done, n_jobs, section)
-                )
+                self.message('INFO {}/{} done'.format(n_done, n_jobs))
                 self.progress_callback(n_jobs, n_done)
 
     def run(self):
@@ -295,7 +292,7 @@ class BatchTreeProjector(TreeProjectorBase):
         # do the work
         for section, selection, weight in self.sec_sel_weight:
             self.launch_tasks(section, selection, weight)
-            self.monitor_tasks(section)
+        self.monitor_tasks()
 
         # finalzing...
         if self.add_aliases_to_analysis:
