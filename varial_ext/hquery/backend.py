@@ -5,6 +5,7 @@ from varial.webcreator import WebCreator
 from varial.tools import Runner
 import varial
 
+import multiprocessing as mp
 import string
 import shutil
 import json
@@ -59,6 +60,7 @@ class HQueryBackend(object):
         weight, msg = kws.pop('weight', ''), 'weight can be str or dict'
         assert isinstance(weight, str) or isinstance(weight, dict), msg
         self.weight = weight
+        self.branchname_proc = None
 
         if backend_type == 'local':
             TP = TreeProjector
@@ -148,14 +150,25 @@ class HQueryBackend(object):
                         funcname, getattr(item, funcname), depth+1)
                 )
 
+        def get_content(t):
+            try:
+                return next(iter(t))
+            except StopIteration:
+                return None
+
         treename = self.params['treename']
         if self.plotter_hook.data:
-            filename = self.tp.filenames[self.plotter_hook.data[0]][0]
+            filenames = iter(self.tp.filenames[self.plotter_hook.data[0]])
         else:
-            filename = next(self.tp.filenames.itervalues())[0]
-        f = ROOT.TFile(filename)
-        t = f.Get(treename)
-        t = next(iter(t))
+            filenames = iter(next(self.tp.filenames.itervalues()))
+        f, t = None, None
+        while not t:
+            if f:
+                f.Close()
+            f = ROOT.TFile(next(filenames))
+            t = f.Get(treename)
+            t = get_content(t)
+
         names = list(b.GetName() for b in t.GetListOfBranches())
         names = list(
             res
@@ -362,8 +375,10 @@ class HQueryBackend(object):
         if not self.read_settings():
             self.run_treeprojection()
             self.run_webcreator()
-            self.make_branch_name_json()
             self.write_settings()
+            self.branchname_proc = mp.Process(target=self.make_branch_name_json)
+            self.branchname_proc.start()
+
         self.q_out.put('task done')
         while True:
             item = None
