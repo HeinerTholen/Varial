@@ -64,8 +64,11 @@ class HQueryBackend(object):
             TP = TreeProjector
         else:
             TP = BatchTreeProjector
-        self.tp = TP(kws.pop('filenames'), self.params,
-                     add_aliases_to_analysis=False, name='treeprojector')
+        self.tp = TP(kws.pop('filenames'),
+                     self.params,
+                     add_aliases_to_analysis=False,
+                     name='treeprojector')
+        self.tp.reset = lambda: None
         self.stack = kws.pop('stack', False)
         self.plotter_hook = HistoTypeSpecifier(kws.pop('signal_samples', []),
                                                kws.pop('data_samples', []))
@@ -241,14 +244,11 @@ class HQueryBackend(object):
 
         self.q_out.put('Section deleted: ' + name)
 
-    def create_histo(self, kws):
+    def create_histogram(self, kws):
         name = str(kws['hidden_histo_name'] or kws['histo_name'])
         bins, low, high = kws['bins'], kws['low'], kws['high']
 
         # checks
-        if name in self.params['histos']:
-            raise RuntimeError('Histogram exists: ' + name)
-
         assert_msg = 'Either "bins" or "low" *and* "high" needed. Or all.'
         assert bins or (low and high), assert_msg
         assert bool(low) == bool(high), assert_msg
@@ -338,7 +338,7 @@ class HQueryBackend(object):
 
             # create histo
             elif 'hidden_histo_name' in kws:
-                self.create_histo(kws)
+                self.create_histogram(kws)
 
             # delete histo
             elif 'delete histogram' in kws:
