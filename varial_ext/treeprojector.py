@@ -91,6 +91,14 @@ class TreeProjectorBase(varial.tools.Tool):
         )
         return iterable
 
+    def finalize(self):
+        wrps = varial.diskio.generate_aliases(self.cwd + '*.root')
+        wrps = varial.gen.gen_add_wrp_info(
+            wrps, sample=lambda w: os.path.basename(w.file_path).split('.')[-2])
+        self.result = varial.wrappers.WrapperWrapper(list(wrps))
+        os.system('touch %s/aliases.in.result' % self.cwd)
+        self._push_aliases_to_analysis()
+
 
 ######################################### tree project directly on the node ###
 def runtime_error_catcher(func):
@@ -162,12 +170,7 @@ class TreeProjector(TreeProjectorBase):
                 pass
 
         # finalize
-        wrps = varial.diskio.generate_aliases(self.cwd + '*.root')
-        wrps = varial.gen.gen_add_wrp_info(
-            wrps, sample=lambda w: os.path.basename(w.file_path).split('.')[-2])
-        self.result = varial.wrappers.WrapperWrapper(list(wrps))
-        os.system('touch %s/aliases.in.result' % self.cwd)
-        self._push_aliases_to_analysis()
+        self.finalize()
 
 
 ############################################### batch tree project with jug ###
@@ -294,15 +297,8 @@ class BatchTreeProjector(TreeProjectorBase):
             self.launch_tasks(section, selection, weight)
         self.monitor_tasks()
 
-        # finalzing...
-        if self.add_aliases_to_analysis:
-            wrps = varial.diskio.generate_aliases(self.cwd + '*.root')
-            wrps = varial.gen.gen_add_wrp_info(
-                wrps, sample=lambda w: w.file_path.split('.')[-2])
-            self.result = varial.wrappers.WrapperWrapper(list(wrps))
-            os.system('touch %s/aliases.in.result' % self.cwd)
-            self._push_aliases_to_analysis()
-
+        # finalize
+        self.finalize()
 
 # TODO option for _not_ copying result back (softlink?)
 # TODO: move jug_constants somewhere sensible
