@@ -13,3 +13,5 @@ def main(**kws):
 # TODO think about pulling everything through GET
 # TODO first make histos for current section, send reload, then others
 # TODO lines in plots if selection is applied (imporved N-1 feature)
+# TODO SGEJobSubmitter: Jobs are killed after 1 hour. Resubmit before that.
+# TODO cut efficiency

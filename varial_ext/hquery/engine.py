@@ -14,7 +14,7 @@ def _start_backend(kws, q_in, q_out):
 def _start_job_submitter():
     from varial_ext.sgeworker import SGESubmitter
     import varial_ext.treeprojector as tp
-    SGESubmitter(40, tp.jug_work_dir_pat, tp.jug_file_search_pat).start()
+    SGESubmitter(100, tp.jug_work_dir_pat, tp.jug_file_search_pat).start()
 
 
 class HQueryEngine(object):
