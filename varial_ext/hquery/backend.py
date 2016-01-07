@@ -5,7 +5,6 @@ from varial.webcreator import WebCreator
 from varial.tools import Runner
 import varial
 
-import multiprocessing as mp
 import string
 import shutil
 import json
@@ -103,81 +102,6 @@ class HQueryBackend(object):
     def write_sec_sel_weight(self):
         with open('params_sec_sel_weight.py', 'w') as f:
             f.write(repr(self.sec_sel_weight))
-
-    def make_branch_name_json(self):
-        import ROOT
-        plain_types = {'int': int, 'float': float, 'long': long, 'bool': bool}
-        plain_types_list = plain_types.values()
-        plain_c_types = plain_types.keys() + ['double', 'short']
-
-        def handle_item(name, item, depth):
-            if item is None or depth > 1:
-                return []
-
-            item_typ = type(item)
-            if item_typ in plain_types_list:
-                return [name]
-            elif 'vector<' in str(item_typ):
-                data_typ = str(item_typ).split('vector<')[1].split('>')[0]
-                if data_typ in plain_types:
-                    return [name, '@%s.size()' % name]
-                else:
-                    typ_inst = getattr(ROOT, data_typ)()
-                    object_items = handle_item('', typ_inst, depth)
-                    object_items = list(
-                        name + conj + res
-                        for res in object_items
-                        for conj in ('.', '[0].')
-                    )
-                    return ['@%s.size()' % name] + object_items
-
-            elif callable(item):
-                func_doc = getattr(item, 'func_doc', '')
-                if func_doc.startswith('void '):
-                    return []
-                elif any(func_doc.startswith(t + ' ') for t in plain_c_types):
-                    return [name+'()']
-                else:
-                    return []
-
-            else:
-                name = name + '.' if name else ''
-                return list(
-                    name + res
-                    for funcname in dir(item)
-                    if not funcname.startswith('_')
-                    for res in handle_item(
-                        funcname, getattr(item, funcname), depth+1)
-                )
-
-        def get_content(t):
-            try:
-                return next(iter(t))
-            except StopIteration:
-                return None
-
-        treename = self.params['treename']
-        if self.plotter_hook.data:
-            filenames = iter(self.tp.filenames[self.plotter_hook.data[0]])
-        else:
-            filenames = iter(next(self.tp.filenames.itervalues()))
-        f, t = None, None
-        while not t:
-            if f:
-                f.Close()
-            f = ROOT.TFile(next(filenames))
-            t = f.Get(treename)
-            t = get_content(t)
-
-        names = list(b.GetName() for b in t.GetListOfBranches())
-        names = list(
-            res
-            for bname in names
-            for res in handle_item(bname, getattr(t, bname), 0)
-        )
-        f.Close()
-        with open('sections/branch_names.json', 'w') as f:
-            json.dump(names, f)
 
     def run_webcreator(self):
         self.wc.run()
@@ -376,8 +300,8 @@ class HQueryBackend(object):
             self.run_treeprojection()
             self.run_webcreator()
             self.write_settings()
-            self.branchname_proc = mp.Process(target=self.make_branch_name_json)
-            self.branchname_proc.start()
+            import quantitylist
+            self.branchname_proc = quantitylist.get_proc(self)
 
         self.q_out.put('task done')
         while True:
@@ -398,4 +322,6 @@ class HQueryBackend(object):
                 msg = 'ERROR: %s' % e.message
                 varial.monitor.message('HQueryBackend.process_request', msg)
                 self.q_out.put(msg)
+
+            # done and ready for next request
             self.q_out.put('task done')
