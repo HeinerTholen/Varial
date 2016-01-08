@@ -8,7 +8,8 @@ def main(**kws):
     server.start(e)
 
 
-# TODO link all selection forms
+# TODO link all selection forms:
+# TODO     https://stackoverflow.com/questions/12370653/split-html-forms
 # TODO status from job submitter (warn when only few jobs are running)
 # TODO progress bar or (n_done / n_all) statement
 # TODO think about pulling everything through GET
@@ -18,3 +19,4 @@ def main(**kws):
 # TODO cut efficiency / cutflow plot in map reduce
 # TODO histo_form: put width into CSS block
 # TODO separate CSS file for all hquery-related fields
+# TODO add multiple histos e.g. store histos via python, not in json
