@@ -92,20 +92,24 @@ def bulk_write(wrps, name_func, dir_path='', suffices=None, linlog=False):
             img_path = os.path.join(dir_path, alt_name)
             good_path = os.path.join(dir_path, name)
 
-            # if the cnv.first_drawn has a member called 'GetMaximum', the
-            # maximum should be greater then zero...
-            if (linlog
-                and hasattr(w, 'first_drawn')
-                and (not hasattr(w.first_drawn, 'GetMaximum')
-                     or w.first_drawn.GetMaximum() > 1e-9)
-            ):
+            if linlog:
                 w.main_pad.SetLogy(0)
                 w.obj.SaveAs(img_path+'_lin'+suffix)
-                min_val = w.y_min_gr_0 * 0.5
-                min_val = max(min_val, 1e-9)
-                w.first_drawn.SetMinimum(min_val)
-                w.main_pad.SetLogy(1)
+
+                # if the cnv.first_drawn has a member called 'GetMaximum', the
+                # maximum should be greater than zero...
+                if (hasattr(w, 'first_drawn')
+                    and (not hasattr(w.first_drawn, 'GetMaximum')
+                         or w.first_drawn.GetMaximum() > 1e-9)
+                ):
+                    min_val = w.y_min_gr_0 * 0.5
+                    min_val = max(min_val, 1e-9)
+                    w.first_drawn.SetMinimum(min_val)
+                    w.main_pad.SetLogy(1)
+
                 w.obj.SaveAs(img_path+'_log'+suffix)
+                w.main_pad.SetLogy(0)  # reset to lin
+
                 if alt_name != name:
                     os.rename(img_path+'_lin'+suffix, good_path+'_lin'+suffix)
                     os.rename(img_path+'_log'+suffix, good_path+'_log'+suffix)
