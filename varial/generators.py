@@ -724,6 +724,34 @@ def switch_log_scale(cnvs, x_axis=False, y_axis=True):
         yield cnv
 
 
+def add_sample_integrals(canvas_builders):
+    """
+    Adds {'legend1' : histo_integral, ...} to canvases.
+    """
+    def integral_histo_wrp(wrp):
+        return [(wrp.legend, wrp.obj.Integral())]
+
+    def integral_stack_wrp(wrp):
+        for hist in wrp.obj.GetHists():
+            yield hist.GetTitle(), hist.Integral()
+
+    def integral(wrp):
+        if isinstance(wrp, rnd.StackRenderer):
+            return integral_stack_wrp(wrp)
+        else:
+            return integral_histo_wrp(wrp)
+
+    for cnv in canvas_builders:
+        # TODO when rendering goes generator
+        cnv.renderers[0].__dict__.update(dict(
+            ('Integral___' + legend, integ)
+            for r in cnv.renderers
+            if isinstance(r, rnd.HistoRenderer)  # applies also to StackRnd.
+            for legend, integ in integral(r)
+        ))
+        yield cnv
+
+
 ################################################### application & packaging ###
 
 

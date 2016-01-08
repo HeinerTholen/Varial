@@ -59,6 +59,7 @@ class HQueryBackend(object):
         self.sec_sel_weight = {}  # sec -> (sec, sel, weight)
         weight, msg = kws.pop('weight', ''), 'weight can be str or dict'
         assert isinstance(weight, str) or isinstance(weight, dict), msg
+
         self.weight = weight
         self.branchname_proc = None
 
@@ -71,15 +72,19 @@ class HQueryBackend(object):
                      add_aliases_to_analysis=False,
                      name='treeprojector')
         self.tp.reset = lambda: None
-        self.stack = kws.pop('stack', False)
         self.plotter_hook = HistoTypeSpecifier(kws.pop('signal_samples', []),
                                                kws.pop('data_samples', []))
         self.wc = WebCreator(name='hQuery', no_tool_check=True)
         self.wc.working_dir = 'sections'
         self.wc.update()
-        varial.settings.no_toggles = True
 
-        self.dump_python_conf = kws.pop('dump_python_conf', False)
+        self.options = {
+            'stack': kws.pop('stack', False),
+            'dump_python_conf': kws.pop('dump_python_conf', False),
+            'integral_info': kws.pop('integral_info', False),
+        }
+        varial.settings.no_toggles = not self.options['integral_info']
+
         process_settings_kws(kws)
 
     def read_settings(self):
@@ -92,7 +97,7 @@ class HQueryBackend(object):
     def write_settings(self):
         with open('params.json', 'w') as f:
             json.dump((self.params, self.sec_sel_weight, self.sel_info), f)
-        if self.dump_python_conf:
+        if self.options['dump_python_conf']:
             self.write_histos()
             self.write_sec_sel_weight()
 
@@ -124,13 +129,18 @@ class HQueryBackend(object):
         self.tp.update()
         Runner(self.tp)
         self.tp.reset()
+        if self.options['integral_info']:
+            cnv_hook = varial.gen.add_sample_integrals
+        else:
+            cnv_hook = None
         Runner(mk_rootfile_plotter(
             name='sections',
             pattern='treeprojector/*.root',
             combine_files=True,
             hook_loaded_histos=self.plotter_hook,
-            stack=self.stack,
+            stack=self.options['stack'],
             auto_legend=False,
+            hook_canvas_post_build=cnv_hook,
         ))
 
     @staticmethod

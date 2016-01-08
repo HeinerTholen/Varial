@@ -381,7 +381,6 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                     ws, lambda w: '', True),
                 save_name_func=lambda w:
                     w._renderers[0].in_file_path.replace('/', '_'),
-                canvas_decorators=default_canvas_decorators,
             )
 
         # ...or resemble root file dirs
@@ -427,7 +426,6 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                     plot_grouper=plot_grouper_by_in_file_path,
                     set_canvas_name=set_canvas_name_to_plot_name,
                     load_func=_mk_private_loader(path),
-                    canvas_decorators=default_canvas_decorators,
                     save_name_func=lambda w: w.name,
                 )
 

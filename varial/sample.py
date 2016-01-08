@@ -150,7 +150,7 @@ import analysis
 import generators as gen
 
 from varial.toolinterface import Tool
-from varial.plotter import default_canvas_decorators
+from rendering import default_decorators
 
 
 class SampleNormalizer(Tool):
@@ -181,7 +181,7 @@ class SampleNormalizer(Tool):
         factor = dh.Integral(*bins) / mh.Integral(*bins)
         canv = next(gen.canvas(
             ((mcee, data),),
-            default_canvas_decorators
+            default_decorators
         ))
         return factor, canv
 
