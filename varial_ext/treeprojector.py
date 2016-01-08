@@ -91,10 +91,9 @@ class TreeProjectorBase(varial.tools.Tool):
         )
         return iterable
 
-    def finalize(self):
+    def finalize(self, sample_func):
         wrps = varial.diskio.generate_aliases(self.cwd + '*.root')
-        wrps = varial.gen.gen_add_wrp_info(
-            wrps, sample=lambda w: os.path.basename(w.file_path).split('.')[-2])
+        wrps = varial.gen.gen_add_wrp_info(wrps, sample=sample_func)
         self.result = varial.wrappers.WrapperWrapper(list(wrps))
         os.system('touch %s/aliases.in.result' % self.cwd)
         self._push_aliases_to_analysis()
@@ -170,7 +169,7 @@ class TreeProjector(TreeProjectorBase):
                 pass
 
         # finalize
-        self.finalize()
+        self.finalize(lambda w: os.path.basename(w.file_path).split('.')[-2])
 
 
 ############################################### batch tree project with jug ###
@@ -181,8 +180,8 @@ except ImportError:
 
 username = os.getlogin()
 jug_work_dir_pat = '/nfs/dust/cms/user/{user}/varial_sge_exec'
-jug_file_search_pat = jug_work_dir_pat + '/jug_file_*.py'
-jug_file_path_pat = jug_work_dir_pat + '/jug_file_.{i}.{section}.{sample}.py'
+jug_file_search_pat = jug_work_dir_pat + '/jug_file-*.py'
+jug_file_path_pat = jug_work_dir_pat + '/jug_file-{i}-{section}-{sample}.py'
 
 jugfile_content = """
 sample = {sample}
@@ -232,6 +231,10 @@ class BatchTreeProjector(TreeProjectorBase):
         if not jug:
             raise ImportError('"Jug" is needed for BatchTreeProjector')
 
+        exec_pat = jug_file_search_pat.format(user=username).replace('.py', '')
+        if glob.glob(exec_pat):
+            os.system('rm -rf ' + exec_pat)
+
     def launch_tasks(self, section, selection, weight):
         self.jug_tasks = []
         params = self.prepare_params(selection, weight)
@@ -240,7 +243,7 @@ class BatchTreeProjector(TreeProjectorBase):
                 params['weight'] = weight[sample]
             p_jugfile = jug_file_path_pat.format(
                 i=self.iteration, user=username, section=section, sample=sample)
-            p_jugres = p_jugfile.replace('.py', '.root')
+            p_jugres = os.path.splitext(p_jugfile)[0]
 
             # write jug_file
             with open(p_jugfile, 'w') as f:
@@ -260,8 +263,17 @@ class BatchTreeProjector(TreeProjectorBase):
         items_done = [False] * n_jobs
 
         while n_done < n_jobs:
+
+            errs = list(p + '.err.txt'
+                for (_, p) in self.jug_tasks
+                if os.path.exists(p + '.err.txt')
+            )
+            if errs:
+                with open(errs[0]) as f:
+                    raise RuntimeError(f.read())
+
             items_due = list(
-                (not d) and os.path.exists(p)
+                (not d) and os.path.exists(p + '.root')
                 for (d, (_, p)) in itertools.izip(items_done, self.jug_tasks)
             )
             items_done = list(
@@ -274,7 +286,7 @@ class BatchTreeProjector(TreeProjectorBase):
             if n_done_prev != n_done:
                 for d, (_, p) in itertools.izip(items_due, self.jug_tasks):
                     if d:
-                        os.system('cp %s %s' % (p, self.cwd))
+                        os.system('mv %s.root %s' % (p, self.cwd))
 
                 self.message('INFO {}/{} done'.format(n_done, n_jobs))
                 self.progress_callback(n_jobs, n_done)
@@ -298,7 +310,10 @@ class BatchTreeProjector(TreeProjectorBase):
         self.monitor_tasks()
 
         # finalize
-        self.finalize()
+        self.finalize(
+            lambda w: w.file_path.split('-')[-1][:-5]
+        )
 
-# TODO option for _not_ copying result back (softlink?)
+
+# TODO option for _not_ copying/moving result back (softlink?)
 # TODO: move jug_constants somewhere sensible
