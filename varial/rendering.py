@@ -703,6 +703,12 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
         self.main_pad.cd()
 
 
+default_decorators = [
+    BottomPlotRatioSplitErr,
+    Legend
+]
+
+
 # TODO use WrapperWrapper info on construction
 # TODO make a setting for choosing the default bottom plot
 # TODO BottomPlotSignificance

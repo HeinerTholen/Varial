@@ -82,6 +82,7 @@ no_toggles = False  # for webcreator
 colors = {}  # legend entries => fill colors
 pretty_names = {}
 stacking_order = []
+canvas_decorators = []
 
 
 ################################################################ root style ###

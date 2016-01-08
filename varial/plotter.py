@@ -83,12 +83,6 @@ def save_by_name_with_hash(wrp):
     return wrp.name + '_' + hex(hash(str(wrp.history)))[-6:]
 
 
-default_canvas_decorators = [
-    rendering.BottomPlotRatioSplitErr,
-    rendering.Legend
-]
-
-
 class Plotter(toolinterface.Tool):
     """
     A plotter. Makes stacks and overlays data by default.
@@ -114,7 +108,8 @@ class Plotter(toolinterface.Tool):
     ...    'keep_content_as_result': False,
     ...    'set_canvas_name': set_canvas_name_to_infilepath,
     ...    'save_name_func': save_by_name,
-    ...    'canvas_decorators': default_canvas_decorators,
+    ...    'canvas_decorators': (settings.canvas_decorators or
+    ...                          rendering.default_decorators),
     ...}
     """
     defaults_attrs = {
@@ -132,7 +127,8 @@ class Plotter(toolinterface.Tool):
         'keep_content_as_result': False,
         'set_canvas_name': set_canvas_name_to_infilepath,
         'save_name_func': save_by_name,
-        'canvas_decorators': default_canvas_decorators,
+        'canvas_decorators': (settings.canvas_decorators or
+                              rendering.default_decorators)
     }
 
     class NoFilterDictError(Exception):
