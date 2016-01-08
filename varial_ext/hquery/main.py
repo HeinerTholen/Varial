@@ -15,3 +15,5 @@ def main(**kws):
 # TODO lines in plots if selection is applied (imporved N-1 feature)
 # TODO SGEJobSubmitter: Jobs are killed after 1 hour. Resubmit before that.
 # TODO cut efficiency
+# TODO histo_form: put width into CSS block
+# TODO separate CSS file for all hquery-related fields

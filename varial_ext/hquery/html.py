@@ -20,11 +20,13 @@ delete_form = """\
 
 histo_form = """\
 <form method="post" accept-charset="ASCII" autocomplete="off">
+  <table><tr><td>
   <input type="hidden" name="hidden_histo_name" value="{name}">
   <input type="text" name="histo_name" placeholder="quantity" \
-         required=true value="{name}" style="width:300px;" {options}>
+         required=true value="{name}" style="width:100%;" {options}>
+  </td></tr><tr><td>
   <input type="text" name="title" placeholder="histo-title; x-title; y-title" \
-         value="{title}">
+         value="{title}" style="width:300px;">
   <input type="number" name="bins" placeholder="bins" style="width:40px;" \
          value="{bins}" min="1">
   <input type="number" name="low" placeholder="low" style="width:40px;" \
@@ -33,6 +35,7 @@ histo_form = """\
          step="0.01" value="{high}">
   <input type="submit" value="{button}">
   {datalist}
+  </td></tr></table>
 </form>
 """
 
