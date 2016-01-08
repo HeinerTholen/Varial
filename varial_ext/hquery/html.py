@@ -23,7 +23,8 @@ histo_form = """\
   <table><tr><td>
   <input type="hidden" name="hidden_histo_name" value="{name}">
   <input type="text" name="histo_name" placeholder="quantity" \
-         required=true value="{name}" style="width:100%;" {options}>
+         required=true value="{name}" {options}
+         style="width:100%; box-sizing:border-box; -moz-box-sizing:border-box;">
   </td></tr><tr><td>
   <input type="text" name="title" placeholder="histo-title; x-title; y-title" \
          value="{title}" style="width:300px;">
