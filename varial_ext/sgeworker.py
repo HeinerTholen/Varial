@@ -7,7 +7,9 @@ import os
 
 
 ################################################################# Submitter ###
-# python -c "from varial_ext.sgeworker import SGESubmitter; SGESubmitter(10, '/nfs/dust/cms/user/{user}/varial_sge_exec', '/nfs/dust/cms/user/{user}/varial_sge_exec/jug_file_*.py').start(); "
+# python -c "from varial_ext.sgeworker import SGESubmitter; SGESubmitter(10,
+#     '/nfs/dust/cms/user/{user}/varial_sge_exec',
+#     '/nfs/dust/cms/user/{user}/varial_sge_exec/jug_file_*.py').start(); "
 
 sge_job_conf = """#!/bin/bash
 #$ -l os=sld6
@@ -16,7 +18,7 @@ sge_job_conf = """#!/bin/bash
 #$ -V
 #$ -l h_rt=01:00:00
 #$ -l h_vmem=2G
-#$ -l h_fsize=2G#
+#$ -l h_fsize=2G
 #$ -o {jug_log_dir}/
 #$ -e {jug_log_dir}/
 #$ -t 1-{num_sge_jobs}
@@ -44,15 +46,11 @@ class SGESubmitter(object):
 
         if not os.path.exists(self.jug_work_dir):
             os.mkdir(self.jug_work_dir)
-            os.system('chmod g+w %s' % self.jug_work_dir)
-            os.system('umask g+w %s' % self.jug_work_dir)  # let's collaborate!
+        os.system('chmod g+w %s' % self.jug_work_dir)
+        os.system('umask g+w %s' % self.jug_work_dir)  # let's collaborate!
 
-        # clear some dirs
-        exec_pat = jug_file_search_pat.format(
-            user=self.username).replace('.py', '')
+        # clear log dir
         log_pat = self.jug_log_dir + '/jug_worker.sh.*'
-        if glob.glob(exec_pat):
-            os.system('rm -rf ' + exec_pat)
         if glob.glob(log_pat):
             os.system('rm -rf ' + log_pat)
 
@@ -104,7 +102,9 @@ class SGESubmitter(object):
 
 
 #################################################################### Worker ###
-# python -c "from varial_ext.sgeworker import SGEWorker; SGEWorker(3, 'tholenhe', '/nfs/dust/cms/user/{user}/varial_sge_exec/jug_file.py').start(); "
+# python -c "from varial_ext.sgeworker import SGEWorker;
+# SGEWorker(3, 'tholenhe',
+# '/nfs/dust/cms/user/{user}/varial_sge_exec/jug_file.py').start(); "
 
 class SGEWorker(object):
     def __init__(self, task_id, username, jug_file_path_pat):
@@ -123,19 +123,19 @@ class SGEWorker(object):
         except IOError:
             pass
 
-        # real errors from map/reduce
-        except RuntimeError as e:
+        # real errors from map/reduce (will not catch KeyboardInterrupt)
+        except Exception as e:
             try:
                 os.remove(work_path)
-
             except OSError:
                 return  # if jugfile is already removed, someone else prints e
 
             err_path = work_path.replace('.py', '.err.txt')
             with open(err_path, 'w') as f:
-                f.write(repr(e))
-
-        # (Errors other then IOError and RuntimeError let the worker crash.)
+                if isinstance(e, RuntimeError):
+                    f.write(e.message)
+                else:
+                    f.write(repr(e))
 
     def find_work_forever(self):
         search_path = self.jug_file_path_pat.format(user='*')
@@ -146,7 +146,7 @@ class SGEWorker(object):
             work_paths = glob.glob(search_path)
 
             # look for own stuff first  (_or_'d with all work)
-            work_paths = filter(lambda p: user in p, work_paths) or work_paths
+            work_paths = list(p for p in work_paths if user in p) or work_paths
 
             if work_paths:
                 work = random.choice(work_paths)
