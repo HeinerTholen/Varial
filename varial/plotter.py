@@ -326,7 +326,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
         legendnames = dict((os.path.basename(p), l)
                            for p, l in legendnames.iteritems())
         self.message(
-            'INFO  Legend names that I will use if not overwritten:\n'
+            'INFO Legend names that I will use if not overwritten:\n'
             + '\n'.join('%32s: %s' % (v, k) for k, v in legendnames.iteritems())
         )
 

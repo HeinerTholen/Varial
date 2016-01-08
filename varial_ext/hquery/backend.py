@@ -1,4 +1,6 @@
 from varial_ext.treeprojector import TreeProjector, BatchTreeProjector
+import quantitylist
+
 from varial.plotter import mk_rootfile_plotter
 from varial.main import process_settings_kws
 from varial.webcreator import WebCreator
@@ -8,8 +10,6 @@ import varial
 import string
 import shutil
 import json
-import glob
-import time
 import os
 
 
@@ -28,6 +28,7 @@ class HistoTypeSpecifier(object):
             wrps,
             is_signal=lambda w: w.sample in self.signals,
             is_data=lambda w: w.sample in self.data,
+            legend=lambda w: w.sample,
         )
 
 
@@ -129,6 +130,7 @@ class HQueryBackend(object):
             combine_files=True,
             hook_loaded_histos=self.plotter_hook,
             stack=self.stack,
+            auto_legend=False,
         ))
 
     @staticmethod
@@ -183,6 +185,7 @@ class HQueryBackend(object):
 
     def create_histogram(self, kws):
         name = str(kws['hidden_histo_name'] or kws['histo_name'])
+        name = name.replace(' ', '')  # remove spaces
         bins, low, high = kws['bins'], kws['low'], kws['high']
 
         # checks
@@ -295,15 +298,14 @@ class HQueryBackend(object):
 
     def start(self):
         self.q_out.put('backend alive')
-        time.sleep(0.01)  # leave thread
+
+        self.branchname_proc = quantitylist.get_proc(self)
         if not self.read_settings():
             self.run_treeprojection()
             self.run_webcreator()
             self.write_settings()
-            import quantitylist
-            self.branchname_proc = quantitylist.get_proc(self)
-
         self.q_out.put('task done')
+
         while True:
             item = None
 
