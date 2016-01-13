@@ -7,9 +7,7 @@ import os
 
 
 ################################################################# Submitter ###
-# python -c "from varial_ext.sgeworker import SGESubmitter; SGESubmitter(10,
-#     '/nfs/dust/cms/user/{user}/varial_sge_exec',
-#     '/nfs/dust/cms/user/{user}/varial_sge_exec/jug_file_*.py').start(); "
+# python -c "from varial_ext.sgeworker import SGESubmitter; SGESubmitter(10, '/nfs/dust/cms/user/{user}/varial_sge_exec', '/nfs/dust/cms/user/{user}/varial_sge_exec/jug_file-*.py').start(); "
 
 sge_job_conf = """#!/bin/bash
 #$ -l os=sld6
@@ -23,6 +21,7 @@ sge_job_conf = """#!/bin/bash
 #$ -e {jug_log_dir}/
 #$ -t 1-{num_sge_jobs}
 cd /tmp/
+umask 2
 python -c "\
 from varial.extensions.sgeworker import SGEWorker; \
 SGEWorker(${SGE_TASK_ID}, '{user}', '{jug_file_path_pat}').start(); \
@@ -43,11 +42,9 @@ class SGESubmitter(object):
         # prepare dirs
         if not os.path.exists(self.jug_log_dir):
             os.mkdir(self.jug_log_dir)
-
         if not os.path.exists(self.jug_work_dir):
             os.mkdir(self.jug_work_dir)
         os.system('chmod g+w %s' % self.jug_work_dir)
-        os.system('umask g+w %s' % self.jug_work_dir)  # let's collaborate!
 
         # clear log dir
         log_pat = self.jug_log_dir + '/jug_worker.sh.*'
@@ -102,15 +99,14 @@ class SGESubmitter(object):
 
 
 #################################################################### Worker ###
-# python -c "from varial_ext.sgeworker import SGEWorker;
-# SGEWorker(3, 'tholenhe',
-# '/nfs/dust/cms/user/{user}/varial_sge_exec/jug_file.py').start(); "
+# python -c "from varial_ext.sgeworker import SGEWorker; SGEWorker(3, 'tholenhe', '/nfs/dust/cms/user/{user}/varial_sge_exec/jug_file-*.py').start(); "
 
 class SGEWorker(object):
     def __init__(self, task_id, username, jug_file_path_pat):
         self.task_id = task_id
         self.username = username
         self.jug_file_path_pat = jug_file_path_pat
+        os.umask(2)
 
     @staticmethod
     def do_work(work_path):
@@ -155,7 +151,7 @@ class SGEWorker(object):
                 time.sleep(1.)
 
     def start(self):
-        print 'SGEWorker started!'
+        print 'SGEWorker started.'
         print 'SGEWorker task_id:           ', self.task_id
         print 'SGEWorker username:          ', self.username
         print 'SGEWorker jug_file_path_pat: ', self.jug_file_path_pat

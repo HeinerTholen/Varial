@@ -210,6 +210,7 @@ def finalize(result):
         __file__.replace('.py', ''),
         initial_mode='UPDATE'
     )
+    os.chmod(__file__.replace('.py', '.root'), 0o0664)
 
 result = CompoundTask(
     jug.mapreduce.mapreduce,
@@ -231,12 +232,14 @@ class BatchTreeProjector(TreeProjectorBase):
         if not jug:
             raise ImportError('"Jug" is needed for BatchTreeProjector')
 
+        # clear directory
         exec_pat = jug_file_search_pat.format(user=username).replace('.py', '')
         if glob.glob(exec_pat):
             os.system('rm -rf ' + exec_pat)
 
+        os.umask(2)  # need files to be writable by workers of any user
+
     def launch_tasks(self, section, selection, weight):
-        self.jug_tasks = []
         params = self.prepare_params(selection, weight)
         for sample in self.samples:
             if isinstance(weight, dict):
@@ -305,6 +308,7 @@ class BatchTreeProjector(TreeProjectorBase):
             os.system('rm ' + ' '.join(tooldir_junk_files))
 
         # do the work
+        self.jug_tasks = []
         for section, selection, weight in self.sec_sel_weight:
             self.launch_tasks(section, selection, weight)
         self.monitor_tasks()
