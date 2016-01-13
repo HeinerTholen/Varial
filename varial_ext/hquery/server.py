@@ -30,7 +30,7 @@ redirect = """\
 static_file_types = {
     '.png': 'image/png',
     '.json': 'application/json',
-    '.rt': 'application/root',
+    '.rt': 'application/octet-stream',
 }
 session_token = ''.join(
     random.SystemRandom().choice(
