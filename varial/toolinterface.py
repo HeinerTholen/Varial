@@ -297,7 +297,6 @@ class ToolChainVanilla(ToolChain):
 def _run_tool_in_worker(arg):
     chain_path, tool_index = arg
     chain = analysis.lookup_tool(chain_path)
-    assert chain, 'lookup failed: ' + chain_path
     reuse_status = chain._reuse
     tool = chain.tool_chain[tool_index]
     multiproc.exec_in_worker(lambda: chain._run_tool(tool))

@@ -245,20 +245,24 @@ def lookup_tool(abs_path):
     Lookup a tool by its absolute path. Will return ``None`` if unsuccessful.
     """
     tokens = abs_path.split('/')
-    if not tokens:
-        return None
-    if not tokens[0]:
+    if tokens and not tokens[0]:
         tokens.pop(0)
     if not tokens:
-        return None
-    if not _tool_stack or tokens.pop(0) != _tool_stack[0].name:
-        return None
+        raise RuntimeError('lookup_tool: abs_path empty, %s' % abs_path)
+    if not _tool_stack:
+        raise RuntimeError('lookup_tool: _tool_stack empty.')
+    if tokens.pop(0) != _tool_stack[0].name:
+        raise RuntimeError(
+            'lookup_tool: tokens.pop(0) != _tool_stack[0].name, %s, %s' % (
+                tokens.pop(0), _tool_stack[0].name))
     tmp = _tool_stack[0]
     for tok in tokens:
         try:
             tmp = tmp.tool_names[tok]
         except KeyError:
-            return None
+            raise RuntimeError(
+                'lookup_tool: %s has no tool called %s' % (
+                    tmp.name, tok))
     return tmp
 
 
