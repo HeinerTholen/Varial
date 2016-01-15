@@ -40,16 +40,18 @@ histo_form = """\
 </form>
 """
 
-selection_form = """\
-<form method="post">
-  <input type="hidden" name="selection_var" value="{name}">
-  <input type="number" name="cut_low" placeholder="low" style="width:40px;" \
-         step="0.01" value="{low}">
-  <input type="number" name="cut_high" placeholder="high" style="width:40px;" \
-         step="0.01" value="{high}">
-  <input type="checkbox" name="nm1" {checked}> N-1
-  <input type="submit" value="select events">
+base_selection_form = """\
+<form method="post" id="sel-f">
+  <input type="hidden" name="selection" value="">
 </form>
+"""
+
+histo_selection_form = """\
+<input type="number" name="{name} low" placeholder="low" style="width:40px;" \
+       step="0.01" value="{low}" form="sel-f">
+<input type="number" name="{name} high" placeholder="high" style="width:40px;" \
+       step="0.01" value="{high}" form="sel-f">
+<input type="submit" value="select events" form="sel-f">
 """
 
 histo_form_args = {
@@ -131,7 +133,7 @@ def add_histo_manipulate_forms(cont, params, section_sel_info):
     cont = cont.replace('rootjs.html?file=sections/', 'rootjs.html?file=')
     cont_parts = cont.split(sep)
     begin = [cont_parts.pop(0)]  # 'non-local' variable
-    histos, nm1 = params['histos'], 'checked' if params['nm1'] else ''
+    histos = params['histos']
 
     def add_selection_in_figure_tab(var, low, high):
         low = '>= %s &nbsp; &nbsp; ' % low if low else ''
@@ -161,8 +163,8 @@ def add_histo_manipulate_forms(cont, params, section_sel_info):
         })
         his_form = histo_form.format(**form_args)
         low, high = section_sel_info.get(name, ('', ''))
-        sel_form = selection_form.format(
-            low=low, high=high, name=name, checked=nm1)
+        sel_form = histo_selection_form.format(
+            low=low, high=high, name=name)
         del_form = delete_form.format(
             value='delete histogram', name=name, action_dir='')
         toggle = '\n'.join((
@@ -181,7 +183,7 @@ def add_histo_manipulate_forms(cont, params, section_sel_info):
         return cont_part
 
     cont = sep.join(handle_histo_div(cp) for cp in cont_parts)
-    return begin[0] + sep + cont
+    return begin[0] + base_selection_form + sep + cont
 
 
 def add_refresh(cont, timeout, url=''):

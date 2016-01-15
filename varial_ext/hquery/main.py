@@ -8,13 +8,13 @@ def main(**kws):
     server.start(e)
 
 
-# TODO multiple instances: add random token to jug_file path (clearing dirs??)
+# TODO multiple instances: add random token to jug_file path (delete 2w olds)
+# TODO add multiple histos e.g. store histos via python, not in json
 # TODO link all selection forms:
 # TODO     https://stackoverflow.com/questions/12370653/split-html-forms
 # TODO CUTFLOW
 # TODO hint toggles (on bins vs. low, high / CUTFLOW)
 # TODO add multiple histos (toggled form)
-# TODO add multiple histos e.g. store histos via python, not in json
 # TODO reloading: use ajax instead of full reload
 # TODO status from job submitter (warn when only few jobs are running)
 # TODO progress bar or (n_done / n_all) statement
