@@ -261,6 +261,14 @@ class BatchTreeProjector(TreeProjectorBase):
             # load new task
             self.jug_tasks.append((sample, p_jugres))
 
+    def transfer_result(self, p):
+        os.system('mv %s.root %s' % (p, self.cwd))
+        ws = varial.diskio.generate_aliases(
+            self.cwd + os.path.basename(p) + '.root')
+        ws = varial.gen.gen_add_wrp_info(ws,
+            sample=lambda w: w.file_path.split('-')[-1][:-5])
+        return ws
+
     def process_tasks(self):
         n_jobs = len(self.jug_tasks)
         n_done_prev, n_done = 0, -1
@@ -291,12 +299,7 @@ class BatchTreeProjector(TreeProjectorBase):
             if n_done_prev != n_done:
                 for d, (_, p) in itertools.izip(items_due, self.jug_tasks):
                     if d:
-                        os.system('mv %s.root %s' % (p, self.cwd))
-                        ws = varial.diskio.generate_aliases(
-                            self.cwd + os.path.basename(p) + '.root')
-                        ws = varial.gen.gen_add_wrp_info(ws,
-                            sample=lambda w: w.file_path.split('-')[-1][:-5])
-                        wrps += ws
+                        wrps += self.transfer_result(p)
 
                 self.message('INFO {}/{} done'.format(n_done, n_jobs))
                 self.progress_callback(n_jobs, n_done)
