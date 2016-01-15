@@ -27,11 +27,6 @@ redirect = """\
     </body>
 </html>
 """
-static_file_types = {
-    '.png': 'image/png',
-    '.json': 'application/json',
-    '.rt': 'application/octet-stream',
-}
 session_token = ''.join(
     random.SystemRandom().choice(
         string.ascii_uppercase + string.digits) for _ in range(20))
@@ -72,14 +67,10 @@ class WebService(object):
 
         if not args:
             return redirect
-
-        ext = os.path.splitext(args[-1])[1]
-        if ext in static_file_types:
-            return serve_file(join(self.path, *args),
-                              content_type=static_file_types[ext])
-        elif args == ('rootjs.html',):
-            return serve_file(join(self.path, *args),
-                              content_type='text/html')
+        elif any(args[-1].endswith(t) for t in (
+            '.png', '.json', '.rt', 'rootjs.html'
+        )):
+            return serve_file(join(self.path, *args))
         elif args[-1].endswith('index.html'):
             return self.engine.get(*load_html(args))
         else:
