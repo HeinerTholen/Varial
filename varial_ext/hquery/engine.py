@@ -11,10 +11,10 @@ def _start_backend(kws, q_in, q_out):
     HQueryBackend(kws, q_in, q_out).start()
 
 
-def _start_job_submitter():
+def _start_job_submitter(n_jobs):
     from varial_ext.sgeworker import SGESubmitter
     import varial_ext.treeprojector as tp
-    SGESubmitter(100, tp.jug_work_dir_pat, tp.jug_file_search_pat).start()
+    SGESubmitter(n_jobs, tp.jug_work_dir_pat, tp.jug_file_search_pat).start()
 
 
 class HQueryEngine(object):
@@ -37,7 +37,8 @@ class HQueryEngine(object):
         if kws.get('backend') != 'sge':
             return
 
-        self.job_proc = mp.Process(target=_start_job_submitter)
+        n_jobs = kws.pop('n_jobs', 100)
+        self.job_proc = mp.Process(target=_start_job_submitter, args=(n_jobs,))
         self.job_proc.start()
 
     def start_backend(self, kws):
@@ -47,7 +48,7 @@ class HQueryEngine(object):
         )
         self.backend_proc.start()
         try:
-            msg = self.backend_q_out.get(timeout=10)
+            msg = self.backend_q_out.get(timeout=15)
         except Queue.Empty:
             msg = ''
         if msg != 'backend alive':
