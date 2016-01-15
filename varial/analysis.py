@@ -251,10 +251,19 @@ def lookup_tool(abs_path):
         raise RuntimeError('lookup_tool: abs_path empty, %s' % abs_path)
     if not _tool_stack:
         raise RuntimeError('lookup_tool: _tool_stack empty.')
-    if tokens.pop(0) != _tool_stack[0].name:
-        raise RuntimeError(
-            'lookup_tool: tokens.pop(0) != _tool_stack[0].name, %s, %s' % (
-                tokens.pop(0), _tool_stack[0].name))
+
+    while True:  # need to forward if the first folders are not the first tools
+        nxt = tokens.pop(0)
+        if nxt == _tool_stack[0].name:
+            if not tokens:
+                return _tool_stack[0]
+            else:
+                break
+        elif not tokens:
+            raise RuntimeError(
+                'lookup_tool: _tool_stack[0].name not in abs_path, %s, %s' % (
+                    _tool_stack[0].name, abs_path))
+
     tmp = _tool_stack[0]
     for tok in tokens:
         try:
