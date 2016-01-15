@@ -3,6 +3,7 @@ Baseclasses for tools and toolchains.
 """
 
 import inspect
+import string
 import time
 import sys
 import os
@@ -15,6 +16,9 @@ import settings
 import wrappers
 import monitor
 import diskio
+
+
+TOOLNAME_CHARS = '-_' + string.ascii_letters + string.digits
 
 
 class _ToolBase(object):
@@ -31,6 +35,11 @@ class _ToolBase(object):
         if not tool_name:
             self.name = self.__class__.__name__
         elif isinstance(tool_name, str):
+            if any(c not in TOOLNAME_CHARS for c in tool_name):
+                raise RuntimeError(
+                    'Tool name may only contain "%s". Got "%s".'
+                    % (TOOLNAME_CHARS, tool_name)
+                )
             self.name = tool_name
         else:
             raise RuntimeError('tool_name must be string or None.')
