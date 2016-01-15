@@ -71,7 +71,7 @@ class HQueryBackend(object):
                      self.params,
                      add_aliases_to_analysis=False,
                      name='treeprojector')
-        self.tp.reset = lambda: None
+        self.tp.reset = lambda: None  # not needed
         self.plotter_hook = HistoTypeSpecifier(kws.pop('signal_samples', []),
                                                kws.pop('data_samples', []))
         self.wc = WebCreator(name='hQuery', no_tool_check=True)
@@ -126,9 +126,7 @@ class HQueryBackend(object):
         self.q_out.put('Filling histograms in: ' + ', '.join(s[0] for s in ssw))
         self.tp.sec_sel_weight = ssw
         self.tp.params = self.params
-        self.tp.update()
         Runner(self.tp)
-        self.tp.reset()
         if self.options['integral_info']:
             cnv_hook = varial.gen.add_sample_integrals
         else:

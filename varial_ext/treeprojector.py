@@ -91,9 +91,10 @@ class TreeProjectorBase(varial.tools.Tool):
         )
         return iterable
 
-    def finalize(self, sample_func):
-        wrps = varial.diskio.generate_aliases(self.cwd + '*.root')
-        wrps = varial.gen.gen_add_wrp_info(wrps, sample=sample_func)
+    def finalize(self, sample_func, wrps=None):
+        if not wrps:
+            wrps = varial.diskio.generate_aliases(self.cwd + '*.root')
+            wrps = varial.gen.gen_add_wrp_info(wrps, sample=sample_func)
         self.result = varial.wrappers.WrapperWrapper(list(wrps))
         os.system('touch %s/aliases.in.result' % self.cwd)
         self._push_aliases_to_analysis()
@@ -260,10 +261,11 @@ class BatchTreeProjector(TreeProjectorBase):
             # load new task
             self.jug_tasks.append((sample, p_jugres))
 
-    def monitor_tasks(self):
+    def process_tasks(self):
         n_jobs = len(self.jug_tasks)
         n_done_prev, n_done = 0, -1
         items_done = [False] * n_jobs
+        wrps = []
 
         while n_done < n_jobs:
 
@@ -290,9 +292,16 @@ class BatchTreeProjector(TreeProjectorBase):
                 for d, (_, p) in itertools.izip(items_due, self.jug_tasks):
                     if d:
                         os.system('mv %s.root %s' % (p, self.cwd))
+                        ws = varial.diskio.generate_aliases(
+                            self.cwd + os.path.basename(p) + '.root')
+                        ws = varial.gen.gen_add_wrp_info(ws,
+                            sample=lambda w: w.file_path.split('-')[-1][:-5])
+                        wrps += ws
 
                 self.message('INFO {}/{} done'.format(n_done, n_jobs))
                 self.progress_callback(n_jobs, n_done)
+
+        return wrps
 
     def run(self):
         self.iteration += 1
@@ -311,12 +320,10 @@ class BatchTreeProjector(TreeProjectorBase):
         self.jug_tasks = []
         for section, selection, weight in self.sec_sel_weight:
             self.launch_tasks(section, selection, weight)
-        self.monitor_tasks()
+        wrps = self.process_tasks()
 
         # finalize
-        self.finalize(
-            lambda w: w.file_path.split('-')[-1][:-5]
-        )
+        self.finalize(None, wrps)
 
 
 # TODO option for _not_ copying/moving result back (softlink?)
