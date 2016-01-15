@@ -127,7 +127,7 @@ def main(**main_kwargs):
     # process kwargs for settings
     main_kwargs.update(_get_cmd_arg_settings())
     main_args.update(main_kwargs)
-    _process_settings_kws(main_kwargs)
+    process_settings_kws(main_kwargs)
     logfile = settings.logfilename()
     logpath = os.path.split(logfile)[0]
     if not os.path.exists(logpath):

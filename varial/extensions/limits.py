@@ -38,6 +38,7 @@ class ThetaLimits(varial.tools.Tool):
         self.bkg_key = bkg_key
         self.sys_key = sys_key
         self.model = None
+        self.what = 'all'
 
     def prepare_dat_sig_bkg(self, wrps):
         if self.filter_keyfunc:
@@ -52,6 +53,7 @@ class ThetaLimits(varial.tools.Tool):
         assert sigs, 'no signal histograms present.'
         if not dats:
             self.message('WARNING No data histogram, only expected limits.')
+            self.what = 'expected'
 
         return dats, sigs, bkgs
 
@@ -125,7 +127,7 @@ class ThetaLimits(varial.tools.Tool):
         if self.asymptotic:
             limit_func = lambda w: theta_auto.asymptotic_cls_limits(w)
         else:
-            limit_func = lambda w: theta_auto.bayesian_limits(w, what='expected')
+            limit_func = lambda w: theta_auto.bayesian_limits(w, what=self.what)
         res_exp, res_obs = limit_func(self.model)
 
         # shout it out loud
