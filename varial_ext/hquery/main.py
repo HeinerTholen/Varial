@@ -7,11 +7,9 @@ def main(**kws):
     import server  # server should not be imported in backend process
     server.start(e)
 
-
+# TODO put git hash of varial on webcreator (find on webcreator init)
 # TODO multiple instances: add random token to jug_file path (delete 2w olds)
 # TODO add multiple histos e.g. store histos via python, not in json
-# TODO link all selection forms:
-# TODO     https://stackoverflow.com/questions/12370653/split-html-forms
 # TODO CUTFLOW
 # TODO hint toggles (on bins vs. low, high / CUTFLOW)
 # TODO add multiple histos (toggled form)

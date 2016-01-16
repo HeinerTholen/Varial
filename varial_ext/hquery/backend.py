@@ -214,10 +214,17 @@ class HQueryBackend(object):
         except RuntimeError:
             del self.params['histos'][name]
             raise
+
+        # add empty selection in every section
+        for si in self.sel_info.itervalues():
+            si[name] = (u'', u'')
+
         self.q_out.put('redirect:index.html#{}'.format(name))
 
     def delete_histogram(self, name):
         del self.params['histos'][name]
+        for si in self.sel_info:
+            del si[name]
         names = list(name + tok +'.png' for tok in ('_lin', '_log', ''))
         for section in self.sec_sel_weight:
             p = os.path.join('sections', section)
@@ -228,41 +235,60 @@ class HQueryBackend(object):
         self.q_out.put('Histogram deleted: ' + name)
 
     def apply_selection(self, section, kws):
-        self.params['nm1'] = 'nm1' in kws
-        var, low, high = kws['selection_var'], kws['cut_low'], kws['cut_high']
+        def pick_sel_str(low, high):
+            return (
+                '({lo} <= {var} && {var} < {hi})'
+                if float(low) <= float(high) else
+                '({lo} <= {var} || {var} < {hi})'
+            ) if low and high else (
+                '{lo} <= {var}'
+                if low else (
+                    '{var} < {hi}'
+                    if high else
+                    ''
+                )
+            )
 
-        # compile selection string
-        if low and high:
-            if float(low) <= float(high):
-                sel = '({lo} <= {var} && {var} < {hi})'
-            else:
-                sel = '({lo} <= {var} || {var} < {hi})'
-        elif low:
-            sel = '{lo} <= {var}'
-        elif high:
-            sel = '{var} < {hi}'
-        else:
-            sel = ''
+        def format_sel_str(var, low, high):
+            return pick_sel_str(low, high).format(lo=low, hi=high, var=var)
 
-        # apply selection
-        sel_list = self.sec_sel_weight[section][1]
-        sel_list = list(s for s in sel_list if var not in s)  # clean old stuff
-        if sel:
-            sel = sel.format(lo=low, hi=high, var=var)
-            sel_list.append(sel)
-            self.q_out.put('Selection defined: ' + sel)
-        else:
-            self.q_out.put('Selection removed for: ' + var)
+        all_reqs = (
+            (var, (kws[var+' low'], kws[var+' high']))
+            for var in self.params['histos'].iterkeys()
+        )
+        all_reqs = list(
+            (var, lo_hi, format_sel_str(var, *lo_hi))
+            for var, lo_hi in all_reqs
+        )
+        sel_list = list(
+            sel
+            for _, _, sel in all_reqs
+            if sel
+        )
+        updates = list(
+            sel
+            for var, lo_hi, sel in all_reqs
+            if self.sel_info[section][var] != lo_hi
+            if sel
+        )
+
+        if not updates:
+            self.q_out.put('Selection unchanged.')
+            return
+
+        self.q_out.put('Selection updated: ' + '; '.join(updates))
+        old_sel_list = self.sec_sel_weight[section][1]
         self.sec_sel_weight[section] = (section, sel_list, self.weight)
 
         # run section with new selection
-        try:  # if something goes wrong, the selection must be removed
+        try:
             self.run_treeprojection(section)
         except RuntimeError:
-            sel_list = list(s for s in sel_list if var not in s)
-            self.sec_sel_weight[section] = (section, sel_list, self.weight)
+            # if something goes wrong, the selection must be removed
+            self.sec_sel_weight[section] = (section, old_sel_list, self.weight)
             raise
-        self.sel_info[section][var] = (low, high)
+
+        self.sel_info[section] = dict((var, lohi) for var, lohi, _ in all_reqs)
 
     def process_request(self, item):
         varial.monitor.message(
@@ -293,7 +319,7 @@ class HQueryBackend(object):
                 self.delete_histogram(kws['delete histogram'])
 
             # apply selection
-            elif 'selection_var' in kws:
+            elif 'selection' in kws:
                 self.apply_selection(args[0], kws)
 
             else:
