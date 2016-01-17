@@ -806,44 +806,6 @@ def sort_group_merge(wrps, keyfunc):
     return wrps
 
 
-def mc_stack(wrps, merge_mc_key_func=None):
-    """
-    Delivers only MC stacks, feed only with MC.
-
-    :param wrps:                Iterables of HistoWrapper (grouped)
-    :param merge_mc_key_func:   key function for python sorted(...), default
-                                tries to sort after stack position
-    :yields:                    StackWrapper
-    """
-    if not merge_mc_key_func:
-        merge_mc_key_func = lambda w: analysis.get_stack_position(w.sample)
-    for grp in wrps:
-
-        # merge mc samples (merge also normalizes to lumi = 1.)
-        mc_sorted = sorted(grp, key=merge_mc_key_func)
-        mc_groupd = group(mc_sorted, merge_mc_key_func)
-        mc_merged = (op.merge(g) for g in mc_groupd)
-        mc_colord = apply_fillcolor(mc_merged)
-
-        # stack mc
-        stack = op.stack(mc_colord)
-        yield stack
-
-
-def fs_mc_stack(filter_keyfunc=None, merge_mc_key_func=None):
-    """
-    Delivers only MC stacks, no data, from fileservice.
-
-    :param filter_keyfunc:      key for filter(...)
-    :param merge_mc_key_func:   key function for python sorted(...), default
-                                tries to sort after stack position
-    :yields:                    StackWrapper
-    """
-    loaded = fs_filter_active_sort_load(filter_keyfunc)
-    grouped = group(loaded)
-    return mc_stack(grouped, merge_mc_key_func)
-
-
 def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=True):
     """
     Stacks MC histos and merges data, input needs to be sorted and grouped.
