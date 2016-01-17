@@ -59,7 +59,7 @@ def bulk_write(wrps, name_func, dir_path='', suffices=None, linlog=False):
         if name in wrps_dict:
             monitor.message(
                 'sparseio',
-                'WARNING Overwriting name from this session: %s in path: %s' %
+                'WARNING Overwriting file "%s" from this session in path: %s' %
                 (name, dir_path)
             )
         wrps_dict[name] = w
