@@ -7,6 +7,7 @@ def main(**kws):
     import server  # server should not be imported in backend process
     server.start(e)
 
+# TODO "reset" -> make everything new
 # TODO put git hash of varial on webcreator (find on webcreator init)
 # TODO multiple instances: add random token to jug_file path (delete 2w olds)
 # TODO add multiple histos e.g. store histos via python, not in json

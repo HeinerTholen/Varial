@@ -223,7 +223,7 @@ class HQueryBackend(object):
 
     def delete_histogram(self, name):
         del self.params['histos'][name]
-        for si in self.sel_info:
+        for si in self.sel_info.itervalues():
             del si[name]
         names = list(name + tok +'.png' for tok in ('_lin', '_log', ''))
         for section in self.sec_sel_weight:

@@ -218,7 +218,7 @@ result = CompoundTask(
     mr.jug_reduce_projection,
     mr.jug_map_projection_per_file,
     inputs,
-    map_step=4,
+    map_step=2,
     reduce_step=8,
 )
 final_task = finalize(result)

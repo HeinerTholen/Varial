@@ -47,6 +47,7 @@ base_selection_form = """\
 """
 
 histo_selection_form = """\
+<br />
 <input type="number" name="{name} low" placeholder="low" style="width:40px;" \
        step="0.01" value="{low}" form="sel-f">
 <input type="number" name="{name} high" placeholder="high" style="width:40px;" \
