@@ -100,18 +100,29 @@ def get_color(sample_or_legend_name, samplename=None, default=0):
     return new_color
 
 
-def get_stack_position(sample):
+def get_stack_position(wrp):
     """Returns the stacking position (sortable str)"""
-    s = settings
-    if sample in all_samples:
-        legend = all_samples[sample].legend
-        if legend in s.stacking_order:
-            # need string to be comparable
-            return str(s.stacking_order.index(legend) * 0.001)
-        else:
-            return legend
+
+    def comparable_str(s):
+        # reverse...
+        pos = len(settings.stacking_order) - settings.stacking_order.index(s)
+        # need comparable string that sorts before alpha chars
+        return str(pos * 0.001)
+
+    if wrp.legend in settings.stacking_order:
+        return comparable_str(wrp.legend)
+
+    elif wrp.sample in settings.stacking_order:
+        return comparable_str(wrp.sample)
+
+    elif (wrp.sample in all_samples and
+          all_samples[wrp.sample].legend in settings.stacking_order):
+        return comparable_str(all_samples[wrp.sample].legend)
+
     else:
-        return sample
+        return wrp.legend
+
+
 
 
 ################################################ result / folder management ###

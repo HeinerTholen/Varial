@@ -820,7 +820,7 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=True):
     :yields:                    WrapperWrapper of wrappers for plotting
     """
     if not merge_mc_key_func:
-        merge_mc_key_func = lambda w: analysis.get_stack_position(w.sample)
+        merge_mc_key_func = lambda w: analysis.get_stack_position(w)
 
     for grp in wrps:
 
