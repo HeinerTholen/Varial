@@ -40,18 +40,18 @@ class Hadd(varial.tools.Tool):
     def __init__(self,
                  src_glob_path,
                  basenames,
+                 cmd='nice hadd -f -v 1 -T',
                  add_aliases_to_analysis=True,
-                 merge_trees=False,
                  samplename_func=lambda w: os.path.basename(w.file_path),
                  name=None):
         super(Hadd, self).__init__(name)
         self.src_glob_path = src_glob_path
         self.src_path = os.path.dirname(src_glob_path)
         self.basenames = basenames
+        self.cmd = cmd
         self.add_aliases_to_analysis = add_aliases_to_analysis
-        self.merge_trees = merge_trees
         self.samplename_func = samplename_func
-        assert(type(basenames) in (list, tuple))
+        assert type(basenames) in (list, tuple)
 
     def produce_aliases(self):
         wrps = list(varial.diskio.generate_aliases(
@@ -71,9 +71,7 @@ class Hadd(varial.tools.Tool):
             self.message('WARNING No files for basename: %s' % basename)
             return
 
-        cmd = 'nice hadd -f -v 1 '
-        if not self.merge_trees:
-            cmd += '-T '
+        cmd = self.cmd + ' '
         cmd += join(self.cwd, basename) + '.root '
         cmd += ' '.join(files)
         os.system(cmd)
