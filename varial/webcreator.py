@@ -633,20 +633,20 @@ class WebCreator(toolinterface.Tool):
                     img_menu_items[img] = res
                 write_code_for_page(path, img_menu_items)
 
-    def run(self):
-        use_ana_cwd_dsk = diskio.use_analysis_cwd
-        use_ana_cwd_spr = sparseio.use_analysis_cwd
-        diskio.use_analysis_cwd = False
-        sparseio.use_analysis_cwd = False
+    def run_procedure(self):
         self.configure()
         self.go4subdirs()
 
-        if any((self.subfolders,
-                self.image_names,
-                self.plain_info,
-                self.plain_tex,
-                self.html_files,
-                self.webcreate_request)):
+        items_to_process = (
+            self.subfolders,
+            self.image_names,
+            self.plain_info,
+            self.plain_tex,
+            self.html_files,
+            self.webcreate_request
+        )
+
+        if any(items_to_process):
             self.message('INFO Building page in ' + self.working_dir)
             self.make_html_head()
             self.make_headline()
@@ -658,12 +658,12 @@ class WebCreator(toolinterface.Tool):
             self.finalize_page()
             self.write_page()
 
+    def run(self):
         if self.is_base:
-            self.message('INFO Making cross-link menus.')
-            self.make_cross_link_menus()
-            diskio.use_analysis_cwd = use_ana_cwd_dsk
-            sparseio.use_analysis_cwd = use_ana_cwd_spr
-
-    def reset(self):
-        super(WebCreator, self).reset()
-        print "web resetted"
+            with util.Switch(diskio, 'use_analysis_cwd', False):
+                with util.Switch(sparseio, 'use_analysis_cwd', False):
+                    self.run_procedure()
+                    self.message('INFO Making cross-link menus.')
+                    self.make_cross_link_menus()
+        else:
+            self.run_procedure()

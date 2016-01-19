@@ -74,8 +74,10 @@ def deepish_copy(obj):
     return obj
 
 
-##################################################### SwitchVariableContext ###
-class SwitchVariableContext(object):
+#################################################################### Switch ###
+class Switch(object):
+    """Set variables only within a context."""
+
     def __init__(self, obj, var_name, new_val):
         assert(type(var_name) == str)
         self.obj = obj
