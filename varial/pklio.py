@@ -48,8 +48,10 @@ def _sync(path):
         with open(data_path) as f:
             try:
                 _current_pack = cPickle.load(f)
-            except ValueError:
-                monitor.message('pklio', 'ERROR with file: %s' % data_path)
+            except Exception as e:
+                msg = 'ERROR with file: %s' % data_path
+                e.message += msg
+                monitor.message('pklio', msg)
                 raise
             assert isinstance(_current_pack, dict), 'path: %s' % data_path
 
