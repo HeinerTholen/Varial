@@ -122,11 +122,11 @@ class TestGenerators(TestHistoToolsBase):
 
         # check stacking order by history
         h = str(mc.history)
-        self.assertTrue(h.index('ttgamma') < h.index('zjets'))
+        self.assertTrue(h.index('ttgamma') > h.index('zjets'))
         settings.stacking_order.reverse()
         mc, data = res.next()
         h = str(mc.history)
-        self.assertTrue(h.index('zjets') < h.index('ttgamma'))
+        self.assertTrue(h.index('ttgamma') < h.index('zjets'))
 
     def test_gen_canvas(self):
         stk, dat = gen.fs_mc_stack_n_data_sum().next()
