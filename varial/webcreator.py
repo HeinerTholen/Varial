@@ -332,7 +332,7 @@ class WebCreator(toolinterface.Tool):
             '<!-- subdirectories -->',
             '<br />subdirectories: <br />',
         )
-        for sf in self.subfolders:
+        for sf in sorted(self.subfolders):
             self.web_lines += (
                 '<a href="%s">%s</a><br />' % (
                     os.path.join(sf, 'index.html'), sf),
