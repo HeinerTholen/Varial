@@ -17,7 +17,7 @@ def show_git_stat_and_log():
     print 'Found the following STAGED changes in the code:'
     os.system('git diff --cached --stat')
     print 'Last 5 commits:'
-    os.system('git log --oneline -5')
+    os.system('git log --oneline -4')
 
 
 class GitAdder(Tool):
@@ -48,7 +48,7 @@ class GitAdder(Tool):
                 last_commit_hash = '-1'
         if last_commit_hash != '-1':
             self.message('Staging commits.')
-            os.system('git add -u')
+            os.system('git add -u :/')
         self.result = wrappers.Wrapper(
             commit_hash = last_commit_hash
         )

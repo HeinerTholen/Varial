@@ -139,6 +139,10 @@ class ThetaLimits(varial.tools.Tool):
             res_exp_y=res_exp.y,
             res_exp_xerrors=res_exp.xerrors,
             res_exp_yerrors=res_exp.yerrors,
+            res_obs_x=res_obs.x,
+            res_obs_y=res_obs.y,
+            res_obs_xerrors=res_obs.xerrors,
+            res_obs_yerrors=res_obs.yerrors,
         )
         theta_auto.config.report.write_html(
             os.path.join(self.cwd, 'result'))
