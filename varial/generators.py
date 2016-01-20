@@ -457,9 +457,13 @@ def resolve_file_pattern(pattern='./*.root'):
     :param pattern: string or list of strings.
     :returns:       List of filenames
     """
+    def resolve_rel_pattern(pat):
+        if pat.startswith('../'):
+            return os.path.join(analysis.cwd, pat)
+        else: return pat
     if type(pattern) is str:
         pattern = [pattern]
-    result = list(glob.glob(pat) for pat in pattern)
+    result = list(glob.glob(resolve_rel_pattern(pat)) for pat in pattern)
     for pat, res in itertools.izip(pattern, result):
         if not res or not all(os.path.isfile(f) for f in res):
             raise RuntimeError('No file(s) found for pattern: %s' % pat)
