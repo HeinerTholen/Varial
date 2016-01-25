@@ -4,6 +4,7 @@ Limit derivation with theta: http://theta-framework.org
 
 import os
 import ROOT
+import cPickle
 
 import varial.tools
 import varial.analysis
@@ -123,14 +124,22 @@ class ThetaLimits(varial.tools.Tool):
         # let the fit run
         options = theta_auto.Options()
         options.set('minimizer', 'strategy', 'robust')
-        theta_auto.model_summary(self.model)
         if self.asymptotic:
-            limit_func = lambda w: theta_auto.asymptotic_cls_limits(w)
+            limit_func = theta_auto.asymptotic_cls_limits
         else:
-            limit_func = lambda w: theta_auto.bayesian_limits(w, what=self.what)
+            limit_func = lambda m: theta_auto.bayesian_limits(m, what=self.what)
         res_exp, res_obs = limit_func(self.model)
 
         # shout it out loud
+        summary = theta_auto.model_summary(self.model)
+        theta_auto.config.report.write_html(os.path.join(self.cwd, 'result'))
+
+        with open(self.cwd + 'rate_table.tex', 'w') as f:
+            f.write(summary['rate_table'].tex())
+        for proc, table in summary['sysrate_tables'].iteritems():
+            with open(self.cwd + 'sysrate_tables_%s.tex' % proc, 'w') as f:
+                f.write(table.tex())
+
         self.result = varial.wrappers.Wrapper(
             name=self.name,
             _res_exp=res_exp,
@@ -143,6 +152,5 @@ class ThetaLimits(varial.tools.Tool):
             res_obs_y=res_obs.y,
             res_obs_xerrors=res_obs.xerrors,
             res_obs_yerrors=res_obs.yerrors,
+            summary=cPickle.dumps(summary),
         )
-        theta_auto.config.report.write_html(
-            os.path.join(self.cwd, 'result'))
