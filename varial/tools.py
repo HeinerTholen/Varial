@@ -195,11 +195,16 @@ class CopyTool(Tool):
             cp_func = lambda w, x, y: os.system(
                 'rsync -avz --delete {0} {1} {2}'.format(
                     ' '.join(w), x, ' '.join(y)))
+            dest = self.dest
         else:
             cp_func = lambda w, x, y: self.def_copy(w, x, y)
+            dest = os.path.abspath(self.dest)
 
         if self.src:
-            src = os.path.abspath(self.src)
+            if self.src.startswith('..'):
+                src = os.path.join(self.cwd, self.src)
+            else:
+                src = os.path.abspath(self.src)
             src_objs = glob.glob(src)
         elif self.cwd:
             src = os.path.abspath(os.path.join(self.cwd, '..'))
@@ -207,7 +212,6 @@ class CopyTool(Tool):
         else:
             src = os.getcwd()
             src_objs = glob.glob(src + '/*')
-        dest = os.path.abspath(self.dest)
 
         # check for htaccess and copy it to src dirs
         htaccess = os.path.join(dest, '.htaccess')
