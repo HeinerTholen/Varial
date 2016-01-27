@@ -1,11 +1,21 @@
-import settings  # init ROOT first
-from ROOT import TH1D
 import functools
 import itertools
 import inspect
+import ctypes
 import random
+import ROOT
 import copy
 import math
+
+
+def integral_and_error(th_hist):
+    err = ctypes.c_double()
+    if isinstance(th_hist, ROOT.TH2):
+        val = th_hist.IntegralAndError(
+            0, th_hist.GetNbinsX(), 0, th_hist.GetNbinsY(), err)
+    else:
+        val = th_hist.IntegralAndError(0, th_hist.GetNbinsX(), err)
+    return val, err.value
 
 
 def random_hex_str():
@@ -20,7 +30,7 @@ def project_items(keyfunc, items):
 
 def list2histogram(values, name='histo', title=None, n_bins=0):
     """Makes histogram from list of values."""
-    mi, ma, n = min(values), max(values), len(values)
+    mi, ma = min(values), max(values)
     val_range = ma - mi
     bounds = mi - 0.1*val_range, ma + 0.1*val_range
     if n_bins:
@@ -30,7 +40,7 @@ def list2histogram(values, name='histo', title=None, n_bins=0):
 
     if not title:
         title = name
-    histo = TH1D(name, title, n_bins, *bounds)
+    histo = ROOT.TH1D(name, title, n_bins, *bounds)
     for v in values:
         histo.Fill(v)
     return histo

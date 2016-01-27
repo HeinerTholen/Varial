@@ -558,6 +558,7 @@ def save(wrps, filename_func, suffices=None, write_complete_wrp=False):
 
 ################################################################## plotting ###
 import rendering as rnd
+import util
 
 
 def touch_legend_color(wrps):
@@ -735,11 +736,12 @@ def add_sample_integrals(canvas_builders):
     Adds {'legend1' : histo_integral, ...} to canvases.
     """
     def integral_histo_wrp(wrp):
-        return [(wrp.legend, wrp.obj.Integral())]
+        return [(wrp.legend, util.integral_and_error(wrp.obj))]
 
     def integral_stack_wrp(wrp):
         for hist in wrp.obj.GetHists():
-            yield hist.GetTitle(), hist.Integral()
+            yield hist.GetTitle(), util.integral_and_error(hist)
+        yield 'bkg_sum', util.integral_and_error(wrp.histo)
 
     def integral(wrp):
         if isinstance(wrp, rnd.StackRenderer):
