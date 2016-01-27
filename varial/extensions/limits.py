@@ -9,7 +9,22 @@ import cPickle
 import varial.tools
 import varial.analysis
 import theta_auto
-theta_auto.config.theta_dir = os.environ["CMSSW_BASE"] + "/../theta"
+theta_auto.config.theta_dir = os.environ['CMSSW_BASE'] + '/../theta'
+
+
+tex_table_mod_list = [
+    ('_', '\_'),        # escape underscore
+    ('\_{', '_{'),      # un-escape subscripts
+    ('\_', ' '),        # remove underscores
+    ('(gauss)', ' '),
+]
+
+
+def tex_table_mod(table, mods=None):
+    mods = mods or tex_table_mod_list
+    for mod in mods:
+        table = table.replace(*mod)
+    return table
 
 
 class ThetaLimits(varial.tools.Tool):
@@ -25,6 +40,7 @@ class ThetaLimits(varial.tools.Tool):
         sig_key=lambda w: w.is_signal,
         bkg_key=lambda w: w.is_background,
         sys_key=None,
+        tex_table_mod=tex_table_mod,
         name=None,
     ):
         super(ThetaLimits, self).__init__(name)
@@ -38,6 +54,7 @@ class ThetaLimits(varial.tools.Tool):
         self.sig_key = sig_key
         self.bkg_key = bkg_key
         self.sys_key = sys_key
+        self.tex_table_mod = tex_table_mod
         self.model = None
         self.what = 'all'
 
@@ -135,15 +152,18 @@ class ThetaLimits(varial.tools.Tool):
         theta_auto.config.report.write_html(os.path.join(self.cwd, 'result'))
 
         with open(self.cwd + 'rate_table.tex', 'w') as f:
-            f.write(summary['rate_table'].tex())
+            f.write(
+                self.tex_table_mod(
+                    summary['rate_table'].tex()))
+
         for proc, table in summary['sysrate_tables'].iteritems():
             with open(self.cwd + 'sysrate_tables_%s.tex' % proc, 'w') as f:
-                f.write(table.tex())
+                f.write(
+                    self.tex_table_mod(
+                        table.tex()))
 
         self.result = varial.wrappers.Wrapper(
             name=self.name,
-            _res_exp=res_exp,
-            _res_obs=res_obs,
             res_exp_x=res_exp.x,
             res_exp_y=res_exp.y,
             res_exp_xerrors=res_exp.xerrors,
@@ -152,5 +172,9 @@ class ThetaLimits(varial.tools.Tool):
             res_obs_y=res_obs.y,
             res_obs_xerrors=res_obs.xerrors,
             res_obs_yerrors=res_obs.yerrors,
+
+            # in order to access details, one must unpickle.
+            res_exp=cPickle.dumps(res_exp),
+            res_obs=cPickle.dumps(res_obs),
             summary=cPickle.dumps(summary),
         )
