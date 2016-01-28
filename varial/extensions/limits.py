@@ -46,6 +46,7 @@ class ThetaLimits(varial.tools.Tool):
         sys_key=None,
         tex_table_mod=tex_table_mod,
         name=None,
+        do_postfit=True,
     ):
         super(ThetaLimits, self).__init__(name)
         self.model_func = model_func
@@ -61,6 +62,7 @@ class ThetaLimits(varial.tools.Tool):
         self.tex_table_mod = tex_table_mod
         self.model = None
         self.what = 'all'
+        self.do_postfit = do_postfit
 
     def prepare_dat_sig_bkg(self, wrps):
         if self.filter_keyfunc:
@@ -154,8 +156,11 @@ class ThetaLimits(varial.tools.Tool):
             'asymptotic_cls_limits' if self.asymptotic else 'bayesian_limits'))
         res_exp, res_obs = limit_func(self.model)
 
-        self.message('INFO fetching post-fit parameters')
-        postfit = theta_auto.mle(self.model, input='data', n=1, options=options)
+        if self.do_postfit:
+            self.message('INFO fetching post-fit parameters')
+            postfit = theta_auto.mle(self.model, input='data', n=1, options=options)
+        else:
+            postfit = None
 
         # shout it out loud
         summary = theta_auto.model_summary(self.model)
