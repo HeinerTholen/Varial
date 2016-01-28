@@ -208,7 +208,7 @@ class ThetaPostFitPlot(varial.tools.Tool):
         return list(
             (name, val_err)
             for name, (val_err,) in sorted(post_fit_dict.iteritems())
-            if name != '__nll'
+            if name not in ('__nll', 'beta_signal')
         )
 
     @staticmethod
