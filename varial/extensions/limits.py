@@ -145,7 +145,13 @@ class ThetaLimits(varial.tools.Tool):
             limit_func = theta_auto.asymptotic_cls_limits
         else:
             limit_func = lambda m: theta_auto.bayesian_limits(m, what=self.what)
+
+        self.message('INFO calling theta func: %s' % (
+            'asymptotic_cls_limits' if self.asymptotic else 'bayesian_limits'))
         res_exp, res_obs = limit_func(self.model)
+
+        self.message('INFO fetching post-fit parameters')
+        postfit = theta_auto.mle(self.model, input='data', n=1, options=options)
 
         # shout it out loud
         summary = theta_auto.model_summary(self.model)
@@ -177,4 +183,5 @@ class ThetaLimits(varial.tools.Tool):
             res_exp=cPickle.dumps(res_exp),
             res_obs=cPickle.dumps(res_obs),
             summary=cPickle.dumps(summary),
+            postfit_vals=postfit,
         )
