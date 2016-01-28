@@ -2,12 +2,15 @@
 Limit derivation with theta: http://theta-framework.org
 """
 
-import os
-import ROOT
 import cPickle
+import ROOT
+import os
 
-import varial.tools
+import varial.sparseio
 import varial.analysis
+import varial.tools
+import varial.pklio
+
 import theta_auto
 theta_auto.config.theta_dir = os.environ['CMSSW_BASE'] + '/../theta'
 
@@ -27,6 +30,7 @@ def tex_table_mod(table, mods=None):
     return table
 
 
+######################################################### limit calculation ###
 class ThetaLimits(varial.tools.Tool):
     def __init__(
         self,
@@ -185,3 +189,117 @@ class ThetaLimits(varial.tools.Tool):
             summary=cPickle.dumps(summary),
             postfit_vals=postfit,
         )
+
+
+################################################## plot nuisance parameters ###
+class ThetaPostFitPlot(varial.tools.Tool):
+    io = varial.pklio
+
+    def __init__(
+        self,
+        input_path='../ThetaLimits',
+        name=None,
+    ):
+        super(ThetaPostFitPlot, self).__init__(name)
+        self.input_path = input_path
+
+    @staticmethod
+    def prepare_post_fit_items(post_fit_dict):
+        return list(
+            (name, val_err)
+            for name, (val_err,) in sorted(post_fit_dict.iteritems())
+            if name != '__nll'
+        )
+
+    @staticmethod
+    def prepare_pull_graph(n_items, post_fit_items):
+        g = ROOT.TGraphAsymmErrors(n_items)
+        for i, (_, (val, err)) in enumerate(post_fit_items):
+            x, y = val, i + 1.5
+            g.SetPoint(i, x, y)
+            g.SetPointEXlow(i, err)
+            g.SetPointEXhigh(i, err)
+
+        g.SetLineStyle(1)
+        g.SetLineWidth(1)
+        g.SetLineColor(1)
+        g.SetMarkerStyle(21)
+        g.SetMarkerSize(1.25)
+        return g
+
+    @staticmethod
+    def prepare_band_graphs(n_items):
+        g68 = ROOT.TGraph(2*n_items+7)
+        g95 = ROOT.TGraph(2*n_items+7)
+        for a in xrange(0, n_items+3):
+            g68.SetPoint(a, -1, a)
+            g95.SetPoint(a, -2, a)
+            g68.SetPoint(a+1+n_items+2, 1, n_items+2-a)
+            g95.SetPoint(a+1+n_items+2, 2, n_items+2-a)
+        g68.SetFillColor(ROOT.kGreen)
+        g95.SetFillColor(ROOT.kYellow)
+        return g68, g95
+
+    @staticmethod
+    def prepare_canvas(name):
+        c_name = 'cnv_post_fit_' + name
+        c = ROOT.TCanvas(c_name, c_name, 600, 700)
+        c.SetTopMargin(0.06)
+        c.SetRightMargin(0.02)
+        c.SetBottomMargin(0.12)
+        c.SetLeftMargin(0.35*700/650)
+        c.SetTickx()
+        c.SetTicky()
+        return c
+
+    @staticmethod
+    def put_axis_foo(n_items, prim_graph, post_fit_items):
+        prim_hist = prim_graph.GetHistogram() 
+        ax_1 = prim_hist.GetYaxis()
+        ax_2 = prim_hist.GetXaxis()
+
+        prim_graph.SetTitle('')
+        ax_2.SetTitle('post-fit nuisance parameters values')
+        #ax_2.SetTitle('deviation in units of #sigma')
+        ax_1.SetTitleSize(0.050)
+        ax_2.SetTitleSize(0.050)
+        ax_1.SetTitleOffset(1.4)
+        ax_2.SetTitleOffset(1.0)
+        ax_1.SetLabelSize(0.05)
+        #ax_2.SetLabelSize(0.05)
+        ax_1.SetRangeUser(0, n_items+2)
+        ax_2.SetRangeUser(-2.4, 2.4)
+
+        ax_1.Set(n_items+2, 0, n_items+2)
+        ax_1.SetNdivisions(-414)
+        for i, (uncert_name, _) in enumerate(post_fit_items):
+            ax_1.SetBinLabel(i+2, uncert_name)
+
+    def mk_canvas(self, sig_name, post_fit_dict):
+        n = len(post_fit_dict)
+        items = self.prepare_post_fit_items(post_fit_dict)
+        
+        g = self.prepare_pull_graph(n, items)
+        g68, g95 = self.prepare_band_graphs(n)
+        cnv = self.prepare_canvas(sig_name)
+
+        cnv.cd()
+        g95.Draw('AF')
+        g68.Draw('F')
+        g.Draw('P')
+        
+        self.put_axis_foo(n, g95, items)
+        g95.GetHistogram().Draw('axis,same')
+        cnv.Modified()
+        cnv.Update()
+
+        return varial.wrp.CanvasWrapper(
+            cnv, post_fit_items=items, pulls=g, g95=g95, g68=g68)
+
+    def run(self):
+        theta_res = self.lookup_result(self.input_path)
+        cnvs = (self.mk_canvas(sig, pfd) 
+                for sig, pfd in theta_res.postfit_vals.iteritems())
+
+        cnvs = varial.sparseio.bulk_write(cnvs, lambda c: c.name)
+        self.result = list(cnvs)
