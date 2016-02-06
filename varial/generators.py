@@ -336,6 +336,8 @@ gen_int_r               = _generate_op(op.int_r)
 gen_eff                 = _generate_op(op.eff)
 gen_th2_projection_x    = _generate_op(op.th2_projection_x)
 gen_th2_projection_y    = _generate_op(op.th2_projection_y)
+gen_squash_sys_sq       = _generate_op(op.squash_sys_sq)
+gen_squash_sys_env      = _generate_op(op.squash_sys_env)
 
 gen_noex_norm_to_lumi       = _generate_op_noex(op.norm_to_lumi)
 gen_noex_norm_to_integral   = _generate_op_noex(op.norm_to_integral)

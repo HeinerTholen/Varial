@@ -38,8 +38,8 @@ class WrapperBase(object):
     def all_writeable_info(self):
         """Like all_info, but removes root objects."""
         return dict(
-            (k,v)
-            for k,v in self.__dict__.iteritems()
+            (k, v)
+            for k, v in self.__dict__.iteritems()
             if k[0] != '_' and not isinstance(v, TObject)
         )
 
@@ -108,7 +108,7 @@ class FileServiceAlias(Alias):
         self.lumi           = sample_inst.lumi
         self.is_data        = sample_inst.is_data
         self.is_signal      = sample_inst.is_signal
-        assert(not(self.is_data and self.is_signal))  # both is forbidden!
+        assert not(self.is_data and self.is_signal)  # both is forbidden!
 
 
 class Wrapper(WrapperBase):
@@ -191,7 +191,7 @@ class WrapperWrapper(Wrapper):
 
     def __setattr__(self, name, value):
         if (value
-            and type(value) == list
+            and isinstance(value, list)
             and any(isinstance(w, WrapperBase)for w in value)
         ):
             if not all(isinstance(w, WrapperBase) for w in value):
@@ -200,6 +200,7 @@ class WrapperWrapper(Wrapper):
                      'else is in the list: \n')
                     + str(value)
                 )
+            # note: object.__setattr__ is called since we checked validity here
             return super(WrapperBase, self).__setattr__(name, value)
         else:
             return super(WrapperWrapper, self).__setattr__(name, value)
@@ -220,14 +221,13 @@ class FloatWrapper(Wrapper):
     2.0
     """
     _float_type = float
-    def __init__(self, float, **kws):
-        self._check_object_type(float, self._float_type)
+    def __init__(self, float_val, **kws):
+        self._check_object_type(float_val, self._float_type)
         super(FloatWrapper, self).__init__(**kws)
-        self.float = float
+        self.float = float_val
 
     @property
     def obj(self):
-        """Getter property for primary object. Overwrite!"""
         return self.float
 
 
@@ -246,15 +246,19 @@ class HistoWrapper(Wrapper):
         self.is_data        = kws.get('is_data', False)
         self.is_pseudo_data = kws.get('is_pseudo_data', False)
         self.is_signal      = kws.get('is_signal', False)
-        assert(len(filter(
-            None,
-            (self.is_data, self.is_pseudo_data, self.is_signal)
-        )) <= 1)  # only one is allowed
         self.lumi           = kws.get('lumi', 1.)
         self.sample         = kws.get('sample', '')
         self.legend         = kws.get('legend', '')
         self.file_path      = kws.get('file_path', '')
         self.in_file_path   = kws.get('in_file_path', '')
+        self.histo_sys_err  = kws.get('histo_sys_err', None)
+        self.sys_info       = kws.get('sys_info', '')  # e.g. 'JER__minus'
+
+        assert sum(
+            1 for boool in
+            (self.is_data, self.is_pseudo_data, self.is_signal)
+            if boool
+        ) <= 1, 'only one of is_data, is_pseudo_data, is_signal is allowed'
 
     def all_info(self):
         info = super(HistoWrapper, self).all_info()
@@ -279,7 +283,7 @@ class StackWrapper(HistoWrapper):
     """
     def __init__(self, stack, **kws):
         self._check_object_type(stack, THStack)
-        if not kws.has_key('histo'):
+        if 'histo' not in kws:
             kws['histo'] = self._add_stack_up(stack)
         super(StackWrapper, self).__init__(**kws)
         self.stack          = stack
@@ -330,15 +334,18 @@ class GraphWrapper(Wrapper):
         self.is_data        = kws.get('is_data', False)
         self.is_pseudo_data = kws.get('is_pseudo_data', False)
         self.is_signal      = kws.get('is_signal', False)
-        assert(len(filter(
-            None,
-            (self.is_data, self.is_pseudo_data, self.is_signal)
-        )) <= 1)  # only one is allowed
         self.lumi           = kws.get('lumi', 1.)
         self.sample         = kws.get('sample', '')
         self.legend         = kws.get('legend', '')
         self.file_path      = kws.get('file_path', '')
         self.in_file_path   = kws.get('in_file_path', '')
+
+        assert sum(
+            1 for bo in
+            (self.is_data, self.is_pseudo_data, self.is_signal)
+            if bo
+        ) <= 1, 'only one of is_data, is_pseudo_data, is_signal is allowed'
+
 
     def all_info(self):
         """
@@ -414,7 +421,7 @@ class FileServiceWrapper(Wrapper):
         """create a TH1D from the values in a dict."""
         hist = TH1D(name, title, len(dictionary), 0, len(dictionary))
         for k in sorted(dictionary.keys()):
-            assert(type(dictionary[k]) in (int, float))
+            assert any(isinstance(dictionary[k], t) for t in (int, float))
             hist.Fill(str(k), dictionary[k])
         self.append(hist)
 

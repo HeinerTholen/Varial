@@ -1025,6 +1025,139 @@ def th2_projection_y(wrp, name='_p', firstbin=0, lastbin=-1, option='eo'):
     return th2_projection(wrp, 'y', name, firstbin, lastbin, option)
 
 
+@history.track_history
+def squash_sys_sq(wrps):
+    """
+    Calculates systematic uncertainty with sum of squares.
+
+    :param wrps:    iterable of histowrappers, where the
+                    first item is taken as the nominal histogram.
+
+    >>> from ROOT import TH1F
+    >>> h1 = TH1F("h1", "", 2, .5, 2.5)
+    >>> h1.Fill(1, 7)
+    1
+    >>> h2 = TH1F("h1", "", 2, .5, 2.5)
+    >>> h2.Fill(1, 4)
+    1
+    >>> h3 = TH1F("h1", "", 2, .5, 2.5)
+    >>> h3.Fill(1, 11)
+    1
+    >>> ws = list(wrappers.HistoWrapper(h) for h in [h1, h2, h3])
+    >>> w1 = squash_sys_sq(ws)
+    >>> w1.obj.GetBinContent(1)
+    7.0
+    >>> w1.histo_sys_err.GetBinContent(1)
+    7.5
+    >>> w1.histo_sys_err.GetBinError(1)
+    5.0
+    """
+    nominal = None
+    sys_hist = None
+    sum_of_sq_errs = None
+    info = None
+    n_sys_hists = 0
+
+    for w in wrps:                                              # histo check
+        if not (isinstance(w, wrappers.HistoWrapper) and 'TH1' in w.type):
+            raise WrongInputError(
+                "squash_sys_uncert_squared accepts only HistoWrappers. wrp: "
+                + str(w)
+            )
+
+        if not nominal:                                         # init
+            nominal = w.obj.Clone()
+            sys_hist = w.obj.Clone()
+            sys_hist.Reset()
+            sum_of_sq_errs = w.obj.Clone()
+            sum_of_sq_errs.Reset()
+            info = w.all_info()
+
+        else:                                                   # collect
+            n_sys_hists += 1
+            sys_hist.Add(w.obj)
+            diff_sq = nominal.Clone()
+            diff_sq.Add(w.obj, -1)
+            diff_sq.Multiply(diff_sq)
+            sum_of_sq_errs.Add(diff_sq)
+
+    assert n_sys_hists, 'At least one systematic histogram needed.'
+
+    # average and assign errors
+    sys_hist.Scale(1./n_sys_hists)
+    for i in xrange(sys_hist.GetNbinsX()):
+        sys_hist.SetBinError(i, sum_of_sq_errs.GetBinContent(i)**.5)
+
+    info['histo_sys_err'] = sys_hist
+    return wrappers.HistoWrapper(nominal, **info)
+
+
+@history.track_history
+def squash_sys_env(wrps):
+    """
+    Calculates envelope of systematic uncertainties.
+
+    If the 'histo_sys_err' are set, these systematic histograms are used for the
+    envelope, including their uncertainties. Otherwise, the envelope is built
+    around the nominal values of the histograms (w.histo).
+
+    The histogram from the first wrp is returned as the nominal one.
+
+    :param wrps:    iterable of histowrappers
+
+    >>> from ROOT import TH1F
+    >>> h1 = TH1F("h1", "", 2, .5, 2.5)
+    >>> h2 = TH1F("h1", "", 2, .5, 2.5)
+    >>> h1.Fill(1, 2)
+    1
+    >>> h2.Fill(1, 4)
+    1
+    >>> ws = list(wrappers.HistoWrapper(h) for h in [h1, h2])
+    >>> w1 = squash_sys_env(ws)
+    >>> w1.obj.GetBinContent(1)
+    2.0
+    >>> w1.histo_sys_err.GetBinContent(1)
+    3.0
+    >>> w1.histo_sys_err.GetBinError(1)
+    1.0
+    """
+    wrps = list(wrps)
+    assert len(wrps) > 1, 'At least 2 wrps are needed.'
+
+    for w in wrps:                                              # histo check
+        if not (isinstance(w, wrappers.HistoWrapper) and 'TH1' in w.type):
+            raise WrongInputError(
+                "squash_sys_uncert_envelope accepts only HistoWrappers. wrp: "
+                + str(w)
+            )
+
+    any_has_sys = any(w.histo_sys_err for w in wrps)
+    all_hav_sys = all(w.histo_sys_err for w in wrps)
+    msg = 'Either all must have histo_sys_err set or none of them.'
+    assert any_has_sys == all_hav_sys, msg
+
+    nominal = wrps[0].obj.Clone()
+    sys_hist = wrps[0].obj.Clone()
+
+    histos = list(w.obj for w in wrps)
+    hi_sys = list(w.histo_sys_err for w in wrps)
+
+    for i in xrange(nominal.GetNbinsX()):
+        if any_has_sys:
+            mini = min(h.GetBinContent(i) - h.GetBinError(i) for h in hi_sys)
+            maxi = max(h.GetBinContent(i) + h.GetBinError(i) for h in hi_sys)
+        else:
+            mini = min(h.GetBinContent(i) for h in histos)
+            maxi = max(h.GetBinContent(i) for h in histos)
+        avg, err = (mini + maxi)/2., (maxi - mini)/2.
+        sys_hist.SetBinContent(i, avg)
+        sys_hist.SetBinError(i, err)
+
+    info = wrps[0].all_info()
+    info['histo_sys_err'] = sys_hist
+    return wrappers.HistoWrapper(nominal, **info)
+
+
 if __name__ == "__main__":
     import ROOT
     ROOT.TH1.AddDirectory(False)
