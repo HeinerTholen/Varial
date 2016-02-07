@@ -54,8 +54,11 @@ class TreeProjectorBase(varial.tools.Tool):
 
         assert filenames, 'dict(sample -> list of files), must not be empty'
         assert isinstance(filenames, dict), 'dict(sample -> list of files)'
-        for sample, fnames in filenames.iteritems():
-            assert fnames, 'no files for sample %s in %s' % (sample, self.name)
+        for sample, fnames in filenames.items():
+            if not fnames:
+                self.message('WARNING no files for sample %s in %s'
+                             % (sample, self.name))
+                del filenames[sample]
 
         # only for BatchTreeProjector
         self.progress_callback = progress_callback or (lambda a, b: None)
