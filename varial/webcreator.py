@@ -667,3 +667,6 @@ class WebCreator(toolinterface.Tool):
                     self.make_cross_link_menus()
         else:
             self.run_procedure()
+
+
+# TODO load info and history of images with ajax

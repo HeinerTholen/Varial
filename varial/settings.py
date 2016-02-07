@@ -83,6 +83,30 @@ colors = {}  # legend entries => fill colors
 pretty_names = {}
 stacking_order = []
 canvas_decorators = []
+stack_line_color = [1]
+
+
+def apply_error_hist_style(h, col, fill):
+    h.SetFillColor(col)
+    h.SetMarkerColor(1)
+    h.SetMarkerSize(0)
+    h.SetFillStyle(fill)
+    h.SetLineColor(1)
+
+
+def stat_error_style(histo):
+    histo.SetTitle('Stat. uncert. MC')
+    apply_error_hist_style(histo, 921, 3013)
+
+
+def sys_error_style(histo):
+    histo.SetTitle('Sys. uncert. MC')
+    apply_error_hist_style(histo, 923, 3002)
+
+
+def tot_error_style(histo):
+    histo.SetTitle('Tot. uncert. MC')
+    apply_error_hist_style(histo, 922, 3013)
 
 
 ################################################################ root style ###
@@ -188,11 +212,3 @@ class StyleClass(TStyle):
         gStyle.SetNumberContours(ncontours)
 
 root_style = StyleClass()  
-
-
-def apply_error_hist_style(histo):
-    histo.SetFillColor(921)
-    histo.SetMarkerColor(1)
-    histo.SetMarkerSize(0)
-    histo.SetFillStyle(3013)
-    histo.SetLineColor(1)

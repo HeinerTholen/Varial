@@ -443,6 +443,47 @@ def gen_make_th2_projections(wrps, keep_th2=True):
         yield y_buf.pop(0)
 
 
+def gen_squash_sys(wrps, accumulator):
+    """
+    Adds one-sided sys' quadratically and builds envelope from up and down.
+    """
+    wrps = list(wrps)
+    if not any(w.sys_info for w in wrps):
+        return accumulator(wrps)
+
+    def plus_minus_key(w):
+        if w.sys_info.endswith('__plus'):
+            return 2
+        elif w.sys_info.endswith('__minus'):
+            return 1
+        else:
+            return 0
+
+    def sys_type_key(w):
+        return w.sys_info
+
+    # accumulate (e.g. stack) every sys-type by itself
+    wrps = sorted(wrps, key=sys_type_key)
+    wrps = group(wrps, sys_type_key)
+    wrps = (accumulator(ws) for ws in wrps)
+
+    # sort for plus and minus and get lists
+    wrps = sorted(wrps, key=plus_minus_key)
+    wrps = group(wrps, plus_minus_key)
+    nominal_list, minus_list, plus_list = list(list(ws) for ws in wrps)
+
+    # all minus (plus) uncerts are combined in quadrature
+    minus = op.squash_sys_sq(nominal_list + minus_list)
+    plus = op.squash_sys_sq(nominal_list + plus_list)
+    nominal = nominal_list[0]
+
+    # build envelope of minus and plus
+    res = op.squash_sys_env([nominal, minus, plus])
+
+    # if nominal is a stack, the stack must be kept
+    nominal.histo_sys_err = res.histo_sys_err
+    return nominal
+
 
 ############################################################### load / save ###
 import pklio
@@ -464,7 +505,7 @@ def resolve_file_pattern(pattern='./*.root'):
             return os.path.join(analysis.cwd, pat)
         else: return pat
 
-    if type(pattern) is str:
+    if isinstance(pattern, str):
         pattern = [pattern]
 
     result = list(glob.glob(resolve_rel_pattern(pat)) for pat in pattern)
@@ -491,26 +532,36 @@ def dir_content(pattern='./*.root'):
 
     :yields:   Alias
     """
-    wrps = None
-
-    def alias_reader(p):
-        info_name = p.split('.')[-1]
-        rel_path = os.path.relpath(os.path.dirname(p), analysis.cwd)
+    def load_aliasses(path):
+        info_name = path.split('.')[-1]
+        rel_path = os.path.relpath(os.path.dirname(path), analysis.cwd)
         info_path = os.path.join(rel_path, info_name)
         wrps = pklio.get(info_path)
         if not wrps:
             wrps = diskio.get(info_path)
-        assert wrps, 'Error: nothing found at %s' % p
+        assert wrps, 'Error: nothing found at %s' % path
         return wrps
 
-    # try to lookup aliases
-    if isinstance(pattern, str):
+    def load_aliasses_for_pat(pattern):
         dirname = os.path.dirname(pattern)
         if not dirname.startswith('../'):
             dirname = os.path.relpath(dirname, analysis.cwd)
         paths = glob.glob(os.path.join(analysis.cwd, dirname, 'aliases.in.*'))
-        if paths:
-            wrps = (w for p in paths for w in alias_reader(p))
+        return (
+            w
+            for p in paths
+            for w in load_aliasses(p)
+        )
+
+    if isinstance(pattern, str):
+        pattern = [pattern]
+
+    # try to lookup aliases
+    wrps = list(
+        w
+        for pat in pattern
+        for w in load_aliasses_for_pat(pat)
+    )
 
     # else generate them anew
     if not wrps:
@@ -763,8 +814,6 @@ def add_sample_integrals(canvas_builders):
 
 
 ################################################### application & packaging ###
-
-
 def open_filter_load(pattern='*.root', filter_keyfunc=None):
     wrps = dir_content(pattern)
     wrps = itertools.ifilter(filter_keyfunc, wrps)
@@ -816,7 +865,10 @@ def sort_group_merge(wrps, keyfunc):
     return wrps
 
 
-def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=True):
+def mc_stack_n_data_sum(wrps,
+                        merge_mc_key_func=None,
+                        use_all_data_lumi=True,
+                        sys_squash=gen_squash_sys):
     """
     Stacks MC histos and merges data, input needs to be sorted and grouped.
 
@@ -830,7 +882,7 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=True):
     :yields:                    WrapperWrapper of wrappers for plotting
     """
     if not merge_mc_key_func:
-        merge_mc_key_func = lambda w: analysis.get_stack_position(w)
+        merge_mc_key_func = analysis.get_stack_position
 
     for grp in wrps:
 
@@ -855,20 +907,23 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=True):
         bkg = group(bkg, merge_mc_key_func)
         bkg = (op.merge(g) for g in bkg)
         bkg = apply_fillcolor(bkg)
-        bkg = apply_linecolor(bkg, [1])
-        bkg = gen_prod(itertools.izip(bkg, itertools.repeat(data_lumi)))
-        bkg_stk = None
+        if settings.stack_line_color:
+            bkg = apply_linecolor(bkg, settings.stack_line_color)
+        if data_lumi.float != 1.:
+            bkg = gen_prod(itertools.izip(bkg, itertools.repeat(data_lumi)))
         try:
             if is_2d:
-                bkg_stk = op.sum(bkg)
+                bkg_stk = sys_squash(bkg, op.sum)
             else:
-                bkg_stk = op.stack(bkg)
+                bkg_stk = sys_squash(bkg, op.stack)
         except op.TooFewWrpsError:
+            bkg_stk = None
             monitor.message('generators.mc_stack_n_data_sum',
                             'DEBUG No background histograms present!')
 
         # signal
         sig = apply_linecolor(sig)
+        sig = (s for s in sig if not s.sys_info)  # filter systematics on signal
         sig_lst = list(sig)
         if not sig_lst:
             monitor.message('generators.mc_stack_n_data_sum',
@@ -876,7 +931,7 @@ def mc_stack_n_data_sum(wrps, merge_mc_key_func=None, use_all_data_lumi=True):
 
         # return in order for plotting: bkg, signals, data
         res = [bkg_stk] + sig_lst + [dat_sum]
-        res = filter(None, res)
+        res = list(r for r in res if r)
         if res:
             yield wrappers.WrapperWrapper(res, name=grp.name)
         else:

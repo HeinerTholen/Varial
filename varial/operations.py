@@ -1066,18 +1066,18 @@ def squash_sys_sq(wrps):
             )
 
         if not nominal:                                         # init
-            nominal = w.obj.Clone()
-            sys_hist = w.obj.Clone()
+            nominal = w.histo.Clone()
+            sys_hist = w.histo.Clone()
             sys_hist.Reset()
-            sum_of_sq_errs = w.obj.Clone()
+            sum_of_sq_errs = w.histo.Clone()
             sum_of_sq_errs.Reset()
             info = w.all_info()
 
         else:                                                   # collect
             n_sys_hists += 1
-            sys_hist.Add(w.obj)
+            sys_hist.Add(w.histo)
             diff_sq = nominal.Clone()
-            diff_sq.Add(w.obj, -1)
+            diff_sq.Add(w.histo, -1)
             diff_sq.Multiply(diff_sq)
             sum_of_sq_errs.Add(diff_sq)
 
@@ -1085,7 +1085,7 @@ def squash_sys_sq(wrps):
 
     # average and assign errors
     sys_hist.Scale(1./n_sys_hists)
-    for i in xrange(sys_hist.GetNbinsX()):
+    for i in xrange(sys_hist.GetNbinsX()+2):
         sys_hist.SetBinError(i, sum_of_sq_errs.GetBinContent(i)**.5)
 
     info['histo_sys_err'] = sys_hist
@@ -1097,11 +1097,14 @@ def squash_sys_env(wrps):
     """
     Calculates envelope of systematic uncertainties.
 
-    If the 'histo_sys_err' are set, these systematic histograms are used for the
-    envelope, including their uncertainties. Otherwise, the envelope is built
-    around the nominal values of the histograms (w.histo).
+    If any of the 'histo_sys_err' is set on the inputs, these systematic
+    histograms are used for the envelope, including their uncertainties, and the
+    result is stored in histo_sys_err of the returned wrp. Here, the histogram
+    from the first wrp is returned as the nominal one.
 
-    The histogram from the first wrp is returned as the nominal one.
+    Otherwise, the envelope is built around the nominal values of the
+    histograms (wrp.histo) and also stored returned in wrp.histo, and
+    histo_sys_err stays unset.
 
     :param wrps:    iterable of histowrappers
 
@@ -1114,11 +1117,10 @@ def squash_sys_env(wrps):
     1
     >>> ws = list(wrappers.HistoWrapper(h) for h in [h1, h2])
     >>> w1 = squash_sys_env(ws)
+    >>> w1.histo_sys_err  # Should be None
     >>> w1.obj.GetBinContent(1)
-    2.0
-    >>> w1.histo_sys_err.GetBinContent(1)
     3.0
-    >>> w1.histo_sys_err.GetBinError(1)
+    >>> w1.obj.GetBinError(1)
     1.0
     """
     wrps = list(wrps)
@@ -1131,30 +1133,28 @@ def squash_sys_env(wrps):
                 + str(w)
             )
 
-    any_has_sys = any(w.histo_sys_err for w in wrps)
-    all_hav_sys = all(w.histo_sys_err for w in wrps)
-    msg = 'Either all must have histo_sys_err set or none of them.'
-    assert any_has_sys == all_hav_sys, msg
+    nominal = wrps[0].histo.Clone()
+    sys_hist = wrps[0].histo.Clone()
 
-    nominal = wrps[0].obj.Clone()
-    sys_hist = wrps[0].obj.Clone()
-
-    histos = list(w.obj for w in wrps)
-    hi_sys = list(w.histo_sys_err for w in wrps)
-
-    for i in xrange(nominal.GetNbinsX()):
-        if any_has_sys:
-            mini = min(h.GetBinContent(i) - h.GetBinError(i) for h in hi_sys)
-            maxi = max(h.GetBinContent(i) + h.GetBinError(i) for h in hi_sys)
+    def get_err(w, i, err_factor):
+        if w.histo_sys_err:
+            return (w.histo_sys_err.GetBinContent(i)
+                    + w.histo_sys_err.GetBinError(i)*err_factor)
         else:
-            mini = min(h.GetBinContent(i) for h in histos)
-            maxi = max(h.GetBinContent(i) for h in histos)
+            return w.histo.GetBinContent(i)
+
+    for i in xrange(nominal.GetNbinsX()+2):
+        mini = min(get_err(w, i, -1) for w in wrps)
+        maxi = max(get_err(w, i, +1) for w in wrps)
         avg, err = (mini + maxi)/2., (maxi - mini)/2.
         sys_hist.SetBinContent(i, avg)
         sys_hist.SetBinError(i, err)
 
     info = wrps[0].all_info()
-    info['histo_sys_err'] = sys_hist
+    if any(w.histo_sys_err for w in wrps):
+        info['histo_sys_err'] = sys_hist
+    else:
+        nominal = sys_hist
     return wrappers.HistoWrapper(nominal, **info)
 
 

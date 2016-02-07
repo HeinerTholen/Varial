@@ -110,19 +110,19 @@ def get_stack_position(wrp):
         return str(pos * 0.001)
 
     if wrp.legend in settings.stacking_order:
-        return comparable_str(wrp.legend)
+        res = comparable_str(wrp.legend)
 
     elif wrp.sample in settings.stacking_order:
-        return comparable_str(wrp.sample)
+        res = comparable_str(wrp.sample)
 
     elif (wrp.sample in all_samples and
           all_samples[wrp.sample].legend in settings.stacking_order):
-        return comparable_str(all_samples[wrp.sample].legend)
+        res = comparable_str(all_samples[wrp.sample].legend)
 
     else:
-        return wrp.legend
+        res = wrp.legend
 
-
+    return res + ('__' + wrp.sys_info if wrp.sys_info else '')
 
 
 ################################################ result / folder management ###

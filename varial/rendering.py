@@ -108,9 +108,27 @@ class StackRenderer(HistoRenderer, wrappers.StackWrapper):
     """
     def __init__(self, wrp):
         super(StackRenderer, self).__init__(wrp)
-        self.histo.SetTitle('Stat. uncert. MC')
-        settings.apply_error_hist_style(self.histo)
-        self.draw_option_sum = wrp.all_info().get('draw_option_sum', 'sameE2')
+
+        if self.histo_sys_err:                          # calculate total error
+            nom, sys, tot = self.histo, self.histo_sys_err, self.histo.Clone()
+            for i in xrange(tot.GetNbinsX()):
+                nom_val = nom.GetBinContent(i)
+                nom_err = nom.GetBinError(i) or 1e-20   # prevent 0-div-error
+                sys_val = sys.GetBinContent(i)
+                sys_err = sys.GetBinError(i) or 1e-20   # prevent 0-div-error
+                nom_wei = nom_err / (nom_err + sys_err)
+                sys_wei = sys_err / (nom_err + sys_err)
+
+                # weighted mean of values and quadratic sum of errors
+                tot.SetBinContent(i, nom_wei*nom_val + sys_wei*sys_val)
+                tot.SetBinError(i, (nom_err**2 + sys_err**2)**.5)
+
+            self.histo_tot_err = tot
+            settings.sys_error_style(self.histo_sys_err)
+            settings.tot_error_style(self.histo_tot_err)
+
+        settings.stat_error_style(self.histo)
+        self.draw_option_sum = getattr(wrp, 'draw_option_sum', 'sameE2')
 
     def y_min_gr_zero(self, histo=None):
         return super(StackRenderer, self).y_min_gr_zero(
@@ -123,7 +141,11 @@ class StackRenderer(HistoRenderer, wrappers.StackWrapper):
         self.stack.Draw(self.draw_option + option)
         self.stack.GetXaxis().SetTitle(self.histo.GetXaxis().GetTitle())
         self.stack.GetYaxis().SetTitle(self.histo.GetYaxis().GetTitle())
-        self.histo.Draw(self.draw_option_sum)
+        if self.histo_sys_err:
+            self.histo_tot_err.Draw(self.draw_option_sum)
+            self.histo_sys_err.Draw(self.draw_option_sum)
+        else:
+            self.histo.Draw(self.draw_option_sum)
 
 
 class GraphRenderer(Renderer, wrappers.GraphWrapper):
@@ -307,7 +329,7 @@ class CanvasBuilder(object):
 
     def do_final_cosmetics(self):
         """Pimp the canvas!"""
-        y_min, y_max = self.y_bounds
+        _, y_max = self.y_bounds
         self.first_drawn.GetXaxis().SetNoExponent()
         self.first_drawn.GetXaxis().SetLabelSize(0.052)
         self.first_drawn.SetMinimum(y_max / 10000.)
@@ -333,7 +355,7 @@ class CanvasBuilder(object):
         return hstry
 
     def _del_builder_refs(self):
-        for k,obj in self.__dict__.items():
+        for k, obj in self.__dict__.items():
             if isinstance(obj, TObject):
                 setattr(self, k, None)
 
@@ -664,33 +686,52 @@ class BottomPlotRatio(BottomPlot):
 
 class BottomPlotRatioSplitErr(BottomPlotRatio):
     """Same as BottomPlotRatio, but split MC and data uncertainties."""
+
     def define_bottom_hist(self):
         rnds = self.renderers
-        mc_histo = rnds[0].histo.Clone()
-        da_histo = filter(lambda r: r.is_data or r.is_pseudo_data,
-                          rnds)[0].histo.Clone()
-        div_hist = da_histo.Clone()
-        div_hist.Divide(mc_histo)
-        for i in xrange(1, mc_histo.GetNbinsX() + 1):
-            mc_val  = mc_histo.GetBinContent(i)
-            mc_err  = mc_histo.GetBinError(i)
-            da_val  = da_histo.GetBinContent(i)
-            da_err  = da_histo.GetBinError(i)
-            div_val = div_hist.GetBinContent(i)
-            mc_histo.SetBinContent(i, 0.)
-            if mc_val > 1e-37:
-                mc_histo.SetBinError(i, mc_err / mc_val)
-                div_hist.SetBinContent(i, div_val - 1.)
-            else:
-                mc_histo.SetBinError(i, 0.)
-            if da_val > 1e-37:
-                div_hist.SetBinError(i, da_err * div_val / da_val)
+        mcee_rnd = rnds[0]
+        data_rnd = next(r for r in rnds if r.is_data or r.is_pseudo_data)
+
+        def mk_bkg_errors(histo):
+            for i in xrange(histo.GetNbinsX() + 2):
+                val = histo.GetBinContent(i) or 1e20  # prevent 0-division-error
+                err = histo.GetBinError(i)
+                histo.SetBinContent(i, 0.)
+                histo.SetBinError(i, err/val)
+            return histo
+
+        # overlaying ratio histogram
+        mc_histo_no_err = mcee_rnd.histo.Clone()
+        for i in xrange(mc_histo_no_err.GetNbinsX()+2):
+            mc_histo_no_err.SetBinError(i, 0.)
+        div_hist = data_rnd.histo.Clone()
+        div_hist.Add(mc_histo_no_err, -1)
+        div_hist.Divide(mc_histo_no_err)
         div_hist.SetYTitle(self.dec_par['y_title'])
         div_hist.SetMarkerSize(0)
-        mc_histo.SetYTitle(self.dec_par['y_title'])
-        settings.apply_error_hist_style(mc_histo)
         self.bottom_hist = div_hist
-        self.bottom_hist_mc_err = mc_histo
+
+        # underlying error bands
+        if mcee_rnd.histo_sys_err:
+            sys_histo = mk_bkg_errors(rnds[0].histo_sys_err.Clone())
+            sys_histo.SetYTitle(self.dec_par['y_title'])
+            settings.sys_error_style(sys_histo)
+
+            tot_histo = mk_bkg_errors(rnds[0].histo_tot_err.Clone())
+            tot_histo.SetYTitle(self.dec_par['y_title'])
+            settings.tot_error_style(tot_histo)
+
+            self.bottom_hist_stt_err = None
+            self.bottom_hist_sys_err = sys_histo
+            self.bottom_hist_tot_err = tot_histo
+        else:
+            stt_histo = mk_bkg_errors(rnds[0].histo.Clone())
+            stt_histo.SetYTitle(self.dec_par['y_title'])
+            settings.stat_error_style(stt_histo)
+
+            self.bottom_hist_stt_err = stt_histo
+            self.bottom_hist_sys_err = None
+            self.bottom_hist_tot_err = None
 
     def draw_full_plot(self):
         """Draw mc error histo below data ratio."""
@@ -698,7 +739,11 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
         if not self.dec_par['renderers_check_ok']:
             return
         self.second_pad.cd()
-        self.bottom_hist_mc_err.Draw('sameE2')
+        if self.bottom_hist_stt_err:
+            self.bottom_hist_stt_err.Draw('sameE2')
+        else:
+            self.bottom_hist_tot_err.Draw('sameE2')
+            self.bottom_hist_sys_err.Draw('sameE2')
         self.bottom_hist.Draw(self.dec_par['draw_opt'] + 'same')
         self.main_pad.cd()
 
