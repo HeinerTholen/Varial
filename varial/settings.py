@@ -85,6 +85,13 @@ stacking_order = []
 canvas_decorators = []
 stack_line_color = [1]
 
+stat_error_color = 921
+stat_error_fill = 3013
+sys_error_color = 923
+sys_error_fill = 3002
+tot_error_color = 922
+tot_error_fill = 3013
+
 
 def apply_error_hist_style(h, col, fill):
     h.SetFillColor(col)
@@ -96,17 +103,17 @@ def apply_error_hist_style(h, col, fill):
 
 def stat_error_style(histo):
     histo.SetTitle('Stat. uncert. MC')
-    apply_error_hist_style(histo, 921, 3013)
+    apply_error_hist_style(histo, stat_error_color, stat_error_fill)
 
 
 def sys_error_style(histo):
     histo.SetTitle('Sys. uncert. MC')
-    apply_error_hist_style(histo, 923, 3002)
+    apply_error_hist_style(histo, sys_error_color, sys_error_fill)
 
 
 def tot_error_style(histo):
     histo.SetTitle('Tot. uncert. MC')
-    apply_error_hist_style(histo, 922, 3013)
+    apply_error_hist_style(histo, tot_error_color, tot_error_fill)
 
 
 ################################################################ root style ###
