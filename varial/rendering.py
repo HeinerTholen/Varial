@@ -692,12 +692,13 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
         mcee_rnd = rnds[0]
         data_rnd = next(r for r in rnds if r.is_data or r.is_pseudo_data)
 
-        def mk_bkg_errors(histo):
+        def mk_bkg_errors(histo, ref_histo):
             for i in xrange(histo.GetNbinsX() + 2):
-                val = histo.GetBinContent(i) or 1e20  # prevent 0-division-error
+                val = histo.GetBinContent(i)
+                ref_val = ref_histo.GetBinContent(i)
                 err = histo.GetBinError(i)
-                histo.SetBinContent(i, 0.)
-                histo.SetBinError(i, err/val)
+                histo.SetBinContent(i, (val-ref_val)/(ref_val or 1e20))
+                histo.SetBinError(i, err/(ref_val or 1e20))
             return histo
 
         # overlaying ratio histogram
@@ -713,11 +714,13 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
 
         # underlying error bands
         if mcee_rnd.histo_sys_err:
-            sys_histo = mk_bkg_errors(rnds[0].histo_sys_err.Clone())
+            sys_histo = mcee_rnd.histo_sys_err.Clone()
+            mk_bkg_errors(sys_histo, mcee_rnd.histo)
             sys_histo.SetYTitle(self.dec_par['y_title'])
             settings.sys_error_style(sys_histo)
 
-            tot_histo = mk_bkg_errors(rnds[0].histo_tot_err.Clone())
+            tot_histo = mcee_rnd.histo_tot_err.Clone()
+            mk_bkg_errors(tot_histo, mcee_rnd.histo)
             tot_histo.SetYTitle(self.dec_par['y_title'])
             settings.tot_error_style(tot_histo)
 
@@ -725,7 +728,8 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
             self.bottom_hist_sys_err = sys_histo
             self.bottom_hist_tot_err = tot_histo
         else:
-            stt_histo = mk_bkg_errors(rnds[0].histo.Clone())
+            stt_histo = mcee_rnd.histo.Clone()
+            mk_bkg_errors(stt_histo, stt_histo)
             stt_histo.SetYTitle(self.dec_par['y_title'])
             settings.stat_error_style(stt_histo)
 
