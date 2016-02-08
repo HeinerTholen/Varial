@@ -71,7 +71,7 @@ defaults_Legend = {
 }
 
 defaults_BottomPlot = {
-    'y_title': '#frac{Data-MC}{MC}',
+    'y_title': '',
     'draw_opt': 'E1',
     'x_min': -1.,
     'x_max': 1.,

@@ -680,7 +680,7 @@ class BottomPlotRatio(BottomPlot):
         for i in xrange(1, wrp.histo.GetNbins() + 1):
             cont = wrp.histo.GetBinContent(i)
             wrp.histo.SetBinContent(i, cont - 1.)
-        wrp.histo.SetYTitle(self.dec_par['y_title'])
+        wrp.histo.SetYTitle(self.dec_par['y_title'] or '#frac{Data}{MC}')
         self.bottom_hist = wrp.histo
 
 
@@ -691,6 +691,8 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
         rnds = self.renderers
         mcee_rnd = rnds[0]
         data_rnd = next(r for r in rnds if r.is_data or r.is_pseudo_data)
+        y_title = self.dec_par['y_title'] or (
+            '#frac{Data-MC}{MC}' if data_rnd.is_data else '#frac{Sig-Bkg}{Bkg}')
 
         def mk_bkg_errors(histo, ref_histo):
             for i in xrange(histo.GetNbinsX() + 2):
@@ -708,7 +710,7 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
         div_hist = data_rnd.histo.Clone()
         div_hist.Add(mc_histo_no_err, -1)
         div_hist.Divide(mc_histo_no_err)
-        div_hist.SetYTitle(self.dec_par['y_title'])
+        div_hist.SetYTitle(y_title)
         div_hist.SetMarkerSize(0)
         self.bottom_hist = div_hist
 
@@ -716,12 +718,12 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
         if mcee_rnd.histo_sys_err:
             sys_histo = mcee_rnd.histo_sys_err.Clone()
             mk_bkg_errors(sys_histo, mcee_rnd.histo)
-            sys_histo.SetYTitle(self.dec_par['y_title'])
+            sys_histo.SetYTitle(y_title)
             settings.sys_error_style(sys_histo)
 
             tot_histo = mcee_rnd.histo_tot_err.Clone()
             mk_bkg_errors(tot_histo, mcee_rnd.histo)
-            tot_histo.SetYTitle(self.dec_par['y_title'])
+            tot_histo.SetYTitle(y_title)
             settings.tot_error_style(tot_histo)
 
             self.bottom_hist_stt_err = None
@@ -730,7 +732,7 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
         else:
             stt_histo = mcee_rnd.histo.Clone()
             mk_bkg_errors(stt_histo, stt_histo)
-            stt_histo.SetYTitle(self.dec_par['y_title'])
+            stt_histo.SetYTitle(y_title)
             settings.stat_error_style(stt_histo)
 
             self.bottom_hist_stt_err = stt_histo
