@@ -16,9 +16,9 @@ theta_auto.config.theta_dir = os.environ['CMSSW_BASE'] + '/../theta'
 
 
 tex_table_mod_list = [
-    ('_', '\_'),        # escape underscore
-    ('\_{', '_{'),      # un-escape subscripts
-    ('\_', ' '),        # remove underscores
+    ('_', r'\_'),        # escape underscore
+    (r'\_{', '_{'),      # un-escape subscripts
+    (r'\_', ' '),        # remove underscores
     ('(gauss)', ' '),
 ]
 
@@ -44,7 +44,7 @@ class ThetaLimits(varial.tools.Tool):
         sig_key=lambda w: w.is_signal,
         bkg_key=lambda w: w.is_background,
         sys_key=None,
-        tex_table_mod=tex_table_mod,
+        tex_table_mod_=tex_table_mod,
         name=None,
     ):
         super(ThetaLimits, self).__init__(name)
@@ -58,7 +58,7 @@ class ThetaLimits(varial.tools.Tool):
         self.sig_key = sig_key
         self.bkg_key = bkg_key
         self.sys_key = sys_key
-        self.tex_table_mod = tex_table_mod
+        self.tex_table_mod = tex_table_mod_
         self.model = None
         self.what = 'all'
 
@@ -70,19 +70,18 @@ class ThetaLimits(varial.tools.Tool):
         sigs = list(w for w in wrps if self.sig_key(w))
         bkgs = list(w for w in wrps if self.bkg_key(w))
 
-        # do some basic input check
         assert bkgs, 'no background histograms present.'
         assert sigs, 'no signal histograms present.'
-        if not dats:
-            self.message('WARNING No data histogram, only expected limits.')
-            self.what = 'expected'
-
         return dats, sigs, bkgs
 
     def add_nominal_hists(self, wrp):
         wrps = self.lookup_result(self.input_path)
         assert wrps, 'no input for path: %s' % self.input_path
         dats, sigs, bkgs = self.prepare_dat_sig_bkg(wrps)
+
+        if not dats:
+            self.message('WARNING No data histogram, only expected limits.')
+            self.what = 'expected'
 
         for w in dats:
             setattr(wrp, self.cat_key(w) + '__DATA', w.histo)
@@ -131,20 +130,7 @@ class ThetaLimits(varial.tools.Tool):
         self.add_nominal_hists(wrp)
         self.add_sys_hists(wrp)
         self.store_histos_for_theta(wrp)
-        
-        # setup theta
-        theta_auto.config.workdir = self.cwd
-        theta_auto.config.report = theta_auto.html_report(
-            os.path.join(self.cwd, 'report.html')
-        )
-        plt_dir = os.path.join(self.cwd, 'plots')
-        if not os.path.exists(plt_dir):
-            os.mkdir(plt_dir)
-        self.model = self.model_func(wrp.file_path)
 
-        # let the fit run
-        options = theta_auto.Options()
-        options.set('minimizer', 'strategy', 'robust')
         if self.asymptotic:
             limit_func = theta_auto.asymptotic_cls_limits
         else:
@@ -152,19 +138,39 @@ class ThetaLimits(varial.tools.Tool):
 
         self.message('INFO calling theta func: %s' % (
             'asymptotic_cls_limits' if self.asymptotic else 'bayesian_limits'))
-        res_exp, res_obs = limit_func(self.model)
 
-        self.message('INFO fetching post-fit parameters')
+        # theta's config.workdir is broken for mle, where it writes temp data 
+        # into cwd. Therefore change into self.cwd.
+        base_path = os.getcwd()
+        os.chdir(self.cwd)
         try:
-            postfit = theta_auto.mle(
-                self.model, input='data', n=1, options=options)
-        except RuntimeError as e:
-            self.message('WARNING error from theta: %s' % str(e.args))
-            postfit = {}
+            # setup theta
+            theta_auto.config.workdir = '.'
+            theta_auto.config.report = theta_auto.html_report('report.html')
+            if not os.path.exists('plots'):
+                os.mkdir('plots')
 
-        # shout it out loud
-        summary = theta_auto.model_summary(self.model)
-        theta_auto.config.report.write_html(os.path.join(self.cwd, 'result'))
+            options = theta_auto.Options()
+            options.set('minimizer', 'strategy', 'robust')
+
+            # get model and let the fit run
+            self.model = self.model_func('ThetaHistos.root')
+            res_exp, res_obs = limit_func(self.model)
+
+            self.message('INFO fetching post-fit parameters')
+            try:
+                postfit = theta_auto.mle(
+                    self.model, input='data', n=1, options=options)
+            except RuntimeError as e:
+                self.message('WARNING error from theta: %s' % str(e.args))
+                postfit = {}
+
+            # shout it out loud
+            summary = theta_auto.model_summary(self.model)
+            theta_auto.config.report.write_html('result')
+
+        finally:
+            os.chdir(base_path)
 
         with open(self.cwd + 'rate_table.tex', 'w') as f:
             f.write(
@@ -183,10 +189,10 @@ class ThetaLimits(varial.tools.Tool):
             res_exp_y=res_exp.y,
             res_exp_xerrors=res_exp.xerrors,
             res_exp_yerrors=res_exp.yerrors,
-            res_obs_x=res_obs.x,
-            res_obs_y=res_obs.y,
-            res_obs_xerrors=res_obs.xerrors,
-            res_obs_yerrors=res_obs.yerrors,
+            res_obs_x=getattr(res_obs, 'x', []),
+            res_obs_y=getattr(res_obs, 'y', []),
+            res_obs_xerrors=getattr(res_obs, 'xerrors', []),
+            res_obs_yerrors=getattr(res_obs, 'yerrors', []),
 
             # in order to access details, one must unpickle.
             res_exp=cPickle.dumps(res_exp),
