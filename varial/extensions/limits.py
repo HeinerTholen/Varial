@@ -69,15 +69,15 @@ class ThetaLimits(varial.tools.Tool):
         dats = list(w for w in wrps if self.dat_key(w))
         sigs = list(w for w in wrps if self.sig_key(w))
         bkgs = list(w for w in wrps if self.bkg_key(w))
-
-        assert bkgs, 'no background histograms present.'
-        assert sigs, 'no signal histograms present.'
         return dats, sigs, bkgs
 
     def add_nominal_hists(self, wrp):
         wrps = self.lookup_result(self.input_path)
         assert wrps, 'no input for path: %s' % self.input_path
         dats, sigs, bkgs = self.prepare_dat_sig_bkg(wrps)
+
+        assert bkgs, 'no background histograms present.'
+        assert sigs, 'no signal histograms present.'
 
         if not dats:
             self.message('WARNING No data histogram, only expected limits.')
