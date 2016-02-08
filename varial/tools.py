@@ -193,11 +193,11 @@ class CopyTool(Tool):
             self.wipe_dest_dir = False
             self.ignore = list('--exclude='+w for w in self.ignore)
             cp_func = lambda w, x, y: os.system(
-                'rsync -avz --delete {0} {1} {2}'.format(
+                'rsync -qavz --delete {0} {1} {2}'.format(
                     ' '.join(w), x, ' '.join(y)))
             dest = self.dest
         else:
-            cp_func = lambda w, x, y: self.def_copy(w, x, y)
+            cp_func = self.def_copy
             dest = os.path.abspath(self.dest)
 
         if self.src:
