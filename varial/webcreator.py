@@ -237,11 +237,14 @@ class WebCreator(toolinterface.Tool):
         if self.is_base:
             self.base_configure()
 
+        if os.path.exists(os.path.join(self.working_dir, 'webcreate_denial')):
+            return
+
         if os.path.exists(os.path.join(self.working_dir, 'webcreate_request')):
             self.webcreate_request = True
 
         # collect folders and images
-        for wd, dirs, files in os.walk(self.working_dir):
+        for _, dirs, files in os.walk(self.working_dir):
             self.subfolders += list(  # check that tools have worked there..
                 d for d in dirs
                 if (self.no_tool_check
@@ -272,7 +275,7 @@ class WebCreator(toolinterface.Tool):
 
             # images
             imgs, files = util.project_items(lambda f: f.endswith(pf), files)
-            imgs = map(lambda f: f[:-len(pf)], imgs)  # remove postfixes
+            imgs = list(f[:-len(pf)] for f in imgs)  # remove postfixes
             self.image_names += imgs
 
             break

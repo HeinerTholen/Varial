@@ -161,6 +161,8 @@ class TreeProjector(TreeProjectorBase):
         self.message('INFO sample done: ' + sample)
 
     def run(self):
+        os.system('touch ' + self.cwd + 'webcreate_denial')
+
         n_procs = min(varial.settings.max_num_processes, len(self.samples))
         with varial.multiproc.NoDeamonWorkersPool(n_procs) as pool:
             res = ((varial.analysis.get_current_tool_path(), s)
@@ -310,6 +312,7 @@ class BatchTreeProjector(TreeProjectorBase):
         return wrps
 
     def run(self):
+        os.system('touch ' + self.cwd + 'webcreate_denial')
         self.iteration += 1
 
         # clear last round of running (and the ones of 3 iterations ago)
