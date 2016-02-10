@@ -443,6 +443,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                 if os.path.exists(logfile):
                     os.remove(logfile)
                 self._private_plotter.run()
+                self._private_plotter._write_result()
                 with open(logfile, 'w') as f:
                     f.write('plotter done.\n')
         if self._is_base_instance:

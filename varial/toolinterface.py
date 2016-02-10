@@ -118,6 +118,17 @@ class Tool(_ToolBase):
         self.logfile_res = None
         super(Tool, self).__exit__(exc_type, exc_val, exc_tb)
 
+    def _write_result(self):
+        if any(isinstance(self.result, t) for t in (list, tuple)):
+            try:
+                self.result = wrappers.WrapperWrapper(self.result)
+            except TypeError as e:
+                self.message('WARNING cannot store result: %s' % e.args)
+        if isinstance(self.result, wrappers.Wrapper):
+            with self.io.block_of_files:
+                self.result.name = self.name
+                self.io.write(self.result, 'result')
+
     def tool_paths(self):
         """Return a list of tool paths for all children."""
         return [self.name]
@@ -145,15 +156,7 @@ class Tool(_ToolBase):
             os.remove(self.logfile_res)
 
     def finished(self):
-        if any(isinstance(self.result, t) for t in (list, tuple)):
-            try:
-                self.result = wrappers.WrapperWrapper(self.result)
-            except TypeError:
-                pass
-        if isinstance(self.result, wrappers.Wrapper):
-            with self.io.block_of_files:
-                self.result.name = self.name
-                self.io.write(self.result, 'result')
+        self._write_result()
         self.time_fin = time.ctime() + '\n'
         logfile = self.logfile_res if self.result else self.logfile
         with open(logfile, 'w') as f:
