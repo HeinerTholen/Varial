@@ -77,7 +77,7 @@ class TexContent(Tool):
                             'Only .eps, .pdf and .png images are supported.')
 
                     # copy image file
-                    img_dest = blockname + '_' + hashified
+                    img_dest = blockname + '_' + hashified.replace('.', '-')
                     shutil.copy(p+ext, self._join(img_dest+ext))
 
                     # write tex include
