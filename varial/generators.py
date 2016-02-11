@@ -538,7 +538,8 @@ def dir_content(pattern='./*.root'):
         info_path = os.path.join(rel_path, info_name)
         wrps = pklio.get(info_path)
         if not wrps:
-            wrps = diskio.get(info_path)
+            with util.Switch(diskio, 'use_analysis_cwd', False):
+                wrps = diskio.get(info_path)
         assert wrps, 'Error: nothing found at %s' % path
         return wrps
 
