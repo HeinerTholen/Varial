@@ -73,8 +73,8 @@ defaults_Legend = {
 defaults_BottomPlot = {
     'y_title': '',
     'draw_opt': 'E1',
-    'x_min': -1.,
-    'x_max': 1.,
+    'x_min': -.8,
+    'x_max': .8,
 }
 
 rootfile_postfixes = ['.root', '.png']

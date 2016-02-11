@@ -643,15 +643,15 @@ class BottomPlot(util.Decorator):
 #            y_max = hist_max
 #        bottom_hist.GetYaxis().SetRangeUser(y_min, y_max)
         bottom_hist.Draw(self.dec_par['draw_opt'])
-        if bottom_hist.GetMinimum() < self.dec_par['x_min']:
+        n_bins = bottom_hist.GetNbinsX()
+        mini = min(bottom_hist.GetBinContent(i+1)
+                   - bottom_hist.GetBinError(i+1) for i in xrange(n_bins)) - .1
+        maxi = max(bottom_hist.GetBinContent(i+1)
+                   + bottom_hist.GetBinError(i+1) for i in xrange(n_bins)) + .1
+        if mini < self.dec_par['x_min'] or maxi > self.dec_par['x_max']:
             bottom_hist.GetYaxis().SetRangeUser(
-                self.dec_par['x_min'],
-                bottom_hist.GetMaximum()
-            )
-        if self.bottom_hist.GetMaximum() > self.dec_par['x_max']:
-            self.bottom_hist.GetYaxis().SetRangeUser(
-                bottom_hist.GetMinimum(),
-                self.dec_par['x_max']
+                max(self.dec_par['x_min'], mini),
+                min(self.dec_par['x_max'], maxi)
             )
 
         # set focus on main_pad for further drawing
