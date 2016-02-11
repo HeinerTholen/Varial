@@ -1047,16 +1047,17 @@ def squash_sys_sq(wrps):
     >>> w1 = squash_sys_sq(ws)
     >>> w1.obj.GetBinContent(1)
     7.0
-    >>> w1.histo_sys_err.GetBinContent(1)
-    7.5
+    >>> round(w1.histo_sys_err.GetBinContent(1), 1)
+    8.5
     >>> w1.histo_sys_err.GetBinError(1)
     5.0
     """
+    n_sys_hists = 0
     nominal = None
     sys_hist = None
     sum_of_sq_errs = None
+    min_errs = None
     info = None
-    n_sys_hists = 0
 
     for w in wrps:                                              # histo check
         if not (isinstance(w, wrappers.HistoWrapper) and 'TH1' in w.type):
@@ -1066,25 +1067,32 @@ def squash_sys_sq(wrps):
             )
 
         if not nominal:                                         # init
+            info = w.all_info()
             nominal = w.histo.Clone()
             sys_hist = w.histo.Clone()
             sys_hist.Reset()
-            sum_of_sq_errs = w.histo.Clone()
-            sum_of_sq_errs.Reset()
-            info = w.all_info()
+            sum_of_sq_errs = sys_hist.Clone()
+            min_errs = sys_hist.Clone()
+            for i in xrange(sys_hist.GetNbinsX()+2):
+                min_errs.SetBinContent(i, 1e-10)  # make non-zero
 
         else:                                                   # collect
             n_sys_hists += 1
-            sys_hist.Add(w.histo)
-            diff_sq = nominal.Clone()
-            diff_sq.Add(w.histo, -1)
-            diff_sq.Multiply(diff_sq)
-            sum_of_sq_errs.Add(diff_sq)
+            delta = nominal.Clone()
+            delta.Add(w.histo, -1)
+            delta.Multiply(delta)  # square
+            delta.Add(min_errs)
+            sum_of_sq_errs.Add(delta)
+
+            weighted_sys = w.histo.Clone()
+            weighted_sys.Multiply(delta)  # weight by sq diffs
+            sys_hist.Add(weighted_sys)
 
     assert n_sys_hists, 'At least one systematic histogram needed.'
 
     # average and assign errors
-    sys_hist.Scale(1./n_sys_hists)
+    # sys_hist.Scale(1./n_sys_hists)
+    sys_hist.Divide(sum_of_sq_errs)
     for i in xrange(sys_hist.GetNbinsX()+2):
         sys_hist.SetBinError(i, sum_of_sq_errs.GetBinContent(i)**.5)
 
