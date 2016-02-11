@@ -111,13 +111,13 @@ class StackRenderer(HistoRenderer, wrappers.StackWrapper):
 
         if self.histo_sys_err:                          # calculate total error
             nom, sys, tot = self.histo, self.histo_sys_err, self.histo.Clone()
-            for i in xrange(tot.GetNbinsX()):
+            for i in xrange(tot.GetNbinsX()+2):
                 nom_val = nom.GetBinContent(i)
-                nom_err = nom.GetBinError(i) or 1e-20   # prevent 0-div-error
+                nom_err = nom.GetBinError(i) or 1e-10   # prevent 0-div-error
                 sys_val = sys.GetBinContent(i)
-                sys_err = sys.GetBinError(i) or 1e-20   # prevent 0-div-error
-                nom_wei = nom_err / (nom_err + sys_err)
-                sys_wei = sys_err / (nom_err + sys_err)
+                sys_err = sys.GetBinError(i) or 1e-10   # prevent 0-div-error
+                nom_wei = nom_err**2 / (nom_err**2 + sys_err**2)
+                sys_wei = sys_err**2 / (nom_err**2 + sys_err**2)
 
                 # weighted mean of values and quadratic sum of errors
                 tot.SetBinContent(i, nom_wei*nom_val + sys_wei*sys_val)

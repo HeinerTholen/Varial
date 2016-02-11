@@ -374,6 +374,7 @@ class ToolChainParallel(ToolChain):
         pool.join()
 
 
+#TODO _load_results => move to analysis and only load on demand
 #TODO profiling in ToolChain._run_tool
 #TODO cProfile.runctx('varial.tools.Runner(tc)', globals(), locals(), 'prof_plotting.out')
 
