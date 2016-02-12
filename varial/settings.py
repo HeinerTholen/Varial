@@ -72,7 +72,7 @@ defaults_Legend = {
 
 defaults_BottomPlot = {
     'y_title': '',
-    'draw_opt': 'E1',
+    'draw_opt': 'E0',  # 'E0X0'
     'x_min': -.8,
     'x_max': .8,
 }

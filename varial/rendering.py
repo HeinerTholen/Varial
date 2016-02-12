@@ -633,6 +633,7 @@ class BottomPlot(util.Decorator):
         bottom_hist.SetTitle('')
         bottom_hist.SetLineColor(1)
         bottom_hist.SetLineStyle(1)
+        bottom_hist.SetMarkerSize(0)
 #        y_min = self.dec_par['y_min']
 #        y_max = self.dec_par['y_max']
 #        hist_min = bottom_hist.GetMinimum()
@@ -711,7 +712,6 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
         div_hist.Add(mc_histo_no_err, -1)
         div_hist.Divide(mc_histo_no_err)
         div_hist.SetYTitle(y_title)
-        div_hist.SetMarkerSize(0)
         self.bottom_hist = div_hist
 
         # underlying error bands
@@ -750,7 +750,7 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
         else:
             self.bottom_hist_tot_err.Draw('sameE2')
             self.bottom_hist_sys_err.Draw('sameE2')
-        self.bottom_hist.Draw(self.dec_par['draw_opt'] + 'same')
+        self.bottom_hist.Draw('same' + self.dec_par['draw_opt'])
         self.main_pad.cd()
 
 
