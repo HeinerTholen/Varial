@@ -1062,7 +1062,7 @@ def squash_sys_sq(wrps):
     for w in wrps:                                              # histo check
         if not (isinstance(w, wrappers.HistoWrapper) and 'TH1' in w.type):
             raise WrongInputError(
-                "squash_sys_uncert_squared accepts only HistoWrappers. wrp: "
+                "squash_sys_sq accepts only HistoWrappers. wrp: "
                 + str(w)
             )
 
@@ -1137,7 +1137,7 @@ def squash_sys_env(wrps):
     for w in wrps:                                              # histo check
         if not (isinstance(w, wrappers.HistoWrapper) and 'TH1' in w.type):
             raise WrongInputError(
-                "squash_sys_uncert_envelope accepts only HistoWrappers. wrp: "
+                "squash_sys_env accepts only HistoWrappers. wrp: "
                 + str(w)
             )
 
@@ -1164,6 +1164,50 @@ def squash_sys_env(wrps):
     else:
         nominal = sys_hist
     return wrappers.HistoWrapper(nominal, **info)
+
+
+@history.track_history
+def squash_sys_stddev(wrps):
+    """
+    Calculates standard deviation for systematic uncertainties.
+
+    Result is stored in wrp.histo.
+
+    >>> from ROOT import TH1F
+    >>> h1 = TH1F("h1", "", 2, .5, 2.5)
+    >>> h2 = TH1F("h1", "", 2, .5, 2.5)
+    >>> h1.Fill(1, 2)
+    1
+    >>> h2.Fill(1, 4)
+    1
+    >>> ws = list(wrappers.HistoWrapper(h) for h in [h1, h2])
+    >>> w1 = squash_sys_stddev(ws)
+    >>> w1.histo_sys_err  # Should be None
+    >>> w1.obj.GetBinContent(1)
+    3.0
+    >>> w1.obj.GetBinError(1)
+    1.0
+    """
+    import numpy
+    wrps = list(wrps)
+    assert len(wrps) > 1, 'At least 2 wrps are needed.'
+
+    for w in wrps:                                              # histo check
+        if not (isinstance(w, wrappers.HistoWrapper) and 'TH1' in w.type):
+            raise WrongInputError(
+                "squash_sys_stddev accepts only HistoWrappers. wrp: "
+                + str(w)
+            )
+
+    histos = list(w.histo for w in wrps)
+    histo = histos[0].Clone()
+    for i in xrange(histo.GetNbinsX()+2):
+        x = numpy.array(list(h.GetBinContent(i) for h in histos))
+        histo.SetBinContent(i, x.mean())
+        histo.SetBinError(i, x.var()**.5)
+
+    info = wrps[0].all_info()
+    return wrappers.HistoWrapper(histo, **info)
 
 
 if __name__ == "__main__":
