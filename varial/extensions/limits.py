@@ -5,6 +5,8 @@ Limit derivation with theta: http://theta-framework.org
 import cPickle
 import ROOT
 import os
+import glob
+from array import array
 
 import varial.sparseio
 import varial.analysis
@@ -28,6 +30,23 @@ def tex_table_mod(table, mods=None):
     for mod in mods:
         table = table.replace(*mod)
     return table
+
+def add_th_curve(grps, th_x=None, th_y=None):
+    for g in grps:
+        x_arr=array('f', th_x)
+        y_arr=array('f', th_y)
+        th_graph = ROOT.TGraph(len(x_arr), x_arr, y_arr)
+        th_graph.SetLineStyle(2)
+        th_graph.SetLineColor(1)
+        th_graph.SetLineWidth(2)
+        th_wrp = varial.wrappers.GraphWrapper(th_graph,
+                    legend='Theory',
+                    draw_option='C',
+                    val_y_min=min(th_y)
+                    )
+        g = list(g)
+        g.append(th_wrp)
+        yield varial.wrappers.WrapperWrapper(g, save_name=g[0].save_name)
 
 
 ######################################################### limit calculation ###
@@ -314,3 +333,119 @@ class ThetaPostFitPlot(varial.tools.Tool):
 
         cnvs = varial.sparseio.bulk_write(cnvs, lambda c: c.name)
         self.result = list(cnvs)
+
+######################################################### plot limit graphs ###
+class LimitGraphs(varial.tools.Tool):
+    def __init__(self,
+        name=None,
+        limit_path='',
+        plot_obs=False,
+        plot_1sigmabands=False,
+        plot_2sigmabands=False,
+    ):
+        super(LimitGraphs, self).__init__(name)
+        self.limit_path = limit_path
+        self.plot_obs = plot_obs
+        self.plot_1sigmabands = plot_1sigmabands
+        self.plot_2sigmabands = plot_2sigmabands
+
+    def prepare_sigma_band_graph(self, x_list, sig_low, sig_high):
+        n_items = len(x_list)
+        sig_graph = ROOT.TGraph(2*n_items)
+        for i in xrange(0, n_items):
+            sig_graph.SetPoint(i, x_list[i], sig_low[i])
+        for i in xrange(0, n_items):
+            sig_graph.SetPoint(i+n_items, x_list[n_items-i-1],
+                sig_high[n_items-i-1])
+        return sig_graph
+
+    def make_sigma_band_graph(self, theta_res, sigma_ind, selection=''):
+        assert(type(sigma_ind) == int and (sigma_ind == 1 or sigma_ind == 2))
+        x_list = theta_res.x
+        sigma_band_low = theta_res.bands[sigma_ind-1][0]
+        sigma_band_high = theta_res.bands[sigma_ind-1][1]
+        sigma_graph = self.prepare_sigma_band_graph(x_list, sigma_band_low,
+            sigma_band_high)
+        if sigma_ind == 1:
+            sigma_graph.SetFillColor(ROOT.kYellow)
+            legend='2 sigma band '+selection,
+        else:
+            sigma_graph.SetFillColor(ROOT.kGreen)
+            legend='1 sigma band '+selection,
+
+        lim_wrapper = varial.wrappers.GraphWrapper(sigma_graph,
+            draw_option='F',
+            draw_option_legend='F',
+            val_y_min = min(theta_res.bands[sigma_ind-1][0]),
+            )
+        return lim_wrapper
+
+    def make_graph(self, theta_res, color, line_style, lim_type, selection=''):
+        x_arr = array('f', theta_res.x)
+        y_arr = array('f', theta_res.y)
+        lim_graph = ROOT.TGraph(len(x_arr), x_arr, y_arr)
+        lim_graph.SetLineColor(color)
+        lim_graph.SetLineWidth(2)
+        lim_graph.GetXaxis().SetTitle("m_{T'} [GeV]")
+        lim_graph.GetYaxis().SetTitle("#sigma x BR [pb]")
+        lim_graph.SetLineStyle(line_style)
+        lim_wrapper = varial.wrappers.GraphWrapper(lim_graph,
+            legend=lim_type+' 95% CL '+selection,
+            draw_option='L',
+            val_y_min = min(theta_res.y),
+            )
+        return lim_wrapper
+
+    def make_exp_graph(self, wrp):
+        theta_res_exp = cPickle.loads(wrp.res_exp)
+        color = varial.settings.colors[wrp.name]
+        selection = varial.settings.pretty_names.get(wrp.name, '')
+        lim_wrapper = self.make_graph(theta_res_exp, color, 3, 'Exp', selection)
+        setattr(lim_wrapper, 'save_name', 'tH%.0ftZ%.0fbW%.0f'\
+            % (wrp.brs['th']*100, wrp.brs['tz']*100, wrp.brs['bw']*100))
+        return lim_wrapper
+
+    def make_obs_graph(self, wrp):
+        theta_res_obs = cPickle.loads(wrp.res_obs)
+        color = varial.settings.colors[wrp.name]
+        selection = varial.settings.pretty_names.get(wrp.name, '')
+        lim_wrapper = self.make_graph(theta_res_obs, color, 1, 'Obs', selection)
+        setattr(lim_wrapper, 'save_name', 'tH%.0ftZ%.0fbW%.0f'\
+            % (wrp.brs['th']*100, wrp.brs['tz']*100, wrp.brs['bw']*100))
+        return lim_wrapper
+
+    def make_sigma_graph(self, wrp, ind):
+        theta_res_exp = cPickle.loads(wrp.res_exp)
+        # color = varial.settings.colors[wrp.name]
+        selection = varial.settings.pretty_names.get(wrp.name, '')
+        lim_wrapper = self.make_sigma_band_graph(theta_res_exp, ind, selection)
+        setattr(lim_wrapper, 'save_name', 'tH%.0ftZ%.0fbW%.0f'\
+            % (wrp.brs['th']*100, wrp.brs['tz']*100, wrp.brs['bw']*100))
+        return lim_wrapper
+
+    def set_draw_option(self, wrp, first=True):
+        if first:
+            wrp.draw_option+='A'
+        return wrp
+
+    def run(self):
+        if self.limit_path.startswith('..'):
+            theta_tools = glob.glob(os.path.join(self.cwd, self.limit_path))
+        else: 
+            theta_tools = glob.glob(self.limit_path)
+        wrps = list(self.lookup_result(k) for k in theta_tools)
+        list_graphs=[]
+        for w in wrps:
+            if self.plot_2sigmabands:
+                list_graphs.append(self.set_draw_option(self.make_sigma_graph(w,
+                    1), not list_graphs))
+            if self.plot_1sigmabands:
+                list_graphs.append(self.set_draw_option(self.make_sigma_graph(w,
+                    2), not list_graphs))
+            list_graphs.append(self.set_draw_option(self.make_exp_graph(w),
+                not list_graphs))
+            if self.plot_obs:
+                list_graphs.append(self.set_draw_option(self.make_obs_graph(w),
+                    not list_graphs))
+
+        self.result = list_graphs
