@@ -31,6 +31,7 @@ def tex_table_mod(table, mods=None):
         table = table.replace(*mod)
     return table
 
+
 def add_th_curve(grps, th_x=None, th_y=None):
     for g in grps:
         x_arr=array('f', th_x)
@@ -139,6 +140,10 @@ class ThetaLimits(varial.tools.Tool):
         return wrp
 
     def run(self):
+        # clear workdir to make theta really run
+        if glob.glob(self.cwd+'*'):
+            os.system('rm -rf %s*' % self.cwd)
+
         # create wrp
         wrp = varial.wrappers.Wrapper(
             name='ThetaHistos',
@@ -337,11 +342,11 @@ class ThetaPostFitPlot(varial.tools.Tool):
 ######################################################### plot limit graphs ###
 class LimitGraphs(varial.tools.Tool):
     def __init__(self,
-        name=None,
         limit_path='',
         plot_obs=False,
         plot_1sigmabands=False,
         plot_2sigmabands=False,
+        name=None,
     ):
         super(LimitGraphs, self).__init__(name)
         self.limit_path = limit_path
