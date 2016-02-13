@@ -13,6 +13,7 @@ import multiproc
 import settings
 import analysis
 import monitor
+import splash
 import tools
 
 
@@ -99,6 +100,8 @@ def main(**main_kwargs):
     :param samples:                 list of sample.Sample instances
     :param toolchain:               root toolchain (see tools.py)
     """
+    splash.print_splash()
+
     # iPython mode
     def ipython_warn():
         print "WARNING =================================================="
