@@ -403,20 +403,30 @@ class LimitGraphs(varial.tools.Tool):
 
     def make_exp_graph(self, wrp):
         theta_res_exp = cPickle.loads(wrp.res_exp)
-        color = varial.settings.colors[wrp.name]
+
+        # KeyError: "'ThetaLimits'
+        # color = varial.settings.colors[wrp.name]
+        color = varial.analysis.get_color(wrp.name)
         selection = varial.settings.pretty_names.get(wrp.name, '')
         lim_wrapper = self.make_graph(theta_res_exp, color, 3, 'Exp', selection)
-        setattr(lim_wrapper, 'save_name', 'tH%.0ftZ%.0fbW%.0f'\
-            % (wrp.brs['th']*100, wrp.brs['tz']*100, wrp.brs['bw']*100))
+
+        # AttributeError: 'Wrapper' object has no attribute 'brs'
+        # setattr(lim_wrapper, 'save_name', 'tH%.0ftZ%.0fbW%.0f'\
+        #     % (wrp.brs['th']*100, wrp.brs['tz']*100, wrp.brs['bw']*100))
         return lim_wrapper
 
     def make_obs_graph(self, wrp):
         theta_res_obs = cPickle.loads(wrp.res_obs)
-        color = varial.settings.colors[wrp.name]
+
+        # KeyError: "'ThetaLimits'
+        # color = varial.settings.colors[wrp.name]
+        color = varial.analysis.get_color(wrp.name)
         selection = varial.settings.pretty_names.get(wrp.name, '')
         lim_wrapper = self.make_graph(theta_res_obs, color, 1, 'Obs', selection)
-        setattr(lim_wrapper, 'save_name', 'tH%.0ftZ%.0fbW%.0f'\
-            % (wrp.brs['th']*100, wrp.brs['tz']*100, wrp.brs['bw']*100))
+
+        # AttributeError: 'Wrapper' object has no attribute 'brs'
+        # setattr(lim_wrapper, 'save_name', 'tH%.0ftZ%.0fbW%.0f'\
+        #     % (wrp.brs['th']*100, wrp.brs['tz']*100, wrp.brs['bw']*100))
         return lim_wrapper
 
     def make_sigma_graph(self, wrp, ind):
@@ -424,8 +434,10 @@ class LimitGraphs(varial.tools.Tool):
         # color = varial.settings.colors[wrp.name]
         selection = varial.settings.pretty_names.get(wrp.name, '')
         lim_wrapper = self.make_sigma_band_graph(theta_res_exp, ind, selection)
-        setattr(lim_wrapper, 'save_name', 'tH%.0ftZ%.0fbW%.0f'\
-            % (wrp.brs['th']*100, wrp.brs['tz']*100, wrp.brs['bw']*100))
+
+        # AttributeError: 'Wrapper' object has no attribute 'brs'
+        # setattr(lim_wrapper, 'save_name', 'tH%.0ftZ%.0fbW%.0f'\
+        #    % (wrp.brs['th']*100, wrp.brs['tz']*100, wrp.brs['bw']*100))
         return lim_wrapper
 
     def set_draw_option(self, wrp, first=True):
@@ -453,4 +465,4 @@ class LimitGraphs(varial.tools.Tool):
                 list_graphs.append(self.set_draw_option(self.make_obs_graph(w),
                     not list_graphs))
 
-        self.result = list_graphs
+        self.result = varial.wrp.WrapperWrapper(list_graphs)
