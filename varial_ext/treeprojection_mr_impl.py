@@ -28,23 +28,18 @@ def map_projection(sample_histo_filename, params, open_file=None):
         ROOT.TH1.AddDirectory(True)
         histo = ROOT.TH1F(histoname, *histoargs)
 
-        # catch all trees (may have many namecycles)
-        tree_keys = list(k
-                         for k in input_file.GetListOfKeys()
-                         if k.GetName() == params['treename'])
+        tree = input_file.Get(params['treename'])
+        if not isinstance(tree, ROOT.TTree):
+            raise RuntimeError(
+                'There seems to be no tree named "%s" in file "%s"'%(
+                    params['treename'], input_file))
 
-        for tree in (k.ReadObj() for k in tree_keys):
-            if not isinstance(tree, ROOT.TTree):
-                raise RuntimeError(
-                    'There seems to be no tree named "%s" in file "%s"'%(
-                        params['treename'], input_file))
-
-            n_selected = tree.Draw(histo_draw_cmd, selection, 'goff')
-            if n_selected < 0:
-                raise RuntimeError(
-                    'Error in TTree::Project. Are variables, selections and '
-                    'weights are properly defined?'
-                )
+        n_selected = tree.Draw(histo_draw_cmd, selection, 'goff')
+        if n_selected < 0:
+            raise RuntimeError(
+                'Error in TTree::Project. Are variables, selections and '
+                'weights are properly defined?'
+            )
 
         histo.SetDirectory(0)
         histo.SetName(quantity)
