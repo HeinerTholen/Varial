@@ -1,3 +1,4 @@
+import collections
 import itertools
 import ROOT
 import glob
@@ -157,7 +158,16 @@ class Plotter(toolinterface.Tool):
 
     def load_content(self):
         if self.input_result_path:
-            wrps = self.lookup_result(self.input_result_path)
+            if isinstance(self.input_result_path, str):
+                wrps = self.lookup_result(self.input_result_path)
+            elif isinstance(self.input_result_path, collections.Iterable):
+                wrps = (w
+                        for p in self.input_result_path
+                        for w in self.lookup_result(p))
+            else:
+                raise RuntimeError(
+                    'ERROR I do not understand input_result_path:%s'%
+                    self.input_result_path)
             if not wrps:
                 raise RuntimeError(
                     'ERROR Input not found: "%s"' % self.input_result_path)
