@@ -346,6 +346,7 @@ class LimitGraphs(varial.tools.Tool):
         plot_obs=False,
         plot_1sigmabands=False,
         plot_2sigmabands=False,
+        axis_labels=('signal process', 'upper limit'),
         name=None,
     ):
         super(LimitGraphs, self).__init__(name)
@@ -353,6 +354,7 @@ class LimitGraphs(varial.tools.Tool):
         self.plot_obs = plot_obs
         self.plot_1sigmabands = plot_1sigmabands
         self.plot_2sigmabands = plot_2sigmabands
+        self.axis_labels = axis_labels
 
     def prepare_sigma_band_graph(self, x_list, sig_low, sig_high):
         n_items = len(x_list)
@@ -373,10 +375,11 @@ class LimitGraphs(varial.tools.Tool):
             sigma_band_high)
         if sigma_ind == 1:
             sigma_graph.SetFillColor(ROOT.kYellow)
-            legend='2 sigma band '+selection,
+            legend='2 sigma band '+selection
         else:
             sigma_graph.SetFillColor(ROOT.kGreen)
-            legend='1 sigma band '+selection,
+            legend='1 sigma band '+selection
+        sigma_graph.SetTitle(legend)
 
         lim_wrapper = varial.wrappers.GraphWrapper(sigma_graph,
             draw_option='F',
@@ -406,7 +409,8 @@ class LimitGraphs(varial.tools.Tool):
 
         # KeyError: "'ThetaLimits'
         # color = varial.settings.colors[wrp.name]
-        color = varial.analysis.get_color(wrp.name)
+        # note: I think color should be black by default and made different by constructor args
+        color = 1  # varial.analysis.get_color(wrp.name)
         selection = varial.settings.pretty_names.get(wrp.name, '')
         lim_wrapper = self.make_graph(theta_res_exp, color, 3, 'Exp', selection)
 
@@ -420,7 +424,8 @@ class LimitGraphs(varial.tools.Tool):
 
         # KeyError: "'ThetaLimits'
         # color = varial.settings.colors[wrp.name]
-        color = varial.analysis.get_color(wrp.name)
+        # note: I think color should be black by default and made different by constructor args
+        color = 1  # varial.analysis.get_color(wrp.name)
         selection = varial.settings.pretty_names.get(wrp.name, '')
         lim_wrapper = self.make_graph(theta_res_obs, color, 1, 'Obs', selection)
 
@@ -464,5 +469,9 @@ class LimitGraphs(varial.tools.Tool):
             if self.plot_obs:
                 list_graphs.append(self.set_draw_option(self.make_obs_graph(w),
                     not list_graphs))
+        for l in list_graphs:
+            x_title, y_title = self.axis_labels
+            l.obj.GetXaxis().SetTitle(x_title)
+            l.obj.GetYaxis().SetTitle(y_title)
 
         self.result = varial.wrp.WrapperWrapper(list_graphs)
