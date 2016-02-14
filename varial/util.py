@@ -15,7 +15,7 @@ def integral_and_error(th_hist):
             0, th_hist.GetNbinsX(), 0, th_hist.GetNbinsY(), err)
     else:
         val = th_hist.IntegralAndError(0, th_hist.GetNbinsX(), err)
-    return val, err.value
+    return round(val, 1), round(err.value, 1)
 
 
 def random_hex_str():
@@ -64,7 +64,6 @@ def deepish_copy(obj):
         or callable(obj)
         or inspect.ismodule(obj)
         or inspect.isclass(obj)
-        #or str(type(obj)) == "<type 'generator'>"
     ):
         return obj
     if type(obj) == list:

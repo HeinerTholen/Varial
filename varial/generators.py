@@ -441,14 +441,10 @@ def gen_make_th2_projections(wrps, keep_th2=True):
         yield y_buf.pop(0)
 
 
-def gen_squash_sys(wrps, accumulator):
+def gen_squash_sys(wrps):
     """
     Adds one-sided sys' quadratically and builds envelope from up and down.
     """
-    wrps = list(wrps)
-    if not any(w.sys_info for w in wrps):
-        return accumulator(wrps)
-
     def plus_minus_key(w):
         if w.sys_info.endswith('__plus'):
             return 2
@@ -457,18 +453,17 @@ def gen_squash_sys(wrps, accumulator):
         else:
             return 0
 
-    def sys_type_key(w):
-        return w.sys_info
-
-    # accumulate (e.g. stack) every sys-type by itself
-    wrps = sorted(wrps, key=sys_type_key)
-    wrps = group(wrps, sys_type_key)
-    wrps = (accumulator(ws) for ws in wrps)
-
     # sort for plus and minus and get lists
     wrps = sorted(wrps, key=plus_minus_key)
     wrps = group(wrps, plus_minus_key)
-    nominal_list, minus_list, plus_list = list(list(ws) for ws in wrps)
+    wrps = list(list(ws) for ws in wrps)
+    try:
+        nominal_list, minus_list, plus_list = wrps
+    except ValueError as e:
+        monitor.message('generators.gen_squash_sys',
+                        'FATAL ValueError. wrps:')
+        print wrps
+        raise e
 
     # all minus (plus) uncerts are combined in quadrature
     minus = op.squash_sys_sq(nominal_list + minus_list)
@@ -481,6 +476,24 @@ def gen_squash_sys(wrps, accumulator):
     # if nominal is a stack, the stack must be kept
     nominal.histo_sys_err = res.histo_sys_err
     return nominal
+
+
+def gen_squash_sys_acc(wrps, accumulator):
+    """
+    Adds one-sided sys' quadratically and builds envelope from up and down.
+    """
+    wrps = list(wrps)
+    if not any(w.sys_info for w in wrps):
+        return accumulator(wrps)
+
+    def sys_info_key(w):
+        return w.sys_info
+
+    # accumulate (e.g. stack) every sys-type by itself
+    wrps = sorted(wrps, key=sys_info_key)
+    wrps = group(wrps, sys_info_key)
+    wrps = (accumulator(ws) for ws in wrps)
+    return gen_squash_sys(wrps)
 
 
 ############################################################### load / save ###
@@ -788,12 +801,20 @@ def add_sample_integrals(canvas_builders):
     Adds {'legend1' : histo_integral, ...} to canvases.
     """
     def integral_histo_wrp(wrp):
-        return [(wrp.legend, util.integral_and_error(wrp.obj))]
+        bkg_sum = util.integral_and_error(wrp.histo)
+        sys_sum = (util.integral_and_error(wrp.histo_sys_err)
+                   if wrp.histo_sys_err
+                   else tuple())
+        return [(wrp.legend, bkg_sum + sys_sum)]
 
     def integral_stack_wrp(wrp):
         for hist in wrp.obj.GetHists():
             yield hist.GetTitle(), util.integral_and_error(hist)
-        yield 'bkg_sum', util.integral_and_error(wrp.histo)
+        bkg_sum = util.integral_and_error(wrp.histo)
+        sys_sum = (util.integral_and_error(wrp.histo_sys_err)
+                   if wrp.histo_sys_err
+                   else tuple())
+        yield 'bkg_sum', bkg_sum + sys_sum
 
     def integral(wrp):
         if isinstance(wrp, rnd.StackRenderer):
@@ -866,8 +887,7 @@ def sort_group_merge(wrps, keyfunc):
 
 def mc_stack_n_data_sum(wrps,
                         merge_mc_key_func=None,
-                        use_all_data_lumi=True,
-                        sys_squash=gen_squash_sys):
+                        use_all_data_lumi=True):
     """
     Stacks MC histos and merges data, input needs to be sorted and grouped.
 
@@ -912,24 +932,28 @@ def mc_stack_n_data_sum(wrps,
             bkg = gen_prod(itertools.izip(bkg, itertools.repeat(data_lumi)))
         try:
             if is_2d:
-                bkg_stk = sys_squash(bkg, op.sum)
+                bkg_stk = gen_squash_sys_acc(bkg, op.sum)
             else:
-                bkg_stk = sys_squash(bkg, op.stack)
+                bkg_stk = gen_squash_sys_acc(bkg, op.stack)
         except op.TooFewWrpsError:
             bkg_stk = None
             monitor.message('generators.mc_stack_n_data_sum',
                             'DEBUG No background histograms present!')
 
         # signal
+        sig = list(sig)
+        if any(s.sys_info for s in sig):
+            sig = sorted(sig, key=lambda s: s.sample)
+            sig = group(sig, lambda s: s.sample)
+            sig = (gen_squash_sys(s) for s in sig)
         sig = apply_linecolor(sig)
-        sig = (s for s in sig if not s.sys_info)  # filter systematics on signal
-        sig_lst = list(sig)
-        if not sig_lst:
+        sig = list(sig)
+        if not sig:
             monitor.message('generators.mc_stack_n_data_sum',
                             'DEBUG No signal histograms present!')
 
         # return in order for plotting: bkg, signals, data
-        res = [bkg_stk] + sig_lst + [dat_sum]
+        res = [bkg_stk] + sig + [dat_sum]
         res = list(r for r in res if r)
         if res:
             yield wrappers.WrapperWrapper(res, name=grp.name)

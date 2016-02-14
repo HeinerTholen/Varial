@@ -1171,7 +1171,7 @@ def squash_sys_stddev(wrps):
     """
     Calculates standard deviation for systematic uncertainties.
 
-    Result is stored in wrp.histo.
+    Result is stored in wrp.histo_sys_err, and wrp.histo is from the first wrp.
 
     >>> from ROOT import TH1F
     >>> h1 = TH1F("h1", "", 2, .5, 2.5)
@@ -1182,10 +1182,11 @@ def squash_sys_stddev(wrps):
     1
     >>> ws = list(wrappers.HistoWrapper(h) for h in [h1, h2])
     >>> w1 = squash_sys_stddev(ws)
-    >>> w1.histo_sys_err  # Should be None
-    >>> w1.obj.GetBinContent(1)
+    >>> w1.histo.GetBinContent(1)
+    2.0
+    >>> w1.histo_sys_err.GetBinContent(1)
     3.0
-    >>> w1.obj.GetBinError(1)
+    >>> w1.histo_sys_err.GetBinError(1)
     1.0
     """
     import numpy
@@ -1201,12 +1202,14 @@ def squash_sys_stddev(wrps):
 
     histos = list(w.histo for w in wrps)
     histo = histos[0].Clone()
+    histo_sys_err = histos[0].Clone()
     for i in xrange(histo.GetNbinsX()+2):
         x = numpy.array(list(h.GetBinContent(i) for h in histos))
-        histo.SetBinContent(i, x.mean())
-        histo.SetBinError(i, x.var()**.5)
+        histo_sys_err.SetBinContent(i, x.mean())
+        histo_sys_err.SetBinError(i, x.var()**.5)
 
     info = wrps[0].all_info()
+    info['histo_sys_err'] = histo_sys_err
     return wrappers.HistoWrapper(histo, **info)
 
 
