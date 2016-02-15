@@ -339,6 +339,7 @@ class ThetaPostFitPlot(varial.tools.Tool):
         cnvs = varial.sparseio.bulk_write(cnvs, lambda c: c.name)
         self.result = list(cnvs)
 
+
 ######################################################### plot limit graphs ###
 class LimitGraphs(varial.tools.Tool):
     def __init__(self,
@@ -375,17 +376,18 @@ class LimitGraphs(varial.tools.Tool):
             sigma_band_high)
         if sigma_ind == 1:
             sigma_graph.SetFillColor(ROOT.kYellow)
-            legend='2 sigma band '+selection
+            legend='#pm 2 #sigma '+selection
         else:
             sigma_graph.SetFillColor(ROOT.kGreen)
-            legend='1 sigma band '+selection
+            legend='#pm 1 #sigma '+selection
         sigma_graph.SetTitle(legend)
 
         lim_wrapper = varial.wrappers.GraphWrapper(sigma_graph,
             draw_option='F',
             draw_option_legend='F',
-            val_y_min = min(theta_res.bands[sigma_ind-1][0]),
-            )
+            val_y_min=min(theta_res.bands[sigma_ind-1][0]),
+            legend=legend,
+        )
         return lim_wrapper
 
     def make_graph(self, theta_res, color, line_style, lim_type, selection=''):
@@ -401,7 +403,7 @@ class LimitGraphs(varial.tools.Tool):
             legend=lim_type+' 95% CL '+selection,
             draw_option='L',
             val_y_min = min(theta_res.y),
-            )
+        )
         return lim_wrapper
 
     def make_exp_graph(self, wrp):
