@@ -184,6 +184,9 @@ class WrapperWrapper(Wrapper):
     def __len__(self):
         return len(self.wrps)
 
+    def __getitem__(self, ind):
+        return self.wrps[ind]
+
     @property
     def obj(self):
         """Getter property for primary object. Overwrite!"""

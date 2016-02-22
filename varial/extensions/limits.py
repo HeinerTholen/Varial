@@ -12,6 +12,7 @@ import varial.sparseio
 import varial.analysis
 import varial.tools
 import varial.pklio
+import varial.generators as gen
 
 import theta_auto
 theta_auto.config.theta_dir = os.environ['CMSSW_BASE'] + '/../theta'
@@ -65,6 +66,7 @@ class ThetaLimits(varial.tools.Tool):
         bkg_key=lambda w: w.is_background,
         sys_key=None,
         tex_table_mod_=tex_table_mod,
+        selection=None,
         name=None,
     ):
         super(ThetaLimits, self).__init__(name)
@@ -81,6 +83,9 @@ class ThetaLimits(varial.tools.Tool):
         self.tex_table_mod = tex_table_mod_
         self.model = None
         self.what = 'all'
+        self.with_data = True
+        self.selection = selection or self.name
+        self.mass_points = []
 
     def prepare_dat_sig_bkg(self, wrps):
         if self.filter_keyfunc:
@@ -102,6 +107,7 @@ class ThetaLimits(varial.tools.Tool):
         if not dats:
             self.message('WARNING No data histogram, only expected limits.')
             self.what = 'expected'
+            self.with_data = False
 
         for w in dats:
             setattr(wrp, self.cat_key(w) + '__DATA', w.histo)
@@ -109,6 +115,7 @@ class ThetaLimits(varial.tools.Tool):
             setattr(wrp, self.cat_key(w) + '__' + w.sample, w.histo)
         for w in sigs:
             setattr(wrp, self.cat_key(w) + '__' + w.sample, w.histo)
+            self.mass_points.append(w.sample)
 
     def add_sys_hists(self, wrp):
         wrps = self.lookup_result(self.input_path_sys)
@@ -182,12 +189,13 @@ class ThetaLimits(varial.tools.Tool):
             res_exp, res_obs = limit_func(self.model)
 
             self.message('INFO fetching post-fit parameters')
-            try:
-                postfit = theta_auto.mle(
-                    self.model, input='data', n=1, options=options)
-            except RuntimeError as e:
-                self.message('WARNING error from theta: %s' % str(e.args))
-                postfit = {}
+            postfit = {}
+            if self.with_data:
+                try:
+                    postfit = theta_auto.mle(
+                        self.model, input='data', n=1, options=options)
+                except RuntimeError as e:
+                    self.message('WARNING error from theta: %s' % str(e.args))
 
             # shout it out loud
             summary = theta_auto.model_summary(self.model)
@@ -209,20 +217,22 @@ class ThetaLimits(varial.tools.Tool):
 
         self.result = varial.wrappers.Wrapper(
             name=self.name,
-            res_exp_x=res_exp.x,
-            res_exp_y=res_exp.y,
-            res_exp_xerrors=res_exp.xerrors,
-            res_exp_yerrors=res_exp.yerrors,
-            res_obs_x=getattr(res_obs, 'x', []),
-            res_obs_y=getattr(res_obs, 'y', []),
-            res_obs_xerrors=getattr(res_obs, 'xerrors', []),
-            res_obs_yerrors=getattr(res_obs, 'yerrors', []),
+            # res_exp_x=res_exp.x,
+            # res_exp_y=res_exp.y,
+            # res_exp_xerrors=res_exp.xerrors,
+            # res_exp_yerrors=res_exp.yerrors,
+            # res_obs_x=getattr(res_obs, 'x', []),
+            # res_obs_y=getattr(res_obs, 'y', []),
+            # res_obs_xerrors=getattr(res_obs, 'xerrors', []),
+            # res_obs_yerrors=getattr(res_obs, 'yerrors', []),
 
             # in order to access details, one must unpickle.
             res_exp=cPickle.dumps(res_exp),
             res_obs=cPickle.dumps(res_obs),
             summary=cPickle.dumps(summary),
             postfit_vals=postfit,
+            selection=self.selection,
+            mass_points=self.mass_points,
         )
 
 
@@ -367,11 +377,8 @@ class LimitGraphs(varial.tools.Tool):
                 sig_high[n_items-i-1])
         return sig_graph
 
-    def make_sigma_band_graph(self, theta_res, sigma_ind, selection=''):
-        assert(type(sigma_ind) == int and (sigma_ind == 1 or sigma_ind == 2))
-        x_list = theta_res.x
-        sigma_band_low = theta_res.bands[sigma_ind-1][0]
-        sigma_band_high = theta_res.bands[sigma_ind-1][1]
+    def make_sigma_band_graph(self, x_list, sigma_band_low, sigma_band_high, sigma_ind, selection=''):
+        assert type(sigma_ind) == int and (sigma_ind == 1 or sigma_ind == 2)
         sigma_graph = self.prepare_sigma_band_graph(x_list, sigma_band_low,
             sigma_band_high)
         if sigma_ind == 1:
@@ -385,14 +392,14 @@ class LimitGraphs(varial.tools.Tool):
         lim_wrapper = varial.wrappers.GraphWrapper(sigma_graph,
             draw_option='F',
             draw_option_legend='F',
-            val_y_min=min(theta_res.bands[sigma_ind-1][0]),
+            val_y_min=min(sigma_band_low),
             legend=legend,
         )
         return lim_wrapper
 
-    def make_graph(self, theta_res, color, line_style, lim_type, selection=''):
-        x_arr = array('f', theta_res.x)
-        y_arr = array('f', theta_res.y)
+    def make_graph(self, x_list, y_list, color, line_style, lim_type, selection=''):
+        x_arr = array('f', x_list)
+        y_arr = array('f', y_list)
         lim_graph = ROOT.TGraph(len(x_arr), x_arr, y_arr)
         lim_graph.SetLineColor(color)
         lim_graph.SetLineWidth(2)
@@ -402,49 +409,95 @@ class LimitGraphs(varial.tools.Tool):
         lim_wrapper = varial.wrappers.GraphWrapper(lim_graph,
             legend=lim_type+' 95% CL '+selection,
             draw_option='L',
-            val_y_min = min(theta_res.y),
+            val_y_min = min(y_list),
         )
         return lim_wrapper
 
-    def make_exp_graph(self, wrp):
-        theta_res_exp = cPickle.loads(wrp.res_exp)
-
-        # KeyError: "'ThetaLimits'
-        # color = varial.settings.colors[wrp.name]
-        # note: I think color should be black by default and made different by constructor args
-        color = 1  # varial.analysis.get_color(wrp.name)
-        selection = varial.settings.pretty_names.get(wrp.name, '')
-        lim_wrapper = self.make_graph(theta_res_exp, color, 3, 'Exp', selection)
-
-        # AttributeError: 'Wrapper' object has no attribute 'brs'
-        # setattr(lim_wrapper, 'save_name', 'tH%.0ftZ%.0fbW%.0f'\
-        #     % (wrp.brs['th']*100, wrp.brs['tz']*100, wrp.brs['bw']*100))
+    def make_exp_graph(self, grp):
+        if len(grp) == 1:
+            wrp = grp[0]
+            theta_res_exp = cPickle.loads(wrp.res_exp)
+            x_list = theta_res_exp.x
+            y_list = theta_res_exp.y
+            color = varial.analysis.get_color(wrp.selection or wrp.name, default=1)
+            selection = varial.settings.pretty_names.get(wrp.selection or wrp.name, '')
+        elif len(grp) > 1:
+            x_list = []
+            y_list = []
+            selection = varial.settings.pretty_names.get(grp[0].selection or grp[0].name, '')
+            color = varial.analysis.get_color(grp[0].selection or grp[0].name, default=1)
+            wrps = grp.wrps
+            wrps = sorted(wrps, key=lambda w: w.mass_points[0])
+            for wrp in wrps:
+                theta_res_exp = cPickle.loads(wrp.res_exp)
+                x = theta_res_exp.x
+                y = theta_res_exp.y
+                assert len(x)==1 and len(y)==1, 'Not exactly one mass point in limit wrapper!'
+                x_list.append(x[0])
+                y_list.append(y[0])
+        lim_wrapper = self.make_graph(x_list, y_list, color, 3, 'Exp', selection)
+        if hasattr(wrp, 'brs'):
+            setattr(lim_wrapper, 'save_name', 'tH%.0ftZ%.0fbW%.0f'\
+                % (wrp.brs['th']*100, wrp.brs['tz']*100, wrp.brs['bw']*100))
         return lim_wrapper
 
-    def make_obs_graph(self, wrp):
-        theta_res_obs = cPickle.loads(wrp.res_obs)
-
-        # KeyError: "'ThetaLimits'
-        # color = varial.settings.colors[wrp.name]
-        # note: I think color should be black by default and made different by constructor args
-        color = 1  # varial.analysis.get_color(wrp.name)
-        selection = varial.settings.pretty_names.get(wrp.name, '')
-        lim_wrapper = self.make_graph(theta_res_obs, color, 1, 'Obs', selection)
-
-        # AttributeError: 'Wrapper' object has no attribute 'brs'
-        # setattr(lim_wrapper, 'save_name', 'tH%.0ftZ%.0fbW%.0f'\
-        #     % (wrp.brs['th']*100, wrp.brs['tz']*100, wrp.brs['bw']*100))
+    def make_obs_graph(self, grp):
+        if len(grp) == 1:
+            wrp = grp[0]
+            theta_res_obs = cPickle.loads(wrp.res_obs)
+            x_list = theta_res_obs.x
+            y_list = theta_res_obs.y
+            color = varial.analysis.get_color(wrp.selection or wrp.name, default=1)
+            selection = varial.settings.pretty_names.get(wrp.selection or wrp.name, '')
+        elif len(grp) > 1:
+            x_list = []
+            y_list = []
+            selection = varial.settings.pretty_names.get(grp[0].selection or grp[0].name, '')
+            color = varial.analysis.get_color(grp[0].selection or grp[0].name, default=1)
+            wrps = grp.wrps
+            wrps = sorted(wrps, key=lambda w: w.mass_points[0])
+            for wrp in wrps:
+                theta_res_obs = cPickle.loads(wrp.res_obs)
+                x = theta_res_obs.x
+                y = theta_res_obs.y
+                assert len(x)==1 and len(y)==1, 'Not exactly one mass point in limit wrapper!'
+                x_list.append(x[0])
+                y_list.append(y[0])
+        lim_wrapper = self.make_graph(x_list, y_list, color, 1, 'Obs', selection)
+        if hasattr(wrp, 'brs'):
+            setattr(lim_wrapper, 'save_name', 'tH%.0ftZ%.0fbW%.0f'\
+                % (wrp.brs['th']*100, wrp.brs['tz']*100, wrp.brs['bw']*100))
         return lim_wrapper
 
-    def make_sigma_graph(self, wrp, ind):
-        theta_res_exp = cPickle.loads(wrp.res_exp)
-        # color = varial.settings.colors[wrp.name]
-        selection = varial.settings.pretty_names.get(wrp.name, '')
-        lim_wrapper = self.make_sigma_band_graph(theta_res_exp, ind, selection)
-
-        # AttributeError: 'Wrapper' object has no attribute 'brs'
-        # setattr(lim_wrapper, 'save_name', 'tH%.0ftZ%.0fbW%.0f'\
-        #    % (wrp.brs['th']*100, wrp.brs['tz']*100, wrp.brs['bw']*100))
+    def make_sigma_graph(self, grp, ind):
+        assert type(ind) == int and (ind == 1 or ind == 2)
+        if len(grp) == 1:
+            wrp = grp[0]
+            theta_res = cPickle.loads(wrp.res_exp)
+            x_list = theta_res.x
+            sigma_band_low = theta_res.bands[ind-1][0]
+            sigma_band_high = theta_res.bands[ind-1][1]
+            selection = varial.settings.pretty_names.get(wrp.selection or wrp.name, '')
+        elif len(grp) > 1:
+            selection = varial.settings.pretty_names.get(grp[0].selection or grp[0].name, '')
+            x_list = []
+            sigma_band_low = []
+            sigma_band_high = []
+            wrps = grp.wrps
+            wrps = sorted(wrps, key=lambda w: w.mass_points[0])
+            for wrp in wrps:
+                theta_res = cPickle.loads(wrp.res_exp)
+                x = theta_res.x
+                sigma_low = theta_res.bands[ind-1][0]
+                sigma_high = theta_res.bands[ind-1][1]
+                assert len(x)==1 and len(sigma_low)==1 and len(sigma_high)==1, 'Not exactly one mass point in limit wrapper!'
+                x_list.append(x[0])
+                sigma_band_low.append(sigma_low[0])
+                sigma_band_high.append(sigma_high[0])
+        lim_wrapper = self.make_sigma_band_graph(x_list, sigma_band_low, sigma_band_high, ind, selection)
+        if hasattr(wrp, 'brs'):
+            setattr(lim_wrapper, 'save_name', 'tH%.0ftZ%.0fbW%.0f'\
+               % (wrp.brs['th']*100, wrp.brs['tz']*100, wrp.brs['bw']*100))
         return lim_wrapper
 
     def set_draw_option(self, wrp, first=True):
@@ -459,6 +512,8 @@ class LimitGraphs(varial.tools.Tool):
             theta_tools = glob.glob(self.limit_path)
         wrps = list(self.lookup_result(k) for k in theta_tools)
         list_graphs=[]
+        wrps = sorted(wrps, key=lambda w: w.selection)
+        wrps = gen.group(wrps, key_func=lambda w: w.selection)
         for w in wrps:
             if self.plot_2sigmabands:
                 list_graphs.append(self.set_draw_option(self.make_sigma_graph(w,
