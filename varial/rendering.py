@@ -65,7 +65,7 @@ class HistoRenderer(Renderer, wrappers.HistoWrapper):
         elif 'TH2' in wrp.type:
             self.draw_option = 'colz'
         elif self.is_data:
-            self.draw_option = 'E1X0'
+            self.draw_option = 'E0X0'
         else:
             self.draw_option = 'hist'
 
@@ -633,7 +633,9 @@ class BottomPlot(util.Decorator):
         bottom_hist.SetTitle('')
         bottom_hist.SetLineColor(1)
         bottom_hist.SetLineStyle(1)
-        bottom_hist.SetMarkerSize(0)
+        bottom_hist.SetLineWidth(1)
+        bottom_hist.SetMarkerStyle(20)
+        bottom_hist.SetMarkerSize(.7)
 #        y_min = self.dec_par['y_min']
 #        y_max = self.dec_par['y_max']
 #        hist_min = bottom_hist.GetMinimum()
@@ -706,13 +708,29 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
 
         # overlaying ratio histogram
         mc_histo_no_err = mcee_rnd.histo.Clone()
+        data_hist = data_rnd.histo                      # NO CLONE HERE!
+        data_hist.SetBinErrorOption(ROOT.TH1.kPoisson)
         for i in xrange(mc_histo_no_err.GetNbinsX()+2):
             mc_histo_no_err.SetBinError(i, 0.)
-        div_hist = data_rnd.histo.Clone()
+            if not data_hist.GetBinContent(i): 
+                if not mc_histo_no_err.GetBinContent(i):
+                    data_hist.SetBinContent(i, -2.)
+                    data_hist.SetBinError(i, 0)
+                else:
+                    data_rnd.histo
+                    data_hist.SetBinError(i, 1.8)
+        div_hist = data_hist.Clone()                    # NOW CLONING!
         div_hist.Add(mc_histo_no_err, -1)
         div_hist.Divide(mc_histo_no_err)
         div_hist.SetYTitle(y_title)
         self.bottom_hist = div_hist
+
+        # for empty MC set data to 0
+        for i in xrange(mc_histo_no_err.GetNbinsX()+2):
+            if not div_hist.GetBinContent(i): 
+                if not mc_histo_no_err.GetBinContent(i):
+                    div_hist.SetBinContent(i, -2.)
+                    div_hist.SetBinError(i, 0)
 
         # underlying error bands
         if mcee_rnd.histo_sys_err:
