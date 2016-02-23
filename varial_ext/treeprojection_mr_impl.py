@@ -34,11 +34,20 @@ def map_projection(sample_histo_filename, params, open_file=None):
                 'There seems to be no tree named "%s" in file "%s"'%(
                     params['treename'], input_file))
 
+        for alias, fcn in params.get('aliases', {}).iteritems():
+            if not tree.SetAlias(alias, fcn):
+                raise RuntimeError(
+                    'Error in TTree::SetAlias: it did not understand %s.'%alias
+                )
+
+
         n_selected = tree.Draw(histo_draw_cmd, selection, 'goff')
         if n_selected < 0:
             raise RuntimeError(
                 'Error in TTree::Project. Are variables, selections and '
-                'weights are properly defined?'
+                'weights are properly defined? cmd, selection: %s, %s' % (
+                    histo_draw_cmd, selections
+                )
             )
 
         histo.SetDirectory(0)
