@@ -271,7 +271,7 @@ class CanvasBuilder(object):
                             w.draw_option = 'hist'
                             w.histo.SetLineWidth(2)
                         elif not w.is_data:  # circles for pseudo-data
-                            w.draw_option = 'E1X0'
+                            w.draw_option = 'E0X0'
                             w.draw_option_legend = 'p'
                             w.histo.SetMarkerStyle(4)
 
@@ -712,7 +712,7 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
         data_hist.SetBinErrorOption(ROOT.TH1.kPoisson)
         for i in xrange(mc_histo_no_err.GetNbinsX()+2):
             mc_histo_no_err.SetBinError(i, 0.)
-            if not data_hist.GetBinContent(i): 
+            if not data_hist.GetBinContent(i):
                 if not mc_histo_no_err.GetBinContent(i):
                     data_hist.SetBinContent(i, -2.)
                     data_hist.SetBinError(i, 0)
@@ -727,7 +727,7 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
 
         # for empty MC set data to 0
         for i in xrange(mc_histo_no_err.GetNbinsX()+2):
-            if not div_hist.GetBinContent(i): 
+            if not div_hist.GetBinContent(i):
                 if not mc_histo_no_err.GetBinContent(i):
                     div_hist.SetBinContent(i, -2.)
                     div_hist.SetBinError(i, 0)

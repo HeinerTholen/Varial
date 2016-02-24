@@ -60,12 +60,13 @@ class ThetaLimits(varial.tools.Tool):
         input_path_sys='../HistoLoaderSys',
         filter_keyfunc=None,
         asymptotic=True,
+        limit_func=None,
         cat_key=lambda _: 'histo',  # lambda w: w.category,
         dat_key=lambda w: w.is_data or w.is_pseudo_data,
         sig_key=lambda w: w.is_signal,
         bkg_key=lambda w: w.is_background,
         sys_key=None,
-        tex_table_mod_=tex_table_mod,
+        tex_table_mod_func=tex_table_mod,
         selection=None,
         name=None,
     ):
@@ -74,18 +75,22 @@ class ThetaLimits(varial.tools.Tool):
         self.input_path = input_path
         self.input_path_sys = input_path_sys
         self.filter_keyfunc = filter_keyfunc
-        self.asymptotic = asymptotic
         self.cat_key = cat_key
         self.dat_key = dat_key
         self.sig_key = sig_key
         self.bkg_key = bkg_key
         self.sys_key = sys_key
-        self.tex_table_mod = tex_table_mod_
+        self.tex_table_mod = tex_table_mod_func
         self.model = None
         self.what = 'all'
         self.with_data = True
         self.selection = selection or self.name
         self.mass_points = []
+        self.limit_func = limit_func or (
+            theta_auto.asymptotic_cls_limits
+            if asymptotic else
+            lambda m: theta_auto.bayesian_limits(m, what=self.what)
+        )
 
     def prepare_dat_sig_bkg(self, wrps):
         if self.filter_keyfunc:
@@ -161,16 +166,9 @@ class ThetaLimits(varial.tools.Tool):
         self.add_nominal_hists(wrp)
         self.add_sys_hists(wrp)
         self.store_histos_for_theta(wrp)
+        self.message('INFO calling theta func: %s' % self.limit_func)
 
-        if self.asymptotic:
-            limit_func = theta_auto.asymptotic_cls_limits
-        else:
-            limit_func = lambda m: theta_auto.bayesian_limits(m, what=self.what)
-
-        self.message('INFO calling theta func: %s' % (
-            'asymptotic_cls_limits' if self.asymptotic else 'bayesian_limits'))
-
-        # theta's config.workdir is broken for mle, where it writes temp data 
+        # theta's config.workdir is broken for mle, where it writes temp data
         # into cwd. Therefore change into self.cwd.
         base_path = os.getcwd()
         os.chdir(self.cwd)
@@ -186,7 +184,7 @@ class ThetaLimits(varial.tools.Tool):
 
             # get model and let the fit run
             self.model = self.model_func('ThetaHistos.root')
-            res_exp, res_obs = limit_func(self.model)
+            res_exp, res_obs = self.limit_func(self.model)
 
             self.message('INFO fetching post-fit parameters')
             postfit = {}
@@ -299,7 +297,7 @@ class ThetaPostFitPlot(varial.tools.Tool):
 
     @staticmethod
     def put_axis_foo(n_items, prim_graph, post_fit_items):
-        prim_hist = prim_graph.GetHistogram() 
+        prim_hist = prim_graph.GetHistogram()
         ax_1 = prim_hist.GetYaxis()
         ax_2 = prim_hist.GetXaxis()
 
@@ -323,7 +321,7 @@ class ThetaPostFitPlot(varial.tools.Tool):
     def mk_canvas(self, sig_name, post_fit_dict):
         n = len(post_fit_dict)
         items = self.prepare_post_fit_items(post_fit_dict)
-        
+
         g = self.prepare_pull_graph(n, items)
         g68, g95 = self.prepare_band_graphs(n)
         cnv = self.prepare_canvas(sig_name)
@@ -332,7 +330,7 @@ class ThetaPostFitPlot(varial.tools.Tool):
         g95.Draw('AF')
         g68.Draw('F')
         g.Draw('P')
-        
+
         self.put_axis_foo(n, g95, items)
         g95.GetHistogram().Draw('axis,same')
         cnv.Modified()
@@ -343,7 +341,7 @@ class ThetaPostFitPlot(varial.tools.Tool):
 
     def run(self):
         theta_res = self.lookup_result(self.input_path)
-        cnvs = (self.mk_canvas(sig, pfd) 
+        cnvs = (self.mk_canvas(sig, pfd)
                 for sig, pfd in theta_res.postfit_vals.iteritems())
 
         cnvs = varial.sparseio.bulk_write(cnvs, lambda c: c.name)
@@ -508,7 +506,7 @@ class LimitGraphs(varial.tools.Tool):
     def run(self):
         if self.limit_path.startswith('..'):
             theta_tools = glob.glob(os.path.join(self.cwd, self.limit_path))
-        else: 
+        else:
             theta_tools = glob.glob(self.limit_path)
         wrps = list(self.lookup_result(k) for k in theta_tools)
         list_graphs=[]
