@@ -135,6 +135,12 @@ class StackRenderer(HistoRenderer, wrappers.StackWrapper):
             self.stack.GetHists()[0]
         )
 
+    def y_max(self):
+        if self.histo_sys_err:
+            return self.val_y_max or self.histo_tot_err.GetMaximum()
+        else:
+            return super(StackRenderer, self).y_max()
+
     def draw(self, option=''):
         for h in self.stack.GetHists():
             h.SetLineColor(ROOT.kGray)
@@ -665,21 +671,25 @@ class BottomPlotRatio(BottomPlot):
     """Ratio of first and second histogram in canvas."""
 
     def check_renderers(self):
-        n_data_hists = len(filter(lambda r: r.is_data or r.is_pseudo_data,
-                                  self.renderers))
-
         if 'TH2' in self.renderers[0].type:
             return False
 
-        if n_data_hists > 1:
-            raise RuntimeError('ERROR BottomPlots can only be created '
-                               'with exactly one data histogram')
-        return n_data_hists == 1
+        data_hists = list(r
+                          for r in self.renderers
+                          if r.is_data or r.is_pseudo_data)
+
+        if len(data_hists) > 1:
+            self.message('ERROR BottomPlots can only be created with exactly '
+                         'one data histogram. Data hists: %s' % data_hists)
+            return False
+
+        return bool(data_hists)
 
     def define_bottom_hist(self):
         rnds = self.renderers
-        wrp = op.div([rnds[0]] + filter(
-            lambda r: r.is_data or r.is_pseudo_data, rnds))
+        wrp = op.div([rnds[0]] + list(r
+                                      for r in rnds
+                                      if r.is_data or r.is_pseudo_data))
         for i in xrange(1, wrp.histo.GetNbins() + 1):
             cont = wrp.histo.GetBinContent(i)
             wrp.histo.SetBinContent(i, cont - 1.)
@@ -717,7 +727,6 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
                     data_hist.SetBinContent(i, -2.)
                     data_hist.SetBinError(i, 0)
                 else:
-                    data_rnd.histo
                     data_hist.SetBinError(i, 1.8)
         div_hist = data_hist.Clone()                    # NOW CLONING!
         div_hist.Add(mc_histo_no_err, -1)
