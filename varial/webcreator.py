@@ -124,7 +124,7 @@ class WebCreator(toolinterface.Tool):
       background: #fafafa;
       display: block;
     }
-    ul li ul li:hover { 
+    ul li ul li:hover {
       background: #555;
     }
     ul li ul li:hover a {
@@ -451,7 +451,7 @@ class WebCreator(toolinterface.Tool):
         )
 
         # build rootjs base link (without item yet)
-        rootjs_base_link = '../' * (self.working_dir.count('/') 
+        rootjs_base_link = '../' * (self.working_dir.count('/')
                                     - self.rootjs_dir_level)
         rootjs_base_link += 'rootjs.html?file='
         rootjs_base_link += os.path.normpath(

@@ -17,6 +17,7 @@ def _catch_exception_in_worker(func, *args, **kws):
     try:
         res = func(*args, **kws)
 
+    # TODO: write SIGINT handler and kill again
     except KeyboardInterrupt as e:
         res = 'Exception', e.__class__, e.args
 
