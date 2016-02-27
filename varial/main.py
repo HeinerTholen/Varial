@@ -112,8 +112,8 @@ def main(**main_kwargs):
         ipython_warn()
         atexit.register(tear_down)
 
-    else:
-        signal.signal(signal.SIGINT, sig_handler.handle)
+    # else:
+    #     signal.signal(signal.SIGINT, sig_handler.handle)
 
     # setup samples
     if 'samples' in main_kwargs:
