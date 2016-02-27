@@ -2,17 +2,19 @@
 Limit derivation with theta: http://theta-framework.org
 """
 
-import cPickle
-import ROOT
-import os
-import glob
 from array import array
+import collections
+import cPickle
+import numpy
+import ROOT
+import glob
+import os
 
+import varial.generators as gen
 import varial.sparseio
 import varial.analysis
 import varial.tools
 import varial.pklio
-import varial.generators as gen
 
 import theta_auto
 theta_auto.config.theta_dir = os.environ['CMSSW_BASE'] + '/../theta'
@@ -68,6 +70,8 @@ class ThetaLimits(varial.tools.Tool):
         sys_key=None,
         tex_table_mod_func=tex_table_mod,
         selection=None,
+        pvalue_func=None,
+        postfit_func=None,
         name=None,
     ):
         super(ThetaLimits, self).__init__(name)
@@ -84,6 +88,10 @@ class ThetaLimits(varial.tools.Tool):
         self.model = None
         self.what = 'all'
         self.with_data = True
+        self.pvalue_func = pvalue_func# or (lambda m: theta_auto.zvalue_approx(
+                                      #                 m, input='data', n=1)
+        self.postfit_func = postfit_func or (lambda m: theta_auto.mle(
+                                                        m, input='data', n=1))
         self.selection = selection or self.name
         self.mass_points = []
         self.limit_func = limit_func or (
@@ -166,7 +174,6 @@ class ThetaLimits(varial.tools.Tool):
         self.add_nominal_hists(wrp)
         self.add_sys_hists(wrp)
         self.store_histos_for_theta(wrp)
-        self.message('INFO calling theta func: %s' % self.limit_func)
 
         # theta's config.workdir is broken for mle, where it writes temp data
         # into cwd. Therefore change into self.cwd.
@@ -184,16 +191,29 @@ class ThetaLimits(varial.tools.Tool):
 
             # get model and let the fit run
             self.model = self.model_func('ThetaHistos.root')
+
+            self.message('INFO calling theta limit func at %s' % self.cwd)
             res_exp, res_obs = self.limit_func(self.model)
 
-            self.message('INFO fetching post-fit parameters')
+            if self.pvalue_func:
+                self.message('INFO calculating p-value')
+                p_vals = self.pvalue_func(self.model)
+                for z_dict in p_vals.itervalues():
+                    z = z_dict['Z']
+                    if isinstance(z, collections.Iterable):
+                        z = numpy.median(z)
+                    z_dict['p'] = theta_auto.Z_to_p(z)
+            else:
+                p_vals = {}
+
             postfit = {}
-            if self.with_data:
-                try:
-                    postfit = theta_auto.mle(
-                        self.model, input='data', n=1, options=options)
-                except RuntimeError as e:
-                    self.message('WARNING error from theta: %s' % str(e.args))
+            if self.postfit_func:
+                self.message('INFO fetching post-fit parameters')
+                if self.with_data:
+                    try:
+                        postfit = self.postfit_func(self.model)
+                    except RuntimeError as e:
+                        self.message('WARNING error from theta: %s' % str(e.args))
 
             # shout it out loud
             summary = theta_auto.model_summary(self.model)
@@ -229,6 +249,7 @@ class ThetaLimits(varial.tools.Tool):
             res_obs=cPickle.dumps(res_obs),
             summary=cPickle.dumps(summary),
             postfit_vals=postfit,
+            p_vals=p_vals,
             selection=self.selection,
             mass_points=self.mass_points,
         )
@@ -251,7 +272,7 @@ class ThetaPostFitPlot(varial.tools.Tool):
         return list(
             (name, val_err)
             for name, (val_err,) in sorted(post_fit_dict.iteritems())
-            if name not in ('__nll', 'beta_signal')
+            if name not in ('__nll')
         )
 
     @staticmethod
