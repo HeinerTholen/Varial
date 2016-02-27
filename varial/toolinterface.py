@@ -311,7 +311,7 @@ def _run_tool_in_worker(arg):
     chain = analysis.lookup_tool(chain_path)
     reuse_status = chain._reuse
     tool = chain.tool_chain[tool_index]
-    multiproc.exec_in_worker(lambda: chain._run_tool(tool))
+    chain._run_tool(tool)
     reused = chain._reuse
     chain._reuse = reuse_status  # reset for next job on worker
     return tool.name, reused
@@ -319,7 +319,7 @@ def _run_tool_in_worker(arg):
 
 class ToolChainParallel(ToolChain):
     """
-    Parallel execution of tools. 
+    Parallel execution of tools.
 
     Tools must not depend on each other an are executed independently.
     """
@@ -354,24 +354,17 @@ class ToolChainParallel(ToolChain):
         n_workers = self.n_workers or min(n_tools, settings.max_num_processes)
         my_path = analysis.get_current_tool_path()
         tool_index_list = list((my_path, i) for i in xrange(n_tools))
-        pool = multiproc.NoDeamonWorkersPool(n_workers)
-        result_iter = pool.imap_unordered(_run_tool_in_worker, tool_index_list)
 
         # run processing
-        try:
-            for name, reused in result_iter:
+        with multiproc.NoDeamonWorkersPool(n_workers) as pool:
+            for name, reused in pool.imap_unordered(_run_tool_in_worker,
+                                                    tool_index_list):
                 if not reused:
                     self._reuse = False
 
                 with monitor.ErrorLevelContext(2):
                     self._load_results(self.tool_names[name])
 
-        except KeyboardInterrupt:
-            multiproc.do_kill_now()
-
-        # cleanup
-        pool.close()
-        pool.join()
 
 
 #TODO _load_results => move to analysis and only load on demand

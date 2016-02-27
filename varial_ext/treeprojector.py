@@ -25,7 +25,7 @@ class TreeProjectorBase(varial.tools.Tool):
     """
     Project histograms from files with TTrees.
 
-    :param filenames:               dict(sample -> list of files), e.g.   
+    :param filenames:               dict(sample -> list of files), e.g.
                                     ``{'samplename': [file1, file2, ...], ...}``
     :param params:                  dict of params for ``map_projection``
     :param sec_sel_weight:          e.g. ``[('title', 'pt>5.', 'weight'), ...]``
@@ -104,38 +104,10 @@ class TreeProjectorBase(varial.tools.Tool):
 
 
 ######################################### tree project directly on the node ###
-def runtime_error_catcher(func):
-    def catcher(args):
-        try:
-            res = func(args)
-        except RuntimeError, e:
-            res = 'RuntimeError', e.message
-        return res
-    return catcher
-
-
-def gen_raise_runtime_error(iterator):
-    for i in iterator:
-        if isinstance(i, tuple) and i and i[0] == 'RuntimeError':
-            raise RuntimeError(i[1])
-        else:
-            yield i
-
-
-def _map_fwd(args):
-    return varial.multiproc.exec_in_worker(
-        runtime_error_catcher(jug_map_projection_per_file),
-        args
-    )
-
-
 def _handle_sample(args):
     instance, sample = args
     instance = varial.analysis.lookup_tool(instance)
-    return varial.multiproc.exec_in_worker(
-        runtime_error_catcher(instance.handle_sample),
-        sample
-    )
+    return instance.handle_sample(sample),
 
 
 class TreeProjector(TreeProjectorBase):
@@ -148,8 +120,7 @@ class TreeProjector(TreeProjectorBase):
                 if isinstance(weight, dict):
                     weight = weight[sample]
                 res = self.prepare_mapiter(selection, weight, sample)
-                res = pool.imap_unordered(_map_fwd, res)
-                res = gen_raise_runtime_error(res)
+                res = pool.imap_unordered(jug_map_projection_per_file, res)
                 res = itertools.chain.from_iterable(res)
                 res = reduce_projection(res, self.params)
                 res = list(res)
@@ -170,7 +141,6 @@ class TreeProjector(TreeProjectorBase):
 
             # work
             res = pool.imap_unordered(_handle_sample, res)
-            res = gen_raise_runtime_error(res)
             for _ in res:
                 pass
 

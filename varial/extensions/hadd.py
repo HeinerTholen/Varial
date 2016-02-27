@@ -17,7 +17,7 @@ join = os.path.join
 def _handle_block(args):
     instance, name, files = args
     instance = varial.analysis.lookup_tool(instance)
-    varial.multiproc.exec_in_worker(lambda: instance.handle_block(name, files))
+    instance.handle_block(name, files)
 
 
 class Hadd(varial.tools.Tool):
@@ -92,16 +92,13 @@ class Hadd(varial.tools.Tool):
                 other_inputs.append(file_path)
 
         # apply hadd in parallel
-        pool = varial.multiproc.NoDeamonWorkersPool(
-            min(varial.settings.max_num_processes, len(basename_map)))
+        n_procs = min(varial.settings.max_num_processes, len(basename_map))
         iterable = ((varial.analysis.get_current_tool_path(), bn, fs)
                     for bn, fs in basename_map.iteritems())
 
-        for _ in pool.imap_unordered(_handle_block, iterable):
-            pass
-
-        pool.close()
-        pool.join()
+        with varial.multiproc.NoDeamonWorkersPool(n_procs) as pool:
+            for _ in pool.imap_unordered(_handle_block, iterable):
+                pass
 
         # link others
         for f in other_inputs:
