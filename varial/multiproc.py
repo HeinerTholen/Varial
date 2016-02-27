@@ -17,6 +17,9 @@ def _catch_exception_in_worker(func, *args, **kws):
     try:
         res = func(*args, **kws)
 
+    except KeyboardInterrupt as e:
+        res = 'Exception', e.__class__, e.args
+
     except Exception as e:
         res = 'Exception', e.__class__, e.args
         if _stacktrace_print_lock.acquire(block=False):
@@ -28,9 +31,6 @@ def _catch_exception_in_worker(func, *args, **kws):
             print '='*80
             print 'EXCEPTION IN PARALLEL EXECUTION END'
             print '='*80
-
-    except KeyboardInterrupt as e:
-        res = 'Exception', e.__class__, e.args
 
     return res
 
