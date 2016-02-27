@@ -96,7 +96,7 @@ class Hadd(varial.tools.Tool):
         iterable = ((varial.analysis.get_current_tool_path(), bn, fs)
                     for bn, fs in basename_map.iteritems())
 
-        with varial.multiproc.NoDeamonWorkersPool(n_procs) as pool:
+        with varial.multiproc.WorkerPool(n_procs) as pool:
             for _ in pool.imap_unordered(_handle_block, iterable):
                 pass
 

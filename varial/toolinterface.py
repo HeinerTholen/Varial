@@ -356,7 +356,7 @@ class ToolChainParallel(ToolChain):
         tool_index_list = list((my_path, i) for i in xrange(n_tools))
 
         # run processing
-        with multiproc.NoDeamonWorkersPool(n_workers) as pool:
+        with multiproc.WorkerPool(n_workers) as pool:
             for name, reused in pool.imap_unordered(_run_tool_in_worker,
                                                     tool_index_list):
                 if not reused:

@@ -115,7 +115,7 @@ class TreeProjector(TreeProjectorBase):
         self.message('INFO starting sample: ' + sample)
 
         n_procs = varial.settings.max_num_processes
-        with varial.multiproc.NoDeamonWorkersPool(n_procs) as pool:
+        with varial.multiproc.WorkerPool(n_procs) as pool:
             for section, selection, weight in self.sec_sel_weight:
                 if isinstance(weight, dict):
                     weight = weight[sample]
@@ -135,7 +135,7 @@ class TreeProjector(TreeProjectorBase):
         os.system('touch ' + self.cwd + 'webcreate_denial')
 
         n_procs = min(varial.settings.max_num_processes, len(self.samples))
-        with varial.multiproc.NoDeamonWorkersPool(n_procs) as pool:
+        with varial.multiproc.WorkerPool(n_procs) as pool:
             res = ((varial.analysis.get_current_tool_path(), s)
                    for s in self.samples)
 

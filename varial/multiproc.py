@@ -1,5 +1,34 @@
 """
 Management for multiprocessing in varial.
+
+WorkerPool creates child processes that do not daemonize. Therefore they can
+spawn further children, which is handy to parallelize at many levels (e.g. run
+parallel tools at every level of a complex directory structure). Nevertheless,
+only a given number of workers runs at the same time, thus keeping the processes
+from dead-locking resources.
+Exceptions from the worker processes are passed to the host process.
+
+When using this module it is important to watch memory consumption! Every
+spawned process is copied in memory. It is best to load data within a worker,
+not in the host process.
+
+Example usage:
+
+>>> import varial.multiproc
+>>>
+>>> my_input_list = [1,2,3,4]
+>>> n_workers = min(varial.settings.max_num_processes, len(my_input_list))
+>>>
+>>> def my_square(num):
+>>>     return num*num
+>>>
+>>> with varial.multiproc.WorkerPool(n_workers) as pool:
+>>>     for res in pool.imap_unordered(my_square, my_input_list):
+>>>         print res
+
+Note that in the example, the input and output data of the worker is just an
+int. If large amounts of data need to be transferred, it is better to let the
+worker store the data on disk and read it back in the host.
 """
 
 import multiprocessing.pool
@@ -52,7 +81,7 @@ def _exec_in_worker(func_and_item):
 
 
 ################################ special worker-pool to allow for recursion ###
-class _NoDaemonProcess(multiprocessing.Process):
+class NoDaemonProcess(multiprocessing.Process):
     # make 'daemon' attribute always return False
     def _get_daemon(self):
         return False
@@ -63,13 +92,13 @@ class _NoDaemonProcess(multiprocessing.Process):
 
     def run(self):
         try:
-            super(_NoDaemonProcess, self).run()
+            super(NoDaemonProcess, self).run()
         except (KeyboardInterrupt, IOError):
             exit(-1)
 
 
-class NoDeamonWorkersPool(multiprocessing.pool.Pool):
-    Process = _NoDaemonProcess
+class WorkerPool(multiprocessing.pool.Pool):
+    Process = NoDaemonProcess
 
     def __init__(self, *args, **kws):
         global cpu_semaphore, _stacktrace_print_lock
@@ -89,7 +118,7 @@ class NoDeamonWorkersPool(multiprocessing.pool.Pool):
             func()
 
         # go parallel
-        super(NoDeamonWorkersPool, self).__init__(*args, **kws)
+        super(WorkerPool, self).__init__(*args, **kws)
 
     def __enter__(self):
         return self
@@ -100,7 +129,7 @@ class NoDeamonWorkersPool(multiprocessing.pool.Pool):
 
     def imap_unordered(self, func, iterable, chunksize=1):
         iterable = ((func, i) for i in iterable)
-        res = super(NoDeamonWorkersPool, self).imap_unordered(
+        res = super(WorkerPool, self).imap_unordered(
             _exec_in_worker, iterable, chunksize
         )
         res = _gen_raise_exception_in_host(res)
@@ -119,4 +148,4 @@ class NoDeamonWorkersPool(multiprocessing.pool.Pool):
             # must re-acquire before leaving
             cpu_semaphore.acquire()
 
-        super(NoDeamonWorkersPool, self).close()
+        super(WorkerPool, self).close()
