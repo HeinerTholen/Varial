@@ -99,7 +99,15 @@ def read(filename):
     """Reads wrapper from disk, including root objects."""
     filename = prepare_basename(filename) + '.info'
     with open(filename) as f:
-        info = _read_wrapper_info(f)
+        try:
+            info = _read_wrapper_info(f)
+        except ValueError as e:
+            monitor.message(
+                'diskio.read',
+                'ERROR can not read info: ' + filename
+            )
+            raise e
+
     if 'root_filename' in info:
         _read_wrapper_objs(info, dirname(filename))
     klass = getattr(wrappers, info.get('klass'))
