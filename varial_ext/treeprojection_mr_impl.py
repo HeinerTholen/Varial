@@ -4,32 +4,33 @@ Project histograms from trees with map/reduce.
 
 
 def map_projection(sample_histo_filename, params, open_file=None):
-    """Map histogram projections to a root file"""
+    """Map histogram projection to a root file"""
+    from ROOT import TFile, TH1, TH1F, TTree
 
-    import ROOT
-    sample, quantity, filename = sample_histo_filename.split()
-    histoname = 'new_histo'
-    input_file = open_file or ROOT.TFile(filename)
-
-    nm1 = params.get('nm1', True)
-    weight = params.get('weight') or '1'
+    sample, histoname, filename = sample_histo_filename.split()
+    histoargs = params['histos'][histoname]
     selection = params.get('selection')
+    if len(histoargs) == 5:
+        quantity, histoargs = histoargs[0], histoargs[1:]
+    else:
+        quantity = histoname
 
     if any(isinstance(selection, t) for t in (list, tuple)):
-        if nm1:  # N-1 instruction: don't cut the plotted variable
+        if params.get('nm1', True):
+            # N-1 instruction: don't cut the plotted variable
             selection = list(s for s in selection if quantity not in s)
         selection = ' && '.join(selection)
 
-    selection = '%s*(%s)' % (weight, selection or '1')
-    histoargs = params['histos'][quantity]
-    histo_draw_cmd = '%s>>+%s' % (quantity, histoname)
+    selection = '%s*(%s)' % (params.get('weight') or '1', selection or '1')
+    histo_draw_cmd = '%s>>+%s' % (quantity, 'new_histo')
+    input_file = open_file or TFile(filename)
 
     try:
-        ROOT.TH1.AddDirectory(True)
-        histo = ROOT.TH1F(histoname, *histoargs)
+        TH1.AddDirectory(True)
+        histo = TH1F('new_histo', *histoargs)
 
         tree = input_file.Get(params['treename'])
-        if not isinstance(tree, ROOT.TTree):
+        if not isinstance(tree, TTree):
             raise RuntimeError(
                 'There seems to be no tree named "%s" in file "%s"'%(
                     params['treename'], input_file))
@@ -40,25 +41,24 @@ def map_projection(sample_histo_filename, params, open_file=None):
                     'Error in TTree::SetAlias: it did not understand %s.'%alias
                 )
 
-
         n_selected = tree.Draw(histo_draw_cmd, selection, 'goff')
         if n_selected < 0:
             raise RuntimeError(
                 'Error in TTree::Project. Are variables, selections and '
                 'weights are properly defined? cmd, selection: %s, %s' % (
-                    histo_draw_cmd, selections
+                    histo_draw_cmd, selection
                 )
             )
 
         histo.SetDirectory(0)
-        histo.SetName(quantity)
+        histo.SetName(histoname)
 
     finally:
-        ROOT.TH1.AddDirectory(False)
+        TH1.AddDirectory(False)
         if not open_file:
             input_file.Close()
 
-    yield sample+' '+quantity, histo
+    yield sample+' '+histoname, histo
 
 
 def reduce_projection(iterator, params):
