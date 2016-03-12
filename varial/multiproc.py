@@ -35,8 +35,8 @@ import multiprocessing.pool
 import settings
 import sys
 
-cpu_semaphore = None
-_stacktrace_print_lock = None  # this is never released (only print once)
+_cpu_semaphore = None
+_traceback_printlock = None  # this is never released (only print once)
 pre_fork_cbs = []
 pre_join_cbs = []
 
@@ -48,16 +48,17 @@ def _catch_exception_in_worker(func, *args, **kws):
 
     # TODO: write SIGINT handler and kill again
     except KeyboardInterrupt as e:
-        res = 'Exception', e.__class__, e.args
+        res = 'Exception', e
 
     except Exception as e:
-        res = 'Exception', e.__class__, e.args
-        if _stacktrace_print_lock.acquire(block=False):
+        res = 'Exception', e
+        if _traceback_printlock.acquire(block=False):
+            import traceback
+            tb = ''.join(traceback.format_exception(*sys.exc_info()))
             print '='*80
             print 'EXCEPTION IN PARALLEL EXECUTION START'
             print '='*80
-            import traceback
-            traceback.print_exception(*sys.exc_info())
+            print tb
             print '='*80
             print 'EXCEPTION IN PARALLEL EXECUTION END'
             print '='*80
@@ -67,8 +68,8 @@ def _catch_exception_in_worker(func, *args, **kws):
 
 def _gen_raise_exception_in_host(iterator):
     for i in iterator:
-        if isinstance(i, tuple) and len(i) == 3 and i[0] == 'Exception':
-            raise i[1](*i[2])
+        if isinstance(i, tuple) and i and i[0] == 'Exception':
+            raise i[1]
         else:
             yield i
 
@@ -76,7 +77,7 @@ def _gen_raise_exception_in_host(iterator):
 def _exec_in_worker(func_and_item):
     """parallel execution with cpu control and exception catching."""
 
-    with cpu_semaphore:
+    with _cpu_semaphore:
         return _catch_exception_in_worker(*func_and_item)
 
 
@@ -101,18 +102,18 @@ class WorkerPool(multiprocessing.pool.Pool):
     Process = NoDaemonProcess
 
     def __init__(self, *args, **kws):
-        global cpu_semaphore, _stacktrace_print_lock
+        global _cpu_semaphore, _traceback_printlock
 
         # prepare parallelism (only once for the all processes)
         self.me_created_semaphore = False
-        if cpu_semaphore:
+        if _cpu_semaphore:
             # process with pool is supposed to be waiting a lot
-            cpu_semaphore.release()
+            _cpu_semaphore.release()
         else:
             self.me_created_semaphore = True
             n_procs = settings.max_num_processes
-            cpu_semaphore = multiprocessing.BoundedSemaphore(n_procs)
-            _stacktrace_print_lock = multiprocessing.RLock()
+            _cpu_semaphore = multiprocessing.BoundedSemaphore(n_procs)
+            _traceback_printlock = multiprocessing.RLock()
 
         for func in pre_fork_cbs:
             func()
@@ -136,16 +137,16 @@ class WorkerPool(multiprocessing.pool.Pool):
         return res
 
     def close(self):
-        global cpu_semaphore, _stacktrace_print_lock
+        global _cpu_semaphore, _traceback_printlock
 
         for func in pre_join_cbs:
             func()
 
         if self.me_created_semaphore:
-            cpu_semaphore = None
-            _stacktrace_print_lock = None
+            _cpu_semaphore = None
+            _traceback_printlock = None
         else:
             # must re-acquire before leaving
-            cpu_semaphore.acquire()
+            _cpu_semaphore.acquire()
 
         super(WorkerPool, self).close()
