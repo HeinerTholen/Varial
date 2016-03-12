@@ -142,10 +142,11 @@ class Tool(_ToolBase):
                 return True
         return False
 
-    def reuse(self):
+    def reuse(self, load_result_now=False):
         self.message('INFO reusing...')
-        with self.io.block_of_files:
-            self.result = self.io.get('result')
+        if load_result_now:
+            with self.io.block_of_files:
+                self.result = self.io.get('result')
 
     def starting(self):
         super(Tool, self).starting()

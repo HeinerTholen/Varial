@@ -71,7 +71,7 @@ class TreeProjectorBase(varial.tools.Tool):
         pass
 
     def reuse(self):
-        super(TreeProjectorBase, self).reuse()
+        super(TreeProjectorBase, self).reuse(self.add_aliases_to_analysis)
         self._push_aliases_to_analysis()
 
     def _push_aliases_to_analysis(self):

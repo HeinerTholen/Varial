@@ -129,7 +129,7 @@ class SFrame(toolinterface.Tool):
             os.system('rm -r ' + tmp_out)
 
     def reuse(self):
-        super(SFrame, self).reuse()
+        super(SFrame, self).reuse(self.add_aliases_to_analysis)
         self._push_aliases_to_analysis()
 
     def run(self):

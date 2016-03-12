@@ -16,6 +16,10 @@ class ResultSearcher(varial.tools.Tool):
         super(ResultSearcher, self).__init__(name)
         self.input_path = input_path
 
+    def reuse(self):
+        with self.io.block_of_files:
+            self.result = self.io.get('result')
+
     def run(self):
         self.result = self.lookup_result(self.input_path)
 

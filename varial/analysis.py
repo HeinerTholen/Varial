@@ -126,6 +126,8 @@ def get_stack_position(wrp):
 
 
 ################################################ result / folder management ###
+import util
+
 cwd = settings.varial_working_dir
 _tool_stack = []
 results_base = None
@@ -144,12 +146,20 @@ def _mktooldir():
 class ResultProxy(object):
     def __init__(self, tool, parent, path):
         self.name = tool.name
+        self.io = tool.io
         self.parent = parent
         self.path = path
         self.children = {}
-        self.result = None
+        self.result = None  # 0 means no result is available
         if parent:
             parent.children[self.name] = self
+
+    def get_result(self):
+        if self.result is None:
+            with util.Switch(self.io, 'use_analysis_cwd', False):
+                with self.io.block_of_files:
+                    self.result = self.io.get(self.path + 'result') or 0
+        return self.result or None
 
     def lookup(self, keys):
         if not keys:
@@ -159,7 +169,7 @@ class ResultProxy(object):
             return self.lookup(keys)
         if k == '..' and self.parent:
             return self.parent.lookup(keys)
-        elif k in self.children:
+        if k in self.children:
             return self.children[k].lookup(keys)
 
 
@@ -177,7 +187,7 @@ def pop_tool():
     global current_result
     t = _tool_stack.pop()
     _mktooldir()
-    current_result.result = getattr(t, 'result', 0) or None
+    current_result.result = getattr(t, 'result', 0)
     current_result = current_result.parent
 
 
@@ -208,7 +218,7 @@ def lookup_result(key, default=None):
                     or None
     """
     res = _lookup(key)
-    if res and res.result:
+    if res and res.get_result():
         return res.result
     else:
         return default
