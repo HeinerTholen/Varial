@@ -73,8 +73,9 @@ defaults_Legend = {
 defaults_BottomPlot = {
     'y_title': '',
     'draw_opt': 'E0X0',
-    'x_min': -.8,
-    'x_max': .8,
+    'y_min': -.8,
+    'y_max': .8,
+    'force_y_range': False,
 }
 
 rootfile_postfixes = ['.root', '.png']
@@ -91,6 +92,11 @@ sys_error_color = 923
 sys_error_fill = 3002
 tot_error_color = 922
 tot_error_fill = 3013
+
+
+################################################################ root style ###
+from array import array
+from ROOT import gROOT, gStyle, TColor, TStyle, TGaxis
 
 
 def apply_error_hist_style(h, col, fill):
@@ -116,9 +122,29 @@ def tot_error_style(histo):
     apply_error_hist_style(histo, tot_error_color, tot_error_fill)
 
 
-################################################################ root style ###
-from array import array
-from ROOT import gROOT, gStyle, TColor, TStyle, TGaxis
+def set_bottom_plot_style(obj):
+    obj.GetYaxis().CenterTitle(1)
+    obj.GetYaxis().SetTitleSize(0.15) #0.11
+    obj.GetYaxis().SetTitleOffset(0.44) #0.55
+    obj.GetYaxis().SetLabelSize(0.16)
+    obj.GetYaxis().SetNdivisions(205)
+
+    obj.GetXaxis().SetNoExponent()
+    obj.GetXaxis().SetTitleSize(0.16)
+    obj.GetXaxis().SetLabelSize(0.17)
+    obj.GetXaxis().SetTitleOffset(1)
+    obj.GetXaxis().SetLabelOffset(0.006)
+    obj.GetXaxis().SetNdivisions(505)
+    obj.GetXaxis().SetTickLength(
+        obj.GetXaxis().GetTickLength() * 3.
+    )
+
+    obj.SetTitle('')
+    obj.SetLineColor(1)
+    obj.SetLineStyle(1)
+    obj.SetLineWidth(1)
+    obj.SetMarkerStyle(20)
+    obj.SetMarkerSize(.7)
 
 
 class StyleClass(TStyle):
@@ -142,18 +168,6 @@ class StyleClass(TStyle):
         self.SetFillColor(0)
         self.SetNdivisions(505, 'XY')
 
-        self.SetPaperSize(20, 26)
-        #self.SetPadTopMargin(0.08)
-        #self.SetPadBottomMargin(0.14)
-        self.SetPadRightMargin(0.3)
-        self.SetPadLeftMargin(0.16)
-        #self.SetCanvasDefH(800)
-        #self.SetCanvasDefW(800)
-        #self.SetPadGridX(1)
-        #self.SetPadGridY(1)
-        self.SetPadTickX(1)
-        self.SetPadTickY(1)
-
         self.SetTextFont(42) #132
         self.SetTextSize(0.09)
         self.SetLabelFont(42, 'xyz')
@@ -169,16 +183,27 @@ class StyleClass(TStyle):
         self.SetTitleFillColor(0)
         self.SetTitleBorderSize(1)
         self.SetTitleFontSize(0.04)
-        #self.SetPadTopMargin(0.05)
+        self.SetPadTopMargin(0.05)
         self.SetPadBottomMargin(0.13)
         #self.SetPadLeftMargin(0.14)
         #self.SetPadRightMargin(0.02)
+
+        self.SetPaperSize(20, 26)
+        self.SetPadRightMargin(0.3)
+        self.SetPadLeftMargin(0.16)
+        #self.SetCanvasDefH(800)
+        #self.SetCanvasDefW(800)
+        #self.SetPadGridX(1)
+        #self.SetPadGridY(1)
+        self.SetPadTickX(1)
+        self.SetPadTickY(1)
 
         # use bold lines and markers
         self.SetMarkerStyle(8)
         self.SetMarkerSize(1.2)
         self.SetHistLineWidth(1)
         self.SetLineWidth(1)
+        self.SetEndErrorSize(0)
 
         self.SetOptTitle(1)
         self.SetOptStat(0)
@@ -218,4 +243,4 @@ class StyleClass(TStyle):
         TColor.CreateGradientColorTable(npoints, s, r, g, b, ncontours)
         gStyle.SetNumberContours(ncontours)
 
-root_style = StyleClass()  
+root_style = StyleClass()
