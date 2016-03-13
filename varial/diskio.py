@@ -34,22 +34,24 @@ class NoHistogramError(RuntimeError): pass
 
 
 ################################################################# file refs ###
-class _BlockMaker(dict):
+class _BlockMaker(object):
     def __enter__(self):
         global _in_a_block
-        _in_a_block = True
+        _in_a_block += 1
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         global _in_a_block
-        _in_a_block = False
-        for filename, in _block_of_open_files:
-            file_handle = _open_root_files.pop(filename)
-            file_handle.Close()
+        _in_a_block -= 1
+        if not _in_a_block:
+            for filename in _block_of_open_files:
+                file_handle = _open_root_files.pop(filename, 0)
+                if file_handle:
+                    file_handle.Close()
 
 
 _open_root_files = {}
 _block_of_open_files = []
-_in_a_block = False
+_in_a_block = 0  # number of opened blocks
 block_of_files = _BlockMaker()
 
 
