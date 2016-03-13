@@ -50,7 +50,11 @@ def add_th_curve(grps, th_x=None, th_y=None):
                     )
         g = list(g)
         g.append(th_wrp)
-        yield varial.wrappers.WrapperWrapper(g, save_name=g[0].save_name)
+        res = varial.wrappers.WrapperWrapper(g)
+        save_name = getattr(g[0], 'save_name', '')
+        if save_name:
+            res.save_name = save_name
+        yield res
 
 
 ######################################################### limit calculation ###
@@ -61,6 +65,7 @@ class ThetaLimits(varial.tools.Tool):
         input_path='../HistoLoader',
         input_path_sys='../HistoLoaderSys',
         filter_keyfunc=None,
+        hook_loaded_histos=None,
         asymptotic=True,
         limit_func=None,
         cat_key=lambda _: 'histo',  # lambda w: w.category,
@@ -79,6 +84,7 @@ class ThetaLimits(varial.tools.Tool):
         self.input_path = input_path
         self.input_path_sys = input_path_sys
         self.filter_keyfunc = filter_keyfunc
+        self.hook_loaded_histos = hook_loaded_histos
         self.cat_key = cat_key
         self.dat_key = dat_key
         self.sig_key = sig_key
@@ -102,8 +108,12 @@ class ThetaLimits(varial.tools.Tool):
 
     def prepare_dat_sig_bkg(self, wrps):
         if self.filter_keyfunc:
-            wrps = list(w for w in wrps if self.filter_keyfunc(w))
+            wrps = (w for w in wrps if self.filter_keyfunc(w))
 
+        if self.hook_loaded_histos:
+            wrps = self.hook_loaded_histos(wrps)
+
+        wrps = list(wrps)
         dats = list(w for w in wrps if self.dat_key(w))
         sigs = list(w for w in wrps if self.sig_key(w))
         bkgs = list(w for w in wrps if self.bkg_key(w))
