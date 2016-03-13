@@ -124,7 +124,7 @@ def stack(wrps):
 def sum(wrps):
     """
     Applies only to HistoWrappers. Returns HistoWrapper. Adds lumi up.
-    
+
     >>> from ROOT import TH1I
     >>> h1 = TH1I("h1", "", 2, .5, 4.5)
     >>> h1.Fill(1)
@@ -220,7 +220,7 @@ def merge(wrps):
     """
     Applies only to HistoWrapper. Returns HistoWrapper. Normalizes histos to lumi.
 
-    >>> from ROOT import TH1I    
+    >>> from ROOT import TH1I
     >>> h1 = TH1I("h1", "", 2, .5, 2.5)
     >>> h1.Fill(1,4)
     1
@@ -238,8 +238,8 @@ def merge(wrps):
     1.0
     """
     wrps = list(iterableize(wrps))
-    if (len(wrps) == 1 
-        and isinstance(wrps[0], wrappers.HistoWrapper) 
+    if (len(wrps) == 1
+        and isinstance(wrps[0], wrappers.HistoWrapper)
         and wrps[0].lumi == 1.
     ):
         return wrps[0]
@@ -269,7 +269,7 @@ def merge(wrps):
 def prod(wrps):
     """
     Applies to HistoWrapper and FloatWrapper. Returns HistoWrapper. Takes lumi from first.
-    
+
     >>> from ROOT import TH1I
     >>> h1 = TH1I("h1", "", 2, .5, 2.5)
     >>> h1.Fill(1)
@@ -331,7 +331,7 @@ def prod(wrps):
 def div(wrps):
     """
     Applies to HistoWrapper and FloatWrapper. Returns HistoWrapper. Takes lumi from first.
-    
+
     >>> from ROOT import TH1I
     >>> h1 = TH1I("h1", "", 2, .5, 2.5)
     >>> h1.Fill(1,4)
@@ -390,7 +390,7 @@ def div(wrps):
 def lumi(wrp):
     """
     Requires ``lumi`` to be defined on wrp. Returns FloatWrapper.
-    
+
     >>> from ROOT import TH1I
     >>> h1 = TH1I("h1", "", 2, .5, 2.5)
     >>> h1.Fill(1)
@@ -413,7 +413,7 @@ def lumi(wrp):
 def norm_to_lumi(wrp):
     """
     Applies to HistoWrapper. Returns HistoWrapper.
-    
+
     >>> from ROOT import TH1I
     >>> h1 = TH1I("h1", "", 2, .5, 2.5)
     >>> h1.Fill(1, 4)
@@ -444,7 +444,7 @@ def norm_to_lumi(wrp):
 def norm_to_integral(wrp, use_bin_width=False):
     """
     Applies to HistoWrapper. Returns HistoWrapper.
-    
+
     >>> from ROOT import TH1I
     >>> h1 = TH1I("h1", "", 2, .5, 2.5)
     >>> h1.Fill(1, 4)
@@ -493,7 +493,7 @@ def norm_to_max_val(wrp):
     """
     if not isinstance(wrp, wrappers.HistoWrapper):
         raise WrongInputError(
-            "norm_to_max_val needs argument of type HistoWrapper. histo: "
+            "norm_to_max_val needs argument of type HistoWrapper. wrp: "
             + str(wrp)
         )
     max_val = wrp.histo.GetBinContent(wrp.histo.GetMaximumBin()) or 1.
@@ -510,8 +510,8 @@ def norm_to_max_val(wrp):
 @history.track_history
 def copy(wrp):
     """
-    Applies to HistoWrapper. Returns HistoWrapper.
-    
+    Applies to HistoWrapper and GraphWrapper.
+
     >>> from ROOT import TH1I
     >>> h1 = TH1I("h1", "", 2, .5, 2.5)
     >>> h1.Fill(1, 4)
@@ -527,14 +527,21 @@ def copy(wrp):
     >>> w1.histo != w2.histo
     True
     """
-    if not isinstance(wrp, wrappers.HistoWrapper):
+    if isinstance(wrp, wrappers.HistoWrapper):
+        return wrappers.HistoWrapper(
+            wrp.histo.Clone(),
+            **wrp.all_info()
+        )
+    elif isinstance(wrp, wrappers.GraphWrapper):
+        return wrappers.GraphWrapper(
+            wrp.graph.Clone(),
+            **wrp.all_info()
+        )
+    else:
         raise WrongInputError(
-            "copy needs argument of type HistoWrapper. histo: "
+            "copy needs argument of type HistoWrapper or GraphWrapper. wrp: "
             + str(wrp)
         )
-    histo = wrp.histo.Clone()
-    info = wrp.all_info()
-    return wrappers.HistoWrapper(histo, **info)
 
 
 @history.track_history
@@ -746,7 +753,7 @@ def mv_in(wrp, overflow=True, underflow=True):
 def integral(wrp, use_bin_width=False):
     """
     Integral. Applies to HistoWrapper. Returns FloatWrapper.
-    
+
     >>> from ROOT import TH1I
     >>> h1 = TH1I("h1", "", 2, .5, 4.5)
     >>> h1.Fill(1)
@@ -775,7 +782,7 @@ def integral(wrp, use_bin_width=False):
 def int_l(wrp, use_bin_width=False):
     """
     Left-sided integral. Applies to HistoWrapper. Returns HistoWrapper.
-    
+
     >>> from ROOT import TH1I
     >>> h1 = TH1I("h1", "", 2, .5, 4.5)
     >>> h1.Fill(1)
@@ -814,7 +821,7 @@ def int_l(wrp, use_bin_width=False):
 def int_r(wrp, use_bin_width=False):
     """
     Applies to HistoWrapper. Returns HistoWrapper.
-    
+
     >>> from ROOT import TH1I
     >>> h1 = TH1I("h1", "", 2, .5, 4.5)
     >>> h1.Fill(1)
