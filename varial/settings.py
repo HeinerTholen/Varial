@@ -100,7 +100,11 @@ from ROOT import gROOT, gStyle, TColor, TStyle, TGaxis
 
 
 def apply_error_hist_style(h, col, fill):
-    h.SetFillColor(col)
+    if isinstance(col, tuple):
+        col, opac = col
+        h.SetFillColorAlpha(col, opac)
+    elif isinstance(col, int):
+        h.SetFillColor(col)
     h.SetMarkerColor(1)
     h.SetMarkerSize(0)
     h.SetFillStyle(fill)
@@ -122,7 +126,7 @@ def tot_error_style(histo):
     apply_error_hist_style(histo, tot_error_color, tot_error_fill)
 
 
-def set_bottom_plot_style(obj):
+def set_bottom_plot_general_style(obj):
     obj.GetYaxis().CenterTitle(1)
     obj.GetYaxis().SetTitleSize(0.15) #0.11
     obj.GetYaxis().SetTitleOffset(0.44) #0.55
@@ -138,13 +142,17 @@ def set_bottom_plot_style(obj):
     obj.GetXaxis().SetTickLength(
         obj.GetXaxis().GetTickLength() * 3.
     )
-
     obj.SetTitle('')
+
+def set_bottom_plot_ratio_style(obj):
     obj.SetLineColor(1)
     obj.SetLineStyle(1)
     obj.SetLineWidth(1)
     obj.SetMarkerStyle(20)
     obj.SetMarkerSize(.7)
+
+def set_bottom_plot_pull_style(obj):
+    obj.SetFillColor(807)
 
 
 class StyleClass(TStyle):
