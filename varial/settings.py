@@ -76,6 +76,7 @@ defaults_BottomPlot = {
     'y_min': -.8,
     'y_max': .8,
     'force_y_range': False,
+    'poisson_errs': False,
 }
 
 rootfile_postfixes = ['.root', '.png']
@@ -143,8 +144,6 @@ def set_bottom_plot_style(obj):
     obj.SetLineColor(1)
     obj.SetLineStyle(1)
     obj.SetLineWidth(1)
-    obj.SetMarkerStyle(20)
-    obj.SetMarkerSize(.7)
 
 
 class StyleClass(TStyle):
