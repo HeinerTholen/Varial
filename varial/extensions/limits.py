@@ -35,7 +35,7 @@ def tex_table_mod(table, mods=None):
     return table
 
 
-def add_th_curve(grps, th_x=None, th_y=None):
+def add_th_curve(grps, th_x, th_y, legend='Theory'):
     for g in grps:
         x_arr=array('f', th_x)
         y_arr=array('f', th_y)
@@ -43,11 +43,12 @@ def add_th_curve(grps, th_x=None, th_y=None):
         th_graph.SetLineStyle(2)
         th_graph.SetLineColor(1)
         th_graph.SetLineWidth(2)
-        th_wrp = varial.wrappers.GraphWrapper(th_graph,
-                    legend='Theory',
-                    draw_option='C',
-                    val_y_min=min(th_y)
-                    )
+        th_wrp = varial.wrappers.GraphWrapper(
+            th_graph,
+            legend=legend,
+            draw_option='C',
+            val_y_min=min(th_y)
+        )
         g = list(g)
         g.append(th_wrp)
         res = varial.wrappers.WrapperWrapper(g)
@@ -412,10 +413,10 @@ class LimitGraphs(varial.tools.Tool):
             sigma_band_high)
         if sigma_ind == 1:
             sigma_graph.SetFillColor(ROOT.kYellow)
-            legend='#pm 2 #sigma '+selection
+            legend='#pm 2 std. deviation '+selection
         else:
             sigma_graph.SetFillColor(ROOT.kGreen)
-            legend='#pm 1 #sigma '+selection
+            legend='#pm 1 std. deviation '+selection
         sigma_graph.SetTitle(legend)
 
         lim_wrapper = varial.wrappers.GraphWrapper(sigma_graph,
