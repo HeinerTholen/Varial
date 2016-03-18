@@ -22,6 +22,7 @@ Decorator)::
 import collections
 import wrappers
 import ROOT
+from math import sqrt
 
 
 class Renderer(object):
@@ -630,7 +631,7 @@ class BottomPlot(util.Decorator):
         self.second_pad.cd()
         bottom_obj = getattr(self, 'bottom_graph', self.bottom_hist)
 
-        settings.set_bottom_plot_style(bottom_obj)
+        settings.set_bottom_plot_general_style(bottom_obj)
         bottom_obj.SetMarkerStyle(20)
         bottom_obj.SetMarkerSize(.7)
         if isinstance(bottom_obj, ROOT.TH1):
@@ -683,6 +684,16 @@ class BottomPlotRatio(BottomPlot):
             wrp.histo.SetBinContent(i, cont - 1.)
         wrp.histo.SetYTitle(self.dec_par['y_title'] or '#frac{Data}{MC}')
         self.bottom_hist = wrp.histo
+
+    def draw_full_plot(self):
+        super(BottomPlotRatio, self).draw_full_plot()
+        if not self.dec_par['renderers_check_ok']:
+            return
+        self.second_pad.cd()
+        bottom_hist = self.bottom_hist
+        settings.set_bottom_plot_ratio_style(bottom_hist)
+        bottom_hist.Draw(self.dec_par['draw_opt'])
+        self.main_pad.cd()
 
 
 class BottomPlotRatioSplitErr(BottomPlotRatio):
@@ -795,7 +806,7 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
                 new_err = max(new_err, 0)  # may not be negative
                 histo.SetBinContent(i, new_val)
                 histo.SetBinError(i, new_err)
-        settings.set_bottom_plot_style(histo)
+        settings.set_bottom_plot_general_style(histo)
         histo.GetYaxis().SetRangeUser(y_min, y_max)
 
     def draw_full_plot(self):
@@ -816,6 +827,72 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
 
         bottom_obj = getattr(self, 'bottom_graph', self.bottom_hist)
         bottom_obj.Draw('same' + self.dec_par['draw_opt'])
+        self.main_pad.cd()
+
+
+class BottomPlotRatioPullErr(BottomPlot):
+    """Same as BottomPlotRatio, but split MC and data uncertainties."""
+    def check_renderers(self):
+        if 'TH2' in self.renderers[0].type:
+            return False
+
+        data_hists = list(r
+                          for r in self.renderers
+                          if r.is_data or r.is_pseudo_data)
+
+        if len(data_hists) > 1:
+            self.message('ERROR BottomPlots can only be created with exactly '
+                         'one data histogram. Data hists: %s' % data_hists)
+            return False
+
+        return bool(data_hists)
+
+    def define_bottom_hist(self):
+        rnds = self.renderers
+        mcee_rnd = rnds[0]
+        data_rnd = next(r for r in rnds if r.is_data or r.is_pseudo_data)
+        y_title = self.dec_par['y_title'] or (
+            '#frac{Data-MC}{#sigma}' if data_rnd.is_data else '#frac{Sig-Bkg}{Bkg}')
+
+        # overlaying ratio histogram
+        mc_histo = mcee_rnd.histo
+        data_hist = data_rnd.histo                      # NO CLONE HERE!
+        sigma_histo = mcee_rnd.histo.Clone()
+        data_hist.SetBinErrorOption(ROOT.TH1.kPoisson)
+        mc_histo.SetBinErrorOption(ROOT.TH1.kPoisson)
+        for i in xrange(mc_histo.GetNbinsX()+2):
+            sigma_histo.SetBinError(i, 0.)
+            # pm stands for plusminus
+            pm = 1. if data_hist.GetBinContent(i) > mc_histo.GetBinContent(i) else -1.
+            mc_sig_stat = mc_histo.GetBinErrorUp(i) if pm > 0 else mc_histo.GetBinErrorLow(i)
+            data_sig_stat = data_hist.GetBinErrorLow(i) if pm > 0 else data_hist.GetBinErrorUp(i)
+            if not data_hist.GetBinContent(i):
+                data_sig_stat = 1.8
+            if not mc_histo.GetBinContent(i):
+                mc_sig_stat = 1.8
+            mc_sig_syst = 0.
+            if mcee_rnd.histo_sys_err:
+                mc_sys_hist = mcee_rnd.histo_sys_err
+                mc_sig_syst = mc_sys_hist.GetBinError(i) + pm*abs(
+                                        mc_histo.GetBinContent(i) - mc_sys_hist.GetBinContent(i))
+            sqr_quad = sqrt(mc_sig_stat**2+data_sig_stat**2+mc_sig_syst**2) or 1e-10
+            sigma_histo.SetBinContent(i, sqr_quad)
+
+        div_hist = data_hist.Clone()                    # NOW CLONING!
+        div_hist.Add(mc_histo, -1)
+        div_hist.Divide(sigma_histo)
+        div_hist.SetYTitle(y_title)
+        self.bottom_hist = div_hist
+
+    def draw_full_plot(self):
+        """Draw mc error histo below data ratio."""
+        super(BottomPlotRatioPullErr, self).draw_full_plot()
+        if not self.dec_par['renderers_check_ok']:
+            return
+        self.second_pad.cd()
+        bottom_hist = self.bottom_hist
+        settings.set_bottom_plot_pull_style(bottom_hist)
+        bottom_hist.Draw('same hist')
         self.main_pad.cd()
 
 
