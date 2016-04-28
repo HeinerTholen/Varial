@@ -32,7 +32,6 @@ session_token = ''.join(
         string.ascii_uppercase + string.digits) for _ in range(20))
 session_token = session_token[:10] + 'hQuery' + session_token[10:]
 
-
 def load_html(args):
     path = '/'.join(args)
     real_path = 'sections/' + path
@@ -50,12 +49,13 @@ def load_html(args):
 class WebService(object):
     exposed = True
 
-    def __init__(self, engine):
+    def __init__(self, engine, kws):
         self.engine = engine
         self.path = os.path.abspath(os.getcwd()) + '/sections'
+        self.use_session = not kws.get('no_session', False)
 
     def GET(self, *args, **kws):
-        if 'auth' not in cherrypy.session:
+        if self.use_session and 'auth' not in cherrypy.session:
             if kws.get('s', '') == session_token:
                 cherrypy.session['auth'] = True
             else:
@@ -142,7 +142,8 @@ conf = {
 
         'tools.sessions.on': True,
         'tools.sessions.storage_type': 'file',
-        'tools.sessions.storage_path': os.path.abspath(os.getcwd())
+        'tools.sessions.storage_path': os.path.abspath(os.getcwd()),
+        'tools.sessions.timeout': 24*60,
     },
     'global': {
         'server.ssl_module': 'pyopenssl',
@@ -154,7 +155,7 @@ conf = {
 }
 
 
-def start(engine):
+def start(engine, kws):
     # check / create keys
     _create_ssl_keys()
 
@@ -171,4 +172,4 @@ def start(engine):
     print '='*80
 
     # start serving
-    cherrypy.quickstart(WebService(engine), '/', conf)
+    cherrypy.quickstart(WebService(engine, kws), '/', conf)

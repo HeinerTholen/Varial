@@ -5,7 +5,7 @@ def main(**kws):
     e = engine.HQueryEngine(kws)
 
     import server  # server should not be imported in backend process
-    server.start(e)
+    server.start(e, kws)
 
 # TODO "reset" -> make everything new
 # TODO put git hash of varial on webcreator (find on webcreator init)
