@@ -632,8 +632,7 @@ class BottomPlot(util.Decorator):
         bottom_obj = getattr(self, 'bottom_graph', self.bottom_hist)
 
         settings.set_bottom_plot_general_style(bottom_obj)
-        bottom_obj.SetMarkerStyle(20)
-        bottom_obj.SetMarkerSize(.7)
+        settings.set_bottom_plot_ratio_style(bottom_obj)
         if isinstance(bottom_obj, ROOT.TH1):
             bottom_obj.Draw(self.dec_par['draw_opt'])
 
@@ -684,16 +683,6 @@ class BottomPlotRatio(BottomPlot):
             wrp.histo.SetBinContent(i, cont - 1.)
         wrp.histo.SetYTitle(self.dec_par['y_title'] or '#frac{Data}{MC}')
         self.bottom_hist = wrp.histo
-
-    def draw_full_plot(self):
-        super(BottomPlotRatio, self).draw_full_plot()
-        if not self.dec_par['renderers_check_ok']:
-            return
-        self.second_pad.cd()
-        bottom_hist = self.bottom_hist
-        settings.set_bottom_plot_ratio_style(bottom_hist)
-        bottom_hist.Draw(self.dec_par['draw_opt'])
-        self.main_pad.cd()
 
 
 class BottomPlotRatioSplitErr(BottomPlotRatio):
@@ -753,6 +742,8 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
         div_hist.Add(mc_histo_no_err, -1)
         div_hist.Divide(mc_histo_no_err)
         div_hist.SetYTitle(y_title)
+        div_hist.SetMarkerStyle(20)
+        div_hist.SetMarkerSize(.7)
         self.bottom_hist = div_hist
 
         # poissonean error bars
@@ -781,13 +772,16 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
             h_x_ax, g_x_ax = div_hist.GetXaxis(), gbot.GetXaxis()
             g_x_ax.SetTitle(h_x_ax.GetTitle())
             g_x_ax.SetRangeUser(h_x_ax.GetXmin(), h_x_ax.GetXmax())
+            gbot.SetMarkerStyle(20)
+            gbot.SetMarkerSize(.7)
             self.bottom_graph = gbot
 
-        # for empty MC set data out of the frame
+
+        # for empty MC set data err to zero (not out of the frame, to preserve histo integral)
         for i in xrange(mc_histo_no_err.GetNbinsX()+2):
             if not div_hist.GetBinContent(i):
                 if not mc_histo_no_err.GetBinContent(i):
-                    div_hist.SetBinContent(i, -500)
+                    div_hist.SetBinContent(i, 0)
                     div_hist.SetBinError(i, 0)
 
     def fix_bkg_err_values(self, histo):
@@ -827,6 +821,7 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
 
         bottom_obj = getattr(self, 'bottom_graph', self.bottom_hist)
         bottom_obj.Draw('same' + self.dec_par['draw_opt'])
+
         self.main_pad.cd()
 
 
@@ -884,16 +879,19 @@ class BottomPlotRatioPullErr(BottomPlot):
         div_hist.SetYTitle(y_title)
         self.bottom_hist = div_hist
 
-    def draw_full_plot(self):
-        """Draw mc error histo below data ratio."""
-        super(BottomPlotRatioPullErr, self).draw_full_plot()
-        if not self.dec_par['renderers_check_ok']:
-            return
-        self.second_pad.cd()
-        bottom_hist = self.bottom_hist
-        settings.set_bottom_plot_pull_style(bottom_hist)
-        bottom_hist.Draw('same hist')
-        self.main_pad.cd()
+        settings.set_bottom_plot_pull_style(div_hist)
+        self.dec_par['draw_opt'] = 'hist'
+
+ #    def draw_full_plot(self):
+ #        """Draw mc error histo below data ratio."""
+ #        super(BottomPlotRatioPullErr, self).draw_full_plot()
+ #        if not self.dec_par['renderers_check_ok']:
+ #            return
+ #        self.second_pad.cd()
+ #        bottom_hist = self.bottom_hist
+ #        settings.set_bottom_plot_pull_style(bottom_hist)
+ #        bottom_hist.Draw('same hist')
+ #        self.main_pad.cd()
 
 
 default_decorators = [
