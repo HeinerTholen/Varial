@@ -2,10 +2,11 @@ import engine
 
 
 def main(**kws):
+    no_session = kws.pop('no_session', False)
     e = engine.HQueryEngine(kws)
 
     import server  # server should not be imported in backend process
-    server.start(e, kws)
+    server.start(e, no_session)
 
 # TODO "reset" -> make everything new
 # TODO put git hash of varial on webcreator (find on webcreator init)

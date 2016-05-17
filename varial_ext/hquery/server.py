@@ -49,10 +49,10 @@ def load_html(args):
 class WebService(object):
     exposed = True
 
-    def __init__(self, engine, kws):
+    def __init__(self, engine, no_session):
         self.engine = engine
         self.path = os.path.abspath(os.getcwd()) + '/sections'
-        self.use_session = not kws.get('no_session', False)
+        self.use_session = not no_session
 
     def GET(self, *args, **kws):
         if self.use_session and 'auth' not in cherrypy.session:
@@ -155,7 +155,7 @@ conf = {
 }
 
 
-def start(engine, kws):
+def start(engine, no_session):
     # check / create keys
     _create_ssl_keys()
 
@@ -163,7 +163,7 @@ def start(engine, kws):
     url = 'https://{}:{}/?s={}'.format(
         '{}',
         conf['global']['server.socket_port'],
-        session_token
+        '' if no_session else session_token
     )
     print '='*80
     print 'hQuery is ready at:'
@@ -172,4 +172,4 @@ def start(engine, kws):
     print '='*80
 
     # start serving
-    cherrypy.quickstart(WebService(engine, kws), '/', conf)
+    cherrypy.quickstart(WebService(engine, no_session), '/', conf)
