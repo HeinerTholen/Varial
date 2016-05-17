@@ -81,7 +81,7 @@ class HQueryBackend(object):
         self.options = {
             'stack': kws.pop('stack', False),
             'dump_python_conf': kws.pop('dump_python_conf', False),
-            'integral_info': kws.pop('integral_info', False),
+            'integral_info': kws.pop('integral_info', True),
         }
         varial.settings.no_toggles = not self.options['integral_info']
 
@@ -172,7 +172,10 @@ class HQueryBackend(object):
             with open('sections/' + name + '/webcreate_request', 'w') as f:
                 f.write('(enable webcreation also for empty folders)\n')
             self.sec_sel_weight[name] = (name, [], self.weight)
-            self.sel_info[name] = {}
+            self.sel_info[name] = dict(
+                (hname, (u'', u''))
+                for hname in self.params['histos'].iterkeys()
+            )
 
         self.q_out.put('Section created: ' + name)
         self.run_webcreator()
@@ -269,7 +272,6 @@ class HQueryBackend(object):
             sel
             for var, lo_hi, sel in all_reqs
             if self.sel_info[section][var] != lo_hi
-            if sel
         )
 
         if not updates:
@@ -289,6 +291,7 @@ class HQueryBackend(object):
             raise
 
         self.sel_info[section] = dict((var, lohi) for var, lohi, _ in all_reqs)
+        print self.sel_info
 
     def process_request(self, item):
         varial.monitor.message(
