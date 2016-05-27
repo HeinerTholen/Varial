@@ -25,11 +25,13 @@ the examples e01 and e02 in varial_example. The varial_rootfileplotter.py script
 
 Options:
 --norm      normalize all input histograms to integral
+--rebin     rebin histograms to have a maximum of 42 bins
 """
     exit(-1)
 
 # grab filenames and options
 norm_to_int = False
+n_bins_max = 0
 sig, bkg, dat, psu = [], [], [], []
 args = sys.argv[:]
 args.pop(0)
@@ -43,6 +45,8 @@ for a in args:
         current_coll = psu
     elif a == '--norm':
         norm_to_int = True
+    elif a == '--rebin':
+        n_bins_max = 42
     else:
         current_coll.append(a)
 all_input = sig + bkg + dat + psu
@@ -69,8 +73,19 @@ varial.settings.canvas_size_y = 400
 varial.settings.root_style.SetPadRightMargin(0.3)
 varial.settings.rootfile_postfixes = ['.root', '.png']
 
-# this function sets metainformation of the histograms
+def label_axes(wrps):
+    for w in wrps:
+        if 'TH1' in w.type and w.histo.GetXaxis().GetTitle() == '':
+            w.histo.GetXaxis().SetTitle(w.histo.GetTitle())
+            w.histo.GetYaxis().SetTitle('events')
+            w.histo.SetTitle('')
+        yield w
+
+# this function processes histograms after loading
 def post_load_hook(wrps):
+    if n_bins_max:
+        wrps = varial.gen.gen_noex_rebin_nbins_max(wrps, n_bins_max)
+    wrps = label_axes(wrps)
     wrps = varial.gen.gen_add_wrp_info(
         wrps,
         sample=lambda w: w.file_path,
