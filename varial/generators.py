@@ -68,7 +68,7 @@ def attribute_printer(iterable, attr):
 
 def imap_conditional(iterable, keyfunc, func, **func_kws):
     """
-    Like itertools.imap, but only applying func if keyfunc evaluates to True. 
+    Like itertools.imap, but only applying func if keyfunc evaluates to True.
 
     >>> def change_sign(value):
     ...     return -value
@@ -88,13 +88,13 @@ def switch(iterable, keyfunc, generator, **gen_kws):
     """
     Switches items to go through generator or not.
 
-    The order of items is preserved if ``generator`` does not reshuffle them. 
-    
+    The order of items is preserved if ``generator`` does not reshuffle them.
+
     :param iterable:    input iterable
     :param keyfunc:     function, called with items from iterable. If an item
-                        evaluates to True, the item goes through generator, 
+                        evaluates to True, the item goes through generator,
                         otherwise it's yielded as is.
-    :param generator:   generator function, through with items are passed if 
+    :param generator:   generator function, through with items are passed if
                         ``keyfunc`` evaluates to True for them.
 
     >>> def gen_change_sign(values):
@@ -220,7 +220,7 @@ def split_data_bkg_sig(wrps):
     """
     Split stream into data and two mc streams.
 
-    This function splits the wrapper stream into three by the ``is_data`` and 
+    This function splits the wrapper stream into three by the ``is_data`` and
     ``is_signal`` attributes of the given wrappers.
 
     :param wrps:        Wrapper iterable
@@ -248,9 +248,9 @@ def split_data_bkg_sig(wrps):
 
     is_data_type_tracking = DataTypeTracker()
     wrps_a, wrps_b, wrps_c = itertools.tee(wrps, 3)
-    dat = itertools.ifilter(lambda w: is_data_type_tracking(w), wrps_a)
-    sig = itertools.ifilter(lambda w: w.is_signal, wrps_b)
-    bkg = itertools.ifilter(lambda w: w.is_background, wrps_c)
+    dat = (w for w in wrps_a if is_data_type_tracking(w))
+    sig = (w for w in wrps_b if w.is_signal)
+    bkg = (w for w in wrps_c if w.is_background)
     return dat, bkg, sig
 
 
@@ -364,8 +364,8 @@ def gen_make_eff_graphs(wrps,
 
     Searches for histgrams ending with ``postfix_sub`` and ``postfix_tot``. On
     finding a matching pair, it creates an efficiency graph. The graphs are
-    interleaved in a sorted stream without disturbing the order needed for 
-    plotting. 
+    interleaved in a sorted stream without disturbing the order needed for
+    plotting.
 
     :param wrps:        Wrapper iterable
     :param postfix_sub: str, search token for histograms of passing data,
@@ -719,53 +719,10 @@ def apply_markercolor(wrps, colors=None):
         yield wrp
 
 
-def make_canvas_builder(grps):
-    """
-    Yields instanciated CanvasBuilders.
-
-    :param grps:    grouped or ungrouped Wrapper iterable
-                    if grouped: on canvas for each group
-    :yields:        CanvasBuilder instance
-    """
-    for grp in grps:
-        grp = _iterableize(grp)
-        yield rnd.CanvasBuilder(grp)
-
-
-def decorate(wrps, decorators=()):
-    """
-    Decorate any iterable with a list of decorators.
-
-    :param wrps:        Wrapper (or CanvasBuilder) iterable
-    :param decorators:  list of decorator classes.
-    :yields:            Wrapper (or CanvasBuilder)
-
-    **Example:** ::
-
-        result = decorate([CanvasBuilder, ...], [Legend, TextBox])
-        # result = [TextBox(Legend(CanvasBuilder)), ...]
-    """
-    for wrp in wrps:
-        for dec in decorators:
-            wrp = dec(wrp)
-        yield wrp
-
-
-def build_canvas(bldrs):
-    """
-    Calls the ``build_canvas()`` method and returns the result.
-
-    :param bldrs:   CanvasBuilder iterable
-    :yields:        CanvasWrapper
-    """
-    for bldr in bldrs:
-        yield bldr.build_canvas()
-
-
 def switch_log_scale(cnvs, x_axis=False, y_axis=True):
     """
     Sets main_pad in canvases to logscale.
-    
+
     :param cnvs:    CanvasWrapper iterable
     :param x_axis:  boolean for x axis
     :param y_axis:  boolean for y axis
@@ -780,7 +737,7 @@ def switch_log_scale(cnvs, x_axis=False, y_axis=True):
             cnv.main_pad.SetLogx(0)
 
         if y_axis:
-            # if the cnv.first_drawn has a member called 'GetMaximum', the 
+            # if the cnv.first_drawn has a member called 'GetMaximum', the
             # maximum should be greater then zero...
             if ((not hasattr(cnv.first_drawn, 'GetMaximum'))
                 or cnv.first_drawn.GetMaximum() > 1e-9
@@ -796,7 +753,7 @@ def switch_log_scale(cnvs, x_axis=False, y_axis=True):
         yield cnv
 
 
-def add_sample_integrals(canvas_builders):
+def add_sample_integrals(canvas_wrps):
     """
     Adds {'legend1' : histo_integral, ...} to canvases.
     """
@@ -822,11 +779,10 @@ def add_sample_integrals(canvas_builders):
         else:
             return integral_histo_wrp(wrp)
 
-    for cnv in canvas_builders:
-        # TODO when rendering goes generator
-        cnv.renderers[0].__dict__.update(dict(
+    for cnv in canvas_wrps:
+        cnv.__dict__.update(dict(
             ('Integral___' + legend, integ)
-            for r in cnv.renderers
+            for r in cnv._renderers
             if isinstance(r, rnd.HistoRenderer)  # applies also to StackRnd.
             for legend, integ in integral(r)
         ))
@@ -891,7 +847,7 @@ def mc_stack_n_data_sum(wrps,
     """
     Stacks MC histos and merges data, input needs to be sorted and grouped.
 
-    Yields tuples of an MC stack, signal histograms, and a data histogram, if 
+    Yields tuples of an MC stack, signal histograms, and a data histogram, if
     all kinds of data are present. Raises an exception if no histograms are
     given at all.
 
@@ -961,7 +917,7 @@ def mc_stack_n_data_sum(wrps,
             raise op.TooFewWrpsError('No histograms present!')
 
 
-def fs_mc_stack_n_data_sum(filter_keyfunc=None, merge_mc_key_func=None):
+def fs_mc_stack_n_data_sum(filter_keyfunc=None, merge_mc_key_func=None, use_all_data_lumi=True):
     """
     The full job to stacked histos and data, directly from fileservice.
 
@@ -977,18 +933,18 @@ def fs_mc_stack_n_data_sum(filter_keyfunc=None, merge_mc_key_func=None):
     return mc_stack_n_data_sum(grouped, merge_mc_key_func, True)
 
 
-def canvas(grps, decorators=()):
-    """
-    Packaging of canvas builder, decorating, callback and canvas building.
+def canvas(grps, build_funcs=(), post_build_funcs=(), **kws):
+    """canvas building."""
 
-    :param grps:            grouped or ungrouped Wrapper iterable
-                            if grouped: on canvas for each group
-    :param decorators:      see function decorate(...) above
-    :yields:                CanvasWrapper
-    """
-    grps = make_canvas_builder(grps)            # a builder for every group
-    grps = decorate(grps, decorators)           # apply decorators
-    return build_canvas(grps)                   # and do the job
+    for grp in grps:
+        grp = _iterableize(grp)
+        grp = rnd.build_canvas(
+            grp,
+            build_funcs or rnd.build_funcs,
+            post_build_funcs or rnd.post_build_funcs,
+            **kws
+        )
+        yield grp  # this is a canvas wrapper
 
 
 def save_canvas_lin_log(cnvs, filename_func, log_only_1d_hists=True):
@@ -1020,6 +976,3 @@ def save_canvas_lin_log(cnvs, filename_func, log_only_1d_hists=True):
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
-
-
-# TODO sparse_canvas_save

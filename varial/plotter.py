@@ -11,6 +11,7 @@ import analysis
 import settings
 import sparseio
 import monitor
+import util
 
 
 def rename_th2(wrps):
@@ -21,16 +22,16 @@ def rename_th2(wrps):
         yield wrp
 
 
-def set_canvas_name_to_infilepath(grps):
-    for grp in grps:
-        grp.name = grp.renderers[0].in_file_path.replace('/', '_')
-        yield grp
+def set_canvas_name_to_infilepath(cnvs):
+    for cnv in cnvs:
+        cnv.name = cnv._renderers[0].in_file_path.replace('/', '_')
+        yield cnv
 
 
-def set_canvas_name_to_plot_name(grps):
-    for grp in grps:
-        grp.name = grp.renderers[0].name
-        yield grp
+def set_canvas_name_to_plot_name(cnvs):
+    for cnv in cnvs:
+        cnv.name = cnv._renderers[0].name
+        yield cnv
 
 
 def plot_grouper_single_plots(wrps):
@@ -94,24 +95,23 @@ class Plotter(toolinterface.Tool):
     If both defaults for ``plot_grouper`` and ``save_name_func`` are kept, the
     latter is replaced with ``save_by_name_with_hash``.
 
-    >>> defaults = {
-    ...    'input_result_path': None,
-    ...    'filter_keyfunc': None,
-    ...    'load_func': gen.fs_filter_active_sort_load,
-    ...    'hook_loaded_histos': None,
-    ...    'stack_grouper': plot_grouper_by_in_file_path,
-    ...    'plot_grouper': plot_grouper_single_plots,
-    ...    'stack_setup': lambda w: gen.mc_stack_n_data_sum(w, None, True),
-    ...    'plot_setup': default_plot_colorizer,
-    ...    'hook_canvas_pre_build': None,
-    ...    'hook_canvas_post_build': None,
-    ...    'y_axis_scale': 'linlog',  # can be 'lin', 'log', or 'linlog'
-    ...    'keep_content_as_result': False,
-    ...    'set_canvas_name': set_canvas_name_to_infilepath,
-    ...    'save_name_func': save_by_name,
-    ...    'canvas_decorators': (settings.canvas_decorators or
-    ...                          rendering.default_decorators),
-    ...}
+    >>> defaults_attrs = {
+    ...     'input_result_path': None,
+    ...     'filter_keyfunc': None,
+    ...     'load_func': gen.fs_filter_active_sort_load,
+    ...     'hook_loaded_histos': None,
+    ...     'stack_grouper': plot_grouper_by_in_file_path,
+    ...     'plot_grouper': plot_grouper_single_plots,
+    ...     'stack_setup': lambda w: gen.mc_stack_n_data_sum(w, None, True),
+    ...     'plot_setup': default_plot_colorizer,
+    ...     'y_axis_scale': 'linlog',  # can be 'lin', 'log', or 'linlog'
+    ...     'keep_content_as_result': False,
+    ...     'set_canvas_name': set_canvas_name_to_infilepath,
+    ...     'save_name_func': save_by_name,
+    ...     'canvas_post_build_funcs': (
+    ...         settings.canvas_post_build_funcs
+    ...         or rendering.post_build_funcs + [gen.add_sample_integrals]
+    ...     ),    ... }
     """
     defaults_attrs = {
         'input_result_path': None,
@@ -122,14 +122,14 @@ class Plotter(toolinterface.Tool):
         'plot_grouper': plot_grouper_single_plots,
         'stack_setup': lambda w: gen.mc_stack_n_data_sum(w, None, True),
         'plot_setup': default_plot_colorizer,
-        'hook_canvas_pre_build': None,
-        'hook_canvas_post_build': None,
         'y_axis_scale': 'linlog',  # can be 'lin', 'log', or 'linlog'
         'keep_content_as_result': False,
         'set_canvas_name': set_canvas_name_to_infilepath,
         'save_name_func': save_by_name,
-        'canvas_decorators': (settings.canvas_decorators or
-                              rendering.default_decorators)
+        'canvas_post_build_funcs': (
+            settings.canvas_post_build_funcs
+            or rendering.post_build_funcs
+        ),
     }
 
     class NoFilterDictError(Exception):
@@ -148,8 +148,8 @@ class Plotter(toolinterface.Tool):
         if stack:
             self.plot_setup = self.stack_setup
             self.plot_grouper = self.stack_grouper
-            
-        if (self.plot_grouper == plot_grouper_single_plots 
+
+        if (self.plot_grouper == plot_grouper_single_plots
             and self.save_name_func == save_by_name):
             self.save_name_func = save_by_name_with_hash
 
@@ -210,31 +210,13 @@ class Plotter(toolinterface.Tool):
                 itertools.chain.from_iterable(self.stream_content))
 
     def make_canvases(self):
-        def run_build_procedure(bldr):
-            for b in bldr:
-                b.run_procedure()
-                yield b
-
-        def decorate(bldr):
-            for b in bldr:
-                if not (hasattr(b.renderers[0], 'histo') and
-                        isinstance(b.renderers[0].histo, ROOT.TH2D)):
-                    for dec in self.canvas_decorators:
-                        b = dec(b)
-                yield b
-
-        bldr = gen.make_canvas_builder(self.stream_content)
-        bldr = self.set_canvas_name(bldr)
-        bldr = decorate(bldr)
-        if self.hook_canvas_pre_build:
-            bldr = self.hook_canvas_pre_build(bldr)
-        bldr = run_build_procedure(bldr)
-        if self.hook_canvas_post_build:
-            bldr = self.hook_canvas_post_build(bldr)
-
-        # no list and warning here, since canvases would be deleted if the have
-        # the same name. This way, diskio will tell if a file is overwritten.
-        self.stream_content = gen.build_canvas(bldr)
+        cnvs = gen.canvas(
+            self.stream_content,
+            post_build_funcs=self.canvas_post_build_funcs,
+        )
+        cnvs = self.set_canvas_name(cnvs)
+        cnvs = gen.add_sample_integrals(cnvs)
+        self.stream_content = cnvs
 
     def save_canvases(self):
         if self.y_axis_scale == 'log':
@@ -258,36 +240,6 @@ class Plotter(toolinterface.Tool):
         self.save_canvases()
 
 
-def setup_legendnames_from_files(pattern):
-    filenames = gen.resolve_file_pattern(pattern)
-
-    # only one file: return directly
-    if len(filenames) < 2:
-        return {filenames[0]: filenames[0]}
-
-    # try the sframe way:
-    lns = list(n.split('.') for n in filenames if isinstance(n, str))
-    if all(len(l) == 5 for l in lns):
-        res = dict((f, l[3]) for f, l in itertools.izip(filenames, lns))
-
-        # make sure the legend names are all different
-        if len(set(l for l in res.itervalues())) == len(res):
-            return res
-
-    # try trim filesnames from front and back
-    lns = list(os.path.splitext(f)[0] for f in filenames)
-    # shorten strings from front
-    while all(n[0] == lns[0][0] and len(n) > 5 for n in lns):
-        for i in xrange(len(lns)):
-            lns[i] = lns[i][1:]
-
-    # shorten strings from back
-    while all(n[-1] == lns[0][-1] and len(n) > 5 for n in lns):
-        for i in xrange(len(lns)):
-            lns[i] = lns[i][:-1]
-    return dict((f, l) for f, l in itertools.izip(filenames, lns))
-
-
 class RootFilePlotter(toolinterface.ToolChainParallel):
     """
     Plots all histograms in a rootfile.
@@ -301,7 +253,6 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                                 default: ``False``
     :param name:                str, tool name
     """
-
     def _setup_aliases(self, pattern, filter_keyfunc):
         aliases = gen.dir_content(pattern)
         if not aliases:
@@ -322,7 +273,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
 
     def _setup_gen_legend(self, pattern, legendnames=None):
         if not legendnames:
-            legendnames = setup_legendnames_from_files(pattern)
+            legendnames = util.setup_legendnames_from_files(pattern)
 
         # update colors (sorting needed, since dict is unsorted, and parallel
         # plotters should have the same result.
@@ -342,6 +293,59 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                     w.legend = legendnames[os.path.basename(w.file_path)]
                 yield w
         return gen_apply_legend
+
+    def _mk_flat_plotter(self, plotter_factory, load_func, gen_apply_legend):
+        self._private_plotter = plotter_factory(
+            name=self.name,
+            filter_keyfunc=lambda _: True,
+            load_func=lambda _: gen_apply_legend(load_func(gen.fs_content())),
+            plot_grouper=plot_grouper_by_in_file_path,
+            plot_setup=lambda ws: gen.mc_stack_n_data_sum(ws, lambda w: '', True),
+            save_name_func=lambda w: w._renderers[0].in_file_path.replace('/', '_'),
+        )
+
+    def _mk_deep_plotter(self, plotter_factory, load_func, gen_apply_legend):
+        all_in_file_paths = set(
+            '/'.join(a.in_file_path.split('/')[:-1])  # drop histo name
+            for a in self.aliases
+        )
+        for path in all_in_file_paths:
+            rfp = self  # start for basedir
+            path = path.split('/')
+
+            # walk over path elements and create RootFilePlotter instances
+            for folder in path:
+                if not folder:
+                    continue
+                if folder not in rfp.tool_names:
+                    rfp.add_tool(RootFilePlotter(None, None, plotter_factory, name=folder))
+                rfp = rfp.tool_names[folder]
+
+            # This function creates a separate namespace for p
+            # (the last reference to p would be lost otherwise)
+            def _mk_private_loader(p):
+                def loader(filter_keyfunc):
+                    wrps = analysis.fs_aliases
+                    wrps = itertools.ifilter(
+                        lambda w: w.in_file_path.split('/')[:-1] == p and filter_keyfunc(w),
+                        wrps
+                    )
+                    wrps = load_func(wrps)
+                    wrps = gen_apply_legend(wrps)
+                    return wrps
+                return loader
+
+            # make private plotter instance if not done already
+            # private plotters are needed, as RootFilePlotter is a subclass
+            # of ToolChain, not Tool itself.
+            rfp._private_plotter = plotter_factory(
+                name=rfp.name,
+                filter_keyfunc=lambda _: True,
+                plot_grouper=plot_grouper_by_in_file_path,
+                set_canvas_name=set_canvas_name_to_plot_name,
+                load_func=_mk_private_loader(path),
+                save_name_func=lambda w: w.name,
+            )
 
     def __init__(self,
                  pattern=None,
@@ -379,65 +383,12 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
         else:
             gen_apply_legend = lambda wrps: wrps
 
-        # either print all in one dir...
         if flat:
-            self._private_plotter = plotter_factory(
-                name=self.name,
-                filter_keyfunc=lambda _: True,
-                load_func=lambda _: gen_apply_legend(
-                    load_func(gen.fs_content())),
-                plot_grouper=plot_grouper_by_in_file_path,
-                plot_setup=lambda ws: gen.mc_stack_n_data_sum(
-                    ws, lambda w: '', True),
-                save_name_func=lambda w:
-                    w._renderers[0].in_file_path.replace('/', '_'),
-            )
-
-        # ...or resemble root file dirs
+            # either print all in one dir
+            self._mk_flat_plotter(plotter_factory, load_func, gen_apply_legend)
         else:
-            all_in_file_paths = set(
-                '/'.join(a.in_file_path.split('/')[:-1])  # drop histo name
-                for a in self.aliases
-            )
-            for path in all_in_file_paths:
-                rfp = self  # start for basedir
-                path = path.split('/')
-
-                # walk over path elements and create RootFilePlotter instances
-                for folder in path:
-                    if not folder:
-                        continue
-                    if folder not in rfp.tool_names:
-                        rfp.add_tool(RootFilePlotter(
-                            None, None, plotter_factory, name=folder))
-                    rfp = rfp.tool_names[folder]
-
-                # This function creates a separate namespace for p
-                # (the last reference to p would be lost otherwise)
-                def _mk_private_loader(p):
-                    def loader(filter_keyfunc):
-                        wrps = analysis.fs_aliases
-                        wrps = itertools.ifilter(
-                            lambda w: w.in_file_path.split('/')[:-1] == p
-                                      and filter_keyfunc(w),
-                            wrps
-                        )
-                        wrps = load_func(wrps)
-                        wrps = gen_apply_legend(wrps)
-                        return wrps
-                    return loader
-
-                # make private plotter instance if not done already
-                # private plotters are needed, as RootFilePlotter is a subclass
-                # of ToolChain, not Tool itself.
-                rfp._private_plotter = plotter_factory(
-                    name=rfp.name,
-                    filter_keyfunc=lambda _: True,
-                    plot_grouper=plot_grouper_by_in_file_path,
-                    set_canvas_name=set_canvas_name_to_plot_name,
-                    load_func=_mk_private_loader(path),
-                    save_name_func=lambda w: w.name,
-                )
+            # or resemble dirs of the root file
+            self._mk_deep_plotter(plotter_factory, load_func, gen_apply_legend)
 
     def run(self):
         old_aliases = analysis.fs_aliases
@@ -528,7 +479,7 @@ def mk_rootfile_plotter(name="RootFilePlots",
         )
         if not plotters:
             monitor.message('plotter.mk_rootfile_plotter',
-                            'WARNING no plotters generated for pattern: %s' 
+                            'WARNING no plotters generated for pattern: %s'
                             % pattern)
         tc = toolinterface.ToolChainParallel(name, plotters)
     return tc

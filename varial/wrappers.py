@@ -385,7 +385,7 @@ class CanvasWrapper(Wrapper):
         self.main_pad   = kws.get('main_pad', canvas)
         self.second_pad = kws.get('second_pad')
         self.legend     = kws.get('legend')
-        self.first_drawn= kws.get('first_drawn')
+        self.first_obj  = kws.get('first_obj')
         self.x_bounds   = kws.get('x_bounds')
         self.y_bounds   = kws.get('y_bounds')
         self.y_min_gr_0 = kws.get('y_min_gr_0')

@@ -9,35 +9,6 @@ from varial import analysis
 from varial import settings
 
 class TestDiskio(TestHistoToolsBase):
-    def test_fileservice_aliases(self):
-        for name, smp in analysis.all_samples.items():
-            analysis.fs_aliases += list(
-                alias for alias in diskio.generate_fs_aliases(
-                    settings.DIR_FILESERVICE + '%s.root' % name,
-                    smp
-                )
-            )
-        aliases = analysis.fs_aliases[:]
-
-        # Is number of loaded elements correct?
-        self.assertEqual(len(aliases), 150)
-
-        # Are sample names correct?
-        samples = set(a.sample for a in aliases)
-        self.assertTrue('tt' in samples)
-        self.assertTrue('ttgamma' in samples)
-        self.assertTrue('zjets' in samples)
-
-        # Check for some in_file_path
-        ifps = set(a.in_file_path for a in aliases)
-        self.assertIn('realTemplate/sihihEB', ifps)
-        self.assertIn('analyzer_ET/photonET', ifps)
-
-        # Check for some histonames
-        histos = set(a.name for a in aliases)
-        self.assertTrue('histo' in histos)
-        self.assertTrue('sihihEB' in histos)
-
     def test_load_histogram(self):
         test_alias = FileServiceAlias(
             settings.DIR_FILESERVICE + 'ttgamma.root',
