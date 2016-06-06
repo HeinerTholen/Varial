@@ -149,7 +149,7 @@ class Wrapper(WrapperBase):
 
     @property
     def obj(self):
-        """Getter property for primary object. Overwrite!"""
+        """Getter property for primary object."""
         pass
 
 
@@ -189,7 +189,7 @@ class WrapperWrapper(Wrapper):
 
     @property
     def obj(self):
-        """Getter property for primary object. Overwrite!"""
+        """Getter property for primary object."""
         return self.wrps
 
     def __setattr__(self, name, value):
@@ -270,7 +270,7 @@ class HistoWrapper(Wrapper):
 
     @property
     def obj(self):
-        """Getter property for primary object. Overwrite!"""
+        """Getter property for primary object."""
         return self.histo
 
     @property
@@ -312,7 +312,7 @@ class StackWrapper(HistoWrapper):
 
     @property
     def obj(self):
-        """Getter property for primary object. Overwrite!"""
+        """Getter property for primary object."""
         return self.stack
 
 
@@ -360,7 +360,7 @@ class GraphWrapper(Wrapper):
 
     @property
     def obj(self):
-        """Getter property for primary object. Overwrite!"""
+        """Getter property for primary object."""
         return self.graph
 
     @property
@@ -390,10 +390,11 @@ class CanvasWrapper(Wrapper):
         self.y_bounds   = kws.get('y_bounds')
         self.y_min_gr_0 = kws.get('y_min_gr_0')
         self.lumi       = kws.get('lumi', 1.)
+        self._renderers = kws.get('_renderers', [])
 
     @property
     def obj(self):
-        """Getter property for primary object. Overwrite!"""
+        """Getter property for primary object."""
         self.canvas.Modified()
         self.canvas.Update()
         return self.canvas

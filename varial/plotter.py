@@ -22,18 +22,6 @@ def rename_th2(wrps):
         yield wrp
 
 
-def set_canvas_name_to_infilepath(cnvs):
-    for cnv in cnvs:
-        cnv.name = cnv._renderers[0].in_file_path.replace('/', '_')
-        yield cnv
-
-
-def set_canvas_name_to_plot_name(cnvs):
-    for cnv in cnvs:
-        cnv.name = cnv._renderers[0].name
-        yield cnv
-
-
 def plot_grouper_single_plots(wrps):
     for w in wrps:
         yield (w,)
@@ -106,7 +94,6 @@ class Plotter(toolinterface.Tool):
     ...     'plot_setup': default_plot_colorizer,
     ...     'y_axis_scale': 'linlog',  # can be 'lin', 'log', or 'linlog'
     ...     'keep_content_as_result': False,
-    ...     'set_canvas_name': set_canvas_name_to_infilepath,
     ...     'save_name_func': save_by_name,
     ...     'canvas_post_build_funcs': (
     ...         settings.canvas_post_build_funcs
@@ -124,7 +111,6 @@ class Plotter(toolinterface.Tool):
         'plot_setup': default_plot_colorizer,
         'y_axis_scale': 'linlog',  # can be 'lin', 'log', or 'linlog'
         'keep_content_as_result': False,
-        'set_canvas_name': set_canvas_name_to_infilepath,
         'save_name_func': save_by_name,
         'canvas_post_build_funcs': (
             settings.canvas_post_build_funcs
@@ -214,7 +200,6 @@ class Plotter(toolinterface.Tool):
             self.stream_content,
             post_build_funcs=self.canvas_post_build_funcs,
         )
-        cnvs = self.set_canvas_name(cnvs)
         cnvs = gen.add_sample_integrals(cnvs)
         self.stream_content = cnvs
 
@@ -342,7 +327,6 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                 name=rfp.name,
                 filter_keyfunc=lambda _: True,
                 plot_grouper=plot_grouper_by_in_file_path,
-                set_canvas_name=set_canvas_name_to_plot_name,
                 load_func=_mk_private_loader(path),
                 save_name_func=lambda w: w.name,
             )
