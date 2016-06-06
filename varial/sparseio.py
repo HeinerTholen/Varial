@@ -56,6 +56,7 @@ def bulk_write(wrps, name_func, dir_path='', suffices=None, linlog=False):
     wrps_dict = dict()
     for w in wrps:
         name = name_func(w)
+        assert name, 'function "%s" returns %s for "%s"' % (name_func, repr(name), w)
         if name in wrps_dict:
             monitor.message(
                 'sparseio',
