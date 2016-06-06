@@ -449,7 +449,12 @@ def mk_legend_func(**outer_kws):
 
 
 def _bottom_plot_check(wrp):
-    return 'TH2' not in wrp._renderers[0].type and len(wrp._renderers) > 1
+    return (
+        len(wrp._renderers) > 1 and
+        isinstance(wrp._renderers[0], wrappers.HistoWrapper) and
+        isinstance(wrp._renderers[1], wrappers.HistoWrapper) and
+        'TH2' not in wrp._renderers[0].type
+    )
 
 
 def _bottom_plot_make_pad(wrp):
