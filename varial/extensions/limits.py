@@ -312,7 +312,7 @@ class ThetaPostFitPlot(varial.tools.Tool):
             g68.SetPoint(a+1+n_items+2, 1, n_items+2-a)
             g95.SetPoint(a+1+n_items+2, 2, n_items+2-a)
         g68.SetFillColor(ROOT.kGreen)
-        g95.SetFillColor(ROOT.kYellow)
+        g95.SetFillColor(ROOT.kOrange)
         return g68, g95
 
     @staticmethod
@@ -412,11 +412,12 @@ class LimitGraphs(varial.tools.Tool):
         sigma_graph = self.prepare_sigma_band_graph(x_list, sigma_band_low,
             sigma_band_high)
         if sigma_ind == 1:
-            sigma_graph.SetFillColor(ROOT.kYellow)
+            sigma_graph.SetFillColor(ROOT.kOrange)
             legend='#pm 2 std. deviation '+selection
         else:
             sigma_graph.SetFillColor(ROOT.kGreen)
             legend='#pm 1 std. deviation '+selection
+
         sigma_graph.SetTitle(legend)
 
         lim_wrapper = varial.wrappers.GraphWrapper(sigma_graph,
