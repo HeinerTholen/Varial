@@ -26,6 +26,9 @@ def map_projection(sample_histo_filename, params, open_file=None):
     input_file = open_file or TFile(filename)
 
     try:
+        if input_file.IsZombie():
+            raise RuntimeError('input_file.IsZombie(): %s' % input_file)
+
         TH1.AddDirectory(True)
         histo = TH1F('new_histo', *histoargs)
 
