@@ -23,7 +23,7 @@ sge_job_conf = """#!/bin/bash
 cd /tmp/
 umask 2
 python -c "\
-from varial.extensions.sgeworker import SGEWorker; \
+from varial_ext.sgeworker import SGEWorker; \
 SGEWorker(${SGE_TASK_ID}, '{user}', '{jug_file_path_pat}').start(); \
 "
 """
