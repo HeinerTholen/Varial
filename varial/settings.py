@@ -145,17 +145,17 @@ def apply_split_pad_styles(cnv_wrp):
 
 
 def stat_error_style(histo):
-    histo.SetTitle('Stat. uncert. MC')
+    histo.SetTitle('stat. uncert. MC')
     apply_error_hist_style(histo, stat_error_color, stat_error_fill)
 
 
 def sys_error_style(histo):
-    histo.SetTitle('Sys. uncert. MC')
+    histo.SetTitle('sys. uncert. MC')
     apply_error_hist_style(histo, sys_error_color, sys_error_fill)
 
 
 def tot_error_style(histo):
-    histo.SetTitle('Tot. uncert. MC')
+    histo.SetTitle('tot. uncert. MC')
     apply_error_hist_style(histo, tot_error_color, tot_error_fill)
 
 

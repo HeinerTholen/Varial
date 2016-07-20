@@ -49,6 +49,25 @@ class HistoRenderer(Renderer, wrappers.HistoWrapper):
     """
     def __init__(self, wrp):
         super(HistoRenderer, self).__init__(wrp)
+
+        if self.histo_sys_err:                          # calculate total error
+            nom, sys, tot = self.histo, self.histo_sys_err, self.histo.Clone()
+            for i in xrange(tot.GetNbinsX()+2):
+                nom_val = nom.GetBinContent(i)
+                nom_err = nom.GetBinError(i) or 1e-10   # prevent 0-div-error
+                sys_val = sys.GetBinContent(i)
+                sys_err = sys.GetBinError(i) or 1e-10   # prevent 0-div-error
+                nom_wei = nom_err**2 / (nom_err**2 + sys_err**2)
+                sys_wei = sys_err**2 / (nom_err**2 + sys_err**2)
+
+                # weighted mean of values and quadratic sum of errors
+                tot.SetBinContent(i, nom_wei*nom_val + sys_wei*sys_val)
+                tot.SetBinError(i, (nom_err**2 + sys_err**2)**.5)
+
+            self.histo_tot_err = tot
+            settings.sys_error_style(self.histo_sys_err)
+            settings.tot_error_style(self.histo_tot_err)
+
         if getattr(wrp, 'draw_option', 0):
             self.draw_option = wrp.draw_option
         elif 'TH2' in wrp.type:
@@ -101,25 +120,6 @@ class StackRenderer(HistoRenderer, wrappers.StackWrapper):
     """
     def __init__(self, wrp):
         super(StackRenderer, self).__init__(wrp)
-
-        if self.histo_sys_err:                          # calculate total error
-            nom, sys, tot = self.histo, self.histo_sys_err, self.histo.Clone()
-            for i in xrange(tot.GetNbinsX()+2):
-                nom_val = nom.GetBinContent(i)
-                nom_err = nom.GetBinError(i) or 1e-10   # prevent 0-div-error
-                sys_val = sys.GetBinContent(i)
-                sys_err = sys.GetBinError(i) or 1e-10   # prevent 0-div-error
-                nom_wei = nom_err**2 / (nom_err**2 + sys_err**2)
-                sys_wei = sys_err**2 / (nom_err**2 + sys_err**2)
-
-                # weighted mean of values and quadratic sum of errors
-                tot.SetBinContent(i, nom_wei*nom_val + sys_wei*sys_val)
-                tot.SetBinError(i, (nom_err**2 + sys_err**2)**.5)
-
-            self.histo_tot_err = tot
-            settings.sys_error_style(self.histo_sys_err)
-            settings.tot_error_style(self.histo_tot_err)
-
         settings.stat_error_style(self.histo)
         self.draw_option = getattr(wrp, 'draw_option', 'hist')
         self.draw_option_sum = getattr(wrp, 'draw_option_sum', 'sameE2')
@@ -532,6 +532,17 @@ def bottom_plot_prep_main_pad(wrp, _):
     wrp.main_pad = main_pad
 
 
+def bottom_plot_get_div_hists(rnds):
+    data_rnds = list(r for r in rnds if r.is_data or r.is_pseudo_data)
+    if data_rnds:
+        assert len(data_rnds) == 1, 'can only have one data histogram if ratio is used.'
+        bkg_rnds = list(r for r in rnds if r.is_background)
+        assert len(bkg_rnds) == 1, 'can only have one background histogram if ratio is used.'
+        return bkg_rnds + data_rnds
+    else:
+        return rnds[1], rnds[0]
+
+
 def mk_ratio_plot_func(**outer_kws):
     """
     Ratio of first and second histogram in canvas.
@@ -546,7 +557,7 @@ def mk_ratio_plot_func(**outer_kws):
         cnv_wrp._par_mk_ratio_plot_func = par
 
         rnds = cnv_wrp._renderers
-        div_wrp = op.div((rnds[1], rnds[0]))
+        div_wrp = op.div(bottom_plot_get_div_hists(rnds))
         div_wrp.histo.SetYTitle(par['y_title'] or (
             '#frac{Data}{MC}' if rnds[1].is_data else 'Ratio'))
 
@@ -576,7 +587,7 @@ def mk_ratio_plot_func(**outer_kws):
 
 def mk_split_err_ratio_plot_func(**outer_kws):
     """
-    Ratio of first and second histogram with uncertainties split up.
+    Ratio of either stack and data or first and second histogram with uncertainties split up.
     """
     def mk_bkg_errors(histo, ref_histo):
         for i in xrange(histo.GetNbinsX() + 2):
@@ -650,9 +661,9 @@ def mk_split_err_ratio_plot_func(**outer_kws):
         cnv_wrp._par_mk_split_err_ratio_plot_func = par
 
         rnds = cnv_wrp._renderers
-        mcee_rnd, data_rnd = rnds[:2]
+        mcee_rnd, data_rnd = bottom_plot_get_div_hists(rnds)
         y_title = par['y_title'] or (
-            '#frac{Data-MC}{MC}'if data_rnd.is_data else '#frac{Sig-Bkg}{Bkg}')
+            '#frac{data-MC}{MC}'if data_rnd.is_data else '#frac{sig-bkg}{bkg}')
 
         # overlaying ratio histogram
         mc_histo_no_err = mcee_rnd.histo.Clone()
@@ -681,6 +692,12 @@ def mk_split_err_ratio_plot_func(**outer_kws):
         # poisson errs or not..
         if par['poisson_errs']:
             mk_poisson_errs_graph(cnv_wrp, data_hist, div_hist, mc_histo_no_err, par)
+
+        # ugly fix: move zeros out of range
+        for i in xrange(mc_histo_no_err.GetNbinsX()+2):
+            if not (div_hist.GetBinContent(i) or div_hist.GetBinError(i)):
+                div_hist.SetBinContent(i, -200)
+
 
     def ratio_plot_func(cnv_wrp, _):
         if not _bottom_plot_make_pad(cnv_wrp):
