@@ -623,10 +623,10 @@ def mk_split_err_ratio_plot_func(**outer_kws):
         cnv_wrp.bottom_hist_sys_err = None
         cnv_wrp.bottom_hist_tot_err = None
 
-    def mk_poisson_errs_graph(cnv_wrp, data_hist, div_hist, mc_histo_no_err, par):
-        data_rnd = cnv_wrp._renderers[1]
-        data_hist.SetBinErrorOption(ROOT.TH1.kPoisson)
-        data_hist.Sumw2(False)
+    def mk_poisson_errs_graph(cnv_wrp, data_rnd, div_hist, mc_histo_no_err, par):
+        data_hist = data_rnd.histo
+        data_hist.SetBinErrorOption(ROOT.TH1.kPoisson)  # TODO: poisson erros for main histo
+        data_hist.Sumw2(False)                          # should be set elsewhere!
         gtop = ROOT.TGraphAsymmErrors(data_hist)
         gbot = ROOT.TGraphAsymmErrors(div_hist)
         for i in xrange(mc_histo_no_err.GetNbinsX(), 0, -1):
@@ -691,7 +691,7 @@ def mk_split_err_ratio_plot_func(**outer_kws):
 
         # poisson errs or not..
         if par['poisson_errs']:
-            mk_poisson_errs_graph(cnv_wrp, data_hist, div_hist, mc_histo_no_err, par)
+            mk_poisson_errs_graph(cnv_wrp, data_rnd, div_hist, mc_histo_no_err, par)
 
         # ugly fix: move zeros out of range
         for i in xrange(mc_histo_no_err.GetNbinsX()+2):
@@ -741,7 +741,7 @@ def mk_pull_plot_func(**outer_kws):
         cnv_wrp._par_mk_pull_plot_func = par
 
         rnds = cnv_wrp._renderers
-        mcee_rnd, data_rnd = rnds[0], rnds[1]
+        mcee_rnd, data_rnd = bottom_plot_get_div_hists(rnds)
         y_title = par['y_title'] or (
             '#frac{Data-MC}{#sigma}' if data_rnd.is_data else '#frac{Sig-Bkg}{Bkg}')
 
