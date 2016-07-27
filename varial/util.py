@@ -19,6 +19,17 @@ def integral_and_error(th_hist):
     return round(val, 1), round(err.value, 1)
 
 
+def integral_and_corr_error(th_hist):
+    ntgrl = th_hist.Integral()
+    err_sum = sum(
+        th_hist.GetBinError(i+1)
+        for i in xrange(
+            th_hist.GetBin(
+                th_hist.GetNbinsX(), th_hist.GetNbinsY(), th_hist.GetNbinsZ()))
+    )
+    return round(ntgrl, 1), round(err_sum, 1)
+
+
 def random_hex_str():
     return hex(random.randint(0, 1e10))[-7:]
 

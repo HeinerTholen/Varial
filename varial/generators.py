@@ -759,7 +759,7 @@ def add_sample_integrals(canvas_wrps):
     """
     def integral_histo_wrp(wrp):
         bkg_sum = util.integral_and_error(wrp.histo)
-        sys_sum = (util.integral_and_error(wrp.histo_sys_err)
+        sys_sum = (util.integral_and_corr_error(wrp.histo_sys_err)
                    if wrp.histo_sys_err
                    else tuple())
         return [(wrp.legend, bkg_sum + sys_sum)]
@@ -768,7 +768,7 @@ def add_sample_integrals(canvas_wrps):
         for hist in wrp.obj.GetHists():
             yield hist.GetTitle(), util.integral_and_error(hist)
         bkg_sum = util.integral_and_error(wrp.histo)
-        sys_sum = (util.integral_and_error(wrp.histo_sys_err)
+        sys_sum = (util.integral_and_corr_error(wrp.histo_sys_err)
                    if wrp.histo_sys_err
                    else tuple())
         yield 'bkg_sum', bkg_sum + sys_sum
