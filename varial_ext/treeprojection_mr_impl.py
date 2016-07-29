@@ -82,8 +82,8 @@ def reduce_projection(iterator, params):
         yield sample_histo, _histo_sum(histos)
 
 
-####################################################################### jug ###
-def jug_map_projection_per_file(args):
+################################################################## adapters ###
+def map_projection_per_file(args):
     sample, filename, params = args
     histos = params['histos'].keys()
 
@@ -101,7 +101,7 @@ def jug_map_projection_per_file(args):
     return result
 
 
-def jug_reduce_projection(one, two):
+def reduce_projection_by_two(one, two):
     return list(reduce_projection(one+two, None))
 
 

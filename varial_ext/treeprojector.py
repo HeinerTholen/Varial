@@ -1,11 +1,9 @@
 """
 Parallel tree projection using map/reduce.
-
-Simple splitting by sample and file.
 """
 
 from varial_ext.treeprojection_mr_impl import \
-    jug_map_projection_per_file, \
+    map_projection_per_file, \
     reduce_projection, \
     store_sample
 import varial.multiproc
@@ -14,10 +12,7 @@ import varial.diskio
 import varial.pklio
 import varial.tools
 import varial.util
-
 import itertools
-import glob
-import time
 import os
 
 
@@ -42,7 +37,6 @@ class TreeProjectorBase(varial.tools.Tool):
                  params,
                  sec_sel_weight=(('Histograms', '', ''),),
                  add_aliases_to_analysis=True,
-                 progress_callback=None,
                  name=None,
                  ):
         super(TreeProjectorBase, self).__init__(name)
@@ -60,17 +54,7 @@ class TreeProjectorBase(varial.tools.Tool):
                              % (sample, self.name))
                 del filenames[sample]
 
-        # only for BatchTreeProjector
-        self.progress_callback = progress_callback or (lambda a, b: None)
-        self.jug_tasks = None
-        self.iteration = -1
-
-        self._init2()
-
-    def _init2(self):
-        pass
-
-    def reuse(self):
+    def reuse(self, _=False):
         super(TreeProjectorBase, self).reuse(self.add_aliases_to_analysis)
         self._push_aliases_to_analysis()
 
@@ -111,6 +95,9 @@ def _handle_sample(args):
 
 
 class TreeProjector(TreeProjectorBase):
+    """
+    See class TreeProjectorBase.
+    """
     def handle_sample(self, sample):
         self.message('INFO starting sample: ' + sample)
 
@@ -120,13 +107,12 @@ class TreeProjector(TreeProjectorBase):
                 if isinstance(weight, dict):
                     weight = weight[sample]
                 res = self.prepare_mapiter(selection, weight, sample)
-                res = pool.imap_unordered(jug_map_projection_per_file, res)
+                res = pool.imap_unordered(map_projection_per_file, res)
                 res = itertools.chain.from_iterable(res)
                 res = reduce_projection(res, self.params)
                 res = list(res)
                 assert res, 'tree_projection did not yield any histograms'
                 store_sample(sample, section, res)
-                self.progress_callback(1, 1)
 
         varial.diskio.write_fileservice(sample)
         self.message('INFO sample done: ' + sample)
@@ -146,164 +132,3 @@ class TreeProjector(TreeProjectorBase):
 
         # finalize
         self.finalize(lambda w: os.path.basename(w.file_path).split('.')[-2])
-
-
-############################################### batch tree project with jug ###
-try:
-    import jug
-except ImportError:
-    jug = None
-
-username = os.getlogin()
-jug_work_dir_pat = '/nfs/dust/cms/user/{user}/varial_sge_exec'
-jug_file_search_pat = jug_work_dir_pat + '/jug_file-*.py'
-jug_file_path_pat = jug_work_dir_pat + '/jug_file-{i}-{section}-{sample}.py'
-
-jugfile_content = """
-sample = {sample}
-section = {section}
-params = {params}
-files = {files}
-
-inputs = list(
-    (sample, f, params)
-    for f in files
-)
-
-import varial_ext.treeprojection_mr_impl as mr
-from jug.compound import CompoundTask
-from jug import TaskGenerator
-import jug.mapreduce
-import cPickle
-import os
-
-@TaskGenerator
-def finalize(result):
-    os.remove(__file__)  # do not let other workers find the task anymore
-    import varial
-    mr.store_sample(sample, section, result)
-    varial.diskio.write_fileservice(
-        __file__.replace('.py', ''),
-        initial_mode='UPDATE'
-    )
-    os.chmod(__file__.replace('.py', '.root'), 0o0664)
-
-result = CompoundTask(
-    jug.mapreduce.mapreduce,
-    mr.jug_reduce_projection,
-    mr.jug_map_projection_per_file,
-    inputs,
-    map_step=2,
-    reduce_step=8,
-)
-final_task = finalize(result)
-
-jug.options.default_options.execute_wait_cycle_time_secs = 1
-jug.options.default_options.execute_nr_wait_cycles = 1
-"""
-
-
-class BatchTreeProjector(TreeProjectorBase):
-    def _init2(self):
-        if not jug:
-            raise ImportError('"Jug" is needed for BatchTreeProjector')
-
-        # clear directory
-        exec_pat = jug_file_search_pat.format(user=username).replace('.py', '')
-        if glob.glob(exec_pat):
-            os.system('rm -rf ' + exec_pat)
-
-        os.umask(2)  # need files to be writable by workers of any user
-
-    def launch_tasks(self, section, selection, weight):
-        params = self.prepare_params(selection, weight)
-        for sample in self.samples:
-            if isinstance(weight, dict):
-                params['weight'] = weight[sample]
-            p_jugfile = jug_file_path_pat.format(
-                i=self.iteration, user=username, section=section, sample=sample)
-            p_jugres = os.path.splitext(p_jugfile)[0]
-
-            # write jug_file
-            with open(p_jugfile, 'w') as f:
-                f.write(jugfile_content.format(
-                    section=repr(section),
-                    sample=repr(sample),
-                    params=repr(params),
-                    files=repr(self.filenames[sample]),
-                ))
-
-            # load new task
-            self.jug_tasks.append((sample, p_jugres))
-
-    def transfer_result(self, p):
-        os.system('mv %s.root %s' % (p, self.cwd))
-        ws = varial.diskio.generate_aliases(
-            self.cwd + os.path.basename(p) + '.root')
-        ws = varial.gen.gen_add_wrp_info(ws,
-            sample=lambda w: w.file_path.split('-')[-1][:-5])
-        return ws
-
-    def process_tasks(self):
-        n_jobs = len(self.jug_tasks)
-        n_done_prev, n_done = 0, -1
-        items_done = [False] * n_jobs
-        wrps = []
-
-        while n_done < n_jobs:
-
-            errs = list(p + '.err.txt'
-                for (_, p) in self.jug_tasks
-                if os.path.exists(p + '.err.txt')
-            )
-            if errs:
-                with open(errs[0]) as f:
-                    raise RuntimeError(f.read())
-
-            items_due = list(
-                (not d) and os.path.exists(p + '.root')
-                for (d, (_, p)) in itertools.izip(items_done, self.jug_tasks)
-            )
-            items_done = list(
-                a or b
-                for a, b in itertools.izip(items_done, items_due)
-            )
-            n_done_prev, n_done = n_done, sum(items_done)
-
-            time.sleep(0.3)  # wait for write  # TODO wait for open exclusively
-            if n_done_prev != n_done:
-                for d, (_, p) in itertools.izip(items_due, self.jug_tasks):
-                    if d:
-                        wrps += self.transfer_result(p)
-
-                self.message('INFO {}/{} done'.format(n_done, n_jobs))
-                self.progress_callback(n_jobs, n_done)
-
-        return wrps
-
-    def run(self):
-        os.system('touch ' + self.cwd + 'webcreate_denial')
-        self.iteration += 1
-
-        # clear last round of running (and the ones of 3 iterations ago)
-        wd_junk = jug_file_search_pat.format(user=username)
-        wd_junk = wd_junk.replace('*.py', '%d.*' % (self.iteration - 4))
-        wd_junk_files = glob.glob(wd_junk)
-        if wd_junk_files:
-            os.system('rm ' + ' '.join(wd_junk_files))
-        tooldir_junk_files = glob.glob('%s/*.root' % self.cwd)
-        if tooldir_junk_files:
-            os.system('rm ' + ' '.join(tooldir_junk_files))
-
-        # do the work
-        self.jug_tasks = []
-        for section, selection, weight in self.sec_sel_weight:
-            self.launch_tasks(section, selection, weight)
-        wrps = self.process_tasks()
-
-        # finalize
-        self.finalize(None, wrps)
-
-
-# TODO option for _not_ copying/moving result back (softlink?)
-# TODO: move jug_constants somewhere sensible

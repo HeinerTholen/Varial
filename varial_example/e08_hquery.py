@@ -61,7 +61,7 @@ if __name__ == '__main__':
         # required parameters
         filenames=filenames,
         treename=treename,
-        backend='local',  # one of sge, local
+        backend='local',  # one of jug, local
 
         # additional parameters
         weight=weight,

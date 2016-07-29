@@ -7,7 +7,7 @@ import os
 
 
 ################################################################# Submitter ###
-# python -c "from varial_ext.sgeworker import SGESubmitter; SGESubmitter(10, '/nfs/dust/cms/user/{user}/varial_sge_exec', '/nfs/dust/cms/user/{user}/varial_sge_exec/jug_file-*.py').start(); "
+# python -c "from varial_ext.treeprojector_jug_sge import SGESubmitter; SGESubmitter(10, '/nfs/dust/cms/user/{user}/varial_sge_exec', '/nfs/dust/cms/user/{user}/varial_sge_exec/jug_file-*.py').start(); "
 
 sge_job_conf = """#!/bin/bash
 #$ -l os=sld6
@@ -23,7 +23,7 @@ sge_job_conf = """#!/bin/bash
 cd /tmp/
 umask 2
 python -c "\
-from varial_ext.sgeworker import SGEWorker; \
+from varial_ext.treeprojector_jug_sge import SGEWorker; \
 SGEWorker(${SGE_TASK_ID}, '{user}', '{jug_file_path_pat}').start(); \
 "
 """
@@ -99,7 +99,7 @@ class SGESubmitter(object):
 
 
 #################################################################### Worker ###
-# python -c "from varial_ext.sgeworker import SGEWorker; SGEWorker(3, 'tholenhe', '/nfs/dust/cms/user/{user}/varial_sge_exec/jug_file-*.py').start(); "
+# python -c "from varial_ext.treeprojector_jug_sge import SGEWorker; SGEWorker(3, 'tholenhe', '/nfs/dust/cms/user/{user}/varial_sge_exec/jug_file-*.py').start(); "
 
 class SGEWorker(object):
     def __init__(self, task_id, username, jug_file_path_pat):

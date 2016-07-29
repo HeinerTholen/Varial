@@ -1,12 +1,9 @@
-from varial_ext.treeprojector import TreeProjector, BatchTreeProjector
-import quantitylist
-
 from varial.plotter import mk_rootfile_plotter
 from varial.main import process_settings_kws
 from varial.webcreator import WebCreator
 from varial.tools import Runner
+import quantitylist
 import varial
-
 import string
 import shutil
 import json
@@ -37,7 +34,7 @@ class HQueryBackend(object):
         assert 'filenames' in kws, '"filenames" is needed.'
         assert 'treename' in kws, '"treename" is needed.'
         if 'backend' in kws:
-            assert kws['backend'] in ('local', 'sge'), 'may be "local" or "sge"'
+            assert kws['backend'] in ('local', 'jug'), 'may be "local" or "jug"'
             backend_type = kws.pop('backend')
         else:
             backend_type = 'local'
@@ -64,9 +61,9 @@ class HQueryBackend(object):
         self.branchname_proc = None
 
         if backend_type == 'local':
-            TP = TreeProjector
-        else:
-            TP = BatchTreeProjector
+            from varial_ext.treeprojector import TreeProjector as TP
+        elif backend_type == 'jug':
+            from varial_ext.treeprojector_jug import BatchTreeProjector as TP
         self.tp = TP(kws.pop('filenames'),
                      self.params,
                      add_aliases_to_analysis=False,

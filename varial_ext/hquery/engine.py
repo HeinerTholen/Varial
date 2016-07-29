@@ -11,10 +11,12 @@ def _start_backend(kws, q_in, q_out):
     HQueryBackend(kws, q_in, q_out).start()
 
 
-def _start_job_submitter(n_jobs):
-    from varial_ext.sgeworker import SGESubmitter
-    import varial_ext.treeprojector as tp
-    SGESubmitter(n_jobs, tp.jug_work_dir_pat, tp.jug_file_search_pat).start()
+def _start_job_submitter(n_jobs, backend):
+    if backend == 'jug':
+        from varial_ext.treeprojector_jug_sge import SGESubmitter
+        import varial_ext.treeprojector_jug as tp
+        SGESubmitter(n_jobs, tp.jug_work_dir_pat, tp.jug_file_search_pat).start()
+    assert False, 'backend type not known: %s' % backend
 
 
 class HQueryEngine(object):
@@ -34,11 +36,12 @@ class HQueryEngine(object):
         self.start_backend(kws)
 
     def start_job_submitter(self, kws):
-        if kws.get('backend') != 'sge':
+        backend = kws.get('backend')
+        if backend == 'local':
             return
 
         n_jobs = kws.pop('n_jobs', 100)
-        self.job_proc = mp.Process(target=_start_job_submitter, args=(n_jobs,))
+        self.job_proc = mp.Process(target=_start_job_submitter, args=(n_jobs, backend))
         self.job_proc.start()
 
     def start_backend(self, kws):
