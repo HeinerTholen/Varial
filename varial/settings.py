@@ -84,7 +84,7 @@ no_toggles = False  # for webcreator
 colors = {}  # legend entries => fill colors
 pretty_names = {}
 stacking_order = []
-canvas_decorators = []
+canvas_post_build_funcs = []
 stack_line_color = [1]
 
 stat_error_color = 921
@@ -100,6 +100,14 @@ from array import array
 from ROOT import gROOT, gStyle, TColor, TStyle, TGaxis
 
 
+def apply_axis_style(obj, y_bounds):
+    _, y_max = y_bounds
+    obj.GetXaxis().SetNoExponent()
+    obj.GetXaxis().SetLabelSize(0.052)
+    obj.SetMinimum(y_max / 10000.)
+    obj.SetMaximum(y_max * 1.1)
+
+
 def apply_error_hist_style(h, col, fill):
     if isinstance(col, tuple):
         col, opac = col
@@ -112,18 +120,42 @@ def apply_error_hist_style(h, col, fill):
     h.SetLineColor(1)
 
 
+def apply_split_pad_styles(cnv_wrp):
+    main, scnd = cnv_wrp.main_pad, cnv_wrp.second_pad
+
+    main.SetTopMargin(0.135)
+    main.SetBottomMargin(0.25)
+    #main.SetRightMargin(0.04)
+    #main.SetLeftMargin(0.16)
+
+    scnd.SetTopMargin(0.)
+    scnd.SetBottomMargin(0.375)
+    #scnd.SetRightMargin(0.04)
+    #scnd.SetLeftMargin(0.16)
+    scnd.SetRightMargin(main.GetRightMargin())
+    scnd.SetLeftMargin(main.GetLeftMargin())
+    scnd.SetGridy()
+
+    first_obj = cnv_wrp.first_obj
+    first_obj.GetYaxis().CenterTitle(1)
+    first_obj.GetYaxis().SetTitleSize(0.055)
+    first_obj.GetYaxis().SetTitleOffset(1.3)
+    first_obj.GetYaxis().SetLabelSize(0.055)
+    first_obj.GetXaxis().SetNdivisions(505)
+
+
 def stat_error_style(histo):
-    histo.SetTitle('Stat. uncert. MC')
+    histo.SetTitle('stat. uncert. MC')
     apply_error_hist_style(histo, stat_error_color, stat_error_fill)
 
 
 def sys_error_style(histo):
-    histo.SetTitle('Sys. uncert. MC')
+    histo.SetTitle('sys. uncert. MC')
     apply_error_hist_style(histo, sys_error_color, sys_error_fill)
 
 
 def tot_error_style(histo):
-    histo.SetTitle('Tot. uncert. MC')
+    histo.SetTitle('tot. uncert. MC')
     apply_error_hist_style(histo, tot_error_color, tot_error_fill)
 
 
@@ -133,22 +165,23 @@ def set_bottom_plot_general_style(obj):
     obj.GetYaxis().SetTitleOffset(0.44) #0.55
     obj.GetYaxis().SetLabelSize(0.16)
     obj.GetYaxis().SetNdivisions(205)
-
     obj.GetXaxis().SetNoExponent()
     obj.GetXaxis().SetTitleSize(0.16)
     obj.GetXaxis().SetLabelSize(0.17)
     obj.GetXaxis().SetTitleOffset(1)
     obj.GetXaxis().SetLabelOffset(0.006)
     obj.GetXaxis().SetNdivisions(505)
-    obj.GetXaxis().SetTickLength(
-        obj.GetXaxis().GetTickLength() * 3.
-    )
+    obj.GetXaxis().SetTickLength(obj.GetXaxis().GetTickLength() * 3.)
     obj.SetTitle('')
+
 
 def set_bottom_plot_ratio_style(obj):
     obj.SetLineColor(1)
     obj.SetLineStyle(1)
     obj.SetLineWidth(1)
+    obj.SetMarkerStyle(20)
+    obj.SetMarkerSize(.7)
+
 
 def set_bottom_plot_pull_style(obj):
     obj.SetFillColor(807)

@@ -6,6 +6,7 @@ import random
 import ROOT
 import copy
 import math
+import os
 
 
 def integral_and_error(th_hist):
@@ -16,6 +17,17 @@ def integral_and_error(th_hist):
     else:
         val = th_hist.IntegralAndError(0, th_hist.GetNbinsX(), err)
     return round(val, 1), round(err.value, 1)
+
+
+def integral_and_corr_error(th_hist):
+    ntgrl = th_hist.Integral()
+    err_sum = sum(
+        th_hist.GetBinError(i+1)
+        for i in xrange(
+            th_hist.GetBin(
+                th_hist.GetNbinsX(), th_hist.GetNbinsY(), th_hist.GetNbinsZ()))
+    )
+    return round(ntgrl, 1), round(err_sum, 1)
 
 
 def random_hex_str():
@@ -66,13 +78,13 @@ def deepish_copy(obj):
         or inspect.isclass(obj)
     ):
         return obj
-    if type(obj) == list:
+    if isinstance(obj, list):
         return list(deepish_copy(o) for o in obj)
-    if type(obj) == tuple:
+    if isinstance(obj, tuple):
         return tuple(deepish_copy(o) for o in obj)
-    if type(obj) == dict:
+    if isinstance(obj, dict):
         return dict((k, deepish_copy(v)) for k, v in obj.iteritems())
-    if type(obj) == set:
+    if isinstance(obj, set):
         return set(deepish_copy(o) for o in obj)
     if hasattr(obj, '__dict__'):
         cp = copy.copy(obj)
@@ -81,6 +93,37 @@ def deepish_copy(obj):
             cp.__dict__[k] = deepish_copy(v)
         return cp
     return obj
+
+
+def setup_legendnames_from_files(pattern):
+    import generators as gen  # hide circular dependency
+    filenames = gen.resolve_file_pattern(pattern)
+
+    # only one file: return directly
+    if len(filenames) < 2:
+        return {filenames[0]: filenames[0]}
+
+    # try the sframe way:
+    lns = list(n.split('.') for n in filenames if isinstance(n, str))
+    if all(len(l) == 5 for l in lns):
+        res = dict((f, l[3]) for f, l in itertools.izip(filenames, lns))
+
+        # make sure the legend names are all different
+        if len(set(l for l in res.itervalues())) == len(res):
+            return res
+
+    # try trim filesnames from front and back
+    lns = list(os.path.splitext(f)[0] for f in filenames)
+    # shorten strings from front
+    while all(n[0] == lns[0][0] and len(n) > 5 for n in lns):
+        for i in xrange(len(lns)):
+            lns[i] = lns[i][1:]
+
+    # shorten strings from back
+    while all(n[-1] == lns[0][-1] and len(n) > 5 for n in lns):
+        for i in xrange(len(lns)):
+            lns[i] = lns[i][:-1]
+    return dict((f, l) for f, l in itertools.izip(filenames, lns))
 
 
 #################################################################### Switch ###
@@ -151,164 +194,6 @@ class ResettableType(type):
         mcs.reset = _reset
         mcs.update = _update_init_state
         return mcs
-
-
-################################################################# decorator ###
-from new import function, instancemethod
-from inspect import getmembers, ismethod
-from functools import wraps
-
-
-def _decorator_sensitive(f):
-    """
-    Wrapper for inner object methods. Forwards calls to the outer decorator.
-    """
-    @wraps(f)
-    def dec_sens(self, *args, **kws):
-        return f(self._outermost_decorator, *args, **kws)
-    return dec_sens
-
-
-class Decorator(object):
-    """
-    Implements the decorator pattern. For a basic outline, have a look at
-    http://en.wikipedia.org/wiki/Decorator_pattern
-    However, in python, no subclassing and no getters/setters are needed,
-    thanks to __getattr__ and __setattr__.
-
-    >>> class Foo(object):
-    ...     def f1(self):
-    ...         print 'in Foo.f1()'
-    ...     def f2(self):
-    ...         print 'in Foo.f2()'
-    >>> class FooDecorator(Decorator):
-    ...     def f2(self):
-    ...         print 'in FooDecorator.f2()'
-    ...         self.decoratee.f2() # VERY IMPORTANT !! pass on the call...
-    >>> x = Foo()
-    >>> y = FooDecorator(x)
-    >>> y.f1()
-    in Foo.f1()
-    >>> y.f2()
-    in FooDecorator.f2()
-    in Foo.f2()
-    """
-    def __init__(self, target=None, deep_decoration=True, **kws):
-        """
-        Init a decorator. "deep_decoration" activates a wrapping of the
-        original methods. If true, direct calls to the inner object methods
-        will go through all decorators. This is especially sensible, when the
-        inner object calls methods of its own.
-        """
-        if not self.__dict__.has_key('dec_par'):
-            self.__dict__['dec_par'] = dict()
-        self.__dict__['dec_par'].update(kws)
-        if not target:
-            return
-        self.__dict__['decoratee'] = target
-
-        # this is automatically forwarded to the inner decoratee
-        target._outermost_decorator = self
-
-        if deep_decoration and not isinstance(target, Decorator):
-            # make the inner object decorator-aware
-            # the mechanism is the same as if @decorator_sensitive would be
-            # applied to each of the inner objects methods.
-
-            # in some cases needed
-            target._inner_decoratee = target
-
-            # get methods
-            members = getmembers(target)
-            methods = [m for m in members if ismethod(m[1])]
-            for m in methods:
-
-                # wrap methods properly with decorator_sensitive(...)
-                m_func = function(m[1].func_code, m[1].func_globals)
-                m_func = _decorator_sensitive(m_func)
-                m_func = instancemethod(m_func, target)
-
-                # do the monkey-'wrap'
-                setattr(target, m[0], m_func)
-
-    def __getattr__(self, name):
-        return getattr(self.decoratee, name)
-
-    def __setattr__(self, name, value):
-        setattr(self.decoratee, name, value)
-
-    def __call__(self, target, dd=True):
-        Decorator.__init__(self, target, dd)
-        return self
-
-    def __str__(self):
-        return 'Decorator "%s" on\n%s' % (str(type(self)), str(self.decoratee))
-
-    def get_decorator(self, klass):
-        """
-        Runs over all inner decorators, returns the match.
-
-        If klass is str, then __class__.__name__ must be equal.
-        If klass is a class object, then all subclasses are returned as well.
-        """
-        inner = self
-        if type(klass) == str:
-            while isinstance(inner, Decorator):
-                if inner.__class__.__name__ == klass:
-                    return inner
-                inner = inner.decoratee
-        elif type(klass) == type:
-            while isinstance(inner, Decorator):
-                if isinstance(inner, klass):
-                    return inner
-                inner = inner.decoratee
-
-    def insert_decorator(self, new_dec):
-        """
-        Inserts decorator right after me.
-        """
-        assert issubclass(new_dec, Decorator)
-        self.__dict__['decoratee'] = new_dec(self.decoratee)
-        return self.decoratee
-
-    def replace_decorator(self, old, new_dec):
-        """
-        Changes old for new in the chain of decorators.
-        """
-        assert issubclass(new_dec, Decorator)
-        inner = self.decoratee
-        outer = self
-        while isinstance(inner, Decorator):
-            if inner.__class__.__name__ == old:
-                outer.__dict__['decoratee'] = new_dec(inner.decoratee, False)
-                break
-            outer = inner
-            inner = outer.decoratee
-
-    def remove_decorator(self, old):
-        """
-        Searches 'old' and removes it.
-        """
-        inner = self.decoratee
-        outer = self
-        while isinstance(inner, Decorator):
-            if inner.__class__.__name__ == old:
-                outer.__dict__['decoratee'] = inner.decoratee
-                break
-            outer = inner
-            inner = outer.decoratee
-
-    def print_decorators(self):
-        """
-        For debugging.
-        """
-        decs  = ''
-        inner = self
-        while isinstance(inner, Decorator):
-            decs += inner.__class__.__name__ + "\n"
-            inner = inner.decoratee
-        self.message(
-            'DEBUG _____________(inner)_decorator_chain_____________\n' + decs)
 
 
 if __name__ == '__main__':

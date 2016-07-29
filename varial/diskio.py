@@ -18,7 +18,6 @@ import os
 import wrappers
 import history
 import monitor
-import sample
 
 
 _n_file_limit = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
@@ -170,16 +169,6 @@ def get(filename, default=None):
 
 
 ########################################################## i/o with aliases ###
-def generate_fs_aliases(file_path, sample_inst):
-    """Produces list of all fileservice histograms for registered samples."""
-    if not isinstance(sample_inst, sample.Sample):
-        raise RuntimeError(
-            '2nd arg of generate_fs_aliases must be instance of sample.Sample')
-    root_file = get_open_root_file(file_path)
-    for ifp, typ in _recursive_path_and_type(root_file, ''):
-        yield wrappers.FileServiceAlias(file_path, ifp, typ, sample_inst)
-
-
 def generate_aliases(glob_path='./*.root'):
     """Looks for root files based on a pattern string and produces aliases."""
     file_paths = glob.glob(glob_path)

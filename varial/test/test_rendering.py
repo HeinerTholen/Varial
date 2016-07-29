@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
 import os
-from ROOT import TCanvas
+import ROOT
+ROOT.gROOT.SetBatch()
+
 from test_histotoolsbase import TestHistoToolsBase
-from varial.rendering import CanvasBuilder
 from varial.wrappers import HistoWrapper
+import varial.rendering as rnd
 import varial.diskio as diskio
 
 class TestRendering(TestHistoToolsBase):
@@ -12,8 +14,7 @@ class TestRendering(TestHistoToolsBase):
         wrp1 = self.test_wrp
         wrp2 = HistoWrapper(wrp1.histo, history="Fake history")
         wrp2.histo.Scale(1.5)
-        cb = CanvasBuilder((wrp1, wrp2))
-        wrp = cb.build_canvas()
+        wrp = rnd.build_canvas((wrp1, wrp2), rnd.build_funcs, [])
 
         # check for stack and data to be in canvas primitives
         prim = wrp.canvas.GetListOfPrimitives()

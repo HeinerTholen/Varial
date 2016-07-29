@@ -4,12 +4,12 @@ import tempfile
 import shutil
 import os
 
+from varial.extensions.cmsrun import Sample
 from varial.wrappers import HistoWrapper
 from varial.history import History
 from varial import analysis
 from varial import settings
 from varial import diskio
-from varial import sample
 
 
 class TestHistoToolsBase(unittest.TestCase):
@@ -23,24 +23,24 @@ class TestHistoToolsBase(unittest.TestCase):
         settings.DIR_FILESERVICE = test_fs
         if (not os.path.exists(test_fs + "tt.root")) \
         or (not os.path.exists(test_fs + "ttgamma.root")) \
-        or (not os.path.exists(test_fs + "ttgamma.root")):
+        or (not os.path.exists(test_fs + "zjets.root")):
             self.fail("Fileservice testfiles not present!")
 
         # create samples
-        analysis.all_samples["tt"] = sample.Sample(
+        analysis.all_samples["tt"] = Sample(
             name = "tt",
             is_data = True,
             lumi = 3.,
             legend = "pseudo data",
             input_files = ["none"],
         )
-        analysis.all_samples["ttgamma"] = sample.Sample(
+        analysis.all_samples["ttgamma"] = Sample(
             name = "ttgamma",
             lumi = 4.,
             legend = "tt gamma",
             input_files = ["none"],
         )
-        analysis.all_samples["zjets"] = sample.Sample(
+        analysis.all_samples["zjets"] = Sample(
             name = "zjets",
             lumi = 0.1,
             legend = "z jets",

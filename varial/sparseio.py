@@ -56,6 +56,7 @@ def bulk_write(wrps, name_func, dir_path='', suffices=None, linlog=False):
     wrps_dict = dict()
     for w in wrps:
         name = name_func(w)
+        assert name, 'function "%s" returns %s for "%s"' % (name_func, repr(name), w)
         if name in wrps_dict:
             monitor.message(
                 'sparseio',
@@ -96,15 +97,15 @@ def bulk_write(wrps, name_func, dir_path='', suffices=None, linlog=False):
                 w.main_pad.SetLogy(0)
                 w.obj.SaveAs(img_path+'_lin'+suffix)
 
-                # if the cnv.first_drawn has a member called 'GetMaximum', the
+                # if the cnv.first_obj has a member called 'GetMaximum', the
                 # maximum should be greater than zero...
-                if (hasattr(w, 'first_drawn')
-                    and (not hasattr(w.first_drawn, 'GetMaximum')
-                         or w.first_drawn.GetMaximum() > 1e-9)
+                if (hasattr(w, 'first_obj')
+                    and (not hasattr(w.first_obj, 'GetMaximum')
+                         or w.first_obj.GetMaximum() > 1e-9)
                 ):
                     min_val = w.y_min_gr_0 * 0.5
                     min_val = max(min_val, 1e-9)
-                    w.first_drawn.SetMinimum(min_val)
+                    w.first_obj.SetMinimum(min_val)
                     w.main_pad.SetLogy(1)
 
                 w.obj.SaveAs(img_path+'_log'+suffix)

@@ -3,18 +3,6 @@ From histogram data to graphical plots.
 
 The members of this package make plots from histograms or other wrapped
 ROOT-objects. The 'Renderers' extend the functionality of wrappers for drawing.
-The ROOT-canvas is build with the ``CanvasBuilder`` class.
-
-Decorators can be used for customization of a ``CanvasBuilder`` instance.
-They provide ways to add content to canvases, like a legend, boxes, lines,
-text, etc.. See :ref:`util-module` for details on the decorator
-implementation. Apply as below (e.g. with a 'Legend' or a 'TextBox'
-Decorator)::
-
-    cb = CanvasBuilder(wrappers)
-    cb = Legend(cb, x1=0.2, x2=0.5)             # wrap cb with Legend
-    cb = Textbox(cb, text="Some boxed Text")    # wrap Legend with Textbox
-    canvas_wrp = cb.build_canvas()
 """
 
 
@@ -61,14 +49,34 @@ class HistoRenderer(Renderer, wrappers.HistoWrapper):
     """
     def __init__(self, wrp):
         super(HistoRenderer, self).__init__(wrp)
-        if hasattr(wrp, 'draw_option'):
+
+        if self.histo_sys_err:                          # calculate total error
+            nom, sys, tot = self.histo, self.histo_sys_err, self.histo.Clone()
+            for i in xrange(tot.GetNbinsX()+2):
+                nom_val = nom.GetBinContent(i)
+                nom_err = nom.GetBinError(i) or 1e-10   # prevent 0-div-error
+                sys_val = sys.GetBinContent(i)
+                sys_err = sys.GetBinError(i) or 1e-10   # prevent 0-div-error
+                nom_wei = nom_err**2 / (nom_err**2 + sys_err**2)
+                sys_wei = sys_err**2 / (nom_err**2 + sys_err**2)
+
+                # weighted mean of values and quadratic sum of errors
+                tot.SetBinContent(i, nom_wei*nom_val + sys_wei*sys_val)
+                tot.SetBinError(i, (nom_err**2 + sys_err**2)**.5)
+
+            self.histo_tot_err = tot
+            settings.sys_error_style(self.histo_sys_err)
+            settings.tot_error_style(self.histo_tot_err)
+
+        if getattr(wrp, 'draw_option', 0):
             self.draw_option = wrp.draw_option
         elif 'TH2' in wrp.type:
             self.draw_option = 'colz'
-        elif self.is_data:
+        elif self.is_data or self.is_pseudo_data:
             self.draw_option = 'E0X0'
-            # self.histo.SetBinErrorOption(ROOT.TH1.kPoisson)
-            # self.histo.Sumw2(False)
+            self.draw_option_legend = 'p'
+            if self.is_pseudo_data:
+                w.histo.SetMarkerStyle(4)
         else:
             self.draw_option = 'hist'
 
@@ -112,26 +120,8 @@ class StackRenderer(HistoRenderer, wrappers.StackWrapper):
     """
     def __init__(self, wrp):
         super(StackRenderer, self).__init__(wrp)
-
-        if self.histo_sys_err:                          # calculate total error
-            nom, sys, tot = self.histo, self.histo_sys_err, self.histo.Clone()
-            for i in xrange(tot.GetNbinsX()+2):
-                nom_val = nom.GetBinContent(i)
-                nom_err = nom.GetBinError(i) or 1e-10   # prevent 0-div-error
-                sys_val = sys.GetBinContent(i)
-                sys_err = sys.GetBinError(i) or 1e-10   # prevent 0-div-error
-                nom_wei = nom_err**2 / (nom_err**2 + sys_err**2)
-                sys_wei = sys_err**2 / (nom_err**2 + sys_err**2)
-
-                # weighted mean of values and quadratic sum of errors
-                tot.SetBinContent(i, nom_wei*nom_val + sys_wei*sys_val)
-                tot.SetBinError(i, (nom_err**2 + sys_err**2)**.5)
-
-            self.histo_tot_err = tot
-            settings.sys_error_style(self.histo_sys_err)
-            settings.tot_error_style(self.histo_tot_err)
-
         settings.stat_error_style(self.histo)
+        self.draw_option = getattr(wrp, 'draw_option', 'hist')
         self.draw_option_sum = getattr(wrp, 'draw_option_sum', 'sameE2')
 
     def y_min_gr_zero(self, histo=None):
@@ -190,10 +180,10 @@ class GraphRenderer(Renderer, wrappers.GraphWrapper):
         self.graph.Draw(self.draw_option + option)
 
 
-############################################################ canvas-builder ###
+################################################# canvas-building functions ###
 import settings
 import history
-from ROOT import TCanvas, TObject
+import util
 
 
 def _renderize(wrp):
@@ -214,267 +204,174 @@ def _renderize_iter(wrps):
     return rnds
 
 
-class CanvasBuilder(object):
+def _track_canvas_history(rnds, kws):
+    list_of_histories = []
+    for rnd in rnds:
+        list_of_histories.append(rnd.history)
+    hstry = history.History('build_canvas')
+    hstry.add_args(list_of_histories)
+    hstry.add_kws(kws)
+    return hstry
+
+
+def setup(wrps, kws):
+    """Scan ROOT-objects for x and y bounds."""
+    pbfs = kws.pop('post_build_funcs', [])
+
+    if not isinstance(wrps, collections.Iterable):
+        raise RuntimeError('setup wants iterable of wrps!')
+
+    # only one stack, which should be one first place
+    wrps = sorted(wrps, key=lambda r: not isinstance(r, wrappers.StackWrapper))
+    if len(wrps) > 1 and isinstance(wrps[1], wrappers.StackWrapper):
+        raise RuntimeError('At most one StackWrapper allowed, it must be in first place.')
+
+    # instanciate..
+    rnds = list(_renderize_iter(wrps))
+    canvas = ROOT.TCanvas(
+        rnds[0].name + '_' + util.random_hex_str(),
+        rnds[0].title,
+        settings.canvas_size_x,
+        settings.canvas_size_y,
+    )
+
+    # collect info
+    info = rnds[0].all_info()  # TODO only common info
+    for attr in ('is_signal', 'is_data', 'is_pseudo_data'):
+        if attr in info:
+            del info[attr]
+    info.update(kws)
+    info.update({
+        'name'        : rnds[0].name,
+        'title'       : rnds[0].title,
+        'in_file_path': rnds[0].in_file_path,
+        'main_pad'    : canvas,
+        'second_pad'  : None,
+        'legend'      : None,
+        'first_obj'   : None,
+        'x_bounds'    : None,
+        'y_bounds'    : None,
+        'y_min_gr_0'  : 1e-23,
+        'history'     : _track_canvas_history(rnds, kws),
+        '_renderers'  : rnds,
+    })
+    wrp = wrappers.CanvasWrapper(canvas, **info)
+
+    for sf in pbfs:
+        if getattr(sf, 'setup', 0):
+            sf.setup(wrp, kws)
+    return wrp
+
+
+def find_x_y_bounds(wrp, _):
+    """Scan ROOT-objects for x and y bounds."""
+    rnds = wrp._renderers
+    x_min = min(r.x_min() for r in rnds)
+    x_max = max(r.x_max() for r in rnds)
+    wrp.x_bounds = x_min, x_max
+    y_min = min(r.y_min() for r in rnds)
+    y_max = max(r.y_max() for r in rnds)
+    wrp.y_bounds = y_min, y_max
+    wrp.y_min_gr_0 = min(r.y_min_gr_zero() for r in rnds)
+    return wrp
+
+
+def draw_content(wrp, _):
+    for i, rnd in enumerate(wrp._renderers):
+        if not i:
+            first_obj = rnd.obj
+            first_obj.SetTitle('')
+            rnd.draw('')
+            settings.apply_axis_style(first_obj, wrp.y_bounds)
+            wrp.first_obj = first_obj
+        else:
+            rnd.draw('same')
+
+    return wrp
+
+
+##################################################### canvas customizations ###
+import operations as op
+
+
+class PostBuildFuncWithSetup(object):
+    def __init__(self, func, setup_funcs):
+        self.func = func
+        self.setup_funcs = setup_funcs
+
+    def __call__(self, *args, **kws):
+        return self.func(*args, **kws)
+
+    def setup(self, *args, **kws):
+        for f in self.setup_funcs:
+            f(*args, **kws)
+
+
+def mk_tobject_draw_func(tobject):
     """
-    Create a TCanvas and plot wrapped ROOT-objects.
+    Draw any TObject. Like a TLatex.
 
-    Use this class like so::
-
-        cb = CanvasBuilder(list_of_wrappers, **kws)
-        canvas_wrp = cb.build_canvas()
-
-    * ``list_of_wrappers`` is can also be a list of renderers. If not, the
-      renderers are created automatically.
-
-    * ``**kws`` can be empty. Accepted keywords are ``name=`` and ``title=`` and
-      any keyword that is accepted by ``histotools.wrappers.CanvasWrapper``.
-
-    When designing decorators, these instance data members can be of interest:
-
-    ================= =========================================================
-    ``x_bounds``      Bounds of canvas area in x
-    ``y_bounds``      Bounds of canvas area in y
-    ``y_min_gr_zero`` smallest y greater zero (need in log plotting)
-    ``canvas``        Reference to the TCanvas instance
-    ``main_pad``      Reference to TPad instance
-    ``second_pad``    Reference to TPad instance or None
-    ``first_drawn``   TObject which is first drawn (for valid TAxis reference)
-    ``legend``        Reference to TLegend object.
-    ================= =========================================================
+    e.g:
+    ``rendering.post_build_functions += rendering.mk_tobject_draw_func(``
+    ``    ROOT.TLatex(0.5, 0.5, 'My Box')``
+    ``)``
     """
-    class TooManyStacksError(Exception): pass
-    class NoInputError(Exception): pass
+    assert isinstance(text, ROOT.TObject), '"tobject" arg must be a TObject'
 
-    x_bounds       = 0., 0.
-    y_bounds       = 0., 0.
-    y_min_gr_zero  = 0.
-    canvas         = None
-    main_pad       = None
-    second_pad     = None
-    first_drawn    = None
-    legend         = None
-
-    def __init__(self, wrps, **kws):
-        if not isinstance(wrps, collections.Iterable):
-            raise self.NoInputError('CanvasBuilder wants iterable of wrps!')
-        super(CanvasBuilder, self).__init__()
-        self.kws = kws
-
-        # only one stack, which should be one first place
-        wrps = sorted(
-            wrps,
-            key=lambda r: not isinstance(r, wrappers.StackWrapper)
-        )
-        if len(wrps) > 1 and isinstance(wrps[1], wrappers.StackWrapper):
-            raise self.TooManyStacksError(
-                'CanvasWrapper takes at most one StackWrapper'
-            )
-
-        # for stacks and overlays
-        if len(wrps) > 1:
-            if isinstance(wrps[0], wrappers.StackWrapper):
-                if not hasattr(wrps[0], 'draw_option'):
-                    wrps[0].draw_option = 'hist'
-                for w in wrps[1:]:
-                    if not hasattr(w, 'draw_option'):
-                        if w.is_signal:
-                            w.draw_option = 'hist'
-                            w.histo.SetLineWidth(2)
-                        elif not w.is_data:  # circles for pseudo-data
-                            w.draw_option = 'E0X0'
-                            w.draw_option_legend = 'p'
-                            w.histo.SetMarkerStyle(4)
-
-        # instanciate Renderers
-        rnds = list(_renderize_iter(wrps))
-        self.renderers = rnds
-
-        # name, title in_file_path
-        self.name = kws.get('name', rnds[0].name)
-        self.title = kws.get('title', rnds[0].title)
-        self.in_file_path = kws.get('in_file_path', rnds[0].in_file_path)
-        self.canvas_wrp = None
-
-    def __del__(self):
-        """Remove the pads first."""
-        if self.main_pad:
-            self.main_pad.Delete()
-        if self.second_pad:
-            self.second_pad.Delete()
-
-    def configure(self):
-        pass
-
-    def find_x_y_bounds(self):
-        """Scan ROOT-objects for x and y bounds."""
-        rnds = self.renderers
-        x_min = min(r.x_min() for r in rnds)
-        x_max = max(r.x_max() for r in rnds)
-        self.x_bounds = x_min, x_max
-        y_min = min(r.y_min() for r in rnds)
-        y_max = max(r.y_max() for r in rnds)
-        self.y_bounds = y_min, y_max
-        self.y_min_gr_zero = min(r.y_min_gr_zero() for r in rnds)
-
-    def make_empty_canvas(self):
-        """Instanciate ``self.canvas`` ."""
-        self.canvas = TCanvas(
-            self.name + '_' + util.random_hex_str(),
-            self.title,
-            settings.canvas_size_x,
-            settings.canvas_size_y,
-        )
-        self.canvas.name = self.name
-        self.main_pad = self.canvas
-
-    def draw_full_plot(self):
-        """The renderers draw method is called."""
-        for i, rnd in enumerate(self.renderers):
-            if not i:
-                self.first_drawn = rnd.obj
-                self.first_drawn.SetTitle('')
-                rnd.draw('')
-            else:
-                rnd.draw('same')
-
-    def do_final_cosmetics(self):
-        """Pimp the canvas!"""
-        _, y_max = self.y_bounds
-        self.first_drawn.GetXaxis().SetNoExponent()
-        self.first_drawn.GetXaxis().SetLabelSize(0.052)
-        self.first_drawn.SetMinimum(y_max / 10000.)
-        self.first_drawn.SetMaximum(y_max * 1.1)
-
-    def run_procedure(self):
-        """
-        This method calls all other methods, which fill and build the canvas.
-        """
-        self.configure()
-        self.find_x_y_bounds()
-        self.make_empty_canvas()
-        self.draw_full_plot()
-        self.do_final_cosmetics()
-
-    def _track_canvas_history(self):
-        list_of_histories = []
-        for rnd in self.renderers:
-            list_of_histories.append(rnd.history)
-        hstry = history.History('CanvasBuilder')
-        hstry.add_args(list_of_histories)
-        hstry.add_kws(self.kws)
-        return hstry
-
-    def _del_builder_refs(self):
-        for k, obj in self.__dict__.items():
-            if isinstance(obj, TObject):
-                setattr(self, k, None)
-
-    def build_canvas(self):
-        """
-        With this method, the building procedure is started.
-
-        :return: ``CanvasWrapper`` instance.
-        """
-        if not self.canvas:
-            self.run_procedure()
-        canvas = self.canvas
-        canvas.Modified()
-        canvas.Update()
-        kws = self.renderers[0].all_info()  # TODO only common info
-        for attr in ('is_signal', 'is_data', 'is_pseudo_data'):
-            if attr in kws:
-                del kws[attr]
-        kws.update(self.kws)
-        kws.update({
-            'main_pad'    : self.main_pad,
-            'second_pad'  : self.second_pad,
-            'legend'      : self.legend,
-            'first_drawn' : self.first_drawn,
-            'x_bounds'    : self.x_bounds,
-            'y_bounds'    : self.y_bounds,
-            'y_min_gr_0'  : self.y_min_gr_zero,
-            'history'     : self._track_canvas_history(),
-            '_renderers'  : self.renderers,
-        })
-        wrp = wrappers.CanvasWrapper(canvas, **kws)
-        self._del_builder_refs()
-        self.canvas_wrp = wrp
+    def tobject_draw_func(wrp, _):
+        tobject.Draw()
         return wrp
 
-
-############################################# customization with decorators ###
-import util
-import operations as op
-from ROOT import TLegend, TPad, TPaveText
+    return tobject_draw_func
 
 
-class TitleBox(util.Decorator):
+def mk_titlebox_func(text):
     """
     Draws title-box with TPaveText above canvas window.
 
-    Instanciate with text argument:
-    ``tb = TitleBox(text='My funny title')``.
+    e.g:
+    ``rendering.post_build_functions += rendering.mk_titlebox_func('my text')``
     """
-    def do_final_cosmetics(self):
-        self.decoratee.do_final_cosmetics()
+    assert isinstance(text, str), '"text" arg must be a string'
 
-        titlebox = TPaveText(0.5, 0.90, 0.98, 1.0, 'brNDC')
-        titlebox.AddText(self.dec_par.get('text', 'ENTER TEXT FOR TITLEBOX!'))
+    def titlebox_func(wrp, _):
+        titlebox = ROOT.TPaveText(0.5, 0.90, 0.98, 1.0, 'brNDC')
+        titlebox.AddText(text)
         titlebox.SetTextSize(0.042)
         titlebox.SetFillStyle(0)
         titlebox.SetBorderSize(0)
         titlebox.SetTextAlign(31)
         titlebox.SetMargin(0.0)
         titlebox.SetFillColor(0)
-        self.canvas.cd()
+        wrp.canvas.cd()
         titlebox.Draw('SAME')
-        self.main_pad.cd()
-        self.titlebox = titlebox
+        wrp.main_pad.cd()
+        wrp.titlebox = titlebox
+        return wrp
+
+    return titlebox_func
 
 
-class TextBox(util.Decorator):
-    """
-    Draw Textbox.
-
-    Instanciate with textbox argument:
-    ``tb = TextBox(textbox=ROOT.TLatex(0.5, 0.5, 'My Box'))``.
-    """
-
-    def do_final_cosmetics(self):
-        if 'textbox' not in self.dec_par:
-            self.dec_par['textbox'] = ROOT.TLatex(
-                0.5, 0.5,
-                'I need a textbox=ROOT.TLatex(0.5, 0.5, "My Box") parameter')
-        self.decoratee.do_final_cosmetics()
-        self.dec_par['textbox'].Draw()
-
-
-class Legend(util.Decorator):
+def mk_legend_func(**outer_kws):
     """
     Adds a legend to the main_pad.
 
     Takes entries from ``self.main_pad.BuildLegend()`` .
     The box height is adjusted by the number of legend entries.
-    No border or shadow are printed. See __init__ for keywords.
+    No border and no shadow is printed.
 
     You can set ``draw_option_legend`` on a wrapper. If it evaluates to
     ``False`` (like an empty string), the item will be removed from the legend.
 
     All default settings in ``settings.defaults_Legend`` can be overwritten by
-    providing an argument with the same name, e.g. ``Legend(x_pos=0.2)``.
+    providing an argument with the same name, e.g. ``mk_legend_func(x_pos=0.2)``.
     """
-    def __init__(self, inner=None, dd='True', **kws):
-        super(Legend, self).__init__(inner, dd)
-        self.dec_par.update(settings.defaults_Legend)
-        self.dec_par.update(kws)
-
-    def make_entry_tupels(self, legend):
-        rnds = self.renderers
+    def make_entry_tupels(rnds, legend, par):
         entries = []
         for entry in legend.GetListOfPrimitives():
             obj = entry.GetObject()
             label = entry.GetLabel()
-            draw_opt = self.dec_par['opt']
+            draw_opt = par['opt']
             for rnd in rnds:
 
                 # match legend entries to renderers
@@ -485,7 +382,7 @@ class Legend(util.Decorator):
                     continue
 
                 if rnd.is_data:
-                    draw_opt = self.dec_par['opt_data']
+                    draw_opt = par['opt_data']
                 else:
                     draw_opt = 'l'
 
@@ -499,11 +396,10 @@ class Legend(util.Decorator):
                 entries.append((obj, label, draw_opt))
         return entries
 
-    def _calc_bounds(self, n_entries):
-        par = self.dec_par
+    def calc_bounds(n_entries, par):
         if 'xy_coords' in par:
             xy = par['xy_coords']
-            assert len(xy) == 4 and all(type(z) == float for z in xy)
+            assert len(xy) == 4 and all(isinstance(z, float) for z in xy)
             return xy
         else:
             x_pos   = par['x_pos']
@@ -511,224 +407,263 @@ class Legend(util.Decorator):
             width   = par['label_width']
             height  = par['label_height'] * n_entries
             if y_pos + height/2. > 1.:
-                 y_pos = 1 - height/2. # do not go outside canvas
-            return x_pos - width/2., \
-                   y_pos - height/2., \
-                   x_pos + width/2., \
-                   y_pos + height/2.
+                y_pos = 1 - height/2. # do not go outside canvas
+            return (
+                x_pos - width/2.,
+                y_pos - height/2.,
+                x_pos + width/2.,
+                y_pos + height/2.,
+            )
 
-    def do_final_cosmetics(self):
-        """
-        Only ``do_final_cosmetics`` is overwritten here.
-
-        If self.legend == None, this method will create a default legend and
-        store it to self.legend
-        """
-        if self.legend:
-            return
+    def legend_func(wrp, kws):
+        par = dict(settings.defaults_Legend)
+        par.update(outer_kws)
+        par.update(kws)
 
         # get legend entry objects
-        tmp_leg = self.main_pad.BuildLegend(0.1, 0.6, 0.5, 0.8)
-        entries = self.make_entry_tupels(tmp_leg)
+        tmp_leg = wrp.main_pad.BuildLegend(0.1, 0.6, 0.5, 0.8)
+        entries = make_entry_tupels(wrp._renderers, tmp_leg, par)
         tmp_leg.Clear()
-        self.main_pad.GetListOfPrimitives().Remove(tmp_leg)
+        wrp.main_pad.GetListOfPrimitives().Remove(tmp_leg)
         tmp_leg.Delete()
 
         # create a new legend
-        bounds = self._calc_bounds(len(entries))
-        legend = TLegend(*bounds)
+        bounds = calc_bounds(len(entries), par)
+        legend = ROOT.TLegend(*bounds)
         legend.SetBorderSize(0)
         legend.SetTextSize(
-            self.dec_par.get('text_size', settings.box_text_size))
-        if 'text_font' in self.dec_par:
-            legend.SetTextFont(self.dec_par['text_font'])
-        par = self.dec_par
+            par.get('text_size', settings.box_text_size))
+        if 'text_font' in par:
+            legend.SetTextFont(par['text_font'])
         if par['reverse']:
             entries.reverse()
         for obj, label, draw_opt in entries:
             legend.AddEntry(obj, label, draw_opt)
-        self.canvas.cd()
+        wrp.canvas.cd()
         legend.Draw()
-        self.main_pad.cd()
-        self.legend = legend
-        self.decoratee.do_final_cosmetics()         # Call next inner class!!
+        wrp.main_pad.cd()
+        wrp.legend = legend
+        return wrp
+
+    return legend_func
 
 
-class BottomPlot(util.Decorator):
-    """Base class for all plot business at the bottom of the canvas."""
-    def __init__(self, inner=None, dd=True, **kws):
-        super(BottomPlot, self).__init__(inner, dd, **kws)
-        self.dec_par.update(settings.defaults_BottomPlot)
-        self.dec_par.update(kws)
-        self.dec_par['renderers_check_ok'] = False
+def _bottom_plot_check(wrp):
+    return (
+        len(wrp._renderers) > 1 and
+        isinstance(wrp._renderers[0], wrappers.HistoWrapper) and
+        isinstance(wrp._renderers[1], wrappers.HistoWrapper) and
+        'TH2' not in wrp._renderers[0].type
+    )
 
-    def check_renderers(self):
-        """Overwrite and return bool!"""
+
+def _bottom_plot_make_pad(wrp):
+    if not _bottom_plot_check(wrp):
         return False
 
-    def define_bottom_hist(self):
-        """Overwrite this method and give a histo-ref to self.bottom_hist!"""
-        pass
+    if wrp.second_pad:
+        return True
 
-    def configure(self):
-        self.decoratee.configure()
-        check_ok = self.check_renderers()
-        self.dec_par['renderers_check_ok'] = check_ok
+    name = wrp.name
+    wrp.second_pad = ROOT.TPad(
+        'bottom_pad_' + name,
+        'bottom_pad_' + name,
+        0, 0, 1, 0.25
+    )
+    settings.apply_split_pad_styles(wrp)
+    wrp.canvas.cd()
+    wrp.second_pad.Draw()
+    wrp.main_pad.cd()
+    return True
 
-        if check_ok:
-            self.define_bottom_hist()
 
-    def make_empty_canvas(self):
-        """Instanciate canvas with two pads."""
-        # canvas
-        self.decoratee.make_empty_canvas()
-        if not self.dec_par['renderers_check_ok']:
-            return
-        name = self.name
-        self.main_pad = TPad(
-            'main_pad_' + name,
-            'main_pad_' + name,
-            0, 0.25, 1, 1
-        )
-        # main (upper) pad
-        main_pad = self.main_pad
-        main_pad.SetTopMargin(0.135)
-        main_pad.SetBottomMargin(0.)
-        #main_pad.SetRightMargin(0.04)
-        #main_pad.SetLeftMargin(0.16)
-        main_pad.Draw()
-        # bottom pad
-        self.canvas.cd()
-        self.second_pad = TPad(
-            'bottom_pad_' + name,
-            'bottom_pad_' + name,
-            0, 0, 1, 0.25
-        )
-        second_pad = self.second_pad
-        second_pad.SetTopMargin(0.)
-        second_pad.SetBottomMargin(0.375)
-        #second_pad.SetRightMargin(0.04)
-        #second_pad.SetLeftMargin(0.16)
-        second_pad.SetRightMargin(main_pad.GetRightMargin())
-        second_pad.SetLeftMargin(main_pad.GetLeftMargin())
-        second_pad.SetGridy()
-        second_pad.Draw()
+def _bottom_plot_y_bounds(wrp, bottom_obj, par):
+    y_min, y_max = par['y_min'], par['y_max']
 
-    def draw_full_plot(self):
-        """Make bottom plot, draw both."""
-        # draw main histogram
-        self.main_pad.cd()
-        self.decoratee.draw_full_plot()
-        if not self.dec_par['renderers_check_ok']:
-            return
-        first_drawn = self.first_drawn
-        first_drawn.GetYaxis().CenterTitle(1)
-        first_drawn.GetYaxis().SetTitleSize(0.055)
-        first_drawn.GetYaxis().SetTitleOffset(1.3)
-        first_drawn.GetYaxis().SetLabelSize(0.055)
-        first_drawn.GetXaxis().SetNdivisions(505)
-        # make bottom histo and draw it
-        self.second_pad.cd()
-        bottom_obj = getattr(self, 'bottom_graph', self.bottom_hist)
+    if par['force_y_range']:
+        bottom_obj.GetYaxis().SetRangeUser(y_min, y_max)
 
-        settings.set_bottom_plot_general_style(bottom_obj)
-        settings.set_bottom_plot_ratio_style(bottom_obj)
-        if isinstance(bottom_obj, ROOT.TH1):
-            bottom_obj.Draw(self.dec_par['draw_opt'])
-
-        y_min, y_max = self.dec_par['y_min'], self.dec_par['y_max']
-        if self.dec_par['force_y_range']:
+    elif isinstance(bottom_obj, ROOT.TH1):
+        n_bins = bottom_obj.GetNbinsX()
+        mini = min(bottom_obj.GetBinContent(i+1)
+                   - bottom_obj.GetBinError(i+1) for i in xrange(n_bins)) - .1
+        maxi = max(bottom_obj.GetBinContent(i+1)
+                   + bottom_obj.GetBinError(i+1) for i in xrange(n_bins)) + .1
+        if mini < y_min or maxi > y_max:
+            y_min, y_max = max(y_min, mini), min(y_max, maxi)
             bottom_obj.GetYaxis().SetRangeUser(y_min, y_max)
-        if isinstance(bottom_obj, ROOT.TH1):
-            n_bins = bottom_obj.GetNbinsX()
-            mini = min(bottom_obj.GetBinContent(i+1)
-                       - bottom_obj.GetBinError(i+1) for i in xrange(n_bins)) - .1
-            maxi = max(bottom_obj.GetBinContent(i+1)
-                       + bottom_obj.GetBinError(i+1) for i in xrange(n_bins)) + .1
-            if mini < y_min or maxi > y_max:
-                y_min, y_max = max(y_min, mini), min(y_max, maxi)
-                bottom_obj.GetYaxis().SetRangeUser(y_min, y_max)
 
-        self.y_min_max = y_min, y_max
-
-        # set focus on main_pad for further drawing
-        self.main_pad.cd()
+    wrp.y_min_max = y_min, y_max
 
 
-class BottomPlotRatio(BottomPlot):
-    """Ratio of first and second histogram in canvas."""
-
-    def check_renderers(self):
-        if 'TH2' in self.renderers[0].type:
-            return False
-
-        data_hists = list(r
-                          for r in self.renderers
-                          if r.is_data or r.is_pseudo_data)
-
-        if len(data_hists) > 1:
-            self.message('ERROR BottomPlots can only be created with exactly '
-                         'one data histogram. Data hists: %s' % data_hists)
-            return False
-
-        return bool(data_hists)
-
-    def define_bottom_hist(self):
-        rnds = self.renderers
-        wrp = op.div([rnds[0]] + list(r
-                                      for r in rnds
-                                      if r.is_data or r.is_pseudo_data))
-        for i in xrange(1, wrp.histo.GetNbins() + 1):
-            cont = wrp.histo.GetBinContent(i)
-            wrp.histo.SetBinContent(i, cont - 1.)
-        wrp.histo.SetYTitle(self.dec_par['y_title'] or '#frac{Data}{MC}')
-        self.bottom_hist = wrp.histo
+def _bottom_plot_fix_bkg_err_values(wrp, histo):
+    # errors are not plottet, if the bin center is out of the y bounds.
+    # this function fixes it.
+    y_min, y_max = wrp.y_min_max
+    for i in xrange(1, histo.GetNbinsX() + 1):
+        val = histo.GetBinContent(i)
+        new_val = 0
+        if val <= y_min:
+            new_val = y_min * 0.99
+        elif val >= y_max:
+            new_val = y_max * 0.99
+        if new_val:
+            new_err = histo.GetBinError(i) - abs(new_val - val)
+            new_err = max(new_err, 0)  # may not be negative
+            histo.SetBinContent(i, new_val)
+            histo.SetBinError(i, new_err)
+    settings.set_bottom_plot_general_style(histo)
+    histo.GetYaxis().SetRangeUser(y_min, y_max)
 
 
-class BottomPlotRatioSplitErr(BottomPlotRatio):
-    """Same as BottomPlotRatio, but split MC and data uncertainties."""
+def bottom_plot_prep_main_pad(wrp, _):
+    if not _bottom_plot_check(wrp) or wrp.main_pad != wrp.canvas:
+        return
 
-    def define_bottom_hist(self):
-        rnds = self.renderers
-        mcee_rnd = rnds[0]
-        data_rnd = next(r for r in rnds if r.is_data or r.is_pseudo_data)
-        y_title = self.dec_par['y_title'] or (
-            '#frac{Data-MC}{MC}' if data_rnd.is_data else '#frac{Sig-Bkg}{Bkg}')
+    # make separate main pad
+    main_pad = ROOT.TPad(
+        'main_pad_' + wrp._renderers[0].name,
+        'main_pad_' + wrp._renderers[0].name,
+        0, 0, 1, 1
+    )
+    wrp.canvas.cd()
+    main_pad.Draw()
+    main_pad.cd()
+    wrp.main_pad = main_pad
 
-        def mk_bkg_errors(histo, ref_histo):
-            for i in xrange(histo.GetNbinsX() + 2):
-                val = histo.GetBinContent(i)
-                ref_val = ref_histo.GetBinContent(i)
-                err = histo.GetBinError(i)
-                histo.SetBinContent(i, (val-ref_val)/(ref_val or 1e20))
-                histo.SetBinError(i, err/(ref_val or 1e20))
-            return histo
 
-        # underlying error bands
-        if mcee_rnd.histo_sys_err:
-            sys_histo = mcee_rnd.histo_sys_err.Clone()
-            mk_bkg_errors(sys_histo, mcee_rnd.histo)
-            sys_histo.SetYTitle(y_title)
-            settings.sys_error_style(sys_histo)
+def bottom_plot_get_div_hists(rnds):
+    data_rnds = list(r for r in rnds if r.is_data or r.is_pseudo_data)
+    if data_rnds:
+        assert len(data_rnds) == 1, 'can only have one data histogram if ratio is used.'
+        bkg_rnds = list(r for r in rnds if r.is_background)
+        assert len(bkg_rnds) == 1, 'can only have one background histogram if ratio is used.'
+        return bkg_rnds + data_rnds
+    else:
+        return rnds[1], rnds[0]
 
-            tot_histo = mcee_rnd.histo_tot_err.Clone()
-            mk_bkg_errors(tot_histo, mcee_rnd.histo)
-            tot_histo.SetYTitle(y_title)
-            settings.tot_error_style(tot_histo)
 
-            self.bottom_hist_stt_err = None
-            self.bottom_hist_sys_err = sys_histo
-            self.bottom_hist_tot_err = tot_histo
+def mk_ratio_plot_func(**outer_kws):
+    """
+    Ratio of first and second histogram in canvas.
+    """
+    def make_bottom_hist(cnv_wrp, kws):
+        if not _bottom_plot_check(cnv_wrp):
+            return cnv_wrp
 
-        else:
-            stt_histo = mcee_rnd.histo.Clone()
-            mk_bkg_errors(stt_histo, stt_histo)
-            stt_histo.SetYTitle(y_title)
-            settings.stat_error_style(stt_histo)
+        par = dict(settings.defaults_BottomPlot)
+        par.update(outer_kws)
+        par.update(kws)
+        cnv_wrp._par_mk_ratio_plot_func = par
 
-            self.bottom_hist_stt_err = stt_histo
-            self.bottom_hist_sys_err = None
-            self.bottom_hist_tot_err = None
+        rnds = cnv_wrp._renderers
+        div_wrp = op.div(bottom_plot_get_div_hists(rnds))
+        div_wrp.histo.SetYTitle(par['y_title'] or (
+            '#frac{Data}{MC}' if rnds[1].is_data else 'Ratio'))
+
+        cnv_wrp.bottom_hist = div_wrp.histo
+        settings.set_bottom_plot_general_style(cnv_wrp.bottom_hist)
+        settings.set_bottom_plot_ratio_style(cnv_wrp.bottom_hist)
+        _bottom_plot_y_bounds(cnv_wrp, cnv_wrp.bottom_hist, par)
+
+    def ratio_plot_func(cnv_wrp, _):
+        if not _bottom_plot_make_pad(cnv_wrp):
+            return cnv_wrp
+
+        par = cnv_wrp._par_mk_ratio_plot_func
+        del cnv_wrp._par_mk_ratio_plot_func
+
+        # draw histo
+        cnv_wrp.second_pad.cd()
+        cnv_wrp.bottom_hist.Draw(par['draw_opt'])
+        cnv_wrp.main_pad.cd()
+        return cnv_wrp
+
+    return PostBuildFuncWithSetup(
+        ratio_plot_func,
+        (bottom_plot_prep_main_pad, make_bottom_hist)
+    )
+
+
+def mk_split_err_ratio_plot_func(**outer_kws):
+    """
+    Ratio of either stack and data or first and second histogram with uncertainties split up.
+    """
+    def mk_bkg_errors(histo, ref_histo):
+        for i in xrange(histo.GetNbinsX() + 2):
+            val = histo.GetBinContent(i)
+            ref_val = ref_histo.GetBinContent(i)
+            err = histo.GetBinError(i)
+            histo.SetBinContent(i, (val-ref_val)/(ref_val or 1e20))
+            histo.SetBinError(i, err/(ref_val or 1e20))
+        return histo
+
+    def mk_sys_tot_histos(cnv_wrp, mcee_rnd):
+        sys_histo = mcee_rnd.histo_sys_err.Clone()
+        mk_bkg_errors(sys_histo, mcee_rnd.histo)
+        settings.sys_error_style(sys_histo)
+        _bottom_plot_fix_bkg_err_values(cnv_wrp, sys_histo)
+
+        tot_histo = mcee_rnd.histo_tot_err.Clone()
+        mk_bkg_errors(tot_histo, mcee_rnd.histo)
+        settings.tot_error_style(tot_histo)
+        _bottom_plot_fix_bkg_err_values(cnv_wrp, tot_histo)
+
+        cnv_wrp.bottom_hist_stt_err = None
+        cnv_wrp.bottom_hist_sys_err = sys_histo
+        cnv_wrp.bottom_hist_tot_err = tot_histo
+
+    def mk_stat_histo(cnv_wrp, mcee_rnd):
+        stt_histo = mcee_rnd.histo.Clone()
+        mk_bkg_errors(stt_histo, stt_histo)
+        settings.stat_error_style(stt_histo)
+        _bottom_plot_fix_bkg_err_values(cnv_wrp, stt_histo)
+
+        cnv_wrp.bottom_hist_stt_err = stt_histo
+        cnv_wrp.bottom_hist_sys_err = None
+        cnv_wrp.bottom_hist_tot_err = None
+
+    def mk_poisson_errs_graph(cnv_wrp, data_rnd, div_hist, mc_histo_no_err, par):
+        data_hist = data_rnd.histo
+        data_hist.SetBinErrorOption(ROOT.TH1.kPoisson)  # TODO: poisson erros for main histo
+        data_hist.Sumw2(False)                          # should be set elsewhere!
+        gtop = ROOT.TGraphAsymmErrors(data_hist)
+        gbot = ROOT.TGraphAsymmErrors(div_hist)
+        for i in xrange(mc_histo_no_err.GetNbinsX(), 0, -1):
+            mc_val = mc_histo_no_err.GetBinContent(i)
+            if mc_val:
+                e_up = data_hist.GetBinErrorUp(i)
+                e_lo = data_hist.GetBinErrorLow(i)
+                gtop.SetPointError(i - 1, 0., 0., e_lo, e_up)
+                gbot.SetPointError(i - 1, 0., 0., e_lo/mc_val, e_up/mc_val)
+            else:
+                gtop.RemovePoint(i - 1)
+                gbot.RemovePoint(i - 1)
+
+        data_hist.Sumw2()
+        data_rnd.graph_draw = gtop
+        data_rnd.draw_option = '0P'
+        par['draw_opt'] = '0P'
+        h_x_ax, g_x_ax = div_hist.GetXaxis(), gbot.GetXaxis()
+        g_x_ax.SetTitle(h_x_ax.GetTitle())
+        g_x_ax.SetRangeUser(h_x_ax.GetXmin(), h_x_ax.GetXmax())
+        settings.set_bottom_plot_ratio_style(gbot)
+        cnv_wrp.bottom_graph = gbot
+        return gbot
+
+    def make_bottom_hist(cnv_wrp, kws):
+        if not _bottom_plot_check(cnv_wrp):
+            return cnv_wrp
+
+        par = dict(settings.defaults_BottomPlot)
+        par.update(outer_kws)
+        par.update(kws)
+        cnv_wrp._par_mk_split_err_ratio_plot_func = par
+
+        rnds = cnv_wrp._renderers
+        mcee_rnd, data_rnd = bottom_plot_get_div_hists(rnds)
+        y_title = par['y_title'] or (
+            '#frac{data-MC}{MC}'if data_rnd.is_data else '#frac{sig-bkg}{bkg}')
 
         # overlaying ratio histogram
         mc_histo_no_err = mcee_rnd.histo.Clone()
@@ -741,115 +676,76 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
                 div_hist.SetBinError(i, 1.)
         div_hist.Add(mc_histo_no_err, -1)
         div_hist.Divide(mc_histo_no_err)
-        div_hist.SetYTitle(y_title)
-        div_hist.SetMarkerStyle(20)
-        div_hist.SetMarkerSize(.7)
-        self.bottom_hist = div_hist
 
-        # poissonean error bars
-        if self.dec_par['poisson_errs']:
-            data_hist.SetBinErrorOption(ROOT.TH1.kPoisson)
-            data_hist.Sumw2(False)
-            gtop = ROOT.TGraphAsymmErrors(data_hist)
-            gbot = ROOT.TGraphAsymmErrors(div_hist)
-            for i in xrange(mc_histo_no_err.GetNbinsX(), 0, -1):
-                mc_val = mc_histo_no_err.GetBinContent(i)
-                if mc_val:
-                    e_up = data_hist.GetBinErrorUp(i)
-                    e_lo = data_hist.GetBinErrorLow(i)
-                    gtop.SetPointError(i - 1, 0., 0., e_lo, e_up)
-                    gbot.SetPointError(i - 1, 0., 0., e_lo/mc_val, e_up/mc_val)
-                else:
-                    gtop.RemovePoint(i - 1)
-                    gbot.RemovePoint(i - 1)
+        settings.set_bottom_plot_ratio_style(div_hist)
+        _bottom_plot_y_bounds(cnv_wrp, div_hist, par)
+        cnv_wrp.bottom_hist = div_hist
 
-            gtop.SetTitle('Data')
-            data_hist.Sumw2()
-            data_rnd.graph_draw = gtop
-            data_rnd.draw_option = '0P'
-            self.dec_par['draw_opt'] = '0P'
-            gbot.GetYaxis().SetTitle(y_title)
-            h_x_ax, g_x_ax = div_hist.GetXaxis(), gbot.GetXaxis()
-            g_x_ax.SetTitle(h_x_ax.GetTitle())
-            g_x_ax.SetRangeUser(h_x_ax.GetXmin(), h_x_ax.GetXmax())
-            gbot.SetMarkerStyle(20)
-            gbot.SetMarkerSize(.7)
-            self.bottom_graph = gbot
+        # underlying error bands
+        if mcee_rnd.histo_sys_err:                      # w/ sys uncerts
+            mk_sys_tot_histos(cnv_wrp, mcee_rnd)
+            cnv_wrp.bottom_hist_tot_err.SetYTitle(y_title)
+        else:                                           # w/o sys uncerts
+            mk_stat_histo(cnv_wrp, mcee_rnd)
+            cnv_wrp.bottom_hist_stt_err.SetYTitle(y_title)
 
+        # poisson errs or not..
+        if par['poisson_errs']:
+            mk_poisson_errs_graph(cnv_wrp, data_rnd, div_hist, mc_histo_no_err, par)
 
-        # for empty MC set data err to zero (not out of the frame, to preserve histo integral)
+        # ugly fix: move zeros out of range
         for i in xrange(mc_histo_no_err.GetNbinsX()+2):
-            if not div_hist.GetBinContent(i):
-                if not mc_histo_no_err.GetBinContent(i):
-                    div_hist.SetBinContent(i, 0)
-                    div_hist.SetBinError(i, 0)
+            if not (div_hist.GetBinContent(i) or div_hist.GetBinError(i)):
+                div_hist.SetBinContent(i, -200)
 
-    def fix_bkg_err_values(self, histo):
-        # errors are not plottet, if the bin center is out of the y bounds.
-        # this function fixes it.
-        y_min, y_max = self.y_min_max
-        for i in xrange(1, histo.GetNbinsX() + 1):
-            val = histo.GetBinContent(i)
-            new_val = 0
-            if val <= y_min:
-                new_val = y_min * 0.99
-            elif val >= y_max:
-                new_val = y_max * 0.99
-            if new_val:
-                new_err = histo.GetBinError(i) - abs(new_val - val)
-                new_err = max(new_err, 0)  # may not be negative
-                histo.SetBinContent(i, new_val)
-                histo.SetBinError(i, new_err)
-        settings.set_bottom_plot_general_style(histo)
-        histo.GetYaxis().SetRangeUser(y_min, y_max)
 
-    def draw_full_plot(self):
-        """Draw mc error histo below data ratio."""
-        super(BottomPlotRatioSplitErr, self).draw_full_plot()
-        if not self.dec_par['renderers_check_ok']:
-            return
+    def ratio_plot_func(cnv_wrp, _):
+        if not _bottom_plot_make_pad(cnv_wrp):
+            return cnv_wrp
 
-        self.second_pad.cd()
-        if self.bottom_hist_stt_err:
-            self.fix_bkg_err_values(self.bottom_hist_stt_err)
-            self.bottom_hist_stt_err.Draw('sameE2')
+        par = cnv_wrp._par_mk_split_err_ratio_plot_func
+        del cnv_wrp._par_mk_split_err_ratio_plot_func
+
+        # draw bottom histos
+        cnv_wrp.second_pad.cd()
+        if cnv_wrp.bottom_hist_stt_err:
+            cnv_wrp.bottom_hist_stt_err.Draw('sameE2')
         else:
-            self.fix_bkg_err_values(self.bottom_hist_tot_err)
-            # self.fix_bkg_err_values(self.bottom_hist_sys_err)
-            self.bottom_hist_tot_err.Draw('sameE2')
-            # self.bottom_hist_sys_err.Draw('sameE2')
+            cnv_wrp.bottom_hist_tot_err.Draw('sameE2')
+            if par.get('draw_sys_sep', 0):
+                cnv_wrp.bottom_hist_sys_err.Draw('sameE2')
+        if par['poisson_errs']:
+            cnv_wrp.bottom_graph.Draw('same' + par['draw_opt'])
+        else:
+            cnv_wrp.bottom_hist.Draw('same' + par['draw_opt'])
+        cnv_wrp.main_pad.cd()
+        return cnv_wrp
 
-        bottom_obj = getattr(self, 'bottom_graph', self.bottom_hist)
-        bottom_obj.Draw('same' + self.dec_par['draw_opt'])
+    return PostBuildFuncWithSetup(
+        ratio_plot_func,
+        (bottom_plot_prep_main_pad, make_bottom_hist)
+    )
 
-        self.main_pad.cd()
 
+def mk_pull_plot_func(**outer_kws):
+    """
+    Ratio of first and second histogram in canvas.
+    """
+    def make_bottom_hist(cnv_wrp, kws):
+        if not _bottom_plot_check(cnv_wrp):
+            return cnv_wrp
 
-class BottomPlotRatioPullErr(BottomPlot):
-    """Same as BottomPlotRatio, but split MC and data uncertainties."""
-    def check_renderers(self):
-        if 'TH2' in self.renderers[0].type:
-            return False
+        par = dict(settings.defaults_BottomPlot)
+        par.update(outer_kws)
+        par.update(kws)
+        cnv_wrp._par_mk_pull_plot_func = par
 
-        data_hists = list(r
-                          for r in self.renderers
-                          if r.is_data or r.is_pseudo_data)
-
-        if len(data_hists) > 1:
-            self.message('ERROR BottomPlots can only be created with exactly '
-                         'one data histogram. Data hists: %s' % data_hists)
-            return False
-
-        return bool(data_hists)
-
-    def define_bottom_hist(self):
-        rnds = self.renderers
-        mcee_rnd = rnds[0]
-        data_rnd = next(r for r in rnds if r.is_data or r.is_pseudo_data)
-        y_title = self.dec_par['y_title'] or (
+        rnds = cnv_wrp._renderers
+        mcee_rnd, data_rnd = bottom_plot_get_div_hists(rnds)
+        y_title = par['y_title'] or (
             '#frac{Data-MC}{#sigma}' if data_rnd.is_data else '#frac{Sig-Bkg}{Bkg}')
 
-        # overlaying ratio histogram
+        # produce pull histogram
         mc_histo = mcee_rnd.histo
         data_hist = data_rnd.histo                      # NO CLONE HERE!
         sigma_histo = mcee_rnd.histo.Clone()
@@ -877,30 +773,55 @@ class BottomPlotRatioPullErr(BottomPlot):
         div_hist.Add(mc_histo, -1)
         div_hist.Divide(sigma_histo)
         div_hist.SetYTitle(y_title)
-        self.bottom_hist = div_hist
 
+        cnv_wrp.bottom_hist = div_hist
+        settings.set_bottom_plot_general_style(cnv_wrp.bottom_hist)
         settings.set_bottom_plot_pull_style(div_hist)
-        self.dec_par['draw_opt'] = 'hist'
+        _bottom_plot_y_bounds(cnv_wrp, cnv_wrp.bottom_hist, par)
+        par['draw_opt'] = 'hist'
 
- #    def draw_full_plot(self):
- #        """Draw mc error histo below data ratio."""
- #        super(BottomPlotRatioPullErr, self).draw_full_plot()
- #        if not self.dec_par['renderers_check_ok']:
- #            return
- #        self.second_pad.cd()
- #        bottom_hist = self.bottom_hist
- #        settings.set_bottom_plot_pull_style(bottom_hist)
- #        bottom_hist.Draw('same hist')
- #        self.main_pad.cd()
+    def ratio_plot_func(cnv_wrp, _):
+        if not _bottom_plot_make_pad(cnv_wrp):
+            return cnv_wrp
+
+        par = cnv_wrp._par_mk_pull_plot_func
+        del cnv_wrp._par_mk_pull_plot_func
+
+        # draw histo
+        cnv_wrp.second_pad.cd()
+        cnv_wrp.bottom_hist.Draw(par['draw_opt'])
+        cnv_wrp.main_pad.cd()
+        return cnv_wrp
+
+    return PostBuildFuncWithSetup(
+        ratio_plot_func,
+        (bottom_plot_prep_main_pad, make_bottom_hist)
+    )
 
 
-default_decorators = [
-    BottomPlotRatioSplitErr,
-    Legend
+############################################################# canvas "main" ###
+build_funcs = [
+    setup,
+    find_x_y_bounds,
+    draw_content,
+]
+post_build_funcs = [
+    mk_split_err_ratio_plot_func(),  # mk_pull_plot_func()
+    mk_legend_func(),
 ]
 
 
+def build_canvas(wrps,
+                 build_funcs=build_funcs,
+                 post_build_funcs=post_build_funcs,
+                 **kws):
+    kws['post_build_funcs'] = post_build_funcs
+    for func_list in (build_funcs, post_build_funcs):
+        for bf in func_list:
+            # after setup a CanvasWrapper is passed instead of a list of wrps
+            wrps = bf(wrps, kws) or wrps  # using "or wrps" for non-returning functions
+    return wrps
+
+
 # TODO use WrapperWrapper info on construction
-# TODO make a setting for choosing the default bottom plot
-# TODO BottomPlotSignificance
-# TODO redesign all canvas-making. Abandon Decorators. Use generators.
+# TODO make a setting for choosing the default bottom plot??
