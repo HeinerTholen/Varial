@@ -4,7 +4,27 @@ Project histograms from trees with map/reduce.
 
 
 def map_projection(sample_histo_filename, params, open_file=None):
-    """Map histogram projection to a root file"""
+    """
+    Map histogram projection to a root file
+
+    :param sample_histo_filename:   (str) e.g. ``'mysample myhisto /nfs/path/to/file.root'``
+    :param params:                  dictionary with parameters (see below)
+    :param open_file:               open TFile instance (can be None)
+
+    The param dict must have these contents:
+
+    ======================= ================================================================
+    histos                  dict of histoname -> tuple(title, n_bins, low bound, high bound)
+                            IMPORTANT: the name of the histogram is also the plotted quantity
+                            If another quantity should be plotted, it can be passed as the first
+                            item in the tuple: tuple(quantity, title, n_bins, low bound, high bound)
+    treename                name of the TTree in the ROOT File
+    selection (optional)    selection string for TTree.Draw
+    nm1 (optional)          create N-1 plots (not placing a selection on the plotted variable)
+    weight (optional)       used in selection string for TTree.Draw
+    aliases (optional)      dict alias -> function to be used with TTree.SetAlias
+    ======================= ================================================================
+    """
     from ROOT import TFile, TH1, TH1F, TTree
 
     sample, histoname, filename = sample_histo_filename.split()
@@ -84,6 +104,11 @@ def reduce_projection(iterator, params):
 
 ################################################################## adapters ###
 def map_projection_per_file(args):
+    """
+    Map histogram projection to a root file
+
+    :param args:    tuple(sample, filename, params), see ``map_projection`` function for more info.
+    """
     sample, filename, params = args
     histos = params['histos'].keys()
 
