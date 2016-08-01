@@ -38,10 +38,7 @@ def finalize(result):
     import varial           # importing varial is time consuming
     import time
     mr.store_sample(sample, section, result)
-    varial.diskio.write_fileservice(
-        __file__.replace('.py', ''),
-        initial_mode='UPDATE'
-    )
+    varial.diskio.write_fileservice(__file__.replace('.py', ''), initial_mode='UPDATE')
     os.chmod(__file__.replace('.py', '.root'), 0o0664)
     os.remove(__file__.replace('.py', '.info'))
     os.system('rm -rf %s' % __file__.replace('.py', '.jugdata'))
@@ -62,7 +59,7 @@ jug.options.default_options.execute_nr_wait_cycles = 1
 """
 
 
-class BatchTreeProjector(TreeProjectorBase):
+class JugTreeProjector(TreeProjectorBase):
     """
     Project histograms from files with TTrees on SGE with jug.
 
@@ -70,7 +67,7 @@ class BatchTreeProjector(TreeProjectorBase):
     :param progress_callback:       function with two args: N(jobs), N(done).
     """
     def __init__(self, *args, **kws):
-        super(BatchTreeProjector, self).__init__(*args, **kws)
+        super(JugTreeProjector, self).__init__(*args, **kws)
 
         self.progress_callback = kws.get('progress_callback', 0) or (lambda a, b: None)
         self.jug_tasks = None
@@ -85,10 +82,8 @@ class BatchTreeProjector(TreeProjectorBase):
         os.umask(2)  # need files to be writable by workers of any user
 
     def launch_tasks(self, section, selection, weight):
-        params = self.prepare_params(selection, weight)
         for sample in self.samples:
-            if isinstance(weight, dict):
-                params['weight'] = weight[sample]
+            params = self.prepare_params(selection, weight, sample)
             p_jugfile = jug_file_path_pat.format(
                 i=self.iteration, user=self.username, section=section, sample=sample)
             p_jugres = os.path.splitext(p_jugfile)[0]
@@ -166,8 +161,8 @@ class BatchTreeProjector(TreeProjectorBase):
 
         # do the work
         self.jug_tasks = []
-        for section, selection, weight in self.sec_sel_weight:
-            self.launch_tasks(section, selection, weight)
+        for ssw in self.sec_sel_weight:
+            self.launch_tasks(*ssw)
         wrps = self.process_tasks()
 
         # finalize

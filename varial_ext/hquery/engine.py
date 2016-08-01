@@ -16,7 +16,9 @@ def _start_job_submitter(n_jobs, backend):
         from varial_ext.treeprojector_jug_sge import SGESubmitter
         import varial_ext.treeprojector_jug as tp
         SGESubmitter(n_jobs, tp.jug_work_dir_pat, tp.jug_file_search_pat).start()
-    assert False, 'backend type not known: %s' % backend
+
+    import time
+    time.sleep(1000000)
 
 
 class HQueryEngine(object):

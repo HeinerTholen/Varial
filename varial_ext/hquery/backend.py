@@ -33,11 +33,7 @@ class HQueryBackend(object):
     def __init__(self, kws, q_in, q_out):
         assert 'filenames' in kws, '"filenames" is needed.'
         assert 'treename' in kws, '"treename" is needed.'
-        if 'backend' in kws:
-            assert kws['backend'] in ('local', 'jug'), 'may be "local" or "jug"'
-            backend_type = kws.pop('backend')
-        else:
-            backend_type = 'local'
+        backend = kws.pop('backend', 'local')
 
         self.q_in = q_in
         self.q_out = q_out
@@ -60,14 +56,27 @@ class HQueryBackend(object):
         self.weight = weight
         self.branchname_proc = None
 
-        if backend_type == 'local':
+        if backend == 'local':
             from varial_ext.treeprojector import TreeProjector as TP
-        elif backend_type == 'jug':
-            from varial_ext.treeprojector_jug import BatchTreeProjector as TP
-        self.tp = TP(kws.pop('filenames'),
-                     self.params,
-                     add_aliases_to_analysis=False,
-                     name='treeprojector')
+            self.tp = TP(kws.pop('filenames'),
+                         self.params,
+                         add_aliases_to_analysis=False,
+                         name='treeprojector')
+        elif backend == 'jug':
+            from varial_ext.treeprojector_jug import JugTreeProjector as TP
+            self.tp = TP(kws.pop('filenames'),
+                         self.params,
+                         add_aliases_to_analysis=False,
+                         name='treeprojector')
+        elif backend.startswith('spark://'):
+            from varial_ext.treeprojector_spark import SparkTreeProjector as TP
+            self.tp = TP(kws.pop('filenames'),
+                         self.params,
+                         add_aliases_to_analysis=False,
+                         name='treeprojector',
+                         spark_url=backend)
+        else:
+            assert False, 'backend may be "local", "jug" or a spark url'
         self.tp.reset = lambda: None  # not needed
         self.plotter_hook = HistoTypeSpecifier(kws.pop('signal_samples', []),
                                                kws.pop('data_samples', []))
@@ -124,10 +133,6 @@ class HQueryBackend(object):
         self.tp.sec_sel_weight = ssw
         self.tp.params = self.params
         Runner(self.tp)
-        if self.options['integral_info']:
-            cnv_hook = varial.gen.add_sample_integrals
-        else:
-            cnv_hook = None
         Runner(mk_rootfile_plotter(
             name='sections',
             pattern='treeprojector/*.root',
@@ -135,7 +140,6 @@ class HQueryBackend(object):
             hook_loaded_histos=self.plotter_hook,
             stack=self.options['stack'],
             auto_legend=False,
-            hook_canvas_post_build=cnv_hook,
         ))
 
     @staticmethod

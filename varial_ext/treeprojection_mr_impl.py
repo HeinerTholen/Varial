@@ -92,14 +92,8 @@ def reduce_projection(iterator, params):
         for k, kvs in groupby(it, lambda kv: kv[0]):
             yield k, (v for _, v in kvs)
 
-    def _histo_sum(h_iter):  # returns single histogram
-        h_sum = next(h_iter).Clone()
-        for h in h_iter:
-            h_sum.Add(h)
-        return h_sum
-
     for sample_histo, histos in _kvgroup(sorted(iterator)):
-        yield sample_histo, _histo_sum(histos)
+        yield sample_histo, plain_histo_sum(histos)
 
 
 ################################################################## adapters ###
@@ -131,6 +125,13 @@ def reduce_projection_by_two(one, two):
 
 
 ###################################################################### util ###
+def plain_histo_sum(h_iter):  # returns single histogram
+    h_sum = next(h_iter).Clone()
+    for h in h_iter:
+        h_sum.Add(h)
+    return h_sum
+
+
 def store_sample(sample, section, result):
     import varial
     fs_wrp = varial.analysis.fileservice(section)

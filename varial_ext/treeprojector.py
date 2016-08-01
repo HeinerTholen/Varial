@@ -62,14 +62,14 @@ class TreeProjectorBase(varial.tools.Tool):
         if self.add_aliases_to_analysis:
             varial.analysis.fs_aliases += self.result.wrps
 
-    def prepare_params(self, selection, weight):
+    def prepare_params(self, selection, weight, sample):
         params = dict(self.params)
-        params['weight'] = weight
+        params['weight'] = weight[sample] if isinstance(weight, dict) else weight
         params['selection'] = selection
         return params
 
     def prepare_mapiter(self, selection, weight, sample):
-        params = self.prepare_params(selection, weight)
+        params = self.prepare_params(selection, weight, sample)
         files = self.filenames[sample]
 
         iterable = (
