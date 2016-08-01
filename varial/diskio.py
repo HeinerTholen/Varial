@@ -245,7 +245,7 @@ def _write_wrapper_objs(wrp, file_handle):
     #"""Writes root objects on wrapper to disk."""
     wrp.root_file_obj_names = {}
     if isinstance(wrp, wrappers.FileServiceWrapper):
-        dirfile = file_handle.mkdir(wrp.name, wrp.name)
+        dirfile = file_handle.Get(wrp.name) or file_handle.mkdir(wrp.name, wrp.name)
         dirfile.cd()
         for key, value in wrp.__dict__.iteritems():
             if not isinstance(value, TObject):
