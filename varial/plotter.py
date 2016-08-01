@@ -97,7 +97,7 @@ class Plotter(toolinterface.Tool):
     ...     'save_name_func': save_by_name,
     ...     'canvas_post_build_funcs': (
     ...         settings.canvas_post_build_funcs
-    ...         or rendering.post_build_funcs + [gen.add_sample_integrals]
+    ...         or rendering.post_build_funcs
     ...     ),    ... }
     """
     defaults_attrs = {
