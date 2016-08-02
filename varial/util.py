@@ -99,10 +99,6 @@ def setup_legendnames_from_files(pattern):
     import generators as gen  # hide circular dependency
     filenames = gen.resolve_file_pattern(pattern)
 
-    # only one file: return directly
-    if len(filenames) < 2:
-        return {filenames[0]: filenames[0]}
-
     # try the sframe way:
     lns = list(n.split('.') for n in filenames if isinstance(n, str))
     if all(len(l) == 5 for l in lns):
@@ -111,6 +107,10 @@ def setup_legendnames_from_files(pattern):
         # make sure the legend names are all different
         if len(set(l for l in res.itervalues())) == len(res):
             return res
+
+    # not sframe but only one file: return
+    if len(filenames) < 2:
+        return {os.path.basename(filenames[0]): filenames[0]}
 
     # try trim filesnames from front and back
     lns = list(os.path.splitext(f)[0] for f in filenames)
