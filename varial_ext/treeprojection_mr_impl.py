@@ -3,13 +3,14 @@ Project histograms from trees with map/reduce.
 """
 
 
-def map_projection(sample_histo_filename, params, open_file=None):
+def map_projection(sample_histo_filename, params, open_file=None, open_tree=None):
     """
     Map histogram projection to a root file
 
     :param sample_histo_filename:   (str) e.g. ``'mysample myhisto /nfs/path/to/file.root'``
     :param params:                  dictionary with parameters (see below)
     :param open_file:               open TFile instance (can be None)
+    :param open_tree:               TTree instance to be used (can be None)
 
     The param dict must have these contents:
 
@@ -18,7 +19,7 @@ def map_projection(sample_histo_filename, params, open_file=None):
                             IMPORTANT: the name of the histogram is also the plotted quantity
                             If another quantity should be plotted, it can be passed as the first
                             item in the tuple: tuple(quantity, title, n_bins, low bound, high bound)
-    treename                name of the TTree in the ROOT File
+    treename                name of the TTree in the ROOT File (not needed when open_tree is given)
     selection (optional)    selection string for TTree.Draw
     nm1 (optional)          create N-1 plots (not placing a selection on the plotted variable)
     weight (optional)       used in selection string for TTree.Draw
@@ -43,7 +44,7 @@ def map_projection(sample_histo_filename, params, open_file=None):
 
     selection = '%s*(%s)' % (params.get('weight') or '1', selection or '1')
     histo_draw_cmd = '%s>>+%s' % (quantity, 'new_histo')
-    input_file = open_file or TFile(filename)
+    input_file = open_tree or open_file or TFile(filename)
 
     try:
         if input_file.IsZombie():
@@ -52,7 +53,7 @@ def map_projection(sample_histo_filename, params, open_file=None):
         TH1.AddDirectory(True)
         histo = TH1F('new_histo', *histoargs)
 
-        tree = input_file.Get(params['treename'])
+        tree = open_tree or input_file.Get(params['treename'])
         if not isinstance(tree, TTree):
             raise RuntimeError(
                 'There seems to be no tree named "%s" in file "%s"'%(
@@ -78,7 +79,7 @@ def map_projection(sample_histo_filename, params, open_file=None):
 
     finally:
         TH1.AddDirectory(False)
-        if not open_file:
+        if not (open_file or open_tree):
             input_file.Close()
 
     yield sample+' '+histoname, histo
@@ -92,8 +93,14 @@ def reduce_projection(iterator, params):
         for k, kvs in groupby(it, lambda kv: kv[0]):
             yield k, (v for _, v in kvs)
 
+    def _histo_sum(h_iter):  # returns single histogram
+        h_sum = next(h_iter).Clone()
+        for h in h_iter:
+            h_sum.Add(h)
+        return h_sum
+
     for sample_histo, histos in _kvgroup(sorted(iterator)):
-        yield sample_histo, plain_histo_sum(histos)
+        yield sample_histo, _histo_sum(histos)
 
 
 ################################################################## adapters ###
@@ -113,7 +120,7 @@ def map_projection_per_file(args):
                     for h in histos
                     for res in map_projection(
                         '%s %s %s'%(sample, h, filename), params, open_file))
-        result = list(reduce_projection(map_iter, params))
+        result = list(map_iter)
     finally:
         open_file.Close()
 
@@ -125,13 +132,6 @@ def reduce_projection_by_two(one, two):
 
 
 ###################################################################### util ###
-def plain_histo_sum(h_iter):  # returns single histogram
-    h_sum = next(h_iter).Clone()
-    for h in h_iter:
-        h_sum.Add(h)
-    return h_sum
-
-
 def store_sample(sample, section, result):
     import varial
     fs_wrp = varial.analysis.fileservice(section)
