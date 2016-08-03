@@ -163,9 +163,6 @@ class Plotter(toolinterface.Tool):
             if self.filter_keyfunc:
                 wrps = itertools.ifilter(self.filter_keyfunc, wrps)
         else:
-            if not self.filter_keyfunc:
-                self.message('WARNING No filter_keyfunc set! '
-                             'Working with _all_ histograms.')
             wrps = self.load_func(self.filter_keyfunc)
         if self.hook_loaded_histos:
             wrps = self.hook_loaded_histos(wrps)
@@ -282,7 +279,6 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
     def _mk_flat_plotter(self, plotter_factory, load_func, gen_apply_legend):
         self._private_plotter = plotter_factory(
             name=self.name,
-            filter_keyfunc=lambda _: True,
             load_func=lambda _: gen_apply_legend(load_func(gen.fs_content())),
             plot_grouper=plot_grouper_by_in_file_path,
             plot_setup=lambda ws: gen.mc_stack_n_data_sum(ws, lambda w: '', True),
@@ -310,6 +306,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
             # (the last reference to p would be lost otherwise)
             def _mk_private_loader(p):
                 def loader(filter_keyfunc):
+                    filter_keyfunc = filter_keyfunc or (lambda w: True)
                     wrps = analysis.fs_aliases
                     wrps = itertools.ifilter(
                         lambda w: w.in_file_path.split('/')[:-1] == p and filter_keyfunc(w),
@@ -325,7 +322,6 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
             # of ToolChain, not Tool itself.
             rfp._private_plotter = plotter_factory(
                 name=rfp.name,
-                filter_keyfunc=lambda _: True,
                 plot_grouper=plot_grouper_by_in_file_path,
                 load_func=_mk_private_loader(path),
                 save_name_func=lambda w: w.name,
@@ -337,7 +333,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                  plotter_factory=None,
                  flat=False,
                  name=None,
-                 filter_keyfunc=lambda w: w,
+                 filter_keyfunc=lambda w: True,
                  auto_legend=True,
                  legendnames=None):
         super(RootFilePlotter, self).__init__(name)
@@ -356,6 +352,11 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
 
         if input_result_path:
             wrps = self.lookup_result(input_result_path)
+            if not wrps:
+                analysis.print_tool_tree()
+                raise RuntimeError(
+                    'no input found for input_result_path "%s". (Check tool tree above)'
+                    % input_result_path)
             self.aliases = list(w for w in wrps if filter_keyfunc(w))
             load_func = lambda wrps: wrps  # histograms are already loaded
         else:
@@ -401,7 +402,7 @@ def mk_rootfile_plotter(name="RootFilePlots",
                         flat=False,
                         plotter_factory=None,
                         combine_files=False,
-                        filter_keyfunc=None,
+                        filter_keyfunc=lambda w: True,
                         auto_legend=True,
                         legendnames=None,
                         **kws):
