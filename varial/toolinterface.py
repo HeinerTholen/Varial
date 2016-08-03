@@ -32,17 +32,20 @@ class _ToolBase(object):
         super(_ToolBase, self).__init__()
 
         # name
+        if isinstance(tool_name, unicode):
+            tool_name = str(tool_name)
+
         if not tool_name:
             self.name = self.__class__.__name__
         elif isinstance(tool_name, str):
             if any(c not in TOOLNAME_CHARS for c in tool_name):
-                raise RuntimeError(
+                raise ValueError(
                     'Tool name may only contain "%s". Got "%s".'
                     % (TOOLNAME_CHARS, tool_name)
                 )
             self.name = tool_name
         else:
-            raise RuntimeError('tool_name must be string or None.')
+            raise TypeError('tool_name must be string or None (is %s).' % type(tool_name))
 
         # messenger
         self.message = monitor.connect_object_with_messenger(self)
@@ -85,6 +88,7 @@ class _ToolBase(object):
 class Tool(_ToolBase):
     """Tool is the host for your business code."""
     __metaclass__ = ResettableType
+    no_reset = False
     can_reuse = True
 
     def __init__(self, name=None):

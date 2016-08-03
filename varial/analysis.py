@@ -203,7 +203,7 @@ def _lookup(key):
         return current_result.lookup(keys)
     else:
         if keys[0] == results_base.name:
-            keys.pop(0)
+            return results_base
         return results_base.lookup(keys)
 
 

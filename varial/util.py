@@ -156,22 +156,28 @@ def _wrap_init(original__init__):
         if inst not in _instance_init_states:
             _instance_init_states[inst] = None
             res = original__init__(inst, *args, **kws)
-            _instance_init_states[inst] = deepish_copy(inst.__dict__)
-            return res
+            if inst.no_reset:
+                del _instance_init_states[inst]
+                return res
+            else:
+                _instance_init_states[inst] = deepish_copy(inst.__dict__)
+                return res
         else:
             return original__init__(inst, *args, **kws)
     return init_hook
 
 
 def _reset(inst):
-    inst.__dict__.clear()
-    inst.__dict__.update(
-        deepish_copy(_instance_init_states[inst])
-    )
+    if not inst.no_reset:
+        inst.__dict__.clear()
+        inst.__dict__.update(
+            deepish_copy(_instance_init_states[inst])
+        )
 
 
 def _update_init_state(inst):
-    _instance_init_states[inst] = deepish_copy(inst.__dict__)
+    if not inst.no_reset:
+        _instance_init_states[inst] = deepish_copy(inst.__dict__)
 
 
 class ResettableType(type):
