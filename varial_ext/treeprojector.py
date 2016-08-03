@@ -2,10 +2,7 @@
 Parallel tree projection using map/reduce.
 """
 
-from varial_ext.treeprojection_mr_impl import \
-    map_projection_per_file, \
-    reduce_projection, \
-    store_sample
+import varial_ext.treeprojection_mr_impl as mr
 import varial.multiproc
 import varial.analysis
 import varial.diskio
@@ -36,6 +33,7 @@ class TreeProjectorBase(varial.tools.Tool):
                  filenames,
                  params,
                  sec_sel_weight=(('Histograms', '', ''),),
+                 hot_result=False,
                  add_aliases_to_analysis=True,
                  name=None,
                  ):
@@ -45,6 +43,11 @@ class TreeProjectorBase(varial.tools.Tool):
         self.params = params
         self.sec_sel_weight = sec_sel_weight
         self.add_aliases_to_analysis = add_aliases_to_analysis
+        self.use_hot_result = hot_result
+        self.hot_result = []
+        if hot_result:
+            self.no_reset = True
+
 
         assert filenames, 'dict(sample -> list of files), must not be empty'
         assert isinstance(filenames, dict), 'dict(sample -> list of files)'
@@ -78,7 +81,7 @@ class TreeProjectorBase(varial.tools.Tool):
         )
         return iterable
 
-    def finalize(self, sample_func, wrps=None):
+    def put_aliases(self, sample_func, wrps=None):
         if not wrps:
             wrps = varial.diskio.generate_aliases(self.cwd + '*.root')
             wrps = varial.gen.gen_add_wrp_info(wrps, sample=sample_func)
@@ -107,18 +110,19 @@ class TreeProjector(TreeProjectorBase):
                 if isinstance(weight, dict):
                     weight = weight[sample]
                 res = self.prepare_mapiter(selection, weight, sample)
-                res = pool.imap_unordered(map_projection_per_file, res)
+                res = pool.imap_unordered(mr.map_projection_per_file, res)
                 res = itertools.chain.from_iterable(res)
-                res = reduce_projection(res, self.params)
+                res = mr.reduce_projection(res, self.params)
                 res = list(res)
                 assert res, 'tree_projection did not yield any histograms'
-                store_sample(sample, section, res)
+                mr.store_sample(sample, section, res)
 
         varial.diskio.write_fileservice(sample)
         self.message('INFO sample done: ' + sample)
 
     def run(self):
         os.system('touch ' + self.cwd + 'webcreate_denial')
+        self.hot_result = []
 
         n_procs = min(varial.settings.max_num_processes, len(self.samples))
         with varial.multiproc.WorkerPool(n_procs) as pool:
@@ -130,5 +134,10 @@ class TreeProjector(TreeProjectorBase):
             for _ in res:
                 pass
 
-        # finalize
-        self.finalize(lambda w: os.path.basename(w.file_path).split('.')[-2])
+        sample_func = lambda w: os.path.basename(w.file_path).split('.')[-2]
+        if self.use_hot_result:
+            wrps = varial.diskio.generate_aliases(self.cwd + '*.root')
+            wrps = varial.gen.gen_add_wrp_info(wrps, sample=sample_func)
+            self.hot_result = varial.diskio.bulk_load_histograms(wrps)
+        else:
+            self.put_aliases(sample_func)

@@ -2,8 +2,8 @@
 
 import multiprocessing as mp
 import Queue
-import json
 import html
+import ast
 
 
 def _start_backend(kws, q_in, q_out):
@@ -53,11 +53,11 @@ class HQueryEngine(object):
         )
         self.backend_proc.start()
         try:
-            msg = self.backend_q_out.get(timeout=15)
+            msg = self.backend_q_out.get(timeout=60)
         except Queue.Empty:
             msg = ''
         if msg != 'backend alive':
-            raise RuntimeError('backend could not be started')
+            raise RuntimeError('backend did not start after 60 seconds')
 
     def check_procs(self):
         if self.status == 'error':
@@ -82,8 +82,8 @@ class HQueryEngine(object):
             if item == 'task done' and self.status == 'task pending':
                 self.status = 'ready'
                 self.messages.append(item)
-                with open('params.json') as f:
-                    self.params, _, self.sel_info = json.load(f)
+                with open('params.py') as f:
+                    self.params, _, self.sel_info = ast.literal_eval(f.read())
             elif item.startswith('redirect:'):
                 self.redirect = item.split(':')[1]
             else:

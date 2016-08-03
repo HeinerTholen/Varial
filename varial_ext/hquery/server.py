@@ -151,6 +151,9 @@ conf = {
         'server.ssl_private_key': _sslkey,
         'server.socket_host': '0.0.0.0',
         'server.socket_port': find_port(8080),
+        'log.screen': False,
+        'log.error_file': 'hQuery.server.error.log',
+        'log.access_file': 'hQuery.server.access.log',
     }
 }
 

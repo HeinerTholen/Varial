@@ -17,22 +17,14 @@ def add_histos(a, b):
     return c
 
 
-def load_trees(args):
+def open_files(args):
     import ROOT
-    sample, treename, filename = args
-    f = ROOT.TFile(os.path.abspath(filename))
-    t = f.Get(treename)
-    assert t, 'could not load tree; treename, file: %s, %s' % (treename, f)
-    assert t.GetTotBytes() < 1.5e9, 'this tree is too large (1.5G allowed); size, treename, file:'\
-                                    ' %iM, %s, %s' % (t.GetTotBytes()/1e6, treename, f)
-    t.LoadBaskets()
-    t.SetDirectory(0)
-    f.Close()
-    return sample, filename, t
+    sample, filename = args
+    return sample, filename, ROOT.TFile(os.path.abspath(filename))
 
 
 def map_projection_spark(args, ssw, params):
-    sample, filename, open_tree = args
+    sample, filename, open_file = args
     _, selection, weight = ssw
     params = dict(params)
     params['weight'] = weight[sample] if isinstance(weight, dict) else weight
@@ -42,10 +34,21 @@ def map_projection_spark(args, ssw, params):
     map_iter = (res
                 for h in histos
                 for res in mr.map_projection(
-                    '%s %s %s'%(sample, h, filename), params, None, open_tree))
+                    '%s %s %s'%(sample, h, filename), params, open_file))
     result = list(map_iter)
 
     return result
+
+
+def wrap_histo(args, section):
+    sample_histoname, histo = args
+    sample, histoname = sample_histoname.split()
+    return varial.wrp.HistoWrapper(
+        histo,
+        name=str(histoname),
+        sample=str(sample),
+        in_file_path=str('%s/%s' % (section, histoname)),
+    )
 
 
 ############################################################ tree projector ###
@@ -55,6 +58,7 @@ class SparkTreeProjector(TreeProjectorBase):
 
     Same args as TreeProjectorBase plus:
     :param spark_url:   e.g. spark://localhost:7077.
+    :param hot_result:  if True, result wrappers are stored in hot_result member and not to disk.
     """
     def __init__(self, *args, **kws):
         global spark_context
@@ -67,18 +71,18 @@ class SparkTreeProjector(TreeProjectorBase):
 
     def run(self):
         os.system('touch ' + self.cwd + 'webcreate_denial')
+        self.hot_result = []
 
-        if True:  # not self.rdd_cache:
+        if not self.rdd_cache:
             self.message('INFO initializing root files.')
-            treename = self.params['treename']
             inputs = list(
-                (sample, treename, f)
+                (sample, f)
                 for sample, filenames in self.filenames.iteritems()
                 for f in filenames
             )
             rdd = spark_context.parallelize(inputs)
-            rdd = rdd.map(load_trees)
-            # rdd.cache()
+            rdd.cache()
+            rdd = rdd.map(open_files)
             self.rdd_cache = rdd
 
         # do the work
@@ -88,12 +92,19 @@ class SparkTreeProjector(TreeProjectorBase):
             self.message('INFO starting section "%s".' % section)
             rdd = self.rdd_cache.flatMap(lambda args: map_projection_spark(args, ssw, params))
             rdd = rdd.reduceByKey(add_histos)
-            rdd = rdd.map(lambda x: (x[0].split()[0], x))
-            rdd = rdd.groupByKey()
-            res = rdd.collect()
-            for sample, histo_iter in res:
-                mr.store_sample(sample, section, histo_iter)
-                varial.diskio.write_fileservice(section+'.'+sample, initial_mode='UPDATE')
 
-        # finalize
-        self.finalize(lambda w: os.path.basename(w.file_path).split('.')[-2])
+            if self.use_hot_result:  # just collect and store in self.hot_result
+                rdd = rdd.map(lambda args: wrap_histo(args, section))
+                res = rdd.collect()
+                self.hot_result += list(res)
+
+            else:  # make rootfiles and aliases
+                rdd = rdd.map(lambda x: (x[0].split()[0], x))  #(sample, (sample-histo-name, histo))
+                rdd = rdd.groupByKey()
+                res = rdd.collect()
+                for sample, histo_iter in res:
+                    mr.store_sample(sample, section, histo_iter)
+                    varial.diskio.write_fileservice(section+'.'+sample, initial_mode='RECREATE')
+
+        if not self.use_hot_result:
+            self.put_aliases(lambda w: os.path.basename(w.file_path).split('.')[-2])

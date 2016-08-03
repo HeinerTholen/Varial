@@ -8,18 +8,14 @@ plain_types_list = plain_types.values()
 plain_c_types = plain_types.keys() + ['double', 'short']
 
 
-def get_proc(backend):
-    proc = mp.Process(target=make_json, args=(backend,))
+def get_proc(filenames, treename):
+    proc = mp.Process(target=make_json, args=(filenames, treename))
     proc.start()
     return proc
 
 
-def make_json(backend):
-    treename = backend.params['treename']
-    if backend.plotter_hook.data:
-        filenames = iter(backend.tp.filenames[backend.plotter_hook.data[0]])
-    else:
-        filenames = iter(next(backend.tp.filenames.itervalues()))
+def make_json(filenames, treename):
+    filenames = iter(filenames)
     f, t = None, None
     while not t:
         if f:
@@ -84,6 +80,6 @@ def _handle_item(name, item, depth):
 
 def _get_content(t):
     try:
-        return next(iter(t))
+        return next(iter(t))    # try to iterate on events
     except StopIteration:
-        return None
+        return None             # return None for empty files

@@ -6,10 +6,11 @@ import quantitylist
 import varial
 import string
 import shutil
-import json
+import ast
 import os
 
 
+varial.ROOT.gROOT.ProcessLine('gErrorIgnoreLevel = kError;')
 SECTION_CHARS = '-_.' + string.ascii_letters + string.digits
 
 
@@ -27,6 +28,64 @@ class HistoTypeSpecifier(object):
             is_data=lambda w: w.sample in self.data,
             legend=lambda w: w.sample,
         )
+
+
+class HistoCache(varial.tools.Tool):
+    io = varial.pklio
+    no_reset = True
+
+    def __init__(self, hot_result_tool, type_spec, name=None):
+        super(HistoCache, self).__init__(name)
+        self.hot_result_tool = hot_result_tool
+        self.result_dict = {}  # 'section/histoname/sample' -> histo-wrp
+        self.type_spec = type_spec
+        self.init = False
+
+    def duplicate_section(self, from_name, to_name):
+        for key in self.result_dict.keys():
+            if key.split('/')[0] == from_name:
+                _, histoname, sample = key.split('/')
+                wrp = varial.op.copy(self.result_dict[key])
+                wrp.in_file_path = '%s/%s' % (to_name, histoname)
+                new_key = '%s/%s' % (wrp.in_file_path, sample)
+                self.result_dict[new_key] = wrp
+        self.fill_result()
+
+    def delete_section(self, name):
+        for key in self.result_dict.keys():
+            if key.split('/')[0] == name:
+                del self.result_dict[key]
+        self.fill_result()
+
+    def delete_histo(self, name):
+        for key in self.result_dict.keys():
+            if key.split('/')[1] == name:
+                del self.result_dict[key]
+        self.fill_result()
+
+    def fill_result_dict(self, histo_wrps):
+        for w in histo_wrps:
+            key = '%s/%s' % (w.in_file_path, w.sample)
+            self.result_dict[key] = w
+
+    def fill_result(self):
+        res_dict = self.result_dict
+        self.result = varial.wrp.WrapperWrapper(list(
+            res_dict[key]
+            for key in sorted(res_dict)
+        ))
+
+    def run(self):
+        os.system('touch ' + self.cwd + 'webcreate_denial')
+        if not self.init:
+            self.reuse(True)  # make sure to get stored results on startup
+            self.init = True
+
+        if self.result and not self.result_dict:
+            self.fill_result_dict(self.result)
+
+        self.fill_result_dict(self.type_spec(self.hot_result_tool.hot_result))
+        self.fill_result()
 
 
 class HQueryBackend(object):
@@ -60,26 +119,34 @@ class HQueryBackend(object):
             from varial_ext.treeprojector import TreeProjector as TP
             self.tp = TP(kws.pop('filenames'),
                          self.params,
-                         add_aliases_to_analysis=False,
+                         hot_result=True,
                          name='treeprojector')
         elif backend == 'jug':
             from varial_ext.treeprojector_jug import JugTreeProjector as TP
             self.tp = TP(kws.pop('filenames'),
                          self.params,
-                         add_aliases_to_analysis=False,
+                         hot_result=True,
                          name='treeprojector')
         elif backend.startswith('spark://'):
             from varial_ext.treeprojector_spark import SparkTreeProjector as TP
             self.tp = TP(kws.pop('filenames'),
                          self.params,
-                         add_aliases_to_analysis=False,
-                         name='treeprojector',
-                         spark_url=backend)
+                         hot_result=True,
+                         spark_url=backend,
+                         name='treeprojector')
         else:
             assert False, 'backend may be "local", "jug" or a spark url'
-        self.tp.reset = lambda: None  # not needed
-        self.plotter_hook = HistoTypeSpecifier(kws.pop('signal_samples', []),
-                                               kws.pop('data_samples', []))
+
+        self.hc = HistoCache(
+            self.tp,
+            HistoTypeSpecifier(
+                kws.pop('signal_samples', []),
+                kws.pop('data_samples', []),
+            ),
+            'cache',
+        )
+        Runner(self.hc)  # initialize cache
+
         self.wc = WebCreator(name='hQuery', no_tool_check=True)
         self.wc.working_dir = 'sections'
         self.wc.update()
@@ -94,15 +161,15 @@ class HQueryBackend(object):
         process_settings_kws(kws)
 
     def read_settings(self):
-        if not os.path.exists('params.json'):
+        if not os.path.exists('params.py'):
             return False
-        with open('params.json') as f:
-            self.params, self.sec_sel_weight, self.sel_info = json.load(f)
+        with open('params.py') as f:
+            self.params, self.sec_sel_weight, self.sel_info = ast.literal_eval(f.read())
         return True
 
     def write_settings(self):
-        with open('params.json', 'w') as f:
-            json.dump((self.params, self.sec_sel_weight, self.sel_info), f)
+        with open('params.py', 'w') as f:
+            f.write(repr((self.params, self.sec_sel_weight, self.sel_info)))
         if self.options['dump_python_conf']:
             self.write_histos()
             self.write_sec_sel_weight()
@@ -120,7 +187,7 @@ class HQueryBackend(object):
         self.wc.reset()
         varial.analysis.reset()
 
-    def run_treeprojection(self, section=None):
+    def run_treeprojection(self, section=None, histo=None):
         if section:
             ssw = [self.sec_sel_weight[section]]
         else:
@@ -131,13 +198,17 @@ class HQueryBackend(object):
 
         self.q_out.put('Filling histograms in: ' + ', '.join(s[0] for s in ssw))
         self.tp.sec_sel_weight = ssw
-        self.tp.params = self.params
+        if histo:
+            self.tp.params = dict(self.params)
+            self.tp.params['histos'] = {histo: self.params['histos'][histo]}
+        else:
+            self.tp.params = self.params
         Runner(self.tp)
+        Runner(self.hc)
         Runner(mk_rootfile_plotter(
             name='sections',
-            pattern='treeprojector/*.root',
+            input_result_path='cache',
             combine_files=True,
-            hook_loaded_histos=self.plotter_hook,
             stack=self.options['stack'],
             auto_legend=False,
         ))
@@ -167,6 +238,7 @@ class HQueryBackend(object):
             sel = self.sec_sel_weight[from_section][1]
             self.sec_sel_weight[name] = (name, sel[:], self.weight)
             self.sel_info[name] = dict(self.sel_info[from_section])
+            self.hc.duplicate_section(from_section, name)
 
         else:  # create from scratch
             os.mkdir('sections/' + name)
@@ -192,6 +264,7 @@ class HQueryBackend(object):
         shutil.rmtree('sections/' + name)
         del self.sec_sel_weight[name]
         del self.sel_info[name]
+        self.hc.delete_section(name)
 
         self.q_out.put('Section deleted: ' + name)
 
@@ -214,7 +287,7 @@ class HQueryBackend(object):
         self.params['histos'][name] = params
         self.q_out.put('Histogram defined: ' + name)
         try:  # if something goes wrong, the histo must be removed
-            self.run_treeprojection()
+            self.run_treeprojection(None, name)
         except RuntimeError:
             del self.params['histos'][name]
             raise
@@ -235,6 +308,7 @@ class HQueryBackend(object):
             for f in os.listdir(p):
                 if f in names:
                     os.remove(os.path.join(p, f))
+        self.hc.delete_histo(name)
 
         self.q_out.put('Histogram deleted: ' + name)
 
@@ -279,7 +353,7 @@ class HQueryBackend(object):
             self.q_out.put('Selection unchanged.')
             return
 
-        self.q_out.put('Selection updated: ' + '; '.join(updates))
+        self.q_out.put('Selection updated: ' + '; '.join(filter(None, updates)))
         old_sel_list = self.sec_sel_weight[section][1]
         self.sec_sel_weight[section] = (section, sel_list, self.weight)
 
@@ -292,7 +366,6 @@ class HQueryBackend(object):
             raise
 
         self.sel_info[section] = dict((var, lohi) for var, lohi, _ in all_reqs)
-        print self.sel_info
 
     def process_request(self, item):
         varial.monitor.message(
@@ -337,7 +410,11 @@ class HQueryBackend(object):
     def start(self):
         self.q_out.put('backend alive')
 
-        self.branchname_proc = quantitylist.get_proc(self)
+        if self.hc.type_spec.data:
+            filenames = self.tp.filenames[self.hc.type_spec.data[0]]
+        else:
+            filenames = next(self.tp.filenames.itervalues())
+        self.branchname_proc = quantitylist.get_proc(filenames, self.params['treename'])
         if not self.read_settings():
             self.run_treeprojection()
             self.run_webcreator()

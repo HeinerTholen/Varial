@@ -138,7 +138,11 @@ class JugTreeProjector(TreeProjectorBase):
             if n_done_prev != n_done:
                 for d, (_, p) in itertools.izip(items_due, self.jug_tasks):
                     if d:
-                        wrps += self.transfer_result(p)
+                        ws = self.transfer_result(p)
+                        if self.use_hot_result:
+                            self.hot_result += varial.diskio.bulk_load_histograms(ws)
+                        else:
+                            wrps += ws
 
                 self.message('INFO {}/{} done'.format(n_done, n_jobs))
                 self.progress_callback(n_jobs, n_done)
@@ -147,6 +151,7 @@ class JugTreeProjector(TreeProjectorBase):
 
     def run(self):
         os.system('touch ' + self.cwd + 'webcreate_denial')
+        self.hot_result = []
         self.iteration += 1
 
         # clear last round of running (and the ones of 3 iterations ago)
@@ -165,8 +170,8 @@ class JugTreeProjector(TreeProjectorBase):
             self.launch_tasks(*ssw)
         wrps = self.process_tasks()
 
-        # finalize
-        self.finalize(None, wrps)
+        if not self.use_hot_result:
+            self.put_aliases(None, wrps)
 
 
 # TODO option for _not_ copying/moving result back (softlink?)
