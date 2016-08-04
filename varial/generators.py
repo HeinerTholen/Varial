@@ -903,6 +903,7 @@ def mc_stack_n_data_sum(wrps,
             sig = group(sig, lambda s: s.sample)
             sig = (gen_squash_sys(s) for s in sig)
         sig = apply_linecolor(sig)
+        sig = apply_linewidth(sig)
         sig = list(sig)
         if not sig:
             monitor.message('generators.mc_stack_n_data_sum',
