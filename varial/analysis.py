@@ -202,8 +202,10 @@ def _lookup(key):
     if keys[0] == '..':
         return current_result.lookup(keys)
     else:
-        if keys[0] == results_base.name:
+        if keys == [results_base.name]:
             return results_base
+        if keys[0] == results_base.name:
+            keys.pop(0)
         return results_base.lookup(keys)
 
 

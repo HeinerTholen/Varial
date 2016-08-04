@@ -156,7 +156,7 @@ def _wrap_init(original__init__):
         if inst not in _instance_init_states:
             _instance_init_states[inst] = None
             res = original__init__(inst, *args, **kws)
-            if inst.no_reset:
+            if getattr(inst, 'no_reset', False):
                 del _instance_init_states[inst]
                 return res
             else:
@@ -168,7 +168,7 @@ def _wrap_init(original__init__):
 
 
 def _reset(inst):
-    if not inst.no_reset:
+    if not getattr(inst, 'no_reset', False) and inst in _instance_init_states:
         inst.__dict__.clear()
         inst.__dict__.update(
             deepish_copy(_instance_init_states[inst])
@@ -176,13 +176,15 @@ def _reset(inst):
 
 
 def _update_init_state(inst):
-    if not inst.no_reset:
+    if not getattr(inst, 'no_reset', False):
         _instance_init_states[inst] = deepish_copy(inst.__dict__)
 
 
 class ResettableType(type):
     """
     Wraps __init__ to store object _after_ init.
+
+    Can be turned on/off through instance member ``no_reset``.
 
     >>> class Foo(object):
     ...     __metaclass__ = ResettableType
@@ -193,6 +195,11 @@ class ResettableType(type):
     >>> foo.reset()
     >>> foo.bar
     'A'
+    >>> foo.bar = 'B'
+    >>> foo.no_reset = True
+    >>> foo.reset()
+    >>> foo.bar
+    'B'
     """
     def __new__(mcs, *more):
         mcs = super(ResettableType, mcs).__new__(mcs, *more)
