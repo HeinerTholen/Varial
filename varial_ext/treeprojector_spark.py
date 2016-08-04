@@ -94,8 +94,9 @@ class SparkTreeProjector(TreeProjectorBase):
             rdd = rdd.reduceByKey(add_histos)
 
             if self.use_hot_result:  # just collect and store in self.hot_result
-                rdd = rdd.map(lambda args: wrap_histo(args, section))
+                # rdd = rdd.map(lambda args: wrap_histo(args, section))
                 res = rdd.collect()
+                res = (wrap_histo(r, section) for r in res)
                 self.hot_result += list(res)
 
             else:  # make rootfiles and aliases

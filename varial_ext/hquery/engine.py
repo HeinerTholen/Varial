@@ -17,8 +17,9 @@ def _start_job_submitter(n_jobs, backend):
         import varial_ext.treeprojector_jug as tp
         SGESubmitter(n_jobs, tp.jug_work_dir_pat, tp.jug_file_search_pat).start()
 
-    import time
-    time.sleep(1000000)
+    if backend.startswith('spark://'):
+        from varial_ext.treeprojector_spark_sge import SGESubmitter
+        SGESubmitter(n_jobs, backend).start()
 
 
 class HQueryEngine(object):

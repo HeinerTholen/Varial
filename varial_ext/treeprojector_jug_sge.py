@@ -93,13 +93,17 @@ class SGESubmitter(object):
             raise RuntimeError('Job submission failed.')
 
     def start(self, every_x_mins=5):
-        while True:
-            self.submit()
-            time.sleep(60*every_x_mins)
-
+        try:
+            while True:
+                self.submit()
+                time.sleep(60*every_x_mins)
+        except KeyboardInterrupt:
+            time.sleep(.2)
+            exit(0)  # exit gracefully
 
 #################################################################### Worker ###
 # python -c "from varial_ext.treeprojector_jug_sge import SGEWorker; SGEWorker(3, 'tholenhe', '/nfs/dust/cms/user/{user}/varial_sge_exec/jug_file-*.py').start(); "
+
 
 class SGEWorker(object):
     def __init__(self, task_id, username, jug_file_path_pat):
