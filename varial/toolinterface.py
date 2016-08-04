@@ -227,12 +227,11 @@ class ToolChain(_ToolBase):
                 t.run()
             except:
                 etype, evalue, etb = sys.exc_info()
-                msg = evalue.message
-                if not 'exception occured at path (class): ' in str(msg):
-                    evalue = etype(
-                        '%s\nexception occured at path (class): %s (%s)' % (
-                            evalue, analysis.cwd[:-1], t.__class__.__name__)
-                    )
+                msg = evalue.args[0]
+                if 'exception occured at path (class): ' not in str(msg):
+                    new_msg = '%s\nexception occured at path (class): %s (%s)' % (
+                        evalue, analysis.cwd[:-1], t.__class__.__name__)
+                    evalue = etype(new_msg, *evalue.args[1:])
                 raise etype, evalue, etb
             t.finished()
             self._reuse = t._reuse
