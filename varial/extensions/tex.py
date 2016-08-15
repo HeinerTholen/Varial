@@ -58,6 +58,10 @@ class TexContent(Tool):
 
     def copy_image_files(self):
         for blockname, blockfiles in self.images.iteritems():
+            if not all(os.path.exists(b) for b in blockfiles):
+                missing_files = list(b for b in blockfiles if not os.path.exists(b))
+                self.message('WARNING the following files in %s do not exist: %s' % (blockname, str(missing_files)))
+                continue
             hashified_and_path = list(
                 (self._hashified_filename(bf), bf) for bf in blockfiles
             )
@@ -86,6 +90,9 @@ class TexContent(Tool):
 
     def copy_plain_files(self):
         for fname, path, in self.tex_files.iteritems():
+            if not os.path.exists(path):
+                self.message('WARNING file %s does not exist' % path)
+                continue
             shutil.copy(path, self._join(fname))
 
     def run(self):

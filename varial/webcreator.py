@@ -472,6 +472,9 @@ class WebCreator(toolinterface.Tool):
 
             # try to get from sparseio
             wrp = sparse_dict.get(img)
+            if not wrp:
+              wrp = sparse_dict.get(img+'_lin')
+
 
             # else look for info file on disk
             img_path = os.path.join(self.working_dir, img_lin or img)

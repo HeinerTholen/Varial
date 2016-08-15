@@ -23,6 +23,8 @@ import collections
 import wrappers
 import ROOT
 from math import sqrt
+import itertools
+import ctypes
 
 
 class Renderer(object):
@@ -66,7 +68,7 @@ class HistoRenderer(Renderer, wrappers.HistoWrapper):
         elif 'TH2' in wrp.type:
             self.draw_option = 'colz'
         elif self.is_data:
-            self.draw_option = 'E0X0'
+            self.draw_option = 'E0'
             # self.histo.SetBinErrorOption(ROOT.TH1.kPoisson)
             # self.histo.Sumw2(False)
         else:
@@ -128,8 +130,8 @@ class StackRenderer(HistoRenderer, wrappers.StackWrapper):
                 tot.SetBinError(i, (nom_err**2 + sys_err**2)**.5)
 
             self.histo_tot_err = tot
-            settings.sys_error_style(self.histo_sys_err)
-            settings.tot_error_style(self.histo_tot_err)
+            # settings.sys_error_style(self.histo_sys_err)
+            # settings.tot_error_style(self.histo_tot_err)
 
         settings.stat_error_style(self.histo)
         self.draw_option_sum = getattr(wrp, 'draw_option_sum', 'sameE2')
@@ -152,6 +154,7 @@ class StackRenderer(HistoRenderer, wrappers.StackWrapper):
         self.stack.GetXaxis().SetTitle(self.histo.GetXaxis().GetTitle())
         self.stack.GetYaxis().SetTitle(self.histo.GetYaxis().GetTitle())
         if self.histo_sys_err:
+            settings.tot_error_style_main(self.histo_tot_err)
             self.histo_tot_err.Draw(self.draw_option_sum)
             # self.histo_sys_err.Draw(self.draw_option_sum)
         else:
@@ -281,7 +284,7 @@ class CanvasBuilder(object):
                             w.draw_option = 'hist'
                             w.histo.SetLineWidth(2)
                         elif not w.is_data:  # circles for pseudo-data
-                            w.draw_option = 'E0X0'
+                            w.draw_option = 'E0'
                             w.draw_option_legend = 'p'
                             w.histo.SetMarkerStyle(4)
 
@@ -342,8 +345,9 @@ class CanvasBuilder(object):
         _, y_max = self.y_bounds
         self.first_drawn.GetXaxis().SetNoExponent()
         self.first_drawn.GetXaxis().SetLabelSize(0.052)
-        self.first_drawn.SetMinimum(y_max / 10000.)
-        self.first_drawn.SetMaximum(y_max * 1.1)
+        if self.first_drawn.GetMinimum() > 0.:
+            self.first_drawn.SetMinimum(y_max / 10000.)
+        self.first_drawn.SetMaximum(y_max * 1.2)
 
     def run_procedure(self):
         """
@@ -446,6 +450,7 @@ class TextBox(util.Decorator):
                 0.5, 0.5,
                 'I need a textbox=ROOT.TLatex(0.5, 0.5, "My Box") parameter')
         self.decoratee.do_final_cosmetics()
+        self.dec_par['textbox'].SetNDC()
         self.dec_par['textbox'].Draw()
 
 
@@ -534,6 +539,21 @@ class Legend(util.Decorator):
         self.main_pad.GetListOfPrimitives().Remove(tmp_leg)
         tmp_leg.Delete()
 
+        # get legend entry objects from bottom plot
+        if self.second_pad:
+            tmp_leg_bot = self.second_pad.BuildLegend(0.1, 0.6, 0.5, 0.8)
+            entries_bot = self.make_entry_tupels(tmp_leg_bot)
+            tmp_leg_bot.Clear()
+            self.second_pad.GetListOfPrimitives().Remove(tmp_leg_bot)
+            tmp_leg_bot.Delete()
+
+            # entries_bot = list(itertools.ifilter(self.dec_par['clean_legend'], entries_bot))
+            entries_bot = list(itertools.ifilter(lambda w: w[1] not in list(g[1] for g in entries), entries_bot))
+
+            entries += entries_bot
+
+        entries = list(itertools.ifilter(self.dec_par['clean_legend'], entries))
+
         # create a new legend
         bounds = self._calc_bounds(len(entries))
         legend = TLegend(*bounds)
@@ -545,6 +565,8 @@ class Legend(util.Decorator):
         par = self.dec_par
         if par['reverse']:
             entries.reverse()
+        entries = list(sorted(entries, key=par['sort_legend']))
+        entries = list(sorted(entries, key=lambda w: 'uncert' in w[1]))
         for obj, label, draw_opt in entries:
             legend.AddEntry(obj, label, draw_opt)
         self.canvas.cd()
@@ -592,7 +614,7 @@ class BottomPlot(util.Decorator):
         )
         # main (upper) pad
         main_pad = self.main_pad
-        main_pad.SetTopMargin(0.135)
+        main_pad.SetTopMargin(0.125)
         main_pad.SetBottomMargin(0.)
         #main_pad.SetRightMargin(0.04)
         #main_pad.SetLeftMargin(0.16)
@@ -629,26 +651,30 @@ class BottomPlot(util.Decorator):
         first_drawn.GetXaxis().SetNdivisions(505)
         # make bottom histo and draw it
         self.second_pad.cd()
-        bottom_obj = getattr(self, 'bottom_graph', self.bottom_hist)
+        # bottom_obj = getattr(self, 'bottom_graph', self.bottom_hist)
+        bottom_obj = self.bottom_hist
 
         settings.set_bottom_plot_general_style(bottom_obj)
-        bottom_obj.SetMarkerStyle(20)
-        bottom_obj.SetMarkerSize(.7)
-        if isinstance(bottom_obj, ROOT.TH1):
-            bottom_obj.Draw(self.dec_par['draw_opt'])
+        # bottom_obj.SetMarkerStyle(20)
+        # bottom_obj.SetMarkerSize(.7)
+        # if isinstance(bottom_obj, ROOT.TH1):
+        #     bottom_obj.Draw(self.dec_par['draw_opt'])
 
         y_min, y_max = self.dec_par['y_min'], self.dec_par['y_max']
-        if self.dec_par['force_y_range']:
-            bottom_obj.GetYaxis().SetRangeUser(y_min, y_max)
-        if isinstance(bottom_obj, ROOT.TH1):
+        if isinstance(bottom_obj, ROOT.TH1) and not self.dec_par['force_y_range']:
             n_bins = bottom_obj.GetNbinsX()
-            mini = min(bottom_obj.GetBinContent(i+1)
-                       - bottom_obj.GetBinError(i+1) for i in xrange(n_bins)) - .1
+            if all(bottom_obj.GetBinContent(i+1) == -500. for i in xrange(n_bins)):
+                mini = y_min
+            else:
+                mini = min(bottom_obj.GetBinContent(i+1)
+                           - bottom_obj.GetBinError(i+1) for i in xrange(n_bins) if bottom_obj.GetBinContent(i+1) != -500.) - .1
             maxi = max(bottom_obj.GetBinContent(i+1)
                        + bottom_obj.GetBinError(i+1) for i in xrange(n_bins)) + .1
             if mini < y_min or maxi > y_max:
                 y_min, y_max = max(y_min, mini), min(y_max, maxi)
-                bottom_obj.GetYaxis().SetRangeUser(y_min, y_max)
+                y_range = max(abs(y_min), abs(y_max))
+                y_min, y_max = -y_range, y_range
+        bottom_obj.GetYaxis().SetRangeUser(y_min, y_max)
 
         self.y_min_max = y_min, y_max
 
@@ -668,8 +694,8 @@ class BottomPlotRatio(BottomPlot):
                           if r.is_data or r.is_pseudo_data)
 
         if len(data_hists) > 1:
-            self.message('ERROR BottomPlots can only be created with exactly '
-                         'one data histogram. Data hists: %s' % data_hists)
+            print 'ERROR BottomPlots can only be created with exactly '\
+                         'one data histogram. N(Data hists): %s' % len(data_hists)
             return False
 
         return bool(data_hists)
@@ -682,7 +708,7 @@ class BottomPlotRatio(BottomPlot):
         for i in xrange(1, wrp.histo.GetNbins() + 1):
             cont = wrp.histo.GetBinContent(i)
             wrp.histo.SetBinContent(i, cont - 1.)
-        wrp.histo.SetYTitle(self.dec_par['y_title'] or '#frac{Data}{MC}')
+        wrp.histo.SetYTitle(self.dec_par['y_title'] or '#frac{Data}{Bkg}')
         self.bottom_hist = wrp.histo
 
     def draw_full_plot(self):
@@ -691,8 +717,8 @@ class BottomPlotRatio(BottomPlot):
             return
         self.second_pad.cd()
         bottom_hist = self.bottom_hist
-        settings.set_bottom_plot_ratio_style(bottom_hist)
-        bottom_hist.Draw(self.dec_par['draw_opt'])
+        # settings.set_bottom_plot_ratio_style(bottom_hist)
+        bottom_hist.Draw(self.dec_par.get('draw_opt_first', self.dec_par['draw_opt']))
         self.main_pad.cd()
 
 
@@ -704,7 +730,7 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
         mcee_rnd = rnds[0]
         data_rnd = next(r for r in rnds if r.is_data or r.is_pseudo_data)
         y_title = self.dec_par['y_title'] or (
-            '#frac{Data-MC}{MC}' if data_rnd.is_data else '#frac{Sig-Bkg}{Bkg}')
+            '#frac{Data-Bkg}{Bkg}' if data_rnd.is_data else '#frac{Sig-Bkg}{Bkg}')
 
         def mk_bkg_errors(histo, ref_histo):
             for i in xrange(histo.GetNbinsX() + 2):
@@ -717,6 +743,11 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
 
         # underlying error bands
         if mcee_rnd.histo_sys_err:
+            stt_histo = mcee_rnd.histo.Clone()
+            mk_bkg_errors(stt_histo, stt_histo)
+            stt_histo.SetYTitle(y_title)
+            settings.stat_error_style(stt_histo)
+
             sys_histo = mcee_rnd.histo_sys_err.Clone()
             mk_bkg_errors(sys_histo, mcee_rnd.histo)
             sys_histo.SetYTitle(y_title)
@@ -725,9 +756,9 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
             tot_histo = mcee_rnd.histo_tot_err.Clone()
             mk_bkg_errors(tot_histo, mcee_rnd.histo)
             tot_histo.SetYTitle(y_title)
-            settings.tot_error_style(tot_histo)
+            settings.tot_error_style_bot(tot_histo)
 
-            self.bottom_hist_stt_err = None
+            self.bottom_hist_stt_err = stt_histo
             self.bottom_hist_sys_err = sys_histo
             self.bottom_hist_tot_err = tot_histo
 
@@ -748,8 +779,8 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
         div_hist.Sumw2()
         for i in xrange(mc_histo_no_err.GetNbinsX()+2):
             mc_histo_no_err.SetBinError(i, 0.)
-            if not div_hist.GetBinContent(i):
-                div_hist.SetBinError(i, 1.)
+            # if div_hist.GetBinContent(i) < 0.:
+            #     div_hist.SetBinError(i, 1.8)
         div_hist.Add(mc_histo_no_err, -1)
         div_hist.Divide(mc_histo_no_err)
         div_hist.SetYTitle(y_title)
@@ -757,38 +788,74 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
 
         # poissonean error bars
         if self.dec_par['poisson_errs']:
+            if hasattr(data_rnd, 'bin_width'):
+                for i in xrange(data_hist.GetNbinsX()+2):
+                    bin_count = data_hist.GetBinContent(i)*data_hist.GetBinWidth(i)/data_rnd.bin_width
+                    data_hist.SetBinContent(i, bin_count)
             data_hist.SetBinErrorOption(ROOT.TH1.kPoisson)
             data_hist.Sumw2(False)
             gtop = ROOT.TGraphAsymmErrors(data_hist)
+            gtop_empty = ROOT.TGraphAsymmErrors(data_hist)
             gbot = ROOT.TGraphAsymmErrors(div_hist)
+            gtop_empty.SetMarkerStyle(1)
+            div_hist.SetMarkerStyle(1)
             for i in xrange(mc_histo_no_err.GetNbinsX(), 0, -1):
                 mc_val = mc_histo_no_err.GetBinContent(i)
-                if mc_val:
+                dat_val = data_hist.GetBinContent(i)
+                x_val = mc_histo_no_err.GetBinCenter(i)
+                x_err = 0.
+                div_hist.SetBinError(i, 0.)
+                if hasattr(self, 'draw_x_errs'):
+                    x_err = data_hist.GetBinWidth(i)/2.
+                # if dat_val <= 0.:
+                #     x_val = mc_histo_no_err.GetBinCenter(i)
+                #     gtop.SetPoint(i -1, x_val, -1.)
+                # if mc_val:
+                scl_fct = 1.
+                if hasattr(data_rnd, 'bin_width'):
+                    scl_fct = data_hist.GetBinWidth(i)/data_rnd.bin_width
+                    # bin_count = data_hist.GetBinContent(i)
+                    # data_hist.SetBinContent(i, bin_count/scl_fct)
+
+                if mc_val and dat_val > 0.:
                     e_up = data_hist.GetBinErrorUp(i)
                     e_lo = data_hist.GetBinErrorLow(i)
-                    gtop.SetPointError(i - 1, 0., 0., e_lo, e_up)
-                    gbot.SetPointError(i - 1, 0., 0., e_lo/mc_val, e_up/mc_val)
+                    gtop.SetPoint(i - 1, x_val, dat_val/scl_fct)
+                    gtop.SetPointError(i - 1, x_err, x_err, e_lo/scl_fct, e_up/scl_fct)
+                    gbot.SetPointError(i - 1, x_err, x_err, e_lo/mc_val, e_up/mc_val)
+                    gtop_empty.RemovePoint(i - 1)
+                elif mc_val:
+                    e_up = data_hist.GetBinErrorUp(i)
+                    e_lo = data_hist.GetBinErrorLow(i)
+                    gtop_empty.SetPointError(i - 1, x_err, x_err, e_lo/scl_fct, e_up/scl_fct)
+                    gbot.SetPointError(i - 1, x_err, x_err, e_lo/mc_val, e_up/mc_val)
+                    gtop.RemovePoint(i - 1)
                 else:
                     gtop.RemovePoint(i - 1)
+                    gtop_empty.RemovePoint(i - 1)
                     gbot.RemovePoint(i - 1)
 
             gtop.SetTitle('Data')
+            gtop_empty.SetTitle('dummy')
             data_hist.Sumw2()
             data_rnd.graph_draw = gtop
             data_rnd.draw_option = '0P'
             self.dec_par['draw_opt'] = '0P'
+            self.dec_par['draw_opt_first'] = '0P'
             gbot.GetYaxis().SetTitle(y_title)
             h_x_ax, g_x_ax = div_hist.GetXaxis(), gbot.GetXaxis()
             g_x_ax.SetTitle(h_x_ax.GetTitle())
             g_x_ax.SetRangeUser(h_x_ax.GetXmin(), h_x_ax.GetXmax())
             self.bottom_graph = gbot
+            # self.bottom_hist = self.bottom_hist_tot_err if self.bottom_hist_tot_err else self.bottom_hist_stt_err
+            self.graph_empty = gtop_empty
 
         # for empty MC set data out of the frame
         for i in xrange(mc_histo_no_err.GetNbinsX()+2):
-            if not div_hist.GetBinContent(i):
-                if not mc_histo_no_err.GetBinContent(i):
-                    div_hist.SetBinContent(i, -500)
-                    div_hist.SetBinError(i, 0)
+            if not div_hist.GetBinContent(i) and not mc_histo_no_err.GetBinContent(i):
+                # if not mc_histo_no_err.GetBinContent(i):
+                div_hist.SetBinContent(i, -500)
+                div_hist.SetBinError(i, 0)
 
     def fix_bkg_err_values(self, histo):
         # errors are not plottet, if the bin center is out of the y bounds.
@@ -815,15 +882,19 @@ class BottomPlotRatioSplitErr(BottomPlotRatio):
         if not self.dec_par['renderers_check_ok']:
             return
 
+
+        if hasattr(self, 'graph_empty'):
+            self.graph_empty.Draw('same0P')
+
         self.second_pad.cd()
-        if self.bottom_hist_stt_err:
+        if self.bottom_hist_tot_err:
             self.fix_bkg_err_values(self.bottom_hist_stt_err)
+            self.fix_bkg_err_values(self.bottom_hist_tot_err)
+            self.bottom_hist_tot_err.Draw('sameE2')
             self.bottom_hist_stt_err.Draw('sameE2')
         else:
-            self.fix_bkg_err_values(self.bottom_hist_tot_err)
-            # self.fix_bkg_err_values(self.bottom_hist_sys_err)
-            self.bottom_hist_tot_err.Draw('sameE2')
-            # self.bottom_hist_sys_err.Draw('sameE2')
+            self.fix_bkg_err_values(self.bottom_hist_stt_err)
+            self.bottom_hist_stt_err.Draw('sameE2')
 
         bottom_obj = getattr(self, 'bottom_graph', self.bottom_hist)
         bottom_obj.Draw('same' + self.dec_par['draw_opt'])
@@ -841,8 +912,8 @@ class BottomPlotRatioPullErr(BottomPlot):
                           if r.is_data or r.is_pseudo_data)
 
         if len(data_hists) > 1:
-            self.message('ERROR BottomPlots can only be created with exactly '
-                         'one data histogram. Data hists: %s' % data_hists)
+            print 'ERROR BottomPlots can only be created with exactly '\
+                         'one data histogram. Data hists: %s' % data_hists
             return False
 
         return bool(data_hists)
@@ -852,7 +923,7 @@ class BottomPlotRatioPullErr(BottomPlot):
         mcee_rnd = rnds[0]
         data_rnd = next(r for r in rnds if r.is_data or r.is_pseudo_data)
         y_title = self.dec_par['y_title'] or (
-            '#frac{Data-MC}{#sigma}' if data_rnd.is_data else '#frac{Sig-Bkg}{Bkg}')
+            '#frac{Data-Bkg}{#sigma}' if data_rnd.is_data else '#frac{Sig-Bkg}{Bkg}')
 
         # overlaying ratio histogram
         mc_histo = mcee_rnd.histo
@@ -891,6 +962,16 @@ class BottomPlotRatioPullErr(BottomPlot):
             return
         self.second_pad.cd()
         bottom_hist = self.bottom_hist
+        y_min, y_max = self.dec_par['y_min'], self.dec_par['y_max']
+        if isinstance(bottom_hist, ROOT.TH1):
+            n_bins = bottom_hist.GetNbinsX()
+            mini = min(bottom_hist.GetBinContent(i+1)
+                       - bottom_hist.GetBinError(i+1) for i in xrange(n_bins)) - .1
+            maxi = max(bottom_hist.GetBinContent(i+1)
+                       + bottom_hist.GetBinError(i+1) for i in xrange(n_bins)) + .1
+            if mini < y_min or maxi > y_max:
+                y_min, y_max = min(y_min, mini), max(y_max, maxi)
+                bottom_hist.GetYaxis().SetRangeUser(y_min, y_max)
         settings.set_bottom_plot_pull_style(bottom_hist)
         bottom_hist.Draw('same hist')
         self.main_pad.cd()

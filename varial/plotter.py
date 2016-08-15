@@ -129,7 +129,8 @@ class Plotter(toolinterface.Tool):
         'set_canvas_name': set_canvas_name_to_infilepath,
         'save_name_func': save_by_name,
         'canvas_decorators': (settings.canvas_decorators or
-                              rendering.default_decorators)
+                              rendering.default_decorators),
+        'raise_on_no_histograms' : True
     }
 
     class NoFilterDictError(Exception):
@@ -149,9 +150,9 @@ class Plotter(toolinterface.Tool):
             self.plot_setup = self.stack_setup
             self.plot_grouper = self.stack_grouper
             
-        if (self.plot_grouper == plot_grouper_single_plots 
-            and self.save_name_func == save_by_name):
-            self.save_name_func = save_by_name_with_hash
+        # if (self.plot_grouper == plot_grouper_single_plots 
+        #     and self.save_name_func == save_by_name):
+        #     self.save_name_func = save_by_name_with_hash
 
     def configure(self):
         pass
@@ -250,12 +251,19 @@ class Plotter(toolinterface.Tool):
 
     def run(self):
         self.configure()
-        self.load_content()
-        self.group_content()
-        self.setup_content()
-        self.store_content_as_result()
-        self.make_canvases()
-        self.save_canvases()
+        try:
+            self.load_content()
+            self.group_content()
+            self.setup_content()
+            self.store_content_as_result()
+            self.make_canvases()
+            self.save_canvases()
+        except RuntimeError as e:
+            if not self.raise_on_no_histograms:
+                self.message('WARNING no histograms found: %s' % e)
+                pass
+            else:
+                raise e
 
 
 def setup_legendnames_from_files(pattern):
@@ -303,7 +311,7 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
     """
 
     def _setup_aliases(self, pattern, filter_keyfunc):
-        aliases = gen.dir_content(pattern)
+        aliases = gen.dir_content(pattern, self.lookup_aliases)
         if not aliases:
             self.message('WARNING Could not create aliases for plotting.')
         else:
@@ -351,12 +359,14 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
                  name=None,
                  filter_keyfunc=lambda w: w,
                  auto_legend=True,
-                 legendnames=None):
+                 legendnames=None,
+                 lookup_aliases='aliases.in.*'):
         super(RootFilePlotter, self).__init__(name)
 
         # initialization for all instances
         self._private_plotter = None
         self._is_base_instance = bool(pattern or input_result_path)
+        self.lookup_aliases = lookup_aliases
         if not self._is_base_instance:
             return
 
@@ -367,8 +377,20 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
             plotter_factory = Plotter
 
         if input_result_path:
-            wrps = self.lookup_result(input_result_path)
-            self.aliases = list(w for w in wrps if filter_keyfunc(w))
+            if isinstance(input_result_path, str):
+                input_result_path = [input_result_path]
+            wrps = []
+            for i in input_result_path:
+                if i.startswith('..'):
+                    i = os.path.join(analysis.cwd, i)
+                wrps += list(self.lookup_result(p) for p in glob.glob(i))
+            # wrps = self.lookup_result(input_result_path)
+            # print list(type(w) for ws in wrps for w in ws)
+            self.aliases = []
+            for ws in wrps:
+                if ws:
+                    self.aliases += list(w for w in ws if filter_keyfunc(w))
+            # self.aliases = list(w for ws in wrps for w in ws if filter_keyfunc(w))
             load_func = lambda wrps: wrps  # histograms are already loaded
         else:
             self._setup_aliases(pattern, filter_keyfunc)

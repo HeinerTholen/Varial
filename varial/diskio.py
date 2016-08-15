@@ -116,8 +116,7 @@ def read(filename):
     if klass == wrappers.WrapperWrapper:
         p = dirname(filename)
         info['wrps'] = _read_wrapperwrapper(
-            join(p, f)
-            for f in info['wrpwrp_names']
+            list(join(p, f) for f in info['wrpwrp_names'])
         )
     wrp = klass(**info)
     _clean_wrapper(wrp)
@@ -225,7 +224,8 @@ _save_log = set()
 
 def prepare_basename(filename):
     if use_analysis_cwd:
-        filename = join(analysis.cwd, filename)
+        if not filename.startswith(analysis.cwd):
+            filename = join(analysis.cwd, filename)
     if filename[-5:] == '.info':
         filename = filename[:-5]
     return filename

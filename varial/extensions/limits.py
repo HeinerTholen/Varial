@@ -6,9 +6,12 @@ from array import array
 import collections
 import cPickle
 import numpy
+import numpy.linalg as linalg
 import ROOT
 import glob
 import os
+import time
+import pprint
 
 import varial.generators as gen
 import varial.sparseio
@@ -35,7 +38,7 @@ def tex_table_mod(table, mods=None):
     return table
 
 
-def add_th_curve(grps, th_x, th_y, legend='Theory'):
+def add_th_curve(grps, th_x, th_y, legend='Theory', min_thy=None, max_thy=None):
     for g in grps:
         x_arr=array('f', th_x)
         y_arr=array('f', th_y)
@@ -43,11 +46,16 @@ def add_th_curve(grps, th_x, th_y, legend='Theory'):
         th_graph.SetLineStyle(2)
         th_graph.SetLineColor(1)
         th_graph.SetLineWidth(2)
+        min_log_y = min_thy or min(th_y)
+        th_graph.GetXaxis().SetNdivisions(510, ROOT.kTRUE)
+
         th_wrp = varial.wrappers.GraphWrapper(
             th_graph,
             legend=legend,
             draw_option='C',
-            val_y_min=min(th_y)
+            val_y_min=min_log_y,
+            val_y_max=max(th_y),
+            is_th=True
         )
         g = list(g)
         g.append(th_wrp)
@@ -57,9 +65,15 @@ def add_th_curve(grps, th_x, th_y, legend='Theory'):
             res.save_name = save_name
         yield res
 
+# def _write_postfit_histogram(histograms):
+#     for reg in histograms:
+#         hist_dict = histograms[reg]
+
+
 
 ######################################################### limit calculation ###
 class ThetaLimits(varial.tools.Tool):
+
     def __init__(
         self,
         model_func,
@@ -68,6 +82,7 @@ class ThetaLimits(varial.tools.Tool):
         filter_keyfunc=None,
         hook_loaded_histos=None,
         asymptotic=True,
+        calc_limits=True,
         limit_func=None,
         cat_key=lambda _: 'histo',  # lambda w: w.category,
         dat_key=lambda w: w.is_data or w.is_pseudo_data,
@@ -77,7 +92,8 @@ class ThetaLimits(varial.tools.Tool):
         tex_table_mod_func=tex_table_mod,
         selection=None,
         pvalue_func=None,
-        postfit_func=None,
+        postfit_func=lambda m: theta_auto.mle(m, input='data', n=1, with_covariance=True),
+        get_postfit_hist='',
         name=None,
     ):
         super(ThetaLimits, self).__init__(name)
@@ -95,17 +111,19 @@ class ThetaLimits(varial.tools.Tool):
         self.model = None
         self.what = 'all'
         self.with_data = True
+        self.with_signal = True
         self.pvalue_func = pvalue_func# or (lambda m: theta_auto.zvalue_approx(
                                       #                 m, input='data', n=1)
-        self.postfit_func = postfit_func or (lambda m: theta_auto.mle(
-                                                        m, input='data', n=1))
+        self.postfit_func = postfit_func
+        self.get_postfit_hist = get_postfit_hist
         self.selection = selection or self.name
         self.mass_points = []
-        self.limit_func = limit_func or (
-            theta_auto.asymptotic_cls_limits
-            if asymptotic else
-            lambda m: theta_auto.bayesian_limits(m, what=self.what)
-        )
+        if calc_limits:
+            self.limit_func = limit_func or (
+                theta_auto.asymptotic_cls_limits
+                if asymptotic else
+                lambda m: theta_auto.bayesian_limits(m, what=self.what)
+            )
 
     def prepare_dat_sig_bkg(self, wrps):
         if self.filter_keyfunc:
@@ -126,8 +144,12 @@ class ThetaLimits(varial.tools.Tool):
         dats, sigs, bkgs = self.prepare_dat_sig_bkg(wrps)
 
         assert bkgs, 'no background histograms present.'
-        assert sigs, 'no signal histograms present.'
+        # assert sigs, 'no signal histograms present.'
 
+        if not sigs:
+            self.message('WARNING No signal histograms, no limit setting possible.')
+            # self.what = 'expected'
+            self.with_signal = False
         if not dats:
             self.message('WARNING No data histogram, only expected limits.')
             self.what = 'expected'
@@ -176,9 +198,10 @@ class ThetaLimits(varial.tools.Tool):
             os.system('rm -rf %s*' % self.cwd)
 
         # create wrp
+        hist_name = 'ThetaHistos%s.root' % hex(hash(time.clock()))
         wrp = varial.wrappers.Wrapper(
             name='ThetaHistos',
-            file_path=os.path.join(self.cwd, 'ThetaHistos.root'),
+            file_path=os.path.join(self.cwd, hist_name),
         )
 
         # add histograms and store for theta
@@ -201,10 +224,13 @@ class ThetaLimits(varial.tools.Tool):
             options.set('minimizer', 'strategy', 'robust')
 
             # get model and let the fit run
-            self.model = self.model_func('ThetaHistos.root')
+            self.model = self.model_func(hist_name)
 
-            self.message('INFO calling theta limit func at %s' % self.cwd)
-            res_exp, res_obs = self.limit_func(self.model)
+            if self.limit_func and self.with_signal:
+                self.message('INFO calling theta limit func at %s' % self.cwd)
+                res_exp, res_obs = self.limit_func(self.model)
+            else:
+                res_exp, res_obs = {}, {}
 
             if self.pvalue_func:
                 self.message('INFO calculating p-value')
@@ -223,10 +249,17 @@ class ThetaLimits(varial.tools.Tool):
                 if self.with_data:
                     try:
                         postfit = self.postfit_func(self.model)
+                        sig_proc_dict = postfit.get(self.get_postfit_hist, None)
+                        if sig_proc_dict:
+                            parameter_values = {}
+                            for p in self.model.get_parameters([]):
+                                parameter_values[p] = sig_proc_dict[p][0][0]
+                            histos = theta_auto.evaluate_prediction(self.model, parameter_values, include_signal=self.with_signal)
+                            theta_auto.write_histograms_to_rootfile(histos, 'ThetaMLE_%s.root' % self.get_postfit_hist)
                     except RuntimeError as e:
                         self.message('WARNING error from theta: %s' % str(e.args))
+            # shout it out loud            # theta_auto.write_histograms_to_rootfile(histos, 'histos-mle.root')
 
-            # shout it out loud
             summary = theta_auto.model_summary(self.model)
             theta_auto.config.report.write_html('result')
 
@@ -259,7 +292,7 @@ class ThetaLimits(varial.tools.Tool):
             res_exp=cPickle.dumps(res_exp),
             res_obs=cPickle.dumps(res_obs),
             summary=cPickle.dumps(summary),
-            postfit_vals=postfit,
+            postfit_vals=cPickle.dumps(postfit),
             p_vals=p_vals,
             selection=self.selection,
             mass_points=self.mass_points,
@@ -283,7 +316,7 @@ class ThetaPostFitPlot(varial.tools.Tool):
         return list(
             (name, val_err)
             for name, (val_err,) in sorted(post_fit_dict.iteritems())
-            if name not in ('__nll')
+            if name not in ('__nll', '__cov')
         )
 
     @staticmethod
@@ -348,7 +381,7 @@ class ThetaPostFitPlot(varial.tools.Tool):
         ax_1.Set(n_items+2, 0, n_items+2)
         ax_1.SetNdivisions(-414)
         for i, (uncert_name, _) in enumerate(post_fit_items):
-            ax_1.SetBinLabel(i+2, uncert_name)
+            ax_1.SetBinLabel(i+2, varial.analysis.get_pretty_name(uncert_name))
 
     def mk_canvas(self, sig_name, post_fit_dict):
         n = len(post_fit_dict)
@@ -373,15 +406,129 @@ class ThetaPostFitPlot(varial.tools.Tool):
 
     def run(self):
         theta_res = self.lookup_result(self.input_path)
+        postfit_vals = cPickle.loads(theta_res.postfit_vals)
         cnvs = (self.mk_canvas(sig, pfd)
-                for sig, pfd in theta_res.postfit_vals.iteritems())
+                for sig, pfd in postfit_vals.iteritems())
 
         cnvs = varial.sparseio.bulk_write(cnvs, lambda c: c.name)
         self.result = list(cnvs)
 
+################################################## plot correlation matrix ###
+
+import numpy as np
+
+class CorrelationMatrix(varial.tools.Tool):
+
+    def __init__(
+        self,
+        input_path='../ThetaLimits',
+        proc_name='',
+        name=None,
+    ):
+        super(CorrelationMatrix, self).__init__(name)
+        self.input_path = input_path
+        self.proc_name = proc_name
+
+    def run(self):
+        theta_res = self.lookup_result(self.input_path)
+        postfit_vals = cPickle.loads(theta_res.postfit_vals)
+        if not postfit_vals.get(self.proc_name, None):
+            self.message('WARNING process not in in postfit_vals')
+            return
+        if not postfit_vals[self.proc_name].get('__cov', None):
+            self.message('WARNING no covariance matrix in postfit_vals')
+            return
+
+        # parameter_values = {}
+        # for i in self.model.get_parameters([]):
+        #     parameter_values[i] = postfit[''][i][0][0]
+
+        # eval_pred = theta_auto.evaluate_prediction(self.model, parameter_values, include_signal = False)
+        # pprint.pprint(eval_pred)
+        theta_res = postfit_vals[self.proc_name]
+        param_list = []
+        for k, res in theta_res.iteritems():
+            if any(k == i for i in ['__nll', '__cov']):
+                continue
+            err_sq = res[0][1]*res[0][1]
+            param_list.append((k, err_sq))
+
+
+        cov_matrix = theta_res['__cov'][0]
+        ind_dict = {}
+        for i in xrange(cov_matrix.shape[0]):
+            for ii in xrange(cov_matrix.shape[1]):
+                entry = cov_matrix[i, ii]
+                for proc, val in param_list:
+                    if abs(val-entry) < 1e-6:
+                        if i != ii:
+                            self.message("WARNING row and column index don't match")
+                        ind_dict[i] = proc
+                if i not in ind_dict.keys():
+                    ind_dict[i] = 'beta_signal'
+
+        cov_matrix = np.matrix(cov_matrix)
+        diag_matrix = np.matrix(np.sqrt(np.diag(np.diag(cov_matrix))))
+        try:
+            inv_matrix = diag_matrix.I
+            corr_matrix = inv_matrix * cov_matrix * inv_matrix
+
+            eigval, eigvec = linalg.eig(cov_matrix)
+
+            corr_hist = ROOT.TH2F("correlation_matrix", "", len(param_list), 0, len(param_list), len(param_list), 0, len(param_list))
+            cov_hist = ROOT.TH2F("covariance_matrix", "", len(param_list), 0, len(param_list), len(param_list), 0, len(param_list))
+            eigval_hist = ROOT.TH2F("eigenvalue_matrix", "", len(param_list), 0, len(param_list), len(param_list), 0, len(param_list))
+            eigvec_hist = ROOT.TH2F("eigenvec_matrix", "", len(param_list), 0, len(param_list), len(param_list), 0, len(param_list))
+            for i in xrange(corr_matrix.shape[0]):
+                if i not in ind_dict.keys():
+                    continue
+                corr_hist.GetXaxis().SetBinLabel(i+1, varial.analysis.get_pretty_name(ind_dict.get(i, 'unknown')))
+                corr_hist.GetYaxis().SetBinLabel(i+1, varial.analysis.get_pretty_name(ind_dict.get(i, 'unknown')))
+                cov_hist.GetXaxis().SetBinLabel(i+1, varial.analysis.get_pretty_name(ind_dict.get(i, 'unknown')))
+                cov_hist.GetYaxis().SetBinLabel(i+1, varial.analysis.get_pretty_name(ind_dict.get(i, 'unknown')))
+                eigvec_hist.GetXaxis().SetBinLabel(i+1, varial.analysis.get_pretty_name(ind_dict.get(i, 'unknown')))
+                eigvec_hist.GetYaxis().SetBinLabel(i+1, varial.analysis.get_pretty_name(ind_dict.get(i, 'unknown')))
+                eigval_hist.GetXaxis().SetBinLabel(i+1, varial.analysis.get_pretty_name(ind_dict.get(i, 'unknown'))+"'")
+                eigval_hist.GetYaxis().SetBinLabel(i+1, varial.analysis.get_pretty_name(ind_dict.get(i, 'unknown'))+"'")
+                corr_hist.SetLabelSize(0.03, 'x')
+                cov_hist.SetLabelSize(0.03, 'x')
+                eigvec_hist.SetLabelSize(0.03, 'x')
+                eigval_hist.SetLabelSize(0.03, 'x')
+                for ii in xrange(corr_matrix.shape[1]):
+                    entry_corr = corr_matrix[i,ii]
+                    entry_cov = cov_matrix[i,ii]
+                    entry_eigvec = eigvec[i,ii]
+                    corr_hist.Fill(i, ii, entry_corr)
+                    cov_hist.Fill(i, ii, entry_cov)
+                    eigvec_hist.Fill(i, ii, entry_eigvec)
+                    if i == ii:
+                        entry_eigval = eigval[i]
+                        eigval_hist.Fill(i, ii, entry_eigval)
+
+
+
+            self.result = [varial.wrappers.HistoWrapper(corr_hist, save_name='corr_matrix'), 
+                           varial.wrappers.HistoWrapper(cov_hist, save_name='cov_matrix'),
+                           varial.wrappers.HistoWrapper(eigvec_hist, save_name='eigvec_matrix'), 
+                           varial.wrappers.HistoWrapper(eigval_hist, save_name='eigval_matrix'),
+                        ]
+        except ValueError as e:
+            self.message('WARNING no correlation matrix produced due to following error: %s' % e)
+            self.result = None
+
+
+
+
+        # cnvs = (self.mk_canvas(sig, pfd)
+        #         for sig, pfd in theta_res.postfit_vals.iteritems())
+
+        # cnvs = varial.sparseio.bulk_write(cnvs, lambda c: c.name)
+        # self.result = list(cnvs)
+
 
 ######################################################### plot limit graphs ###
 class LimitGraphs(varial.tools.Tool):
+
     def __init__(self,
         limit_path='',
         plot_obs=False,
@@ -413,16 +560,18 @@ class LimitGraphs(varial.tools.Tool):
             sigma_band_high)
         if sigma_ind == 1:
             sigma_graph.SetFillColor(ROOT.kYellow)
-            legend='#pm 2 std. deviation '+selection
+            legend='#pm 2 #sigma Expected '+selection
         else:
             sigma_graph.SetFillColor(ROOT.kGreen)
-            legend='#pm 1 std. deviation '+selection
+            legend='#pm 1 #sigma Expected '+selection
         sigma_graph.SetTitle(legend)
+        sigma_graph.GetXaxis().SetNdivisions(510, ROOT.kTRUE)
 
         lim_wrapper = varial.wrappers.GraphWrapper(sigma_graph,
             draw_option='F',
             draw_option_legend='F',
             val_y_min=min(sigma_band_low),
+            val_y_max=max(sigma_band_low)*10,
             legend=legend,
         )
         return lim_wrapper
@@ -433,13 +582,13 @@ class LimitGraphs(varial.tools.Tool):
         lim_graph = ROOT.TGraph(len(x_arr), x_arr, y_arr)
         lim_graph.SetLineColor(color)
         lim_graph.SetLineWidth(2)
-        lim_graph.GetXaxis().SetTitle("m_{T'} [GeV]")
-        lim_graph.GetYaxis().SetTitle("#sigma x BR [pb]")
         lim_graph.SetLineStyle(line_style)
+        lim_graph.GetXaxis().SetNdivisions(510, ROOT.kTRUE)
         lim_wrapper = varial.wrappers.GraphWrapper(lim_graph,
             legend=lim_type+' 95% CL '+selection,
             draw_option='L',
-            val_y_min = min(y_list),
+            val_y_min=min(y_list),
+            val_y_max=max(y_list)*10,
         )
         return lim_wrapper
 
@@ -465,10 +614,11 @@ class LimitGraphs(varial.tools.Tool):
                 assert len(x)==1 and len(y)==1, 'Not exactly one mass point in limit wrapper!'
                 x_list.append(x[0])
                 y_list.append(y[0])
-        lim_wrapper = self.make_graph(x_list, y_list, color, 3, 'Exp', selection)
+        lim_wrapper = self.make_graph(x_list, y_list, color, 3, 'Expected', selection)
+        setattr(lim_wrapper, 'is_exp', True)
         if hasattr(wrp, 'brs'):
             setattr(lim_wrapper, 'save_name', 'tH%.0ftZ%.0fbW%.0f'\
-                % (wrp.brs['th']*100, wrp.brs['tz']*100, wrp.brs['bw']*100))
+                % (wrp.brs['h']*100, wrp.brs['z']*100, wrp.brs['w']*100))
         return lim_wrapper
 
     def make_obs_graph(self, grp):
@@ -493,10 +643,11 @@ class LimitGraphs(varial.tools.Tool):
                 assert len(x)==1 and len(y)==1, 'Not exactly one mass point in limit wrapper!'
                 x_list.append(x[0])
                 y_list.append(y[0])
-        lim_wrapper = self.make_graph(x_list, y_list, color, 1, 'Obs', selection)
+        lim_wrapper = self.make_graph(x_list, y_list, color, 1, 'Observed', selection)
+        setattr(lim_wrapper, 'is_obs', True)
         if hasattr(wrp, 'brs'):
             setattr(lim_wrapper, 'save_name', 'tH%.0ftZ%.0fbW%.0f'\
-                % (wrp.brs['th']*100, wrp.brs['tz']*100, wrp.brs['bw']*100))
+                % (wrp.brs['h']*100, wrp.brs['z']*100, wrp.brs['w']*100))
         return lim_wrapper
 
     def make_sigma_graph(self, grp, ind):
@@ -527,7 +678,7 @@ class LimitGraphs(varial.tools.Tool):
         lim_wrapper = self.make_sigma_band_graph(x_list, sigma_band_low, sigma_band_high, ind, selection)
         if hasattr(wrp, 'brs'):
             setattr(lim_wrapper, 'save_name', 'tH%.0ftZ%.0fbW%.0f'\
-               % (wrp.brs['th']*100, wrp.brs['tz']*100, wrp.brs['bw']*100))
+               % (wrp.brs['h']*100, wrp.brs['z']*100, wrp.brs['w']*100))
         return lim_wrapper
 
     def set_draw_option(self, wrp, first=True):
@@ -535,12 +686,15 @@ class LimitGraphs(varial.tools.Tool):
             wrp.draw_option+='A'
         return wrp
 
+
     def run(self):
         if self.limit_path.startswith('..'):
             theta_tools = glob.glob(os.path.join(self.cwd, self.limit_path))
         else:
             theta_tools = glob.glob(self.limit_path)
         wrps = list(self.lookup_result(k) for k in theta_tools)
+        if any(not a for a in wrps):
+            wrps = gen.dir_content(self.limit_path, '*.info', 'result')
         list_graphs=[]
         wrps = sorted(wrps, key=lambda w: w.selection)
         wrps = gen.group(wrps, key_func=lambda w: w.selection)
@@ -562,3 +716,26 @@ class LimitGraphs(varial.tools.Tool):
             l.obj.GetYaxis().SetTitle(y_title)
 
         self.result = varial.wrp.WrapperWrapper(list_graphs)
+
+
+# class ThetaLoader(varial.tools.Tool):
+#     def __init__(self,
+#         limit_rel_paths,
+#         sort_limit_func,
+#         name=None
+#     ):
+#         super(ThetaLoader, self).__init__(name)
+#         self.limit_rel_paths = limit_rel_paths
+#         self.sort_limit_func = sort_limit_func
+
+#     def run(self):
+#         if self.limit_path.startswith('..'):
+#             theta_tools = glob.glob(os.path.join(self.cwd, self.limit_path))
+#         else: 
+#             theta_tools = glob.glob(self.limit_path)
+#         wrps = list(self.lookup_result(k) for k in theta_tools)
+#         wrps = sorted(wrps, key=self.sort_limit_func)
+#         wrps = gen.group(wrps, key_func=self.sort_limit_func)
+#         for grp in wrps:
+#             theta_model = 
+

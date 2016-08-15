@@ -96,9 +96,11 @@ class TreeProjectorBase(varial.tools.Tool):
 
     def finalize(self, sample_func, wrps=None):
         if not wrps:
-            wrps = varial.diskio.generate_aliases(self.cwd + '*.root')
-            wrps = varial.gen.gen_add_wrp_info(wrps, sample=sample_func)
-        self.result = varial.wrappers.WrapperWrapper(list(wrps))
+            with varial.diskio.block_of_files:
+                wrps = varial.diskio.generate_aliases(self.cwd + '*.root')
+                wrps = varial.gen.gen_add_wrp_info(wrps, sample=sample_func)
+                wrps = list(wrps)
+        self.result = varial.wrappers.WrapperWrapper(wrps)
         os.system('touch %s/aliases.in.result' % self.cwd)
         self._push_aliases_to_analysis()
 
@@ -187,6 +189,7 @@ def finalize(result):
         initial_mode='UPDATE'
     )
     os.chmod(__file__.replace('.py', '.root'), 0o0664)
+    os.remove(__file__.replace('.py', '.jugdata'))
 
 result = CompoundTask(
     jug.mapreduce.mapreduce,
@@ -238,10 +241,12 @@ class BatchTreeProjector(TreeProjectorBase):
 
     def transfer_result(self, p):
         os.system('mv %s.root %s' % (p, self.cwd))
-        ws = varial.diskio.generate_aliases(
-            self.cwd + os.path.basename(p) + '.root')
-        ws = varial.gen.gen_add_wrp_info(ws,
-            sample=lambda w: w.file_path.split('-')[-1][:-5])
+        with varial.diskio.block_of_files:
+            ws = varial.diskio.generate_aliases(
+                self.cwd + os.path.basename(p) + '.root')
+            ws = varial.gen.gen_add_wrp_info(ws,
+                sample=lambda w: w.file_path.split('-')[-1][:-5])
+            ws = list(ws)
         return ws
 
     def process_tasks(self):

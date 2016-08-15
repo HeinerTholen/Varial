@@ -65,7 +65,9 @@ defaults_Legend = {
     'label_height': 0.07,
     'opt': 'f',
     'opt_data': 'p',
-    'reverse': True
+    'reverse': True,
+    'sort_legend' : lambda w: w,
+    # 'clean_legend' : lambda w: 'uncert' in w[1],
     # 'text_size': 0.03,
     # 'text_font': 42,
 }
@@ -91,8 +93,10 @@ stat_error_color = 921
 stat_error_fill = 3013
 sys_error_color = 923
 sys_error_fill = 3002
-tot_error_color = 922
-tot_error_fill = 3013
+tot_error_color_main = 922
+tot_error_fill_main = 3013
+tot_error_color_bot = 922
+tot_error_fill_bot = 3013
 
 
 ################################################################ root style ###
@@ -122,9 +126,13 @@ def sys_error_style(histo):
     apply_error_hist_style(histo, sys_error_color, sys_error_fill)
 
 
-def tot_error_style(histo):
+def tot_error_style_main(histo):
     histo.SetTitle('Tot. uncert. MC')
-    apply_error_hist_style(histo, tot_error_color, tot_error_fill)
+    apply_error_hist_style(histo, tot_error_color_main, tot_error_fill_main)
+
+def tot_error_style_bot(histo):
+    histo.SetTitle('Tot. uncert. MC')
+    apply_error_hist_style(histo, tot_error_color_bot, tot_error_fill_bot)
 
 
 def set_bottom_plot_general_style(obj):
@@ -143,7 +151,7 @@ def set_bottom_plot_general_style(obj):
     obj.GetXaxis().SetTickLength(
         obj.GetXaxis().GetTickLength() * 3.
     )
-    obj.SetTitle('')
+    # obj.SetTitle('')
 
 def set_bottom_plot_ratio_style(obj):
     obj.SetLineColor(1)

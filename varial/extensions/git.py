@@ -147,8 +147,11 @@ class GitTagger(Tool):
             else:
                 previous_commit_msg = commit_msg
                 previous_commit_hash = self.log_data['LatestCommit']
+        if previous_commit_msg.startswith(self.commit_prefix):
+            previous_commit_msg = previous_commit_msg[len(self.commit_prefix)+2:]
         os.system(
-            'git commit --amend -m "{0}"'.format(previous_commit_msg))
+            'git commit --amend -m "{0}: {1}"'.format(
+                    self.commit_prefix, previous_commit_msg))
         new_commit_hash = subprocess.check_output(
             'git rev-parse --verify HEAD', shell=True)[:-2]
         self.set_commit_hash(
@@ -237,6 +240,8 @@ class GitTagger(Tool):
                 else:
                     previous_commit_hash = subprocess.check_output(
                         'git rev-parse --verify HEAD', shell=True)[:-2]
+                    if commit_msg.startswith(self.commit_prefix):
+                        commit_msg = commit_msg[len(self.commit_prefix)+2:]
                     os.system(
                         'git commit --amend -m "{0}: {1}"'.format(
                             self.commit_prefix, commit_msg))

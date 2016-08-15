@@ -7,7 +7,6 @@ import ROOT
 import copy
 import math
 
-
 def integral_and_error(th_hist):
     err = ctypes.c_double()
     if isinstance(th_hist, ROOT.TH2):

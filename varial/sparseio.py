@@ -9,7 +9,7 @@ Only generator modules are provided.
 """
 
 
-from ROOT import TFile
+from ROOT import TFile, TH2
 import cPickle
 import os
 
@@ -94,21 +94,32 @@ def bulk_write(wrps, name_func, dir_path='', suffices=None, linlog=False):
 
             if linlog:
                 w.main_pad.SetLogy(0)
+                w.main_pad.SetLogz(0)
                 w.obj.SaveAs(img_path+'_lin'+suffix)
 
                 # if the cnv.first_drawn has a member called 'GetMaximum', the
                 # maximum should be greater than zero...
+                old_min_ = 1e-9
                 if (hasattr(w, 'first_drawn')
                     and (not hasattr(w.first_drawn, 'GetMaximum')
                          or w.first_drawn.GetMaximum() > 1e-9)
                 ):
+                    old_min_ = w.first_drawn.GetMinimum()
                     min_val = w.y_min_gr_0 * 0.5
                     min_val = max(min_val, 1e-9)
                     w.first_drawn.SetMinimum(min_val)
-                    w.main_pad.SetLogy(1)
+                    # if (hasattr(w, 'y_max_log')):
+                    #     w.first_drawn.SetMaximum(w.y_max_log)
+                    #     max_changed = True
+                    if isinstance(w.first_drawn, TH2):
+                        w.main_pad.SetLogz(1)
+                    else:
+                        w.main_pad.SetLogy(1)
 
                 w.obj.SaveAs(img_path+'_log'+suffix)
+                w.first_drawn.SetMinimum(old_min_)
                 w.main_pad.SetLogy(0)  # reset to lin
+                w.main_pad.SetLogz(0)  # reset to lin
 
                 if alt_name != name:
                     os.rename(img_path+'_lin'+suffix, good_path+'_lin'+suffix)

@@ -11,6 +11,7 @@ import varial.tools
 
 import glob
 import os
+from itertools import ifilter
 join = os.path.join
 
 
@@ -43,6 +44,7 @@ class Hadd(varial.tools.Tool):
                  cmd='nice hadd -f -v 1 -T',
                  add_aliases_to_analysis=True,
                  samplename_func=lambda w: os.path.basename(w.file_path),
+                 filter_keyfunc=None,
                  name=None):
         super(Hadd, self).__init__(name)
         self.src_glob_path = src_glob_path
@@ -51,6 +53,7 @@ class Hadd(varial.tools.Tool):
         self.cmd = cmd
         self.add_aliases_to_analysis = add_aliases_to_analysis
         self.samplename_func = samplename_func
+        self.filter_keyfunc = filter_keyfunc
         assert type(basenames) in (list, tuple)
 
     def produce_aliases(self):
@@ -79,6 +82,8 @@ class Hadd(varial.tools.Tool):
     def run(self):
         # sort input files
         input_files = glob.glob(join(self.cwd, self.src_glob_path))
+        if self.filter_keyfunc:
+            input_files = list(ifilter(self.filter_keyfunc, input_files))
         basename_map = dict((b, []) for b in self.basenames)
         other_inputs = []
         for inp_file in input_files:

@@ -6,6 +6,7 @@ Project histograms from trees with map/reduce.
 def map_projection(sample_histo_filename, params, open_file=None):
     """Map histogram projection to a root file"""
     from ROOT import TFile, TH1, TH1F, TTree
+    import os
 
     sample, histoname, filename = sample_histo_filename.split()
     histoargs = params['histos'][histoname]
@@ -23,7 +24,10 @@ def map_projection(sample_histo_filename, params, open_file=None):
 
     selection = '%s*(%s)' % (params.get('weight') or '1', selection or '1')
     histo_draw_cmd = '%s>>+%s' % (quantity, 'new_histo')
+    # print os.getcwd()
     input_file = open_file or TFile(filename)
+    if input_file.IsZombie():
+        raise RuntimeError('input_file.IsZombie(): %s' % input_file) 
 
     try:
         TH1.AddDirectory(True)

@@ -18,6 +18,7 @@ import ctypes
 import array
 import ROOT
 import math
+import varial.monitor
 
 
 class OperationError(Exception): pass
@@ -25,6 +26,7 @@ class TooFewWrpsError(OperationError): pass
 class TooManyWrpsError(OperationError): pass
 class WrongInputError(OperationError): pass
 class NoLumiMatchError(OperationError): pass
+class WrongIntegralError(OperationError): pass
 
 
 def iterableize(obj):
@@ -111,6 +113,7 @@ def stack(wrps):
         if wrp.legend:
             wrp.histo.SetTitle(wrp.legend)
         stk_wrp.Add(wrp.histo)
+        info.update(wrp.all_info())
     if not info:
         raise TooFewWrpsError(
             "At least one Wrapper must be provided."
@@ -1045,7 +1048,7 @@ def squash_sys_sq(wrps):
     >>> h1.Fill(1, 7)
     1
     >>> h2 = TH1F("h1", "", 2, .5, 2.5)
-    >>> h2.Fill(1, 4)
+    >>> h2.Fill(1, 10)
     1
     >>> h3 = TH1F("h1", "", 2, .5, 2.5)
     >>> h3.Fill(1, 11)
@@ -1054,10 +1057,10 @@ def squash_sys_sq(wrps):
     >>> w1 = squash_sys_sq(ws)
     >>> w1.obj.GetBinContent(1)
     7.0
-    >>> round(w1.histo_sys_err.GetBinContent(1), 1)
-    8.5
+    >>> w1.histo_sys_err.GetBinContent(1)
+    7.0
     >>> w1.histo_sys_err.GetBinError(1)
-    5.0
+    7.0
     """
     n_sys_hists = 0
     nominal = None
@@ -1106,39 +1109,147 @@ def squash_sys_sq(wrps):
     info['histo_sys_err'] = sys_hist
     return wrappers.HistoWrapper(nominal, **info)
 
-
 @history.track_history
+def squash_sys_sq_mod(wrps, scl_dict=None):
+    """
+    Calculates systematic uncertainty with sum of squares.
+
+    :param wrps:    iterable of histowrappers, where the
+                    first item is taken as the nominal histogram.
+
+    >>> from ROOT import TH1F
+    >>> h0 = TH1F("h0", "", 2, .5, 2.5)
+    >>> h0.Fill(1, 10)
+    1
+    >>> h0 = wrappers.HistoWrapper(h0)
+    >>> h1_sys = TH1F("h1_sys", "", 2, .5, 2.5)
+    >>> h1_sys.Fill(1, 10.5)
+    1
+    >>> h1_sys.SetBinError(1, 4.5)
+    >>> h1_sys = wrappers.HistoWrapper(h1_sys)
+    >>> h2_sys = TH1F("h2_sys", "", 2, .5, 2.5)
+    >>> h2_sys.Fill(1, 14.5)
+    1
+    >>> h2_sys.SetBinError(1, 7.5)
+    >>> h2_sys = wrappers.HistoWrapper(h2_sys)
+    >>> w2 = squash_sys_sq_mod([h0, h1_sys, h2_sys])
+    >>> w2.obj.GetBinContent(1)
+    10.0
+    >>> w2.histo_sys_err.GetBinContent(1)
+    14.0
+    >>> w2.histo_sys_err.GetBinError(1)
+    9.0
+    """
+    n_sys_hists = 0
+    nominal = None
+    sys_hist = None
+    sum_of_sq_errs_up = None
+    sum_of_sq_errs_down = None
+    min_errs = None
+    info = None
+
+    def get_err_hist(h, err_factor):
+        w_err = h.Clone()
+        for i in xrange(w_err.GetNbinsX()+2):
+            w_err.SetBinContent(i, h.GetBinContent(i)
+                + h.GetBinError(i)*err_factor)
+        return w_err
+
+    def add_del_sq(sys_h, err_sign):
+        delta = nominal.Clone()
+        delta.Add(get_err_hist(sys_h, err_sign), -1)
+        delta.Multiply(delta)  # square
+        delta.Add(min_errs)
+        return delta
+
+    def get_sqr_hist(hist):
+        for i in xrange(hist.GetNbinsX()+2):
+            hist.SetBinContent(i, hist.GetBinContent(i)**.5)
+
+    for w in wrps:                                              # histo check
+        # if not (isinstance(w, wrappers.HistoWrapper) and 'TH1' in w.type):
+        #     raise WrongInputError(
+        #         "squash_sys_sq accepts only HistoWrappers. wrp: "
+        #         + str(w)
+        #     )
+
+        if not nominal:                                         # init
+            info = w.all_info()
+            nominal = w.histo.Clone()
+            sys_hist = w.histo.Clone()
+            sys_hist.Reset()
+            sum_of_sq_errs_up = sys_hist.Clone()
+            sum_of_sq_errs_down = sys_hist.Clone()
+            min_errs = sys_hist.Clone()
+            for i in xrange(sys_hist.GetNbinsX()+2):
+                min_errs.SetBinContent(i, 1e-10)  # make non-zero
+
+        else:                                                   # collect
+            if not w or (not (isinstance(w, wrappers.HistoWrapper) and 'TH1' in w.type)):
+                continue
+            n_sys_hists += 1
+            sum_of_sq_errs_up.Add(add_del_sq(w.histo, +1))
+            sum_of_sq_errs_down.Add(add_del_sq(w.histo, -1))
+
+    if not n_sys_hists:
+        return wrappers.HistoWrapper(nominal, **info)
+
+    # assert n_sys_hists, 'At least one systematic histogram needed.'
+
+    get_sqr_hist(sum_of_sq_errs_up)
+    get_sqr_hist(sum_of_sq_errs_down)
+    sum_of_sq_errs_up.Add(nominal)
+    sum_of_sq_errs_down.Add(nominal, -1)
+    sum_of_sq_errs_down.Scale(-1)
+
+    # average and assign errors
+    # sys_hist.Scale(1./n_sys_hists)
+    for i in xrange(sys_hist.GetNbinsX()+2):
+        sys_hist.SetBinContent(i, (sum_of_sq_errs_up.GetBinContent(i)
+            + sum_of_sq_errs_down.GetBinContent(i))/2.)
+        sys_hist.SetBinError(i, (sum_of_sq_errs_up.GetBinContent(i)
+            - sum_of_sq_errs_down.GetBinContent(i))/2.)
+
+    info['histo_sys_err'] = sys_hist
+    return wrappers.HistoWrapper(nominal, **info)
+
+
+# @history.track_history
 def squash_sys_env(wrps):
     """
-    Calculates envelope of systematic uncertainties.
+    Calculates systematic uncertainty with sum of squares.
 
-    If any of the 'histo_sys_err' is set on the inputs, these systematic
-    histograms are used for the envelope, including their uncertainties, and the
-    result is stored in histo_sys_err of the returned wrp. Here, the histogram
-    from the first wrp is returned as the nominal one.
-
-    Otherwise, the envelope is built around the nominal values of the
-    histograms (wrp.histo) and also stored returned in wrp.histo, and
-    histo_sys_err stays unset.
-
-    :param wrps:    iterable of histowrappers
+    :param wrps:    iterable of histowrappers, where the
+                    first item is taken as the nominal histogram.
 
     >>> from ROOT import TH1F
     >>> h1 = TH1F("h1", "", 2, .5, 2.5)
+    >>> h1.Fill(1, 7)
+    1
     >>> h2 = TH1F("h1", "", 2, .5, 2.5)
-    >>> h1.Fill(1, 2)
+    >>> h2.Fill(1, 0)
     1
-    >>> h2.Fill(1, 4)
+    >>> h3 = TH1F("h1", "", 2, .5, 2.5)
+    >>> h3.Fill(1, 14)
     1
-    >>> ws = list(wrappers.HistoWrapper(h) for h in [h1, h2])
-    >>> w1 = squash_sys_env(ws)
-    >>> w1.histo_sys_err  # Should be None
-    >>> w1.obj.GetBinContent(1)
-    3.0
-    >>> w1.obj.GetBinError(1)
-    1.0
+    >>> ws1 = list(wrappers.HistoWrapper(h) for h in [h1, h2])
+    >>> ws2 = list(wrappers.HistoWrapper(h) for h in [h1, h3])
+    >>> w0 = wrappers.HistoWrapper(h1)
+    >>> w1 = squash_sys_sq(ws1)
+    >>> w2 = squash_sys_sq(ws2)
+    >>> w3 = squash_sys_env([w0, w1, w2])
+    >>> w3.obj.GetBinContent(1)
+    7.0
+    >>> w3.histo_sys_err.GetBinContent(1)
+    7.0
+    >>> w3.histo_sys_err.GetBinError(1)
+    7.0
     """
     wrps = list(wrps)
+    if len(wrps) < 2:
+        varial.monitor.message('operations.squash_sys_env',
+                        'WARNING nominal or systematic histogram missing. Wrps: %s' % str(list((w.sample, w.in_file_path, w.sys_info) for w in wrps)))
+        return None
     assert len(wrps) > 1, 'At least 2 wrps are needed.'
 
     for w in wrps:                                              # histo check
@@ -1219,6 +1330,60 @@ def squash_sys_stddev(wrps):
     info['histo_sys_err'] = histo_sys_err
     return wrappers.HistoWrapper(histo, **info)
 
+
+
+def get_sys_int(wrp, use_bin_width=False):
+    """
+    Calculates standard deviation for systematic uncertainties.
+
+    Result is stored in wrp.histo_sys_err, and wrp.histo is from the first wrp.
+
+    >>> from ROOT import TH1F
+    >>> h1 = TH1F("h1", "", 2, .5, 2.5)
+    >>> h2 = TH1F("h1", "", 2, .5, 2.5)
+    >>> h1.Fill(1, 2)
+    1
+    >>> h2.Fill(1, 3)
+    1
+    >>> h2.SetBinError(1, 2)
+    >>> w = wrappers.HistoWrapper(h1)
+    >>> w.histo_sys_err = h2
+    >>> get_sys_int(w)
+    (3.0, -1.0)
+    """
+    if not isinstance(wrp, wrappers.HistoWrapper):
+        raise WrongInputError(
+            "get_sys_int needs argument of type HistoWrapper. histo: "
+            + str(wrp)
+        )
+
+    if not hasattr(wrp, "histo_sys_err"):
+        raise WrongInputError(
+            "get_sys_int needs histo sith systematic uncertainty."
+        )
+
+    if not hasattr(wrp, "histo_sys_err") or not wrp.histo_sys_err:
+        return 0., 0.
+
+    nom_hist = wrp.histo
+    sys_up = wrp.histo_sys_err.Clone()
+    sys_down = wrp.histo_sys_err.Clone()
+
+    for i in xrange(sys_up.GetNbinsX()+2):
+        sys_up.SetBinContent(i, sys_up.GetBinContent(i)+sys_up.GetBinError(i))
+        sys_down.SetBinContent(i, sys_down.GetBinContent(i)-sys_down.GetBinError(i))
+    
+    option = "width" if use_bin_width else ""
+    up_uncert = sys_up.Integral(option) - nom_hist.Integral(option)
+    down_uncert = sys_down.Integral(option) - nom_hist.Integral(option)
+
+    if up_uncert < 0 or down_uncert > 0:
+        raise WrongIntegralError(
+            "Uncertainty integrals with wrong sign: %s %s" % (up_uncert, down_uncert)
+        )
+           
+
+    return up_uncert, down_uncert
 
 if __name__ == "__main__":
     import ROOT

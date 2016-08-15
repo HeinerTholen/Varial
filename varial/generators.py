@@ -461,8 +461,8 @@ def gen_squash_sys(wrps):
         nominal_list, minus_list, plus_list = wrps
     except ValueError as e:
         monitor.message('generators.gen_squash_sys',
-                        'FATAL ValueError. wrps:')
-        print wrps
+                        'WARNING ValueError: nominal or systematic histogram missing. Wrps: %s' % str(list((w.sample, w.in_file_path, w.sys_info) for ws in wrps for w in ws)))
+        # print wrps
         raise e
 
     # all minus (plus) uncerts are combined in quadrature
@@ -473,27 +473,72 @@ def gen_squash_sys(wrps):
     # build envelope of minus and plus
     res = op.squash_sys_env([nominal, minus, plus])
 
-    # if nominal is a stack, the stack must be kept
     nominal.histo_sys_err = res.histo_sys_err
+
+        # if nominal is a stack, the stack must be kept
+    return nominal
+
+def gen_squash_sys_mod(wrps):
+    """
+    Adds one-sided sys' quadratically and builds envelope from up and down.
+    """
+    def sys_info_key(w):
+        if w.sys_info.endswith('__plus'):
+            return w.sys_info[:-6]
+        elif w.sys_info.endswith('__minus'):
+            return w.sys_info[:-7]
+        else:
+            return 0
+
+    # sort for plus and minus and get lists
+    wrps = sorted(wrps, key=sys_info_key)
+    wrps = group(wrps, sys_info_key)
+    wrps = list(list(ws) for ws in wrps)
+    nominal_list = wrps[0]
+    uncertainties = list(op.squash_sys_env(ws) for ws in wrps[1:])
+
+    sys_uncert = op.squash_sys_sq_mod(nominal_list + uncertainties)
+
+    nominal = nominal_list[0]
+    nominal.histo_sys_err = sys_uncert.histo_sys_err
+
+        # if nominal is a stack, the stack must be kept
     return nominal
 
 
-def gen_squash_sys_acc(wrps, accumulator):
+def gen_squash_sys_acc(wrps, accumulator, calc_sys_integral=False):
     """
     Adds one-sided sys' quadratically and builds envelope from up and down.
     """
     wrps = list(wrps)
-    if not any(w.sys_info for w in wrps):
+    if not any(w.sys_info for w in wrps) or not any(w.sys_info == '' for w in wrps):
         return accumulator(wrps)
 
     def sys_info_key(w):
         return w.sys_info
 
+    sys_tup = []
+    if calc_sys_integral:
+        nwrps = gen_copy(wrps)
+        nwrps = sorted(nwrps, key=lambda w: w.sample)
+        nwrps = group(nwrps, lambda w: w.sample)
+        try:
+            nwrps = (gen_squash_sys_mod(ngrp) for ngrp in nwrps)
+            # nwrps = list(nwrps)
+            sys_tup = list((nw.legend, (op.get_sys_int(nw))) for nw in nwrps)
+        except AssertionError:
+            sys_tup = None
+    # wrps = gen_add_wrp_info(wrps, sys_int=lambda w: sys_tup[w.sample])
     # accumulate (e.g. stack) every sys-type by itself
     wrps = sorted(wrps, key=sys_info_key)
     wrps = group(wrps, sys_info_key)
     wrps = (accumulator(ws) for ws in wrps)
-    return gen_squash_sys(wrps)
+    wrp_stack = gen_squash_sys_mod(wrps)
+    if sys_tup:
+        for s, i in sys_tup:
+            setattr(wrp_stack, s+'__sys', i)
+    # op.add_wrp_info(wrp_stack, **tmp_dct)
+    return wrp_stack
 
 
 ############################################################### load / save ###
@@ -512,17 +557,24 @@ def resolve_file_pattern(pattern='./*.root'):
     :returns:       List of filenames
     """
     def resolve_rel_pattern(pat):
+        res_pat = pat
         if pat.startswith('../'):
-            return os.path.join(analysis.cwd, pat)
-        else: return pat
+            res_pat = os.path.join(analysis.cwd, pat)
+        # print os.getcwd(), pat
+        res_pat = glob.glob(pat)
+        if not res_pat:
+            res_pat = os.path.relpath(pat, analysis.cwd)
+            res_pat = glob.glob(res_pat)
+        return res_pat
 
     if isinstance(pattern, str):
         pattern = [pattern]
 
-    result = list(glob.glob(resolve_rel_pattern(pat)) for pat in pattern)
+    result = list(resolve_rel_pattern(pat) for pat in pattern)
     for pat, res in itertools.izip(pattern, result):
         if not res or not all(os.path.isfile(f) for f in res):
-            raise RuntimeError('No file(s) found for pattern: %s' % pat)
+            monitor.message('generators.resolve_file_pattern',
+                'WARNING No file(s) found for pattern: %s' % pat)
 
     return list(itertools.chain.from_iterable(result))
 
@@ -537,17 +589,20 @@ def fs_content():
         yield alias
 
 
-def dir_content(pattern='./*.root'):
+def dir_content(pattern='./*.root', lookup_aliases='aliases.in.*', result_name=None):
     """
     Proxy of diskio.generate_aliases(directory) / tries to load aliases first
 
     :yields:   Alias
     """
     def load_aliasses(path):
-        info_name = path.split('.')[-1]
+        info_name = result_name or path.split('.')[-1]
         rel_path = os.path.relpath(os.path.dirname(path), analysis.cwd)
         info_path = os.path.join(rel_path, info_name)
         wrps = pklio.get(info_path)
+        if not wrps:
+            with util.Switch(diskio, 'use_analysis_cwd', True):
+                wrps = diskio.get(info_path)
         if not wrps:
             with util.Switch(diskio, 'use_analysis_cwd', False):
                 wrps = diskio.get(info_path)
@@ -558,22 +613,28 @@ def dir_content(pattern='./*.root'):
         dirname = os.path.dirname(pattern)
         if not dirname.startswith('../'):
             dirname = os.path.relpath(dirname, analysis.cwd)
-        paths = glob.glob(os.path.join(analysis.cwd, dirname, 'aliases.in.*'))
-        return (
-            w
-            for p in paths
-            for w in load_aliasses(p)
-        )
+        paths = glob.glob(os.path.join(analysis.cwd, dirname, lookup_aliases))
+        try:
+            res = list(
+                w
+                for p in paths
+                for w in load_aliasses(p)
+            )
+        except TypeError:
+            res = list(load_aliasses(p) for p in paths)
+        return res
 
     if isinstance(pattern, str):
         pattern = [pattern]
 
+    wrps = []
     # try to lookup aliases
-    wrps = list(
-        w
-        for pat in pattern
-        for w in load_aliasses_for_pat(pat)
-    )
+    if lookup_aliases:
+        wrps = list(
+            w
+            for pat in pattern
+            for w in load_aliasses_for_pat(pat)
+        )
 
     # else generate them anew
     if not wrps:
@@ -887,7 +948,8 @@ def sort_group_merge(wrps, keyfunc):
 
 def mc_stack_n_data_sum(wrps,
                         merge_mc_key_func=None,
-                        use_all_data_lumi=True):
+                        use_all_data_lumi=True,
+                        calc_sys_integral=False):
     """
     Stacks MC histos and merges data, input needs to be sorted and grouped.
 
@@ -932,9 +994,9 @@ def mc_stack_n_data_sum(wrps,
             bkg = gen_prod(itertools.izip(bkg, itertools.repeat(data_lumi)))
         try:
             if is_2d:
-                bkg_stk = gen_squash_sys_acc(bkg, op.sum)
+                bkg_stk = gen_squash_sys_acc(bkg, op.sum, calc_sys_integral)
             else:
-                bkg_stk = gen_squash_sys_acc(bkg, op.stack)
+                bkg_stk = gen_squash_sys_acc(bkg, op.stack, calc_sys_integral)
         except op.TooFewWrpsError:
             bkg_stk = None
             monitor.message('generators.mc_stack_n_data_sum',
@@ -942,10 +1004,17 @@ def mc_stack_n_data_sum(wrps,
 
         # signal
         sig = list(sig)
+
         if any(s.sys_info for s in sig):
             sig = sorted(sig, key=lambda s: s.sample)
             sig = group(sig, lambda s: s.sample)
-            sig = (gen_squash_sys(s) for s in sig)
+            try:
+                sig = list(gen_squash_sys_mod(s) for s in sig)
+            except ValueError:
+                monitor.message('generators.mc_stack_n_data_sum',
+                            'WARNING No nominal signal histogram present')
+                sig = []
+
         sig = apply_linecolor(sig)
         sig = list(sig)
         if not sig:

@@ -87,16 +87,19 @@ class SFrame(toolinterface.Tool):
         def add_sample_name(w):
             w.sample = self.samplename_func(w)
             return w
-        wrps = diskio.generate_aliases(self.cwd + '*.root')
-        wrps = list(add_sample_name(w) for w in wrps)
-        self.result = wrappers.WrapperWrapper(
-            wrps,
-            exit_code=self.subprocess.returncode,
-            cwd=self.cwd,
-            log_file=self.log_filename,
-            conf_filename=self.private_conf,
-        )
-        self._push_aliases_to_analysis()
+            
+        if self.add_aliases_to_analysis:
+            wrps = diskio.generate_aliases(self.cwd + 'workdir/*.root')
+            wrps = list(add_sample_name(w) for w in wrps)
+            print len(wrps)
+            self.result = wrappers.WrapperWrapper(
+                wrps,
+                exit_code=self.subprocess.returncode,
+                cwd=self.cwd,
+                log_file=self.log_filename,
+                conf_filename=self.private_conf,
+            )
+            self._push_aliases_to_analysis()
 
     def successful(self):
         return (
