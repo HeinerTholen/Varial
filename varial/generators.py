@@ -309,7 +309,7 @@ def _generate_op_noex(op_func):
         for wrp in wrps:
             try:
                 yield op_func(wrp, *args, **kws)
-            except op.WrongInputError:
+            except op.OperationError:
                 yield wrp
     return gen_op_noex
 
@@ -342,6 +342,7 @@ gen_noex_norm_to_integral   = _generate_op_noex(op.norm_to_integral)
 gen_noex_th2_projection_x   = _generate_op_noex(op.th2_projection_x)
 gen_noex_th2_projection_y   = _generate_op_noex(op.th2_projection_y)
 gen_noex_rebin_nbins_max    = _generate_op_noex(op.rebin_nbins_max)
+
 
 def gen_norm_to_data_lumi(wrps):
     return gen_prod(
@@ -445,55 +446,65 @@ def gen_squash_sys(wrps):
     """
     Adds one-sided sys' quadratically and builds envelope from up and down.
     """
-    def plus_minus_key(w):
+    def sys_info_key(w):
         if w.sys_info.endswith('__plus'):
-            return 2
+            return w.sys_info[:-6]
         elif w.sys_info.endswith('__minus'):
-            return 1
+            return w.sys_info[:-7]
         else:
             return 0
 
     # sort for plus and minus and get lists
-    wrps = sorted(wrps, key=plus_minus_key)
-    wrps = group(wrps, plus_minus_key)
-    wrps = list(list(ws) for ws in wrps)
+    wrps = sorted(wrps, key=sys_info_key)
+    wrps = group(wrps, sys_info_key)
+    wrps = list(list(ws) for ws in wrps)  # [[nom], [A__plus, A__minus], [B__plus, B__minus], ...]
+    nominal, nominal_list = wrps[0][0], wrps[0]
     try:
-        nominal_list, minus_list, plus_list = wrps
-    except ValueError as e:
+        uncertainties = list(op.squash_sys_env(ws) for ws in wrps[1:]) #  [A, B, ...]
+        sys_uncert = op.squash_sys_sq(nominal_list + uncertainties)
+    except op.OperationError as e:
         monitor.message('generators.gen_squash_sys',
-                        'FATAL ValueError. wrps:')
-        print wrps
-        raise e
+                        'WARNING catching error: \n' + str(e))
+        return nominal
 
-    # all minus (plus) uncerts are combined in quadrature
-    minus = op.squash_sys_sq(nominal_list + minus_list)
-    plus = op.squash_sys_sq(nominal_list + plus_list)
-    nominal = nominal_list[0]
-
-    # build envelope of minus and plus
-    res = op.squash_sys_env([nominal, minus, plus])
-
-    # if nominal is a stack, the stack must be kept
-    nominal.histo_sys_err = res.histo_sys_err
+    # put sys on nominal wrp (if nominal is a stack, the stack must be kept)
+    nominal.histo_sys_err = sys_uncert.histo_sys_err
     return nominal
 
 
-def gen_squash_sys_acc(wrps, accumulator):
+def gen_squash_sys_acc(wrps, accumulator, calc_sys_integral=False):
     """
     Adds one-sided sys' quadratically and builds envelope from up and down.
     """
     wrps = list(wrps)
-    if not any(w.sys_info for w in wrps):
+    if not any(w.sys_info for w in wrps) or not any(w.sys_info == '' for w in wrps):
         return accumulator(wrps)
 
     def sys_info_key(w):
         return w.sys_info
 
+    sys_tup = []
+    if calc_sys_integral:
+        nwrps = gen_copy(wrps)
+        nwrps = sorted(nwrps, key=lambda w: w.sample)
+        nwrps = group(nwrps, lambda w: w.sample)
+        try:
+            nwrps = (gen_squash_sys(ngrp) for ngrp in nwrps)
+            sys_tup = list((nw.legend, (op.get_sys_int(nw))) for nw in nwrps)
+        except op.OperationError as e:
+            monitor.message('generators.gen_squash_sys_acc',
+                            'WARNING catching error: \n' + str(e))
+
     # accumulate (e.g. stack) every sys-type by itself
     wrps = sorted(wrps, key=sys_info_key)
     wrps = group(wrps, sys_info_key)
     wrps = (accumulator(ws) for ws in wrps)
-    return gen_squash_sys(wrps)
+    wrp_acc = gen_squash_sys(wrps)
+    if sys_tup:
+        for s, i in sys_tup:
+            setattr(wrp_acc, s+'__sys', i)
+
+    return wrp_acc
 
 
 ############################################################### load / save ###

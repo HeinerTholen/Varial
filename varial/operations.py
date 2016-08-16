@@ -20,11 +20,12 @@ import ROOT
 import math
 
 
-class OperationError(Exception): pass
+class OperationError(RuntimeError): pass
 class TooFewWrpsError(OperationError): pass
 class TooManyWrpsError(OperationError): pass
 class WrongInputError(OperationError): pass
 class NoLumiMatchError(OperationError): pass
+class WrongIntegralError(OperationError): pass
 
 
 def iterableize(obj):
@@ -1036,35 +1037,56 @@ def th2_projection_y(wrp, name='_p', firstbin=0, lastbin=-1, option='eo'):
 def squash_sys_sq(wrps):
     """
     Calculates systematic uncertainty with sum of squares.
-
     :param wrps:    iterable of histowrappers, where the
                     first item is taken as the nominal histogram.
-
     >>> from ROOT import TH1F
-    >>> h1 = TH1F("h1", "", 2, .5, 2.5)
-    >>> h1.Fill(1, 7)
+    >>> h0 = TH1F("h0", "", 2, .5, 2.5)
+    >>> h0.Fill(1, 10)
     1
-    >>> h2 = TH1F("h1", "", 2, .5, 2.5)
-    >>> h2.Fill(1, 4)
+    >>> h0 = wrappers.HistoWrapper(h0)
+    >>> h1_sys = TH1F("h1_sys", "", 2, .5, 2.5)
+    >>> h1_sys.Fill(1, 10.5)
     1
-    >>> h3 = TH1F("h1", "", 2, .5, 2.5)
-    >>> h3.Fill(1, 11)
+    >>> h1_sys.SetBinError(1, 4.5)
+    >>> h1_sys = wrappers.HistoWrapper(h1_sys)
+    >>> h2_sys = TH1F("h2_sys", "", 2, .5, 2.5)
+    >>> h2_sys.Fill(1, 14.5)
     1
-    >>> ws = list(wrappers.HistoWrapper(h) for h in [h1, h2, h3])
-    >>> w1 = squash_sys_sq(ws)
-    >>> w1.obj.GetBinContent(1)
-    7.0
-    >>> round(w1.histo_sys_err.GetBinContent(1), 1)
-    8.5
-    >>> w1.histo_sys_err.GetBinError(1)
-    5.0
+    >>> h2_sys.SetBinError(1, 7.5)
+    >>> h2_sys = wrappers.HistoWrapper(h2_sys)
+    >>> w2 = squash_sys_sq([h0, h1_sys, h2_sys])
+    >>> w2.obj.GetBinContent(1)
+    10.0
+    >>> w2.histo_sys_err.GetBinContent(1)
+    14.0
+    >>> w2.histo_sys_err.GetBinError(1)
+    9.0
     """
     n_sys_hists = 0
     nominal = None
     sys_hist = None
-    sum_of_sq_errs = None
+    sum_of_sq_errs_up = None
+    sum_of_sq_errs_down = None
     min_errs = None
     info = None
+
+    def get_err_hist(h, err_factor):
+        w_err = h.Clone()
+        for i in xrange(w_err.GetNbinsX()+2):
+            w_err.SetBinContent(i, h.GetBinContent(i)
+                + h.GetBinError(i)*err_factor)
+        return w_err
+
+    def add_del_sq(sys_h, err_sign):
+        delta = nominal.Clone()
+        delta.Add(get_err_hist(sys_h, err_sign), -1)
+        delta.Multiply(delta)  # square
+        delta.Add(min_errs)
+        return delta
+
+    def get_sqr_hist(hist):
+        for i in xrange(hist.GetNbinsX()+2):
+            hist.SetBinContent(i, hist.GetBinContent(i)**.5)
 
     for w in wrps:                                              # histo check
         if not (isinstance(w, wrappers.HistoWrapper) and 'TH1' in w.type):
@@ -1078,30 +1100,32 @@ def squash_sys_sq(wrps):
             nominal = w.histo.Clone()
             sys_hist = w.histo.Clone()
             sys_hist.Reset()
-            sum_of_sq_errs = sys_hist.Clone()
+            sum_of_sq_errs_up = sys_hist.Clone()
+            sum_of_sq_errs_down = sys_hist.Clone()
             min_errs = sys_hist.Clone()
             for i in xrange(sys_hist.GetNbinsX()+2):
                 min_errs.SetBinContent(i, 1e-10)  # make non-zero
 
         else:                                                   # collect
             n_sys_hists += 1
-            delta = nominal.Clone()
-            delta.Add(w.histo, -1)
-            delta.Multiply(delta)  # square
-            delta.Add(min_errs)
-            sum_of_sq_errs.Add(delta)
-
-            weighted_sys = w.histo.Clone()
-            weighted_sys.Multiply(delta)  # weight by sq diffs
-            sys_hist.Add(weighted_sys)
+            sum_of_sq_errs_up.Add(add_del_sq(w.histo, +1))
+            sum_of_sq_errs_down.Add(add_del_sq(w.histo, -1))
 
     assert n_sys_hists, 'At least one systematic histogram needed.'
 
+    get_sqr_hist(sum_of_sq_errs_up)
+    get_sqr_hist(sum_of_sq_errs_down)
+    sum_of_sq_errs_up.Add(nominal)
+    sum_of_sq_errs_down.Add(nominal, -1)
+    sum_of_sq_errs_down.Scale(-1)
+
     # average and assign errors
     # sys_hist.Scale(1./n_sys_hists)
-    sys_hist.Divide(sum_of_sq_errs)
     for i in xrange(sys_hist.GetNbinsX()+2):
-        sys_hist.SetBinError(i, sum_of_sq_errs.GetBinContent(i)**.5)
+        sys_hist.SetBinContent(i, (sum_of_sq_errs_up.GetBinContent(i)
+            + sum_of_sq_errs_down.GetBinContent(i))/2.)
+        sys_hist.SetBinError(i, (sum_of_sq_errs_up.GetBinContent(i)
+            - sum_of_sq_errs_down.GetBinContent(i))/2.)
 
     info['histo_sys_err'] = sys_hist
     return wrappers.HistoWrapper(nominal, **info)
@@ -1218,6 +1242,56 @@ def squash_sys_stddev(wrps):
     info = wrps[0].all_info()
     info['histo_sys_err'] = histo_sys_err
     return wrappers.HistoWrapper(histo, **info)
+
+
+def get_sys_int(wrp, use_bin_width=False):
+    """
+    Calculates standard deviation for systematic uncertainties.
+
+    Result is stored in wrp.histo_sys_err, and wrp.histo is from the first wrp.
+
+    >>> from ROOT import TH1F
+    >>> h1 = TH1F("h1", "", 2, .5, 2.5)
+    >>> h2 = TH1F("h1", "", 2, .5, 2.5)
+    >>> h1.Fill(1, 2)
+    1
+    >>> h2.Fill(1, 3)
+    1
+    >>> h2.SetBinError(1, 2)
+    >>> w = wrappers.HistoWrapper(h1)
+    >>> w.histo_sys_err = h2
+    >>> get_sys_int(w)
+    (3.0, -1.0)
+    """
+    if not isinstance(wrp, wrappers.HistoWrapper):
+        raise WrongInputError(
+            "get_sys_int needs argument of type HistoWrapper. histo: "
+            + str(wrp)
+        )
+
+    if not wrp.histo_sys_err:
+        raise WrongInputError(
+            "get_sys_int needs histo with systematic uncertainty."
+        )
+
+    nom_hist = wrp.histo
+    sys_up = wrp.histo_sys_err.Clone()
+    sys_down = wrp.histo_sys_err.Clone()
+
+    for i in xrange(sys_up.GetNbinsX()+2):
+        sys_up.SetBinContent(i, sys_up.GetBinContent(i)+sys_up.GetBinError(i))
+        sys_down.SetBinContent(i, sys_down.GetBinContent(i)-sys_down.GetBinError(i))
+
+    option = "width" if use_bin_width else ""
+    up_uncert = sys_up.Integral(option) - nom_hist.Integral(option)
+    down_uncert = sys_down.Integral(option) - nom_hist.Integral(option)
+
+    if up_uncert < 0 or down_uncert > 0:
+        raise WrongIntegralError(
+            "Uncertainty integrals with wrong sign: %s %s" % (up_uncert, down_uncert)
+        )
+
+    return up_uncert, down_uncert
 
 
 if __name__ == "__main__":
