@@ -7,12 +7,10 @@ Varial
 ======
 
 
-Toolkit for analysis with ROOT. No gui, just library.
+One-click analysis with ROOT.
 
 Documentation can be found at:
 http://desy.de/~tholenhe/varial_doc/html/index.html
-
-(By the way, this is a "Varial": https://www.youtube.com/watch?v=X0dxKbJ08d4)
 
 
 Installation
@@ -30,9 +28,16 @@ variable::
 Basic plotting
 ==============
 
-In your shell, type ``varial_rootfileplotter.py`` (without arguments) to get a 
+In your shell, type ``varial_plotter.py`` (without arguments) to get a
 help message on how to specify inputs.
 
 
 .. include:: docs/index.rst
 
+
+hQuery
+======
+
+Interactive event selection and plotting, driven with Apache Spark.
+
+.. image:: https://raw.githubusercontent.com/HeinerTholen/Varial/master/docs/sc_hQuery.png
