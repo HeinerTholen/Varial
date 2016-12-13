@@ -176,10 +176,12 @@ class ToolChain(_ToolBase):
     def __init__(self,
                  name=None,
                  tools=None,
-                 default_reuse=False,
+                 default_reuse=None,
                  lazy_eval_tools_func=None):
         super(ToolChain, self).__init__(name)
-        self._reuse = default_reuse
+        self._reuse = (default_reuse
+                       if isinstance(default_reuse, bool)
+                       else settings.try_reuse_results)
         self.tool_chain = []
         self.tool_names = {}
         self.lazy_eval_tools_func = lazy_eval_tools_func
@@ -330,7 +332,7 @@ class ToolChainParallel(ToolChain):
     def __init__(self,
                  name=None,
                  tools=None,
-                 default_reuse=False,
+                 default_reuse=None,
                  lazy_eval_tools_func=None,
                  n_workers=None):
         super(ToolChainParallel, self).__init__(
