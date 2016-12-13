@@ -8,10 +8,10 @@ ROOT.gROOT.ProcessLine('gErrorIgnoreLevel = kError;')
 if len(sys.argv) < 2:
     print """
 Usage:
-varial_rootfileplotter.py <signal-files>
-                          [--bkg <background-files>]
-                          [--dat <data-files>]
-                          [--psu <pseudodata-files>]
+varial_plotter.py <signal-files>
+                  [--bkg <background-files>]
+                  [--dat <data-files>]
+                  [--psu <pseudodata-files>]
 
 The given files are plotted with these styles:
     - signal files are plotted as lines
@@ -19,9 +19,10 @@ The given files are plotted with these styles:
     - data files are plotted as filled circles
     - pseudo-data files are plotted as empty circles
 
-For more control over plotting, it's needed to implement a script, as done in
-the examples e01 and e02 in varial_example. The varial_rootfileplotter.py script
-(this script!) might be a good starting point as well.
+For more control over plotting, a script needs to be implemented.
+The varial_plotter.py executable in the /bin directory is probably
+the best starting point. Also, check the examples e01 and e02 in
+the varial_example module.
 
 Options:
 --norm          normalize all input histograms to integral
