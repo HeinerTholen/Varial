@@ -62,15 +62,15 @@ class SFrameBatch(SFrame):
 
 
 if start_all_parallel:
-    ToolChain = tools.ToolChainParallel
+    n_workers = None  # auto-adjust number of workers
 else:
-    ToolChain = tools.ToolChain
+    n_workers = 1
 
 if use_sframe_batch:
     SFrame = SFrameBatch
 
 
-sframe_tools = ToolChain(
+sframe_tools = tools.ToolChainParallel(
     'SFrameUncerts',
     list(
         SFrame(
@@ -80,7 +80,8 @@ sframe_tools = ToolChain(
             halt_on_exception=False,
         )
         for uncert in sys_uncerts
-    )
+    ),
+    n_workers=n_workers,
 )
 
 
