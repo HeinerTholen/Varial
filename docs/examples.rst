@@ -46,12 +46,12 @@ Make a toolchain
    :members:
 
 
-.. _sampledefinition-example:
+.. _sframeuncerts-example:
 
-Sample definition
-=================
+Systematic Uncertainties with SFrame
+====================================
 
-.. automodule:: varial_example.e04_sampledefinition
+.. automodule:: varial_example.e04_sframe_uncerts
    :members:
 
 
@@ -71,16 +71,3 @@ Basic setup and running
 
 .. automodule:: varial_example.e06_config
    :members:
-
-
-.. _more_plotting-example:
-
-More plotting
-=============
-
-.. automodule:: varial_example.e07_more_plotting
-   :members:
-
-
-
-

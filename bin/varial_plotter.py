@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 """
-Add colors like so:
+You can copy this script to change settings.
+
+Add colors like this:
 
 import varial
 varial.settings.colors.update({
