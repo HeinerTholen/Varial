@@ -50,7 +50,7 @@ help message on how to specify inputs.
 Run systematic uncertainties with SFrame:
 =========================================
 
-See ``varial_example/e04_sframe_uncerts.py``.
+Copy the script ``varial_example/e04_sframe_uncerts.py`` and change it to your needs.
 
 
 hQuery
