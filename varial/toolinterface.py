@@ -229,7 +229,7 @@ class ToolChain(_ToolBase):
                 t.run()
             except:
                 etype, evalue, etb = sys.exc_info()
-                msg = evalue.args[0]
+                msg = evalue.args[0] if evalue.args else ''
                 if 'exception occured at path (class): ' not in str(msg):
                     new_msg = '%s\nexception occured at path (class): %s (%s)' % (
                         evalue, analysis.cwd[:-1], t.__class__.__name__)

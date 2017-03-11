@@ -380,7 +380,8 @@ def gen_make_eff_graphs(wrps,
     len_postfix_tot = len(postfix_tot)
 
     def rename(w):
-        w.in_file_path = w.in_file_path[:-len_postfix_sub] + new_postfix
+        l = len_postfix_sub if w.name.endswith(postfix_sub) else len_postfix_tot
+        w.in_file_path = w.in_file_path[:-l] + new_postfix
         w.name = w.in_file_path.split('/')[-1]
         return w
 
@@ -404,8 +405,11 @@ def gen_make_eff_graphs(wrps,
         elif not yield_everything:  # do not yield everything twice
             yield wrp
         if res and not (subs or tots):
-            for _ in xrange(len(res)):
+            while res:
                 yield res.pop(0)
+
+    assert not len(subs), 'ERROR, some subs are left: '+str(subs.keys())
+    assert not len(tots), 'ERROR, some tots are left: '+str(tots.keys())
 
 
 def gen_make_th2_projections(wrps, keep_th2=True):
