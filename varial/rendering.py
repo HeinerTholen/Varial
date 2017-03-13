@@ -635,21 +635,19 @@ def _err_ratio_util_mk_stat_histo(cnv_wrp, mcee_rnd):
     cnv_wrp.bottom_hist_sys_err = None
     cnv_wrp.bottom_hist_tot_err = None
 
-def _err_ratio_util_mk_sys_stt_histos(cnv_wrp, mcee_rnd, y_title):
+def _err_ratio_util_mk_sys_stt_histos(cnv_wrp, mcee_rnd):
     if mcee_rnd.histo_sys_err:                      # w/ sys uncerts
         _err_ratio_util_mk_sys_tot_histos(cnv_wrp, mcee_rnd)
-        cnv_wrp.bottom_hist_tot_err.SetYTitle(y_title)
     else:                                           # w/o sys uncerts
         _err_ratio_util_mk_stat_histo(cnv_wrp, mcee_rnd)
-        cnv_wrp.bottom_hist_stt_err.SetYTitle(y_title)
 
 def _err_ratio_util_plot_sys_stt_histos(cnv_wrp, par):
-    if cnv_wrp.bottom_hist_stt_err:
-        cnv_wrp.bottom_hist_stt_err.Draw('sameE2')
-    else:
-        cnv_wrp.bottom_hist_tot_err.Draw('sameE2')
-        if par.get('draw_sys_sep', 0):
-            cnv_wrp.bottom_hist_sys_err.Draw('sameE2')
+    h = cnv_wrp.bottom_hist_stt_err or cnv_wrp.bottom_hist_tot_err
+    h.Draw('sameE2')
+    h.GetYaxis().SetTitle(par['y_title'])
+    if par.get('draw_sys_sep', 0):
+        cnv_wrp.bottom_hist_sys_err.Draw('sameE2')
+
 
 def mk_split_err_ratio_plot_func(**outer_kws):
     """
@@ -691,7 +689,9 @@ def mk_split_err_ratio_plot_func(**outer_kws):
         par = dict(settings.defaults_BottomPlot)
         par.update(outer_kws)
         par.update(kws)
+        par['y_title'] = par.get('y_title', '') or '#frac{Data-MC}{MC}'
         cnv_wrp._par_mk_split_err_ratio_plot_func = par
+
 
         rnds = cnv_wrp._renderers
         mcee_rnd, data_rnd = bottom_plot_get_div_hists(rnds)
@@ -715,17 +715,16 @@ def mk_split_err_ratio_plot_func(**outer_kws):
         cnv_wrp.bottom_hist = div_hist
 
         # underlying error bands
-        _err_ratio_util_mk_sys_stt_histos(
-            cnv_wrp, mcee_rnd, par.get('y_title', '#frac{Data-MC}{MC}'))
+        _err_ratio_util_mk_sys_stt_histos(cnv_wrp, mcee_rnd)
 
         # poisson errs or not..
         if par['poisson_errs']:
             mk_poisson_errs_graph(cnv_wrp, data_rnd, div_hist, mc_histo_no_err, par)
 
         # ugly fix: move zeros out of range
-        for i in xrange(1, mc_histo_no_err.GetNbinsX()):
+        for i in xrange(1, mc_histo_no_err.GetNbinsX()+1):
             if not (div_hist.GetBinContent(i) or div_hist.GetBinError(i)):
-                div_hist.SetBinContent(i, -200)
+                div_hist.SetBinContent(i, -500)
 
     def ratio_plot_func(cnv_wrp, _):
         if not _bottom_plot_make_pad(cnv_wrp):
@@ -761,7 +760,6 @@ def mk_split_err_multi_ratio_plot_func(**outer_kws):
 
         rnds = cnv_wrp._renderers
         bkg_rnd, sig_rnds = rnds[0], rnds[1:]
-        y_title = par.get('y_title', '#frac{Sig-bkg}{bkg}')
 
         # overlaying ratio histogram
         mc_histo_no_err = bkg_rnd.histo.Clone()
@@ -787,8 +785,7 @@ def mk_split_err_multi_ratio_plot_func(**outer_kws):
             _bottom_plot_y_bounds(cnv_wrp, div_hist, par)
 
         # underlying error bands
-        _err_ratio_util_mk_sys_stt_histos(
-            cnv_wrp, bkg_rnd, par.get('y_title', '#frac{sig-bkg}{bkg}'))
+        _err_ratio_util_mk_sys_stt_histos(cnv_wrp, bkg_rnd)
 
         return div_hists
 
@@ -798,6 +795,7 @@ def mk_split_err_multi_ratio_plot_func(**outer_kws):
         par = dict(settings.defaults_BottomPlot)
         par.update(outer_kws)
         par.update(kws)
+        par['y_title'] = par.get('y_title', '') or '#frac{Sig-bkg}{bkg}'
 
         # make bottom histos
         div_hists = make_bottom_hists(cnv_wrp, par)
