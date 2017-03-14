@@ -307,19 +307,19 @@ class PostBuildFuncWithSetup(object):
             f(*args, **kws)
 
 
-def mk_tobject_draw_func(tobject):
+def mk_tobject_draw_func(tobject, *draw_opts):
     """
     Draw any TObject. Like a TLatex.
 
     e.g:
-    ``rendering.post_build_functions += rendering.mk_tobject_draw_func(``
+    ``rendering.post_build_funcs += [rendering.mk_tobject_draw_func(``
     ``    ROOT.TLatex(0.5, 0.5, 'My Box')``
-    ``)``
+    ``)]``
     """
-    assert isinstance(text, ROOT.TObject), '"tobject" arg must be a TObject'
+    assert isinstance(tobject, ROOT.TObject), '"tobject" arg must be a TObject'
 
     def tobject_draw_func(wrp, _):
-        tobject.Draw()
+        tobject.Draw(*draw_opts)
         return wrp
 
     return tobject_draw_func
@@ -330,7 +330,7 @@ def mk_titlebox_func(text):
     Draws title-box with TPaveText above canvas window.
 
     e.g:
-    ``rendering.post_build_functions += rendering.mk_titlebox_func('my text')``
+    ``rendering.post_build_funcs += [rendering.mk_titlebox_func('my text')]``
     """
     assert isinstance(text, str), '"text" arg must be a string'
 
