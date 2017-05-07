@@ -448,17 +448,32 @@ def mk_legend_func(**outer_kws):
     return legend_func
 
 
-def _bottom_plot_check(wrp):
-    return (
-        len(wrp._renderers) > 1 and
-        isinstance(wrp._renderers[0], wrappers.HistoWrapper) and
-        isinstance(wrp._renderers[1], wrappers.HistoWrapper) and
-        'TH2' not in wrp._renderers[0].type
-    )
+def _bottom_plot_canv_ok(wrp):
+    # prioritize on cached result
+    is_ok = getattr(wrp, '_bottom_plot_canv_check_ok', -1)
+    if is_ok == -1:
+        wrp._bottom_plot_canv_check_ok = (
+            len(wrp._renderers) > 1 and
+            isinstance(wrp._renderers[0], wrappers.HistoWrapper) and
+            isinstance(wrp._renderers[1], wrappers.HistoWrapper) and
+            'TH2' not in wrp._renderers[0].type
+        )
+        return wrp._bottom_plot_canv_check_ok
+    else:
+        return is_ok
+
+
+def bottom_plot_canv_ok_data(wrp, _):
+    is_ok = _bottom_plot_canv_ok(wrp)
+    if is_ok and sum(w.is_data for w in wrp._renderers) == 1:
+        return True
+    else:
+        wrp._bottom_plot_canv_check_ok = False
+        return False
 
 
 def _bottom_plot_make_pad(wrp):
-    if not _bottom_plot_check(wrp):
+    if not _bottom_plot_canv_ok(wrp):
         return False
 
     if wrp.second_pad:
@@ -517,7 +532,7 @@ def _bottom_plot_fix_bkg_err_values(wrp, histo):
 
 
 def bottom_plot_prep_main_pad(wrp, _):
-    if not _bottom_plot_check(wrp) or wrp.main_pad != wrp.canvas:
+    if not _bottom_plot_canv_ok(wrp) or wrp.main_pad != wrp.canvas:
         return
 
     # make separate main pad
@@ -548,7 +563,7 @@ def mk_ratio_plot_func(**outer_kws):
     Ratio of first and second histogram in canvas.
     """
     def make_bottom_hist(cnv_wrp, kws):
-        if not _bottom_plot_check(cnv_wrp):
+        if not _bottom_plot_canv_ok(cnv_wrp):
             return cnv_wrp
 
         par = dict(settings.defaults_BottomPlot)
@@ -587,10 +602,10 @@ def mk_ratio_plot_func(**outer_kws):
 
 def mk_split_err_ratio_plot_func(**outer_kws):
     """
-    Ratio of either stack and data or first and second histogram with uncertainties split up.
+    Ratio of stack and *data* with uncertainties split up.
     """
     def mk_bkg_errors(histo, ref_histo):
-        for i in xrange(histo.GetNbinsX() + 2):
+        for i in xrange(1, histo.GetNbinsX() + 1):
             val = histo.GetBinContent(i)
             ref_val = ref_histo.GetBinContent(i)
             err = histo.GetBinError(i)
@@ -652,7 +667,7 @@ def mk_split_err_ratio_plot_func(**outer_kws):
         return gbot
 
     def make_bottom_hist(cnv_wrp, kws):
-        if not _bottom_plot_check(cnv_wrp):
+        if not _bottom_plot_canv_ok(cnv_wrp):
             return cnv_wrp
 
         par = dict(settings.defaults_BottomPlot)
@@ -663,14 +678,16 @@ def mk_split_err_ratio_plot_func(**outer_kws):
         rnds = cnv_wrp._renderers
         mcee_rnd, data_rnd = bottom_plot_get_div_hists(rnds)
         y_title = par['y_title'] or (
-            '#frac{data-MC}{MC}'if data_rnd.is_data else '#frac{sig-bkg}{bkg}')
+            '#frac{Data-MC}{MC}'if data_rnd.is_data else '#frac{Sig-bkg}{bkg}')
 
         # overlaying ratio histogram
         mc_histo_no_err = mcee_rnd.histo.Clone()
+        mc_histo_no_err.GetXaxis().SetCanExtend(0)
         data_hist = data_rnd.histo
         div_hist = data_hist.Clone()
+        div_hist.GetXaxis().SetCanExtend(0)
         div_hist.Sumw2()
-        for i in xrange(mc_histo_no_err.GetNbinsX()+2):
+        for i in xrange(1, mc_histo_no_err.GetXaxis().GetNbins()+1):
             mc_histo_no_err.SetBinError(i, 0.)
             if not div_hist.GetBinContent(i):
                 div_hist.SetBinError(i, 1.)
@@ -694,10 +711,9 @@ def mk_split_err_ratio_plot_func(**outer_kws):
             mk_poisson_errs_graph(cnv_wrp, data_rnd, div_hist, mc_histo_no_err, par)
 
         # ugly fix: move zeros out of range
-        for i in xrange(mc_histo_no_err.GetNbinsX()+2):
+        for i in xrange(1, mc_histo_no_err.GetNbinsX()):
             if not (div_hist.GetBinContent(i) or div_hist.GetBinError(i)):
                 div_hist.SetBinContent(i, -200)
-
 
     def ratio_plot_func(cnv_wrp, _):
         if not _bottom_plot_make_pad(cnv_wrp):
@@ -723,7 +739,7 @@ def mk_split_err_ratio_plot_func(**outer_kws):
 
     return PostBuildFuncWithSetup(
         ratio_plot_func,
-        (bottom_plot_prep_main_pad, make_bottom_hist)
+        (bottom_plot_canv_ok_data, bottom_plot_prep_main_pad, make_bottom_hist)
     )
 
 
@@ -732,7 +748,7 @@ def mk_pull_plot_func(**outer_kws):
     Ratio of first and second histogram in canvas.
     """
     def make_bottom_hist(cnv_wrp, kws):
-        if not _bottom_plot_check(cnv_wrp):
+        if not _bottom_plot_canv_ok(cnv_wrp):
             return cnv_wrp
 
         par = dict(settings.defaults_BottomPlot)
@@ -743,7 +759,7 @@ def mk_pull_plot_func(**outer_kws):
         rnds = cnv_wrp._renderers
         mcee_rnd, data_rnd = bottom_plot_get_div_hists(rnds)
         y_title = par['y_title'] or (
-            '#frac{Data-MC}{#sigma}' if data_rnd.is_data else '#frac{Sig-Bkg}{Bkg}')
+            '#frac{Data-MC}{#sigma}' if data_rnd.is_data else '#frac{Sig-bkg}{bkg}')
 
         # produce pull histogram
         mc_histo = mcee_rnd.histo

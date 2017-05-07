@@ -39,7 +39,6 @@ class TreeProjectorBase(varial.tools.Tool):
                  ):
         super(TreeProjectorBase, self).__init__(name)
         self.filenames = filenames
-        self.samples = filenames.keys()
         self.params = params
         self.sec_sel_weight = sec_sel_weight
         self.add_aliases_to_analysis = add_aliases_to_analysis
@@ -56,6 +55,8 @@ class TreeProjectorBase(varial.tools.Tool):
                 self.message('WARNING no files for sample %s in %s'
                              % (sample, self.name))
                 del filenames[sample]
+
+        self.samples = filenames.keys()
 
     def reuse(self, _=False):
         super(TreeProjectorBase, self).reuse(self.add_aliases_to_analysis)

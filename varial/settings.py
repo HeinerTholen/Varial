@@ -36,7 +36,7 @@ def logfilename():
     )
 
 
-############################################## cmsRun and fwlite processing ###
+################################################################ processing ###
 import multiprocessing
 max_num_processes = multiprocessing.cpu_count()
 use_parallel_chains = True
@@ -145,17 +145,17 @@ def apply_split_pad_styles(cnv_wrp):
 
 
 def stat_error_style(histo):
-    histo.SetTitle('stat. uncert. MC')
+    histo.SetTitle('Stat. uncert. MC')
     apply_error_hist_style(histo, stat_error_color, stat_error_fill)
 
 
 def sys_error_style(histo):
-    histo.SetTitle('sys. uncert. MC')
+    histo.SetTitle('Sys. uncert. MC')
     apply_error_hist_style(histo, sys_error_color, sys_error_fill)
 
 
 def tot_error_style(histo):
-    histo.SetTitle('tot. uncert. MC')
+    histo.SetTitle('Tot. uncert. MC')
     apply_error_hist_style(histo, tot_error_color, tot_error_fill)
 
 

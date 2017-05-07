@@ -41,6 +41,7 @@ class Hadd(varial.tools.Tool):
                  src_glob_path,
                  basenames,
                  cmd='nice hadd -f -v 1 -T',
+                 link_other_files=False,
                  add_aliases_to_analysis=True,
                  samplename_func=lambda w: os.path.basename(w.file_path),
                  name=None):
@@ -49,6 +50,7 @@ class Hadd(varial.tools.Tool):
         self.src_path = os.path.dirname(src_glob_path)
         self.basenames = basenames
         self.cmd = cmd
+        self.link_other_files = link_other_files
         self.add_aliases_to_analysis = add_aliases_to_analysis
         self.samplename_func = samplename_func
         assert type(basenames) in (list, tuple)
@@ -101,8 +103,9 @@ class Hadd(varial.tools.Tool):
                 pass
 
         # link others
-        for f in other_inputs:
-            os.system('ln -sf %s %s' % (os.path.relpath(f, self.cwd), self.cwd))
+        if self.link_other_files:
+            for f in other_inputs:
+                os.system('ln -sf %s %s' % (os.path.relpath(f, self.cwd), self.cwd))
 
         # aliases
         self.produce_aliases()
