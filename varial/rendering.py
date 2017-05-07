@@ -316,7 +316,7 @@ def mk_tobject_draw_func(tobject):
     ``    ROOT.TLatex(0.5, 0.5, 'My Box')``
     ``)``
     """
-    assert isinstance(text, ROOT.TObject), '"tobject" arg must be a TObject'
+    assert isinstance(tobject, ROOT.TObject), '"tobject" arg must be a TObject'
 
     def tobject_draw_func(wrp, _):
         tobject.Draw()
