@@ -27,21 +27,18 @@ the varial_example module.
 Options:
 --norm          normalize all input histograms to integral
 --rebin         rebin histograms to have a maximum of 42 bins
---filter <p>    plot only histograms with <p> in their in-file-path
 """
     exit(-1)
 
 # grab filenames and options
 norm_to_int = False
 n_bins_max = 0
-sig, bkg, dat, psu, filt = [], [], [], [], []
+sig, bkg, dat, psu = [], [], [], []
 args = sys.argv[:]
 args.pop(0)
 current_coll = sig
 for a in args:
-    if a == '--filter':
-        current_coll = filt
-    elif a == '--bkg':
+    if a == '--bkg':
         current_coll = bkg
     elif a == '--dat':
         current_coll = dat
@@ -54,7 +51,6 @@ for a in args:
     else:
         current_coll.append(a)
 all_input = sig + bkg + dat + psu
-filt = filt[0] if filt else ''
 
 print 'signal-files:        ', sig
 print 'background-files:    ', bkg
@@ -64,9 +60,6 @@ if n_bins_max:
     print '- rebinning to a maximum of 42 bins'
 if norm_to_int:
     print '- normalizing to integral'
-if filt:
-    print '- selecting histograms that contain "%s" in their path' % filt
-
 
 # setup varial
 import varial.tools
@@ -116,22 +109,30 @@ def post_load_hook(wrps):
     return wrps
 
 
-def plotter_factory(**kws):
-    kws['hook_loaded_histos'] = post_load_hook
-    kws['save_lin_log_scale'] = True
-    kws['stack'] = True
-    return varial.tools.Plotter(**kws)
+def make_plotter(**kws):
+    filter_keyfunc = kws.pop('filter_keyfunc', None)
+
+    def plotter_factory(**f_kws):
+        f_kws.update(kws)
+        hook_loaded_histos = f_kws.pop('hook_loaded_histos', None)
+        if hook_loaded_histos:     # if present, then post_load_hook should be run before
+            f_kws['hook_loaded_histos'] = lambda ws: hook_loaded_histos(post_load_hook(ws))
+        else:
+            f_kws['hook_loaded_histos'] = post_load_hook
+        f_kws['save_lin_log_scale'] = True
+        f_kws['stack'] = True
+        return varial.tools.Plotter(**f_kws)
+
+    return varial.tools.mk_rootfile_plotter(
+        pattern=all_input,
+        name='varial_plotter',
+        plotter_factory=plotter_factory,
+        combine_files=True,
+        filter_keyfunc=filter_keyfunc,
+    )
 
 
-plotter = varial.tools.mk_rootfile_plotter(
-    pattern=all_input,
-    name='varial_plotter',
-    plotter_factory=plotter_factory,
-    combine_files=True,
-    filter_keyfunc=(lambda w: filt in w.in_file_path) if filt else None,
-)
-
-
-def run():
+def run(**kws):
+    plotter = make_plotter(**kws)
     varial.tools.Runner(plotter)
     varial.tools.WebCreator().run()
