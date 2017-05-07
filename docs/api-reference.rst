@@ -14,7 +14,6 @@ Analysis-wide settings and steering
 
    analysis.rst
    settings.rst
-   sample.rst
 
 
 Histogram handling
@@ -44,8 +43,8 @@ Tools & Toolchains
    webcreator.rst
 
 
-Extensions (CMSSW, Fitting)
-===========================
+Extensions (CMSSW, SFrame, Fitting)
+===================================
 
 .. toctree::
    :maxdepth: 1

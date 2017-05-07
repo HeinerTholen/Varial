@@ -15,14 +15,13 @@ ROOT.gROOT.ProcessLine('gErrorIgnoreLevel = kError;')
 import varial.main
 
 # these modules are also examples
-import e04_sampledefinition         # sample definition
 import e03_make_a_toolchain         # my normalization tool
 
 # list of all samples
-samples = e04_sampledefinition.smp_emu_mc + e04_sampledefinition.smp_emu_data
+samples = ['TTbar', 'WJets', 'SingleT', 'QCD']
 
 # all samples should be active, appart from plain TTbar
-active_samples = list(s.name for s in samples)
+active_samples = list(samples)  # make a copy
 active_samples.remove('TTbar')
 
 

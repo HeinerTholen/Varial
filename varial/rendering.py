@@ -307,19 +307,19 @@ class PostBuildFuncWithSetup(object):
             f(*args, **kws)
 
 
-def mk_tobject_draw_func(tobject):
+def mk_tobject_draw_func(tobject, *draw_opts):
     """
     Draw any TObject. Like a TLatex.
 
     e.g:
-    ``rendering.post_build_functions += rendering.mk_tobject_draw_func(``
+    ``rendering.post_build_funcs += [rendering.mk_tobject_draw_func(``
     ``    ROOT.TLatex(0.5, 0.5, 'My Box')``
-    ``)``
+    ``)]``
     """
     assert isinstance(tobject, ROOT.TObject), '"tobject" arg must be a TObject'
 
     def tobject_draw_func(wrp, _):
-        tobject.Draw()
+        tobject.Draw(*draw_opts)
         return wrp
 
     return tobject_draw_func
@@ -330,7 +330,7 @@ def mk_titlebox_func(text):
     Draws title-box with TPaveText above canvas window.
 
     e.g:
-    ``rendering.post_build_functions += rendering.mk_titlebox_func('my text')``
+    ``rendering.post_build_funcs += [rendering.mk_titlebox_func('my text')]``
     """
     assert isinstance(text, str), '"text" arg must be a string'
 
@@ -448,7 +448,7 @@ def mk_legend_func(**outer_kws):
     return legend_func
 
 
-def _bottom_plot_canv_ok(wrp):
+def bottom_plot_canv_ok(wrp, *_):
     # prioritize on cached result
     is_ok = getattr(wrp, '_bottom_plot_canv_check_ok', -1)
     if is_ok == -1:
@@ -464,7 +464,7 @@ def _bottom_plot_canv_ok(wrp):
 
 
 def bottom_plot_canv_ok_data(wrp, _):
-    is_ok = _bottom_plot_canv_ok(wrp)
+    is_ok = bottom_plot_canv_ok(wrp)
     if is_ok and sum(w.is_data for w in wrp._renderers) == 1:
         return True
     else:
@@ -473,7 +473,7 @@ def bottom_plot_canv_ok_data(wrp, _):
 
 
 def _bottom_plot_make_pad(wrp):
-    if not _bottom_plot_canv_ok(wrp):
+    if not bottom_plot_canv_ok(wrp):
         return False
 
     if wrp.second_pad:
@@ -532,7 +532,7 @@ def _bottom_plot_fix_bkg_err_values(wrp, histo):
 
 
 def bottom_plot_prep_main_pad(wrp, _):
-    if not _bottom_plot_canv_ok(wrp) or wrp.main_pad != wrp.canvas:
+    if not bottom_plot_canv_ok(wrp) or wrp.main_pad != wrp.canvas:
         return
 
     # make separate main pad
@@ -563,7 +563,7 @@ def mk_ratio_plot_func(**outer_kws):
     Ratio of first and second histogram in canvas.
     """
     def make_bottom_hist(cnv_wrp, kws):
-        if not _bottom_plot_canv_ok(cnv_wrp):
+        if not bottom_plot_canv_ok(cnv_wrp):
             return cnv_wrp
 
         par = dict(settings.defaults_BottomPlot)
@@ -600,43 +600,59 @@ def mk_ratio_plot_func(**outer_kws):
     )
 
 
+# util functions for err_ratio_plot_func's:
+def _err_ratio_util_mk_bkg_errors(histo, ref_histo):
+    for i in xrange(1, histo.GetNbinsX() + 1):
+        val = histo.GetBinContent(i)
+        ref_val = ref_histo.GetBinContent(i)
+        err = histo.GetBinError(i)
+        histo.SetBinContent(i, (val-ref_val)/(ref_val or 1e20))
+        histo.SetBinError(i, err/(ref_val or 1e20))
+    return histo
+
+def _err_ratio_util_mk_sys_tot_histos(cnv_wrp, mcee_rnd):
+    sys_histo = mcee_rnd.histo_sys_err.Clone()
+    _err_ratio_util_mk_bkg_errors(sys_histo, mcee_rnd.histo)
+    settings.sys_error_style(sys_histo)
+    _bottom_plot_fix_bkg_err_values(cnv_wrp, sys_histo)
+
+    tot_histo = mcee_rnd.histo_tot_err.Clone()
+    _err_ratio_util_mk_bkg_errors(tot_histo, mcee_rnd.histo)
+    settings.tot_error_style(tot_histo)
+    _bottom_plot_fix_bkg_err_values(cnv_wrp, tot_histo)
+
+    cnv_wrp.bottom_hist_stt_err = None
+    cnv_wrp.bottom_hist_sys_err = sys_histo
+    cnv_wrp.bottom_hist_tot_err = tot_histo
+
+def _err_ratio_util_mk_stat_histo(cnv_wrp, mcee_rnd):
+    stt_histo = mcee_rnd.histo.Clone()
+    _err_ratio_util_mk_bkg_errors(stt_histo, stt_histo)
+    settings.stat_error_style(stt_histo)
+    _bottom_plot_fix_bkg_err_values(cnv_wrp, stt_histo)
+
+    cnv_wrp.bottom_hist_stt_err = stt_histo
+    cnv_wrp.bottom_hist_sys_err = None
+    cnv_wrp.bottom_hist_tot_err = None
+
+def _err_ratio_util_mk_sys_stt_histos(cnv_wrp, mcee_rnd):
+    if mcee_rnd.histo_sys_err:                      # w/ sys uncerts
+        _err_ratio_util_mk_sys_tot_histos(cnv_wrp, mcee_rnd)
+    else:                                           # w/o sys uncerts
+        _err_ratio_util_mk_stat_histo(cnv_wrp, mcee_rnd)
+
+def _err_ratio_util_plot_sys_stt_histos(cnv_wrp, par):
+    h = cnv_wrp.bottom_hist_stt_err or cnv_wrp.bottom_hist_tot_err
+    h.Draw('sameE2')
+    h.GetYaxis().SetTitle(par['y_title'])
+    if par.get('draw_sys_sep', 0):
+        cnv_wrp.bottom_hist_sys_err.Draw('sameE2')
+
+
 def mk_split_err_ratio_plot_func(**outer_kws):
     """
     Ratio of stack and *data* with uncertainties split up.
     """
-    def mk_bkg_errors(histo, ref_histo):
-        for i in xrange(1, histo.GetNbinsX() + 1):
-            val = histo.GetBinContent(i)
-            ref_val = ref_histo.GetBinContent(i)
-            err = histo.GetBinError(i)
-            histo.SetBinContent(i, (val-ref_val)/(ref_val or 1e20))
-            histo.SetBinError(i, err/(ref_val or 1e20))
-        return histo
-
-    def mk_sys_tot_histos(cnv_wrp, mcee_rnd):
-        sys_histo = mcee_rnd.histo_sys_err.Clone()
-        mk_bkg_errors(sys_histo, mcee_rnd.histo)
-        settings.sys_error_style(sys_histo)
-        _bottom_plot_fix_bkg_err_values(cnv_wrp, sys_histo)
-
-        tot_histo = mcee_rnd.histo_tot_err.Clone()
-        mk_bkg_errors(tot_histo, mcee_rnd.histo)
-        settings.tot_error_style(tot_histo)
-        _bottom_plot_fix_bkg_err_values(cnv_wrp, tot_histo)
-
-        cnv_wrp.bottom_hist_stt_err = None
-        cnv_wrp.bottom_hist_sys_err = sys_histo
-        cnv_wrp.bottom_hist_tot_err = tot_histo
-
-    def mk_stat_histo(cnv_wrp, mcee_rnd):
-        stt_histo = mcee_rnd.histo.Clone()
-        mk_bkg_errors(stt_histo, stt_histo)
-        settings.stat_error_style(stt_histo)
-        _bottom_plot_fix_bkg_err_values(cnv_wrp, stt_histo)
-
-        cnv_wrp.bottom_hist_stt_err = stt_histo
-        cnv_wrp.bottom_hist_sys_err = None
-        cnv_wrp.bottom_hist_tot_err = None
 
     def mk_poisson_errs_graph(cnv_wrp, data_rnd, div_hist, mc_histo_no_err, par):
         data_hist = data_rnd.histo
@@ -667,18 +683,18 @@ def mk_split_err_ratio_plot_func(**outer_kws):
         return gbot
 
     def make_bottom_hist(cnv_wrp, kws):
-        if not _bottom_plot_canv_ok(cnv_wrp):
+        if not bottom_plot_canv_ok(cnv_wrp):
             return cnv_wrp
 
         par = dict(settings.defaults_BottomPlot)
         par.update(outer_kws)
         par.update(kws)
+        par['y_title'] = par.get('y_title', '') or '#frac{Data-MC}{MC}'
         cnv_wrp._par_mk_split_err_ratio_plot_func = par
+
 
         rnds = cnv_wrp._renderers
         mcee_rnd, data_rnd = bottom_plot_get_div_hists(rnds)
-        y_title = par['y_title'] or (
-            '#frac{Data-MC}{MC}'if data_rnd.is_data else '#frac{Sig-bkg}{bkg}')
 
         # overlaying ratio histogram
         mc_histo_no_err = mcee_rnd.histo.Clone()
@@ -699,21 +715,16 @@ def mk_split_err_ratio_plot_func(**outer_kws):
         cnv_wrp.bottom_hist = div_hist
 
         # underlying error bands
-        if mcee_rnd.histo_sys_err:                      # w/ sys uncerts
-            mk_sys_tot_histos(cnv_wrp, mcee_rnd)
-            cnv_wrp.bottom_hist_tot_err.SetYTitle(y_title)
-        else:                                           # w/o sys uncerts
-            mk_stat_histo(cnv_wrp, mcee_rnd)
-            cnv_wrp.bottom_hist_stt_err.SetYTitle(y_title)
+        _err_ratio_util_mk_sys_stt_histos(cnv_wrp, mcee_rnd)
 
         # poisson errs or not..
         if par['poisson_errs']:
             mk_poisson_errs_graph(cnv_wrp, data_rnd, div_hist, mc_histo_no_err, par)
 
         # ugly fix: move zeros out of range
-        for i in xrange(1, mc_histo_no_err.GetNbinsX()):
+        for i in xrange(1, mc_histo_no_err.GetNbinsX()+1):
             if not (div_hist.GetBinContent(i) or div_hist.GetBinError(i)):
-                div_hist.SetBinContent(i, -200)
+                div_hist.SetBinContent(i, -500)
 
     def ratio_plot_func(cnv_wrp, _):
         if not _bottom_plot_make_pad(cnv_wrp):
@@ -724,12 +735,7 @@ def mk_split_err_ratio_plot_func(**outer_kws):
 
         # draw bottom histos
         cnv_wrp.second_pad.cd()
-        if cnv_wrp.bottom_hist_stt_err:
-            cnv_wrp.bottom_hist_stt_err.Draw('sameE2')
-        else:
-            cnv_wrp.bottom_hist_tot_err.Draw('sameE2')
-            if par.get('draw_sys_sep', 0):
-                cnv_wrp.bottom_hist_sys_err.Draw('sameE2')
+        _err_ratio_util_plot_sys_stt_histos(cnv_wrp, par)
         if par['poisson_errs']:
             cnv_wrp.bottom_graph.Draw('same' + par['draw_opt'])
         else:
@@ -743,12 +749,79 @@ def mk_split_err_ratio_plot_func(**outer_kws):
     )
 
 
+def mk_split_err_multi_ratio_plot_func(**outer_kws):
+    """
+    Ratio for many histograms with uncertainties split up.
+    """
+
+    def make_bottom_hists(cnv_wrp, par):
+        if not bottom_plot_canv_ok(cnv_wrp):
+            return cnv_wrp
+
+        rnds = cnv_wrp._renderers
+        bkg_rnd, sig_rnds = rnds[0], rnds[1:]
+
+        # overlaying ratio histogram
+        mc_histo_no_err = bkg_rnd.histo.Clone()
+        mc_histo_no_err.GetXaxis().SetCanExtend(0)
+        for i in xrange(1, mc_histo_no_err.GetXaxis().GetNbins()+1):
+            mc_histo_no_err.SetBinError(i, 0.)
+
+        div_hists = list(sr.histo.Clone() for sr in sig_rnds)
+        cnv_wrp._bottom_hist_overlay = div_hists
+        for div_hist in div_hists:
+            div_hist.GetXaxis().SetCanExtend(0)
+            div_hist.Sumw2()
+
+            for i in xrange(1, mc_histo_no_err.GetXaxis().GetNbins()+1):
+                if not div_hist.GetBinContent(i):
+                    div_hist.SetBinError(i, 1.)
+            div_hist.Add(mc_histo_no_err, -1)
+            div_hist.Divide(mc_histo_no_err)
+            for i in xrange(1, mc_histo_no_err.GetXaxis().GetNbins()+1):
+                if not div_hist.GetBinContent(i):
+                    div_hist.SetBinContent(i, -500.)
+
+            _bottom_plot_y_bounds(cnv_wrp, div_hist, par)
+
+        # underlying error bands
+        _err_ratio_util_mk_sys_stt_histos(cnv_wrp, bkg_rnd)
+
+        return div_hists
+
+    def ratio_plot_func(cnv_wrp, kws):
+        if not _bottom_plot_make_pad(cnv_wrp):
+            return cnv_wrp
+        par = dict(settings.defaults_BottomPlot)
+        par.update(outer_kws)
+        par.update(kws)
+        par['y_title'] = par.get('y_title', '') or '#frac{Sig-bkg}{bkg}'
+
+        # make bottom histos
+        div_hists = make_bottom_hists(cnv_wrp, par)
+
+        # draw bottom histos
+        cnv_wrp.second_pad.cd()
+        _err_ratio_util_plot_sys_stt_histos(cnv_wrp, par)
+        for hist in div_hists:
+            hist.SetMarkerSize(hist.GetMarkerSize()*0.8)
+            hist.Draw('same' + par['draw_opt_multi_line'])
+
+        cnv_wrp.main_pad.cd()
+        return cnv_wrp
+
+    return PostBuildFuncWithSetup(
+        ratio_plot_func,
+        (bottom_plot_canv_ok, bottom_plot_prep_main_pad)  # make_bottom_hist is called later
+    )
+
+
 def mk_pull_plot_func(**outer_kws):
     """
     Ratio of first and second histogram in canvas.
     """
     def make_bottom_hist(cnv_wrp, kws):
-        if not _bottom_plot_canv_ok(cnv_wrp):
+        if not bottom_plot_canv_ok(cnv_wrp):
             return cnv_wrp
 
         par = dict(settings.defaults_BottomPlot)

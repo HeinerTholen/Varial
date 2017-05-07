@@ -4,24 +4,33 @@ Extensions Package
 
 
 The extensions package contains code that does not belong to the core of Varial.
-It mostly links to other frameworks or libraries, e.g. CMSSW, PyMC or theta.
+It mostly links to other frameworks or libraries, e.g. CMSSW, SFrame, theta...
 
 
-.. _cmsrunproxy-module:
+.. _cmsrun-module:
 
-Module cmsrunproxy
-==================
+Module cmsrun
+=============
 
-.. automodule:: varial.extensions.cmsrunproxy
+.. automodule:: varial.extensions.cmsrun
    :members:
 
 
-.. _fwliteproxy-module:
+.. _sframe-module:
 
-Module fwliteproxy
-==================
+Module SFrame
+=============
 
-.. automodule:: varial.extensions.fwliteproxy
+.. automodule:: varial.extensions.sframe
+   :members:
+
+
+.. _fwlite-module:
+
+Module fwlite
+=============
+
+.. automodule:: varial.extensions.fwlite
    :members:
 
 

@@ -8,18 +8,20 @@ Base script to call the varial plotter. Copy and adjust to your need.
 Changing settings
 =================
 
-For stuff to be adjusted, check the ``varial.settings`` module. Everything
-in there can be adjusted before the last two lines of this script here.
+For settings, check the ``varial.settings`` module. Everything in there can be
+adjusted before the last two lines of this script here.
 
 
 Adding colors
 -------------
 
-import varial
-varial.settings.colors.update({
-    'TTbar': 643,
-    'WJets': 522,
-})
+Add colors by updating the ``colors`` with the names in the legends::
+
+    import varial
+    varial.settings.colors.update({
+        'TTbar': 643,
+        'WJets': 522,
+    })
 
 
 
