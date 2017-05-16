@@ -27,11 +27,13 @@ the varial_example module.
 Options:
 --norm          normalize all input histograms to integral
 --rebin         rebin histograms to have a maximum of 42 bins
+--theta_file    plot systematic uncertainties from a theta-file
 """
     exit(-1)
 
 # grab filenames and options
 norm_to_int = False
+theta_file = False
 n_bins_max = 0
 sig, bkg, dat, psu = [], [], [], []
 args = sys.argv[:]
@@ -48,6 +50,8 @@ for a in args:
         norm_to_int = True
     elif a == '--rebin':
         n_bins_max = 42
+    elif a == '--theta_file':
+        theta_file = True
     else:
         current_coll.append(a)
 all_input = sig + bkg + dat + psu
@@ -64,6 +68,7 @@ if norm_to_int:
 # setup varial
 import varial.tools
 varial.settings.box_text_size = 0.03
+varial.settings.try_reuse_results = False
 varial.settings.defaults_Legend.update({
     'x_pos': 0.85,
     'y_pos': 0.5,
@@ -90,19 +95,42 @@ def label_axes(wrps):
         yield w
 
 
+def theta_tokenizer(w):
+    orig_name = w.name
+    tokens = orig_name.split('__')
+    if len(tokens) == 2:
+        w.name, w.sample = tokens
+        if tokens[1] == 'DATA':
+            w.sample = 'Data'
+            w.is_data = True
+    elif len(tokens) == 4:
+        w.name, w.sample, sys1, sys2 = tokens
+        w.sys_info = '%s__%s' % (sys1, sys2)
+    else:
+        raise RuntimeError("Don't understand name in thetafile: " + orig_name)
+
+    w.legend = w.sample
+    w.in_file_path = w.in_file_path[0:-len(orig_name)] + w.name
+
+    return w
+
+
 # this function processes histograms after loading
 def post_load_hook(wrps):
     if n_bins_max:
         wrps = varial.gen.gen_noex_rebin_nbins_max(wrps, n_bins_max)
     wrps = label_axes(wrps)
-    wrps = varial.gen.gen_add_wrp_info(
-        wrps,
-        sample=lambda w: sample_names[w.file_path],
-        is_signal=lambda w: w.file_path in sig,
-        is_data=lambda w: w.file_path in dat,
-        is_pseudo_data=lambda w: w.file_path in psu,
-    )
-    wrps = sorted(wrps, key=lambda w: w.in_file_path + '__' + w.file_path)
+    if theta_file:
+        wrps = (theta_tokenizer(w) for w in wrps)
+    else:
+        wrps = varial.gen.gen_add_wrp_info(
+            wrps,
+            sample=lambda w: sample_names[w.file_path],
+            is_signal=lambda w: w.file_path in sig,
+            is_data=lambda w: w.file_path in dat,
+            is_pseudo_data=lambda w: w.file_path in psu,
+        )
+    wrps = sorted(wrps, key=lambda w: w.in_file_path + '___' + w.file_path)
     wrps = varial.gen.gen_make_th2_projections(wrps)
     if norm_to_int:
         wrps = varial.gen.gen_noex_norm_to_integral(wrps)
