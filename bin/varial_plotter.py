@@ -96,7 +96,7 @@ the canvas. The ``mk_tobject_draw_func`` function will take any TObject::
 
     import varial
     lumibox = varial.ROOT.TPaveText(0.5, 0.823, 0.7, 0.923, 'brNDC')
-    lumibox.AddText('One bazzillion fb^{-1} (21.1 Giggawatts)')
+    lumibox.AddText('One bazzillion fb^{-1} (1.21 Giggawatts)')
     lumibox.SetTextSize(0.042)
     lumibox.SetFillStyle(0)
     lumibox.SetBorderSize(0)
