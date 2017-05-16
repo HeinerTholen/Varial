@@ -571,7 +571,7 @@ def dir_content(pattern='./*.root'):
 
     def load_aliasses_for_pat(pattern):
         dirname = os.path.dirname(pattern)
-        if not dirname.startswith('../'):
+        if dirname and not dirname.startswith('../'):
             dirname = os.path.relpath(dirname, analysis.cwd)
         paths = glob.glob(os.path.join(analysis.cwd, dirname, 'aliases.in.*'))
         return (
