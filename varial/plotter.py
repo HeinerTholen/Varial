@@ -305,6 +305,8 @@ class RootFilePlotter(toolinterface.ToolChainParallel):
             # This function creates a separate namespace for p
             # (the last reference to p would be lost otherwise)
             def _mk_private_loader(p):
+                if p == ['']:
+                    p = []  # for the base-folder, w.in_file_path.split('/')[:-1] will be []
                 def loader(filter_keyfunc):
                     filter_keyfunc = filter_keyfunc or (lambda w: True)
                     wrps = analysis.fs_aliases
