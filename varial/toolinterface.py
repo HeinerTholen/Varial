@@ -18,7 +18,7 @@ import monitor
 import diskio
 
 
-TOOLNAME_CHARS = '-_' + string.ascii_letters + string.digits
+TOOLNAME_CHARS = ' -_' + string.ascii_letters + string.digits
 
 
 class _ToolBase(object):
