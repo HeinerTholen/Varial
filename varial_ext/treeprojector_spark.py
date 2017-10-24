@@ -1,5 +1,5 @@
 """
-Treeprojection on SGE with jug. (https://jug.readthedocs.org)
+Treeprojection with apache spark.
 """
 from varial_ext.treeprojector import TreeProjectorBase
 import varial_ext.treeprojection_mr_impl as mr
