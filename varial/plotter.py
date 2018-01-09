@@ -166,6 +166,8 @@ class Plotter(toolinterface.Tool):
             wrps = self.load_func(self.filter_keyfunc)
         if self.hook_loaded_histos:
             wrps = self.hook_loaded_histos(wrps)
+            if not wrps:
+                raise RuntimeError('ERROR hook_loaded_histos returned None.')
         self.stream_content = list(wrps)
         if not self.stream_content:
             self.message('WARNING Could not load histogram content!')
