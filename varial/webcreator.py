@@ -479,8 +479,9 @@ class WebCreator(toolinterface.Tool):
                 with open(img_path + '.info') as f:
                     wrp = wrappers.Wrapper(**diskio._read_wrapper_info(f))
 
+            # else create a dummy wrapper
             if not wrp:
-                continue
+                wrp = wrappers.Wrapper(name=img, history='no history available')
 
             if settings.no_toggles:
                 toggles = ('<!-- TOGGLES -->',)
@@ -547,7 +548,7 @@ class WebCreator(toolinterface.Tool):
             '<p style="margin-top:50px; margin-bottom:600px;">Created on '
             + datetime.datetime.now().strftime('%Y-%m-%d %H:%M') +
             ' with '
-            '<a href="https://github.com/HeinAtCERN/Varial" target="new">'
+            '<a href="https://github.com/HeinerTholen/Varial" target="new">'
             'varial_webcreator'
             '</a>.'
             '</p>',
@@ -579,7 +580,7 @@ class WebCreator(toolinterface.Tool):
 
         def find_paths_for_image(img, path, paths_with_same_len):
             p = path.split('/')                 # 1st items are current path
-            menu_items = list([elem + ' /'] for elem in p)
+            menu_items = list([elem] for elem in p)
             for other_path, other_img_set in paths_with_same_len.iteritems():
                 if path == other_path:
                     continue
@@ -606,7 +607,7 @@ class WebCreator(toolinterface.Tool):
                 res += '</li>'
                 return res
 
-            line = '<div class="crosslinks"><ul>' + ''.join(
+            line = '<div class="crosslinks"><ul>' + '<li>/</li>'.join(
                 make_submenu(link_list) for link_list in menu_items
             ) + '</ul></div>\n'
             return line
