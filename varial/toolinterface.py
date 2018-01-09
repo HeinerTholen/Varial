@@ -242,14 +242,19 @@ class ToolChain(_ToolBase):
         if self.lazy_eval_tools_func:
             new_tools = self.lazy_eval_tools_func()
             if not new_tools:
-                self.message('WARNING lazy_eval_tools_func didnot return tools')
+                self.message('WARNING lazy_eval_tools_func did not return tools')
             else:
                 self.add_tools(new_tools)
+            return new_tools
+        else:
+            return []
 
     def run(self):
-        self._fetch_lazy_eval_tools()
-
         for tool in self.tool_chain:
+            self._run_tool(tool)
+
+        new_tools = self._fetch_lazy_eval_tools()
+        for tool in new_tools:
             self._run_tool(tool)
 
 
