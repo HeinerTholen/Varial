@@ -912,7 +912,9 @@ def mc_stack_n_data_sum(wrps,
                             'DEBUG No background histograms present!')
 
         # signal
-        sig = list(sig)
+        sig = sorted(sig, key=merge_mc_key_func)
+        sig = group(sig, merge_mc_key_func)
+        sig = list(op.merge(g) for g in sig)
         if any(s.sys_info for s in sig):
             sig = sorted(sig, key=lambda s: s.sample)
             sig = group(sig, lambda s: s.sample)
