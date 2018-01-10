@@ -35,6 +35,7 @@ class TreeProjectorBase(varial.tools.Tool):
                  sec_sel_weight=(('Histograms', '', ''),),
                  hot_result=False,
                  add_aliases_to_analysis=True,
+                 proc_sections_in_parallel=True,
                  name=None,
                  ):
         super(TreeProjectorBase, self).__init__(name)
@@ -42,6 +43,7 @@ class TreeProjectorBase(varial.tools.Tool):
         self.params = params
         self.sec_sel_weight = sec_sel_weight
         self.add_aliases_to_analysis = add_aliases_to_analysis
+        self.proc_sections_in_parallel = proc_sections_in_parallel
         self.use_hot_result = hot_result
         self.hot_result = []
         if hot_result:
@@ -105,18 +107,24 @@ class TreeProjector(TreeProjectorBase):
     def handle_sample(self, sample):
         self.message('INFO starting sample: ' + sample)
 
-        n_procs = varial.settings.max_num_processes
-        with varial.multiproc.WorkerPool(n_procs) as pool:
+        def _walk_over_sections(imap_func):
             for section, selection, weight in self.sec_sel_weight:
                 if isinstance(weight, dict):
                     weight = weight[sample]
                 res = self.prepare_mapiter(selection, weight, sample)
-                res = pool.imap_unordered(mr.map_projection_per_file, res)
+                res = imap_func(mr.map_projection_per_file, res)
                 res = itertools.chain.from_iterable(res)
                 res = mr.reduce_projection(res, self.params)
                 res = list(res)
                 assert res, 'tree_projection did not yield any histograms'
                 mr.store_sample(sample, section, res)
+
+        if self.proc_sections_in_parallel:
+            n_procs = min(varial.settings.max_num_processes, len(self.sec_sel_weight))
+            with varial.multiproc.WorkerPool(n_procs) as pool:
+                _walk_over_sections(pool.imap_unordered)
+        else:
+            _walk_over_sections(itertools.imap)
 
         varial.diskio.write_fileservice(sample)
         self.message('INFO sample done: ' + sample)
