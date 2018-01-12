@@ -599,13 +599,16 @@ class WebCreator(toolinterface.Tool):
         def convert_to_web_line(menu_items):
             def sort_key(l):
                 # pull out my_plot from either 'my_plot' or '<a href="#my_plot">my_plot</a>''
-                return l.replace('</a>', '').split('>')[-1]
+                return l.replace('</a>', '').replace('</font>', '').split('>')[-1]
 
             def make_submenu(link_list):
                 res = '<li>' + link_list[0]
                 if len(link_list) > 1:
                     res += '<ul>'
-                    for lnk in sorted(link_list, key=sort_key):
+                    for lnk in sorted(
+                        ['<font color="000">'+link_list[0]+'</font>'] + link_list[1:],
+                        key=sort_key
+                    ):
                         res += '<li>%s</li>' % lnk
                     res += '</ul>'
                 res += '</li>'
@@ -636,8 +639,9 @@ class WebCreator(toolinterface.Tool):
                     res = find_paths_for_image(img, path, paths_with_same_len)
                     res.append([img] + list(
                         '<a href="#%s">%s</a>' % (img_, img_)
-                        for img_ in img_set)
-                    )
+                        for img_ in img_set
+                        if img_ != img
+                    ))
                     img_menu_items[img] = res
                 write_code_for_page(path, img_menu_items)
 
