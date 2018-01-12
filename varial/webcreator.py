@@ -597,11 +597,15 @@ class WebCreator(toolinterface.Tool):
             return menu_items
 
         def convert_to_web_line(menu_items):
+            def sort_key(l):
+                # pull out my_plot from either 'my_plot' or '<a href="#my_plot">my_plot</a>''
+                return l.replace('</a>', '').split('>')[-1]
+
             def make_submenu(link_list):
                 res = '<li>' + link_list[0]
                 if len(link_list) > 1:
                     res += '<ul>'
-                    for lnk in sorted(link_list[1:]):
+                    for lnk in sorted(link_list, key=sort_key):
                         res += '<li>%s</li>' % lnk
                     res += '</ul>'
                 res += '</li>'
