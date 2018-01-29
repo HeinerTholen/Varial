@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import functools
 import itertools
 import inspect
@@ -127,23 +128,11 @@ def setup_legendnames_from_files(pattern):
 
 
 #################################################################### Switch ###
-class Switch(object):
-    """Set variables only within a context."""
-
-    def __init__(self, obj, var_name, new_val):
-        assert(type(var_name) == str)
-        self.obj = obj
-        self.var_name = var_name
-        self.new_val = new_val
-        self.old_val = None
-
-    def __enter__(self):
-        self.old_val = getattr(self.obj, self.var_name)
-        setattr(self.obj,self.var_name, self.new_val)
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        setattr(self.obj, self.var_name, self.old_val)
-        return exc_type, exc_val, exc_tb
+@contextmanager
+def Switch(obj, var_name, new_val):
+    old_val = getattr(obj, var_name)
+    yield
+    setattr(obj, var_name, old_val)
 
 
 ############################################################ ResettableType ###
