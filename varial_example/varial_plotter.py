@@ -28,6 +28,7 @@ Options:
 --norm          normalize all input histograms to integral
 --rebin         rebin histograms to have a maximum of 42 bins
 --theta_file    plot systematic uncertainties from a theta-file
+--pdf           produces pdf files as well
 """
     exit(-1)
 
@@ -35,6 +36,7 @@ Options:
 norm_to_int = False
 theta_file = False
 n_bins_max = 0
+add_pdf = False
 sig, bkg, dat, psu = [], [], [], []
 args = sys.argv[:]
 args.pop(0)
@@ -50,6 +52,8 @@ for a in args:
         norm_to_int = True
     elif a == '--rebin':
         n_bins_max = 42
+    elif a == '--pdf':
+        add_pdf = True
     elif a == '--theta_file':
         theta_file = True
     else:
@@ -82,6 +86,8 @@ varial.settings.canvas_size_x = 550
 varial.settings.canvas_size_y = 400
 varial.settings.root_style.SetPadRightMargin(0.3)
 varial.settings.rootfile_postfixes = ['.root', '.png']
+if add_pdf:
+    varial.settings.rootfile_postfixes += ['.pdf']
 
 sample_names = varial.util.setup_legendnames_from_files(all_input)
 

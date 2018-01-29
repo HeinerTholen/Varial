@@ -185,7 +185,7 @@ class WebCreator(toolinterface.Tool):
     rootjs_dir_level = 0  # number of directories above base wd
 
     def __init__(self, name=None, working_dir='', no_tool_check=False,
-                 is_base=True, cross_link_images=None):
+                 is_base=True, cross_link_images=None, use_jsroot=True):
         super(WebCreator, self).__init__(name)
         self.working_dir = working_dir
         self.web_lines = []
@@ -198,6 +198,7 @@ class WebCreator(toolinterface.Tool):
         self.is_base = is_base
         self.webcreate_request = False
         self.cross_link_images = cross_link_images
+        self.use_jsroot = use_jsroot
 
         # structure of self.cross_link_images
         # { pathlen: {
@@ -509,6 +510,14 @@ class WebCreator(toolinterface.Tool):
                     info_lines,
                     '</pre></div>',
                 )
+                if os.path.exists(img_path+'.png'):
+                    toggles += (
+                        '<a href="%s.png" target="new">(png)</a>' % img_lin or img,
+                    )
+                if os.path.exists(img_path+'.pdf'):
+                    toggles += (
+                        '<a href="%s.pdf" target="new">(pdf)</a>' % img_lin or img,
+                    )
 
             rootjs_link = rootjs_base_link + '&item={0}/{0}'.format(wrp.name)
 
