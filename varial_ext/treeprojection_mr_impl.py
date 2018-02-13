@@ -65,6 +65,10 @@ def map_projection(sample_histo_filename, params, open_file=None, open_tree=None
                     'Error in TTree::SetAlias: it did not understand %s.'%alias
                 )
 
+        tree_prep = params.get('tree_prep')
+        if tree_prep:
+            tree = tree_prep(tree) or tree
+
         n_selected = tree.Draw(histo_draw_cmd, selection, 'goff')
         if n_selected < 0:
             raise RuntimeError(
