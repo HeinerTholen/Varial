@@ -3,11 +3,11 @@ Project histograms from trees with map/reduce.
 """
 
 
-def map_projection(sample_histo_filename, params, open_file=None, open_tree=None):
+def map_projection(key_histo_filename, params, open_file=None, open_tree=None):
     """
     Map histogram projection to a root file
 
-    :param sample_histo_filename:   (str) e.g. ``'mysample myhisto /nfs/path/to/file.root'``
+    :param key_histo_filename:      (str) e.g. ``'mysample myhisto /nfs/path/to/file.root'``
     :param params:                  dictionary with parameters (see below)
     :param open_file:               open TFile instance (can be None)
     :param open_tree:               TTree instance to be used (can be None)
@@ -28,7 +28,7 @@ def map_projection(sample_histo_filename, params, open_file=None, open_tree=None
     """
     from ROOT import TFile, TH1, TH1F, TTree
 
-    sample, histoname, filename = sample_histo_filename.split()
+    key, histoname, filename = key_histo_filename.split()
     histoargs = params['histos'][histoname]
     selection = params.get('selection')
     if len(histoargs) == 5:
@@ -40,7 +40,7 @@ def map_projection(sample_histo_filename, params, open_file=None, open_tree=None
         if params.get('nm1', True):
             # N-1 instruction: don't cut the plotted variable
             selection = list(s for s in selection if quantity not in s)
-        selection = ' && '.join(selection)
+        selection = '(' + ')&&('.join(selection) + ')'
 
     selection = '%s*(%s)' % (params.get('weight') or '1', selection or '1')
     histo_draw_cmd = '%s>>+%s' % (quantity, 'new_histo')
@@ -86,7 +86,7 @@ def map_projection(sample_histo_filename, params, open_file=None, open_tree=None
         if not (open_file or open_tree):
             input_file.Close()
 
-    yield sample+' '+histoname, histo
+    yield key+' '+histoname, histo
 
 
 def reduce_projection(iterator, params):
@@ -103,14 +103,16 @@ def reduce_projection(iterator, params):
             h_sum.Add(h)
         return h_sum
 
-    for sample_histo, histos in _kvgroup(sorted(iterator)):
-        yield sample_histo, _histo_sum(histos)
+    for key, histos in _kvgroup(sorted(iterator)):
+        yield key, _histo_sum(histos)
 
 
 ################################################################## adapters ###
 def map_projection_per_file(args):
     """
     Map histogram projection to a root file
+
+    Use ``store_sample`` to store the reduced output of this projector.
 
     :param args:    tuple(sample, filename, params), see ``map_projection`` function for more info.
     """
@@ -131,6 +133,37 @@ def map_projection_per_file(args):
     return result
 
 
+def map_projection_per_file_with_all_sections(args):
+    """
+    As map_projection_per_file, but runs over all sections as well.
+
+    Use ``store_sample_with_all_sections`` to store the reduced output of this projector.
+
+    (This function allows to open every file only once)
+    """
+    sample, filename, list_of_sections_and_params = args
+
+    import ROOT
+    open_file = ROOT.TFile(filename)
+
+    try:
+        map_iter = (
+            res
+            for section, params in list_of_sections_and_params
+            for histoname in params['histos'].keys()
+            for res in map_projection(
+                '%s/%s %s %s'%(sample, section, histoname, filename),
+                params,
+                open_file
+            )
+        )
+        result = list(map_iter)
+    finally:
+        open_file.Close()
+
+    return result
+
+
 def reduce_projection_by_two(one, two):
     return list(reduce_projection(one+two, None))
 
@@ -138,8 +171,22 @@ def reduce_projection_by_two(one, two):
 ###################################################################### util ###
 def store_sample(sample, section, result):
     import varial
-    fs_wrp = varial.analysis.fileservice(section)
-    fs_wrp.sample = sample
-    for sample_histoname, histo in result:
-        _, name = sample_histoname.split()
+
+    def do_store(key_histoname, histo):
+        if section:
+            _, name = key_histoname.split()
+            sec = section
+        else:
+            sample_sec, name = key_histoname.split()
+            _, sec = sample_sec.split('/')
+        fs_wrp = varial.analysis.fileservice(sec)
+        fs_wrp.sample = sample
         setattr(fs_wrp, name, histo)
+        return key_histoname, histo
+
+    # return a list - not a generator - to make sure that storing is executed
+    return list(do_store(k, h) for k, h in result)
+
+
+def store_sample_with_all_sections(sample, result):
+    return store_sample(sample, None, result)
