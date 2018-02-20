@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+import collections
 import functools
 import itertools
 import inspect
@@ -8,6 +9,15 @@ import ROOT
 import copy
 import math
 import os
+
+
+def iterableize(obj_or_iterable):
+    """provides iterable for [obj OR iterable(obj)]"""
+    if isinstance(obj_or_iterable, collections.Iterable) and not isinstance(obj_or_iterable, str):
+        for o in obj_or_iterable:
+            yield o
+    else:
+        yield obj_or_iterable
 
 
 def integral_and_error(th_hist):

@@ -327,13 +327,8 @@ def fileservice(section_name, autosave=True):
     :returns:               FileServiceWrapper
     """
     if autosave:
-        if section_name in fs_wrappers:
-            raise RuntimeError(
-                'fileservice section already exists: %s' % section_name
-            )
-        fs_wrappers[section_name] = wrappers.FileServiceWrapper(
-            name=section_name
-        )
+        if section_name not in fs_wrappers:
+            fs_wrappers[section_name] = wrappers.FileServiceWrapper(name=section_name)
         return fs_wrappers[section_name]
     else:
         return wrappers.FileServiceWrapper(name=section_name)

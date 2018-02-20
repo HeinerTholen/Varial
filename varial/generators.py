@@ -13,9 +13,9 @@ http://www.dabeaz.com/generators/index.html
 """
 
 ################################################################### utility ###
-import collections
 import itertools
 
+from util import iterableize
 import settings  # init ROOT first
 import analysis
 import wrappers
@@ -23,15 +23,6 @@ import operator
 import monitor
 import diskio
 
-
-def _iterableize(obj_or_iterable):
-    """provides iterable for [obj OR iterable(obj)]"""
-    if (isinstance(obj_or_iterable, collections.Iterable)
-            and not type(obj_or_iterable) == str):
-        for o in obj_or_iterable:
-            yield o
-    else:
-        yield obj_or_iterable
 
 
 def debug_printer(iterable, print_obj=True):
@@ -171,7 +162,7 @@ def sort(wrps, key_list=None):
         key_list = settings.wrp_sorting_keys
     # python sorting is stable: Just sort by reversed key_list:
     wrps = list(wrps)
-    for key in reversed(list(_iterableize(key_list))):
+    for key in reversed(list(iterableize(key_list))):
         try:
             wrps = sorted(wrps, key=operator.attrgetter(key))
         except AttributeError:
@@ -955,7 +946,7 @@ def canvas(grps, build_funcs=(), post_build_funcs=(), **kws):
     """canvas building."""
 
     for grp in grps:
-        grp = _iterableize(grp)
+        grp = iterableize(grp)
         grp = rnd.build_canvas(
             grp,
             build_funcs or rnd.build_funcs,
