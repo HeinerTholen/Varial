@@ -141,6 +141,7 @@ def setup_legendnames_from_files(pattern):
 @contextmanager
 def Switch(obj, var_name, new_val):
     old_val = getattr(obj, var_name)
+    setattr(obj, var_name, new_val)
     yield
     setattr(obj, var_name, old_val)
 
