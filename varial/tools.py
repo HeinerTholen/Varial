@@ -59,6 +59,9 @@ class Runner(ToolChain):
         super(Runner, self).__init__(None, [tool], default_reuse)
         analysis.reset()
         self.run()
+        if self._reuse:
+            self.message('WARNING Finished reusing the last step '
+                         '(please remove the folder of the first tool that should be rerun).')
 
 
 class PrintToolTree(Tool):
