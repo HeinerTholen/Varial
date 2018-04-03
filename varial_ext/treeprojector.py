@@ -54,6 +54,7 @@ class TreeProjectorBase(varial.tools.Tool):
                 del filenames[sample]
 
         self.samples = filenames.keys()
+        assert self.samples, 'ERROR no samples to be plotted (%s)' % self.name
 
     def reuse(self, _=False):
         super(TreeProjectorBase, self).reuse(self.add_aliases_to_analysis)
