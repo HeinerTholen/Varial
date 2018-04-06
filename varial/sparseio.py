@@ -14,6 +14,7 @@ import cPickle
 import os
 
 import settings  # init ROOT first
+import generators
 import analysis
 import wrappers
 import monitor
@@ -97,19 +98,9 @@ def bulk_write(wrps, name_func, dir_path='', suffices=None, linlog=False):
                 w.main_pad.SetLogy(0)
                 w.obj.SaveAs(img_path+'_lin'+suffix)
 
-                # if the cnv.first_obj has a member called 'GetMaximum', the
-                # maximum should be greater than zero...
-                if (hasattr(w, 'first_obj')
-                    and (not hasattr(w.first_obj, 'GetMaximum')
-                         or w.first_obj.GetMaximum() > 1e-9)
-                ):
-                    min_val = w.y_min_gr_0 * 0.5
-                    min_val = max(min_val, 1e-9)
-                    w.first_obj.SetMinimum(min_val)
-                    w.main_pad.SetLogy(1)
-
+                generators.switch_log_scale_single_cnv(w, False, True)
                 w.obj.SaveAs(img_path+'_log'+suffix)
-                w.main_pad.SetLogy(0)  # reset to lin
+                generators.switch_log_scale_single_cnv(w, False, False) # reset to lin
 
                 if alt_name != name:
                     os.rename(img_path+'_lin'+suffix, good_path+'_lin'+suffix)

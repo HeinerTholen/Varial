@@ -102,11 +102,12 @@ from ROOT import gROOT, gStyle, TColor, TStyle, TGaxis
 
 
 def apply_axis_style(obj, y_bounds):
-    _, y_max = y_bounds
+    y_min, y_max = y_bounds
     obj.GetXaxis().SetNoExponent()
     obj.GetXaxis().SetLabelSize(0.052)
-    obj.SetMinimum(y_max / 10000.)
-    obj.SetMaximum(y_max * 1.1)
+    obj.SetMinimum(y_min)
+    obj.SetMaximum(y_max * 1.1 + 1e-23)
+    # (the tiny addition makes sure that y_max > y_min)
 
 
 def apply_error_hist_style(h, col, fill):

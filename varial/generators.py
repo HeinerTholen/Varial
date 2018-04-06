@@ -725,6 +725,31 @@ def apply_markercolor(wrps, colors=None):
         yield wrp
 
 
+def switch_log_scale_single_cnv(cnv, x_axis, y_axis):
+    """see doc of switch_log_scale"""
+    assert isinstance(cnv, rnd.wrappers.CanvasWrapper)
+
+    if x_axis:
+        cnv.main_pad.SetLogx(1)
+    else:
+        cnv.main_pad.SetLogx(0)
+
+    if y_axis:
+        # if the cnv.first_obj has a member called 'GetMaximum', the
+        # maximum should be greater then zero...
+        if ((not hasattr(cnv.first_obj, 'GetMaximum'))
+            or cnv.first_obj.GetMaximum() > 1e-9
+        ):
+            y_min, _ = cnv.y_bounds
+            y_min = max(cnv.y_min_gr_0 * 0.5, y_min)
+            cnv.first_obj.SetMinimum(y_min)
+            cnv.main_pad.SetLogy(1)
+    else:
+        cnv.first_obj.SetMinimum(cnv.y_bounds[0])
+        cnv.main_pad.SetLogy(0)
+    return cnv
+
+
 def switch_log_scale(cnvs, x_axis=False, y_axis=True):
     """
     Sets main_pad in canvases to logscale.
@@ -735,28 +760,7 @@ def switch_log_scale(cnvs, x_axis=False, y_axis=True):
     :yields:        CanvasWrapper
     """
     for cnv in cnvs:
-        assert isinstance(cnv, rnd.wrappers.CanvasWrapper)
-
-        if x_axis:
-            cnv.main_pad.SetLogx(1)
-        else:
-            cnv.main_pad.SetLogx(0)
-
-        if y_axis:
-            # if the cnv.first_drawn has a member called 'GetMaximum', the
-            # maximum should be greater then zero...
-            if ((not hasattr(cnv.first_drawn, 'GetMaximum'))
-                or cnv.first_drawn.GetMaximum() > 1e-9
-            ):
-                min_val = cnv.y_min_gr_0 * 0.5
-                min_val = max(min_val, 1e-9)
-                cnv.first_drawn.SetMinimum(min_val)
-                cnv.main_pad.SetLogy(1)
-        else:
-            cnv.first_drawn.SetMinimum(cnv.y_min)
-            cnv.main_pad.SetLogy(0)
-
-        yield cnv
+        yield switch_log_scale_single_cnv(cnv, x_axis, y_axis)
 
 
 def add_sample_integrals(canvas_wrps):

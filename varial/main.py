@@ -33,7 +33,7 @@ class SigintHandler(object):
         if signal_int is signal.SIGINT:
             if not ipython_mode:
                 if self.hits:
-                    if multiproc.cpu_semaphore:
+                    if multiproc._cpu_semaphore:
                         try:
                             os.killpg(os.getpid(), signal.SIGTERM)
                         except OSError:
