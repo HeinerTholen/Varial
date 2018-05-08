@@ -3,6 +3,18 @@ Project histograms from trees with map/reduce.
 """
 
 
+def _prepare_selection(params, quantity):
+    selection = params.get('selection')
+
+    if any(isinstance(selection, t) for t in (list, tuple)):
+        if params.get('nm1', True):
+            # N-1 instruction: don't cut the plotted variable
+            selection = list(s for s in selection if quantity not in s)
+        selection = '(' + ')&&('.join(selection) + ')'
+
+    return '%s*(%s)' % (params.get('weight') or '1', selection or '1')
+
+
 def map_projection(key_histo_filename, params, open_file=None, open_tree=None):
     """
     Map histogram projection to a root file
@@ -30,21 +42,14 @@ def map_projection(key_histo_filename, params, open_file=None, open_tree=None):
 
     key, histoname, filename = key_histo_filename.split()
     histoargs = params['histos'][histoname]
-    selection = params.get('selection')
     if len(histoargs) == 5:
         quantity, histoargs = histoargs[0], histoargs[1:]
     else:
         quantity = histoname
 
-    if any(isinstance(selection, t) for t in (list, tuple)):
-        if params.get('nm1', True):
-            # N-1 instruction: don't cut the plotted variable
-            selection = list(s for s in selection if quantity not in s)
-        selection = '(' + ')&&('.join(selection) + ')'
-
-    selection = '%s*(%s)' % (params.get('weight') or '1', selection or '1')
     histo_draw_cmd = '%s>>+%s' % (quantity, 'new_histo')
     input_file = open_tree or open_file or TFile(filename)
+    selection = _prepare_selection(params, quantity)
 
     try:
         if input_file.IsZombie():
@@ -108,7 +113,7 @@ def reduce_projection(iterator, params):
 
 
 ################################################################## adapters ###
-def map_projection_per_file(args):
+def map_projection_per_file(args, open_file=None):
     """
     Map histogram projection to a root file
 
@@ -120,15 +125,26 @@ def map_projection_per_file(args):
     histos = params['histos'].keys()
 
     import ROOT
-    open_file = ROOT.TFile(filename)
+    open_file_local = open_file or ROOT.TFile(filename)
+    open_tree = open_file_local.Get(params['treename'])
+    if not params.get('nm1', False):
+        params = params.copy()
+        selection = _prepare_selection(params, '')
+        open_tree.Draw('>>testhist', selection, 'goff')
+        eventlist = ROOT.gDirectory.Get('testhist')
+        eventlist.SetDirectory(0)
+        open_tree.SetEventList(eventlist)
+        params['selection'] = ''
+
     try:
         map_iter = (res
                     for h in histos
                     for res in map_projection(
-                        '%s %s %s'%(sample, h, filename), params, open_file))
+                        '%s %s %s'%(sample, h, filename), params, None, open_tree))
         result = list(map_iter)
     finally:
-        open_file.Close()
+        if not open_file:
+            open_file_local.Close()
 
     return result
 
