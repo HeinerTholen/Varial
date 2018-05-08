@@ -142,6 +142,7 @@ def map_projection_per_file(args, open_file=None):
                     for res in map_projection(
                         '%s %s %s'%(sample, h, filename), params, None, open_tree))
         result = list(map_iter)
+        open_tree.SetEventList(None)
     finally:
         if not open_file:
             open_file_local.Close()
@@ -166,10 +167,8 @@ def map_projection_per_file_with_all_sections(args):
         map_iter = (
             res
             for section, params in list_of_sections_and_params
-            for histoname in params['histos'].keys()
-            for res in map_projection(
-                '%s/%s %s %s'%(sample, section, histoname, filename),
-                params,
+            for res in map_projection_per_file(
+                ('%s/%s' % (sample, section), filename, params),
                 open_file
             )
         )
