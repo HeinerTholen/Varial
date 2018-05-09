@@ -127,11 +127,13 @@ def map_projection_per_file(args, open_file=None):
     import ROOT
     open_file_local = open_file or ROOT.TFile(filename)
     open_tree = open_file_local.Get(params['treename'])
-    if not params.get('nm1', False):
+    if open_tree.GetEntriesFast() and not params.get('nm1', False):
+        import uuid
         params = params.copy()
         selection = _prepare_selection(params, '')
-        open_tree.Draw('>>testhist', selection, 'goff')
-        eventlist = ROOT.gDirectory.Get('testhist')
+        name = uuid.uuid1().hex
+        open_tree.Draw('>>'+name, selection, 'goff')
+        eventlist = ROOT.gDirectory.Get(name)
         eventlist.SetDirectory(0)
         open_tree.SetEventList(eventlist)
         params['selection'] = ''
