@@ -127,6 +127,10 @@ def map_projection_per_file(args, open_file=None):
     import ROOT
     open_file_local = open_file or ROOT.TFile(filename)
     open_tree = open_file_local.Get(params['treename'])
+    if not isinstance(open_tree, ROOT.TTree):
+        raise RuntimeError(
+            'There seems to be no tree named "%s" in file "%s"'%(
+                params['treename'], open_file_local))
     if open_tree.GetEntriesFast() and not params.get('nm1', False):
         import uuid
         params = params.copy()
