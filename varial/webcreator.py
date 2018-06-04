@@ -200,6 +200,9 @@ class WebCreator(toolinterface.Tool):
         self.cross_link_images = cross_link_images
         self.use_jsroot = use_jsroot
 
+        if self.name == 'WebCreator':
+            self.name = 'VarialWebCreator'
+
         # structure of self.cross_link_images
         # { pathlen: {
         #         'path/one': {'imagename1', 'imagename2'},

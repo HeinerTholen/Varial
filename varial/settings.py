@@ -57,12 +57,12 @@ def can_go_parallel():
 canvas_size_x = 550
 canvas_size_y = 400
 
-box_text_size = 0.05
+box_text_size = 0.04
 defaults_Legend = {
     'x_pos': 0.81,  # left edge
     'y_pos': 0.5,   # upper edge
     'label_width': 0.2,
-    'label_height': 0.07,
+    'label_height': 0.05,
     'opt': 'f',
     'opt_data': 'p',
     'reverse': True

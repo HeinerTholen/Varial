@@ -88,7 +88,7 @@ class HistoRenderer(Renderer, wrappers.HistoWrapper):
 
     def y_min(self):
         # > 0 cuts away half numbers
-        return self.val_y_min or self.histo.GetMinimum() + 1e-23
+        return self.val_y_min or self.histo.GetMinimum() + 1e-10
 
     def y_max(self):
         return self.val_y_max or self.histo.GetMaximum()
@@ -98,15 +98,15 @@ class HistoRenderer(Renderer, wrappers.HistoWrapper):
             histo = self.histo
         nbins = histo.GetNbinsX()
         min_val = histo.GetMinimum()  # min on y axis
-        if min_val < 1e-23 < histo.GetMaximum():  # should be greater than zero
+        if min_val < 1e-10 < histo.GetMaximum():  # should be greater than zero
             try:
                 min_val = min(
                     histo.GetBinContent(i)
                     for i in xrange(nbins + 1)
-                    if histo.GetBinContent(i) > 1e-23
+                    if histo.GetBinContent(i) > 1e-10
                 )
             except ValueError:
-                min_val = 1e-23
+                min_val = 1e-10
         return min_val
 
     def draw(self, option=''):
@@ -167,7 +167,7 @@ class GraphRenderer(Renderer, wrappers.GraphWrapper):
 
     def y_min(self):
         # > 0 cuts away half numbers
-        return self.val_y_min or self.graph.GetYaxis().GetXmin() + 1e-23
+        return self.val_y_min or self.graph.GetYaxis().GetXmin() + 1e-10
 
     def y_max(self):
         return self.val_y_max or self.graph.GetYaxis().GetXmax()
@@ -251,7 +251,7 @@ def setup(wrps, kws):
         'first_obj'   : None,
         'x_bounds'    : None,
         'y_bounds'    : None,
-        'y_min_gr_0'  : 1e-23,
+        'y_min_gr_0'  : 1e-10,
         'history'     : _track_canvas_history(rnds, kws),
         '_renderers'  : rnds,
     })
