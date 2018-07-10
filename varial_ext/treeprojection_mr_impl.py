@@ -3,7 +3,7 @@ Project histograms from trees with map/reduce.
 """
 
 
-def _prepare_selection(params, quantity):
+def _prepare_selection(params, quantity, weight=''):
     selection = params.get('selection')
 
     if any(isinstance(selection, t) for t in (list, tuple)):
@@ -12,7 +12,7 @@ def _prepare_selection(params, quantity):
             selection = list(s for s in selection if quantity not in s)
         selection = '(' + ')&&('.join(selection) + ')'
 
-    return '%s*(%s)' % (params.get('weight') or '1', selection or '1')
+    return '%s*(%s)' % (weight or params.get('weight') or '1', selection or '1')
 
 
 def map_projection(key_histo_filename, params, open_file=None, open_tree=None):
@@ -27,10 +27,12 @@ def map_projection(key_histo_filename, params, open_file=None, open_tree=None):
     The param dict must have these contents:
 
     ======================= ================================================================
-    histos                  dict of histoname -> tuple(title, n_bins, low bound, high bound)
+    histos                  dict of histoname -> tuple(title,n_bins,low bound,high bound)
                             IMPORTANT: the name of the histogram is also the plotted quantity
                             If another quantity should be plotted, it can be passed as the first
-                            item in the tuple: tuple(quantity, title, n_bins, low bound, high bound)
+                            item in the tuple: tuple(quantity,title,n_bins,low bound,high bound).
+                            If a six-tuple is provided, the first item is interpreted as a special
+                            weight-expression for this histogram: tuple(weight,quantity,title,...).
     treename                name of the TTree in the ROOT File (not needed when open_tree is given)
     selection (optional)    selection string for TTree.Draw
     nm1 (optional)          create N-1 plots (not placing a selection on the plotted variable)
@@ -42,14 +44,16 @@ def map_projection(key_histo_filename, params, open_file=None, open_tree=None):
 
     key, histoname, filename = key_histo_filename.split()
     histoargs = params['histos'][histoname]
-    if len(histoargs) == 5:
-        quantity, histoargs = histoargs[0], histoargs[1:]
+    if len(histoargs) == 6:
+        weight, quantity, histoargs = histoargs[0], histoargs[1], histoargs[2:]
+    elif len(histoargs) == 5:
+        weight, quantity, histoargs = '', histoargs[0], histoargs[1:]
     else:
-        quantity = histoname
+        weight, quantity = '', histoname
 
     histo_draw_cmd = '%s>>+%s' % (quantity, 'new_histo')
     input_file = open_tree or open_file or TFile(filename)
-    selection = _prepare_selection(params, quantity)
+    selection = _prepare_selection(params, quantity, weight)
 
     try:
         if input_file.IsZombie():
