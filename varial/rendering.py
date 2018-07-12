@@ -88,7 +88,7 @@ class HistoRenderer(Renderer, wrappers.HistoWrapper):
 
     def y_min(self):
         # > 0 cuts away half numbers
-        return self.val_y_min or self.histo.GetMinimum() + 1e-10
+        return self.val_y_min or 1e-10
 
     def y_max(self):
         return self.val_y_max or self.histo.GetMaximum()
