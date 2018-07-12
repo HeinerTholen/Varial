@@ -60,7 +60,9 @@ def map_projection(key_histo_filename, params, open_file=None, open_tree=None):
             raise RuntimeError('input_file.IsZombie(): %s' % input_file)
 
         TH1.AddDirectory(True)
-        histo = TH1F('new_histo', *histoargs)
+        histo_factory = params.get('histo_factory', TH1F)
+        histo = histo_factory(histoname, *histoargs)
+        histo.SetName('new_histo')
 
         tree = open_tree or input_file.Get(params['treename'])
         if not isinstance(tree, TTree):
