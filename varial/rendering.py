@@ -76,7 +76,7 @@ class HistoRenderer(Renderer, wrappers.HistoWrapper):
             self.draw_option = 'E0X0'
             self.draw_option_legend = 'p'
             if self.is_pseudo_data:
-                w.histo.SetMarkerStyle(4)
+                wrp.histo.SetMarkerStyle(4)
         else:
             self.draw_option = 'hist'
 
