@@ -70,9 +70,9 @@ def imap_conditional(iterable, keyfunc, func, **func_kws):
     """
     for val in iterable:
         if keyfunc(val):
-             yield func(val, **func_kws)
+            yield func(val, **func_kws)
         else:
-             yield val
+            yield val
 
 
 def switch(iterable, keyfunc, generator, **gen_kws):
@@ -399,8 +399,8 @@ def gen_make_eff_graphs(wrps,
             while res:
                 yield res.pop(0)
 
-    assert not len(subs), 'ERROR, some subs are left: '+str(subs.keys())
-    assert not len(tots), 'ERROR, some tots are left: '+str(tots.keys())
+    assert not subs, 'ERROR, some subs are left: '+str(subs.keys())
+    assert not tots, 'ERROR, some tots are left: '+str(tots.keys())
 
 
 def gen_make_th2_projections(wrps, keep_th2=True):
@@ -442,12 +442,11 @@ def gen_squash_sys(wrps):
     Adds one-sided sys' quadratically and builds envelope from up and down.
     """
     def sys_info_key(w):
-        if w.sys_info.endswith('__plus'):
+        if w.sys_info.endswith(settings.sys_var_token_up):
             return w.sys_info[:-6]
-        elif w.sys_info.endswith('__minus'):
+        if w.sys_info.endswith(settings.sys_var_token_down):
             return w.sys_info[:-7]
-        else:
-            return 0
+        return 0
 
     # sort for plus and minus and get lists
     wrps = sorted(wrps, key=sys_info_key)
@@ -520,7 +519,7 @@ def resolve_file_pattern(pattern='./*.root'):
     def resolve_rel_pattern(pat):
         if pat.startswith('../'):
             return os.path.join(analysis.cwd, pat)
-        else: return pat
+        return pat
 
     if isinstance(pattern, str):
         pattern = [pattern]
@@ -786,8 +785,7 @@ def add_sample_integrals(canvas_wrps):
     def integral(wrp):
         if isinstance(wrp, rnd.StackRenderer):
             return integral_stack_wrp(wrp)
-        else:
-            return integral_histo_wrp(wrp)
+        return integral_histo_wrp(wrp)
 
     for cnv in canvas_wrps:
         cnv.__dict__.update(dict(
@@ -943,7 +941,7 @@ def fs_mc_stack_n_data_sum(filter_keyfunc=None, merge_mc_key_func=None, use_all_
     """
     loaded = fs_filter_active_sort_load(filter_keyfunc)
     grouped = group(loaded)     # default: group by in_file_path
-    return mc_stack_n_data_sum(grouped, merge_mc_key_func, True)
+    return mc_stack_n_data_sum(grouped, merge_mc_key_func, use_all_data_lumi)
 
 
 def canvas(grps, build_funcs=(), post_build_funcs=(), **kws):

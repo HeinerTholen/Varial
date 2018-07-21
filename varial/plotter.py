@@ -88,10 +88,13 @@ class Plotter(toolinterface.Tool):
     ...     'filter_keyfunc': None,
     ...     'load_func': gen.fs_filter_active_sort_load,
     ...     'hook_loaded_histos': None,
+    ...
+    ...     'stack': False,
     ...     'stack_grouper': plot_grouper_by_in_file_path,
-    ...     'plot_grouper': plot_grouper_single_plots,
     ...     'stack_setup': lambda w: gen.mc_stack_n_data_sum(w, None, True),
+    ...     'plot_grouper': plot_grouper_single_plots,
     ...     'plot_setup': default_plot_colorizer,
+    ...
     ...     'y_axis_scale': 'linlog',  # can be 'lin', 'log', or 'linlog'
     ...     'keep_content_as_result': False,
     ...     'save_name_func': save_by_name,
@@ -105,10 +108,13 @@ class Plotter(toolinterface.Tool):
         'filter_keyfunc': None,
         'load_func': gen.fs_filter_active_sort_load,
         'hook_loaded_histos': None,
+
+        'stack': False,
         'stack_grouper': plot_grouper_by_in_file_path,
-        'plot_grouper': plot_grouper_single_plots,
         'stack_setup': lambda w: gen.mc_stack_n_data_sum(w, None, True),
+        'plot_grouper': plot_grouper_single_plots,
         'plot_setup': default_plot_colorizer,
+
         'y_axis_scale': 'linlog',  # can be 'lin', 'log', or 'linlog'
         'keep_content_as_result': False,
         'save_name_func': save_by_name,
@@ -121,7 +127,7 @@ class Plotter(toolinterface.Tool):
     class NoFilterDictError(Exception):
         pass
 
-    def __init__(self, name=None, stack=False, **kws):
+    def __init__(self, name=None, **kws):
         super(Plotter, self).__init__(name)
         defaults = dict(self.defaults_attrs)
         defaults.update(self.__dict__)  # do not overwrite user stuff
@@ -131,7 +137,7 @@ class Plotter(toolinterface.Tool):
 
         assert(self.y_axis_scale in ('lin', 'log', 'linlog'))
 
-        if stack:
+        if self.stack:
             self.plot_setup = self.stack_setup
             self.plot_grouper = self.stack_grouper
 
