@@ -443,9 +443,9 @@ def gen_squash_sys(wrps):
     """
     def sys_info_key(w):
         if w.sys_info.endswith(settings.sys_var_token_up):
-            return w.sys_info[:-6]
+            return w.sys_info[:-len(settings.sys_var_token_up)]
         if w.sys_info.endswith(settings.sys_var_token_down):
-            return w.sys_info[:-7]
+            return w.sys_info[:-len(settings.sys_var_token_down)]
         return 0
 
     # sort for plus and minus and get lists
